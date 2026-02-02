@@ -54,7 +54,7 @@
         <a href="home" class="logo">LearnSphere</a>
         <div class="nav-right">
             <a href="report" class="btn-nav">🛠 Báo cáo sự cố</a>
-            <a href="#" class="btn-nav">⏳ Lịch sử</a>
+            <a href="history" class="btn-nav">⏳ Lịch sử</a>
             <span style="margin-left: 10px; border-left: 2px solid #ddd; padding-left: 10px;">
                 Chào, <b>${sessionScope.customerName}</b>
             </span>
