@@ -9,7 +9,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
 // Đường dẫn truy cập trên trình duyệt sẽ là: /home
-@WebServlet(name = "CustomerHomeServlet", urlPatterns = {"/home"})
+@WebServlet(name = "CustomerHomeServlet", urlPatterns = {"/customerhome"})
 public class CustomerHomeServlet extends HttpServlet {
 
     @Override
