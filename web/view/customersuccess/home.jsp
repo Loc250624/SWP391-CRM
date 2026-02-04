@@ -17,6 +17,28 @@
         .btn-nav { text-decoration: none; padding: 8px 15px; border: 1px solid #ccc; border-radius: 4px; color: #555; background: white; transition: 0.3s; }
         .btn-nav:hover { background-color: #f0f8ff; color: #00aeef; border-color: #00aeef; }
         
+        /* --- [MỚI] CSS CHO NÚT PROFILE --- */
+        .btn-user {
+            text-decoration: none;
+            color: #333;
+            font-weight: bold;
+            padding: 8px 15px;
+            border-radius: 20px;
+            background-color: #f0f2f5; /* Màu nền nhẹ */
+            transition: 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            border: 1px solid transparent;
+        }
+        .btn-user:hover {
+            background-color: #e6f7ff; /* Màu nền khi di chuột vào */
+            color: #00aeef;            /* Đổi màu chữ */
+            border-color: #00aeef;     /* Viền xanh */
+            cursor: pointer;
+        }
+        /* ---------------------------------- */
+        
         /* CONTAINER CHÍNH */
         .container { display: flex; justify-content: center; padding: 50px; }
         
@@ -54,10 +76,12 @@
         <a href="home" class="logo">LearnSphere</a>
         <div class="nav-right">
             <a href="report" class="btn-nav">🛠 Báo cáo sự cố</a>
-            <a href="#" class="btn-nav">⏳ Lịch sử</a>
-            <span style="margin-left: 10px; border-left: 2px solid #ddd; padding-left: 10px;">
-                Chào, <b>${sessionScope.customerName}</b>
-            </span>
+            <a href="history" class="btn-nav">⏳ Lịch sử</a>
+            <span style="color: #ccc;">|</span>
+            
+            <a href="profile" class="btn-user">
+                👤 Chào, ${sessionScope.customerName != null ? sessionScope.customerName : 'Khách'}
+            </a>
         </div>
     </div>
 
