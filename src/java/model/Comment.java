@@ -8,6 +8,6 @@ package model;
  *
  * @author hello
  */
-public class Ticket {
+public class Comment {
     
 }
