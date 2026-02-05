@@ -1,33 +1,36 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package model;
 
-import java.time.LocalDateTime;
+import java.sql.Timestamp;
 
-/**
- *
- * @author hello
- */
-public class Users {
+public class User {
+
+    // Các cột trong bảng users
     private int userId;
     private String employeeCode;
     private String email;
-    private String passwordHash;
+    private String passwordHash; 
     private String firstName;
     private String lastName;
     private String phone;
     private String avatarUrl;
-    private Integer departmentId;
+    private int departmentId;
     private String status;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
+    private Timestamp createdAt;
+    private Timestamp updatedAt; 
 
-    public Users() {
+    // Các cột bổ sung từ bảng khác (Joined columns)
+    private String fullName;
+    private String roleCode;
+    private String departmentName;
+
+    public User() {
     }
 
-    public Users(int userId, String employeeCode, String email, String passwordHash, String firstName, String lastName, String phone, String avatarUrl, Integer departmentId, String status, LocalDateTime createdAt, LocalDateTime updatedAt) {
+    // Constructor đầy đủ (Đã thêm tham số updatedAt)
+    public User(int userId, String employeeCode, String email, String passwordHash,
+            String firstName, String lastName, String phone, String avatarUrl,
+            int departmentId, String status, Timestamp createdAt, Timestamp updatedAt, 
+            String roleCode, String departmentName) {
         this.userId = userId;
         this.employeeCode = employeeCode;
         this.email = email;
@@ -39,6 +42,21 @@ public class Users {
         this.departmentId = departmentId;
         this.status = status;
         this.createdAt = createdAt;
+        this.updatedAt = updatedAt; 
+
+        // Tự động ghép Full Name
+        this.fullName = (lastName != null ? lastName : "") + " " + (firstName != null ? firstName : "");
+        this.roleCode = roleCode;
+        this.departmentName = departmentName;
+    }
+
+    // --- GETTERS AND SETTERS ---
+
+    public Timestamp getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(Timestamp updatedAt) {
         this.updatedAt = updatedAt;
     }
 
@@ -106,11 +124,11 @@ public class Users {
         this.avatarUrl = avatarUrl;
     }
 
-    public Integer getDepartmentId() {
+    public int getDepartmentId() {
         return departmentId;
     }
 
-    public void setDepartmentId(Integer departmentId) {
+    public void setDepartmentId(int departmentId) {
         this.departmentId = departmentId;
     }
 
@@ -122,21 +140,37 @@ public class Users {
         this.status = status;
     }
 
-    public LocalDateTime getCreatedAt() {
+    public Timestamp getCreatedAt() {
         return createdAt;
     }
 
-    public void setCreatedAt(LocalDateTime createdAt) {
+    public void setCreatedAt(Timestamp createdAt) {
         this.createdAt = createdAt;
     }
 
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
+    public String getFullName() {
+        return fullName;
     }
 
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
+    // Lưu ý: fullName thường là thuộc tính dẫn xuất (derived), nên có thể không cần Setter
+    // nếu bạn muốn set thủ công thì giữ lại, không thì xóa cũng được.
+    public void setFullName(String fullName) { 
+        this.fullName = fullName; 
     }
-    
-    
+
+    public String getRoleCode() {
+        return roleCode;
+    }
+
+    public void setRoleCode(String roleCode) {
+        this.roleCode = roleCode;
+    }
+
+    public String getDepartmentName() {
+        return departmentName;
+    }
+
+    public void setDepartmentName(String departmentName) {
+        this.departmentName = departmentName;
+    }
 }

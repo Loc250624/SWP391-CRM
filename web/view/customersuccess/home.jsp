@@ -1,137 +1,137 @@
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
+<%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <!DOCTYPE html>
-<html>
+<html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>${pageTitle}</title>
-    <style>
-        /* CSS reset và font chữ chuẩn */
-        body { margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f5f7fa; }
-        
-        /* HEADER */
-        .header { background: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e0e0e0; }
-        .logo { font-size: 24px; font-weight: bold; color: #333; text-decoration: none; }
-        .nav-right { display: flex; align-items: center; gap: 10px; font-size: 14px; color: #555; }
-        
-        /* Button style trên Header */
-        .btn-nav { text-decoration: none; padding: 8px 15px; border: 1px solid #ccc; border-radius: 4px; color: #555; background: white; transition: 0.3s; }
-        .btn-nav:hover { background-color: #f0f8ff; color: #00aeef; border-color: #00aeef; }
-        
-        /* --- [MỚI] CSS CHO NÚT PROFILE --- */
-        .btn-user {
-            text-decoration: none;
-            color: #333;
-            font-weight: bold;
-            padding: 8px 15px;
-            border-radius: 20px;
-            background-color: #f0f2f5; /* Màu nền nhẹ */
-            transition: 0.3s;
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            border: 1px solid transparent;
-        }
-        .btn-user:hover {
-            background-color: #e6f7ff; /* Màu nền khi di chuột vào */
-            color: #00aeef;            /* Đổi màu chữ */
-            border-color: #00aeef;     /* Viền xanh */
-            cursor: pointer;
-        }
-        /* ---------------------------------- */
-        
-        /* CONTAINER CHÍNH */
-        .container { display: flex; justify-content: center; padding: 50px; }
-        
-        /* CARD LỚN */
-        .banner-card { width: 900px; background: white; border-radius: 20px; box-shadow: 0 5px 20px rgba(0,0,0,0.05); display: flex; overflow: hidden; }
-        
-        /* Cột Trái (Thông tin) */
-        .left-panel { flex: 1; padding: 40px; display: flex; flex-direction: column; justify-content: center; }
-        .tag { background: #ffe6eb; color: #ff3250; padding: 5px 10px; border-radius: 4px; font-weight: bold; font-size: 12px; width: fit-content; margin-bottom: 15px; }
-        .title-big { font-size: 42px; font-weight: bold; line-height: 1.1; margin-bottom: 10px; color: #333; }
-        .text-blue { color: #00aeef; }
-        .desc { color: gray; font-size: 14px; margin-bottom: 25px; line-height: 1.5; }
-        
-        /* Đồng hồ đếm ngược giả lập */
-        .timer { display: flex; gap: 15px; margin-bottom: 30px; }
-        .time-box { text-align: center; }
-        .time-num { font-size: 20px; font-weight: bold; display: block; }
-        .time-label { font-size: 11px; color: gray; text-transform: uppercase; }
-        
-        .btn-buy { background: #00aeef; color: white; border: none; padding: 12px 30px; border-radius: 6px; font-weight: bold; font-size: 16px; cursor: pointer; transition: 0.2s; }
-        .btn-buy:hover { background: #0095ce; }
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Success Dashboard</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
 
-        /* Cột Phải (Gradient) */
-        .right-panel { flex: 1; background: linear-gradient(135deg, #00b4db 0%, #ffaf7b 100%); padding: 30px; position: relative; color: white; display: flex; flex-direction: column; justify-content: flex-end; }
-        .badge { position: absolute; top: 20px; right: 20px; background: rgba(0,0,0,0.5); padding: 5px 12px; border-radius: 4px; font-size: 12px; }
-        .course-name { font-size: 24px; font-weight: bold; margin-bottom: 5px; }
-        .price-box { margin-top: 10px; }
-        .price-new { font-size: 36px; font-weight: bold; }
-        .price-old { text-decoration: line-through; opacity: 0.8; font-size: 16px; margin-left: 10px; }
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+        
+        /* Sidebar */
+        .sidebar {
+            height: 100vh;
+            width: 250px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            background-color: #1e293b;
+            color: white;
+            padding-top: 20px;
+            transition: all 0.3s;
+            z-index: 1000;
+        }
+        
+        .sidebar-brand {
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: #38bdf8;
+            margin-bottom: 30px;
+        }
+
+        .sidebar a {
+            padding: 15px 25px;
+            text-decoration: none;
+            font-size: 16px;
+            color: #cbd5e1;
+            display: block;
+            transition: 0.3s;
+        }
+
+        .sidebar a:hover, .sidebar a.active {
+            background-color: #334155;
+            color: white;
+            border-left: 4px solid #38bdf8;
+        }
+
+        .sidebar i {
+            margin-right: 10px;
+            width: 20px;
+            text-align: center;
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: 250px;
+            padding: 30px;
+        }
+
+        /* Header Profile */
+        .header-profile {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: white;
+            padding: 15px 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            margin-bottom: 30px;
+        }
+        
+        /* Empty State (Vùng trống) */
+        .empty-state {
+            text-align: center;
+            padding: 50px;
+            color: #94a3b8;
+        }
     </style>
 </head>
 <body>
 
-    <div class="header">
-        <a href="home" class="logo">LearnSphere</a>
-        <div class="nav-right">
-            <a href="report" class="btn-nav">🛠 Báo cáo sự cố</a>
-            <a href="history" class="btn-nav">⏳ Lịch sử</a>
-            <span style="color: #ccc;">|</span>
-            
-            <a href="profile" class="btn-user">
-                👤 Chào, ${sessionScope.customerName != null ? sessionScope.customerName : 'Khách'}
-            </a>
+    <c:if test="${sessionScope.account == null}">
+        <c:redirect url="${pageContext.request.contextPath}/login"></c:redirect>
+    </c:if>
+
+    <div class="sidebar">
+        <div class="sidebar-brand">
+            <i class="fa-solid fa-cloud"></i> CRM System
         </div>
-    </div>
-
-    <div class="container">
-        <div class="banner-card">
-            <div class="left-panel">
-                <div class="tag">ƯU ĐÃI ĐẶC BIỆT</div>
-                <div class="title-big">Giảm 70% <br> Gói Masterclass <br> <span class="text-blue">Cao cấp!</span></div>
-                <div class="desc">
-                    Mở khóa các chiến lược nâng cao trong Thiết kế & Phát triển UX. <br>
-                    Cơ hội cuối cùng để nâng cấp kỹ năng của bạn.
-                </div>
-                
-                <div class="timer">
-                    <div class="time-box"><span class="time-num">02</span><span class="time-label">Ngày</span></div>
-                    <div class="time-box"><span class="time-num">14</span><span class="time-label">Giờ</span></div>
-                    <div class="time-box"><span class="time-num">35</span><span class="time-label">Phút</span></div>
-                    <div class="time-box"><span class="time-num">12</span><span class="time-label">Giây</span></div>
-                </div>
-
-                <button class="btn-buy" onclick="alert('Tính năng thanh toán đang bảo trì!')">Mua ngay | VNPAY</button>
-            </div>
-
-            <div class="right-panel">
-                <div class="badge">Premium Only</div>
-                <div class="course-name">Chiến lược UX Nâng cao</div>
-                <div style="font-size: 13px; opacity: 0.9;">Bao gồm 40 giờ video + Chứng chỉ quốc tế</div>
-                <div class="price-box">
-                    <span class="price-new">$59.00</span>
-                    <span class="price-old">$199.00</span>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <% 
-        // Lấy thông báo từ Session
-        String msg = (String) session.getAttribute("notification");
+        <a href="#" class="active"><i class="fa-solid fa-chart-line"></i> Tổng quan</a>
+        <a href="#"><i class="fa-solid fa-ticket"></i> Quản lý Ticket</a>
+        <a href="#"><i class="fa-solid fa-users"></i> Khách hàng</a>
+        <a href="#"><i class="fa-solid fa-comment-dots"></i> Phản hồi</a>
+        <a href="#"><i class="fa-solid fa-gear"></i> Cài đặt</a>
         
-        // Nếu có thông báo thì hiện Alert
-        if (msg != null && !msg.isEmpty()) { 
-    %>
-        <script>
-            alert("<%= msg %>");
-        </script>
-    <% 
-            // Xóa thông báo ngay lập tức để không hiện lại khi F5
-            session.removeAttribute("notification");
-        } 
-    %>
+        <a href="${pageContext.request.contextPath}/login" style="margin-top: 50px; color: #f87171;">
+            <i class="fa-solid fa-right-from-bracket"></i> Đăng xuất
+        </a>
+    </div>
 
+    <div class="main-content">
+        
+        <div class="header-profile">
+            <div>
+                <h4 style="font-weight: 600; margin: 0;">Dashboard</h4>
+            </div>
+            <div class="d-flex align-items-center">
+                <div class="me-3 text-end">
+                    <div style="font-weight: bold; color: #334155;">${sessionScope.account.fullName}</div>
+                    <div style="font-size: 13px; color: #64748b;">${sessionScope.account.roleCode}</div>
+                </div>
+                <img src="https://ui-avatars.com/api/?name=${sessionScope.account.fullName}&background=0D8ABC&color=fff" class="rounded-circle" width="45">
+            </div>
+        </div>
+
+        <div class="empty-state">
+            <i class="fa-regular fa-folder-open" style="font-size: 48px; margin-bottom: 15px;"></i>
+            <h5>Khu vực làm việc</h5>
+            <p>Chọn một chức năng từ menu bên trái để bắt đầu.</p>
+        </div>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
