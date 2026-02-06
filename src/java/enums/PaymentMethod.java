@@ -6,5 +6,9 @@
 package enums;
 
 public enum PaymentMethod {
+    CreditCard,
+    PayPal,
+    BankTransfer,
+    Cash
 
 }

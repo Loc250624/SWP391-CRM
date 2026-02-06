@@ -6,5 +6,10 @@
 package enums;
 
 public enum EntityType {
+    Lead,
+    Customer,
+    Opportunity,
+    Contact,
+    Account,
 
 }

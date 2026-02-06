@@ -6,5 +6,7 @@ package enums;
 
 
 public enum CallDirection {
+    Inbound,
+    Outbound
     
 }

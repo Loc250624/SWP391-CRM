@@ -6,5 +6,10 @@
 package enums;
 
 public enum StageType {
+    New,
+    InProgress,
+    Completed,
+    OnHold,
+    Cancelled
 
 }

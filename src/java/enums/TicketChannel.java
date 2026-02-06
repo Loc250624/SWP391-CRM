@@ -6,5 +6,10 @@
 package enums;
 
 public enum TicketChannel {
+    Email,
+    Phone,
+    Chat,
+    SocialMedia,
+    Other
 
 }

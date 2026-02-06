@@ -6,5 +6,8 @@
 package enums;
 
 public enum CourseLanguage {
+    VietNamese,
+    English,
+    Both
 
 }

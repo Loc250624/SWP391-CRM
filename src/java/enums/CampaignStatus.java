@@ -6,5 +6,15 @@
 package enums;
 
 public enum CampaignStatus {
+    Draft,
+    Planning,
+    Scheduled,
+    Active,
+    Paused,
+    Completed,
+    Cancelled,
+    Archived,
+    Failed
+    
 
 }

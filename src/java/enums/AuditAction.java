@@ -6,5 +6,23 @@
 package enums;
 
 public enum AuditAction {
+    CREATE,
+    UPDATE,
+    DELETE,
+    VIEW,
+    EXPORT,
+    IMPORT,
+    LOGIN,
+    LOGOUT,
+    LOGIN_FAILED,
+    PASSWORD_CHANGE,
+    PASSWORD_RESET,
+    ASSIGN,
+    UNASSIGN,
+    APPROVE,
+    REJECT,
+    SEND,
+    SHARE,
+    
 
 }

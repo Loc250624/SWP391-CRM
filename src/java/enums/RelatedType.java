@@ -6,5 +6,11 @@
 package enums;
 
 public enum RelatedType {
+    Lead,
+    Customer,
+    Opportunity,
+    Campaign,
+    Contact,
+    Course
 
 }

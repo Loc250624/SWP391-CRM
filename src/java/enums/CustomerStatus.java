@@ -6,5 +6,9 @@
 package enums;
 
 public enum CustomerStatus {
+    Active,
+    Inactive,
+    Churned,
+    Blocked
 
 }

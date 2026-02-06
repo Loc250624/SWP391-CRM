@@ -7,5 +7,6 @@ public enum ActivityType {
     MEETING,
     EMAIL,
     NOTE,
-    TASK
+    TASK,
+    OTHER
 }

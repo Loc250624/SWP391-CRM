@@ -6,5 +6,11 @@
 package enums;
 
 public enum OpportunityStatus {
+    Open,
+    InProgress,
+    Won,
+    Lost,
+    OnHold,
+    Cancelled
 
 }

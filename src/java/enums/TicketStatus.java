@@ -6,5 +6,12 @@
 package enums;
 
 public enum TicketStatus {
+    Open,
+    InProgress,
+    Resolved,
+    Closed,
+    Reopened,
+    OnHold,
+    Cancelled,
 
 }
