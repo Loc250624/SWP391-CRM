@@ -3,13 +3,15 @@ package model;
 import java.time.LocalDateTime;
 
 public class UserRole {
+
     public int userRoleId;
     public int userId;
     public int roleId;
     public LocalDateTime assignedAt;
     public Integer assignedBy; // nullable FK users
 
-    public UserRole() {}
+    public UserRole() {
+    }
 
     public UserRole(int userRoleId, int userId, int roleId, LocalDateTime assignedAt, Integer assignedBy) {
         this.userRoleId = userRoleId;
@@ -58,5 +60,5 @@ public class UserRole {
     public void setAssignedBy(Integer assignedBy) {
         this.assignedBy = assignedBy;
     }
-    
+
 }
