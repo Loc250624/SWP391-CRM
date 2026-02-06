@@ -6,11 +6,11 @@
 package enums;
 
 public enum EmailStatus {
-    QUEUED,
-    SENDING,
-    SENT,
-    FAILED,
-    BOUNCED,
-    OPENED,
-    CLICKED
+    Queued,
+    Sending,
+    Sent,
+    Failed,
+    Bounced,
+    Opened,
+    Clicked
 }

@@ -6,9 +6,10 @@
 package enums;
 
 public enum EmailRelatedType {
-    QUOTATION,
-    LEAD,
-    CUSTOMER,
-    TICKET
+    Quotation,
+    Lead,
+    Customer,
+    Ticket
 }
+
 

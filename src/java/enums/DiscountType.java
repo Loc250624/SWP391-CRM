@@ -6,7 +6,8 @@
 package enums;
 
 public enum DiscountType {
-    PERCENTAGE,
-    FIXED,
-    NONE
+    Percentage,
+    Fixed,
+    None
 }
+

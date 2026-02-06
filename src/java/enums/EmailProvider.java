@@ -6,7 +6,7 @@
 package enums;
 
 public enum EmailProvider {
-    SENDGRID,
-    MAILGUN,
-    SMTP
+    Sendgrid,
+    Mailgun,
+    Smtp
 }

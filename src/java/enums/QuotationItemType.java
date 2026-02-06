@@ -6,7 +6,7 @@
 package enums;
 
 public enum QuotationItemType {
-    COURSE,
-    SERVICE,
-    FEE
+    Course,
+    Service,
+    Fee
 }
