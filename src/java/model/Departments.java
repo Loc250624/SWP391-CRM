@@ -3,6 +3,7 @@ package model;
 import java.time.LocalDateTime;
 
 public class Departments {
+
     public int departmentId;
     public String departmentCode;
     public String departmentName;
@@ -59,5 +60,5 @@ public class Departments {
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
     }
-    
+
 }

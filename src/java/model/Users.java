@@ -1,16 +1,9 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package model;
 
 import java.time.LocalDateTime;
 
-/**
- *
- * @author hello
- */
 public class Users {
+
     private int userId;
     private String employeeCode;
     private String email;
@@ -137,6 +130,5 @@ public class Users {
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
     }
-    
-    
+
 }

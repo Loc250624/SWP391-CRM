@@ -3,6 +3,7 @@ package model;
 import java.time.LocalDateTime;
 
 public class Role {
+
     public int roleId;
     public String roleCode;       // ADMIN/MARKETING/SALES/SUPPORT
     public String roleName;
@@ -10,7 +11,8 @@ public class Role {
     public boolean isActive;
     public LocalDateTime createdAt;
 
-    public Role() {}
+    public Role() {
+    }
 
     public Role(int roleId, String roleCode, String roleName, String description, boolean isActive, LocalDateTime createdAt) {
         this.roleId = roleId;
@@ -68,5 +70,5 @@ public class Role {
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
     }
-    
+
 }
