@@ -6,13 +6,13 @@
 package enums;
 
 public enum QuotationStatus {
-    DRAFT,
-    PENDING_APPROVAL,
-    APPROVED,
-    SENT,
-    VIEWED,
-    ACCEPTED,
-    REJECTED,
-    EXPIRED,
-    CANCELLED
+    Draft,
+    PendingApproval,
+    Approved,
+    Sent,
+    Viewed,
+    Accepted,
+    Rejected,
+    Expired,
+    Cancelled
 }

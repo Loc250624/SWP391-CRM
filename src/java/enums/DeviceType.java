@@ -6,7 +6,8 @@
 package enums;
 
 public enum DeviceType {
-    DESKTOP,
-    MOBILE,
-    TABLET
+    Desktop,
+    Mobile,
+    Tablet
 }
+
