@@ -6,5 +6,17 @@
 package enums;
 
 public enum CampaignMemberStatus {
+    Added,
+    Sent,
+    Responded,
+    Bounced,
+    Unsubscribed,
+    Complained,
+    Delivered,
+    Opened,
+    Clicked,
+    Failed,
+    Spam,
+    Other,
 
 }

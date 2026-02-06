@@ -6,5 +6,8 @@
 package enums;
 
 public enum ResponderType {
+    Agent,
+    Customer,
+    System
 
 }

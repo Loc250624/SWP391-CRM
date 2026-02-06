@@ -6,5 +6,9 @@
 package enums;
 
 public enum UserStatus {
+    Active,
+    Inactive,
+    Suspended,
+    Deleted
 
 }

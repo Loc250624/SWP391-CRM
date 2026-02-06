@@ -7,4 +7,5 @@ package enums;
 
 public enum LearningStatus {
 
+    NotStarted, InProgress, Completed, Dropped
 }

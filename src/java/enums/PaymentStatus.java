@@ -6,5 +6,8 @@
 package enums;
 
 public enum PaymentStatus {
-
+    Pending,
+    Paid,
+    Refunded,
+    Cancelled
 }

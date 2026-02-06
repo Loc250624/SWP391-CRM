@@ -6,5 +6,9 @@
 package enums;
 
 public enum CourseStatus {
+    Active,
+    Inactive,
+    Archived,
+    Suspended
 
 }

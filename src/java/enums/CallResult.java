@@ -6,5 +6,16 @@
 package enums;
 
 public enum CallResult {
+    Connected,
+    LeftMessage,
+    NoAnswer,
+    Busy,
+    WrongNumber,
+    CallBack,
+    NotInterested,
+    Interested,
+    ScheduledFlollowUp,
+    MeetingScheduled,
+    Completed,
 
 }

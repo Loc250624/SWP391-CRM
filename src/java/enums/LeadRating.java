@@ -6,5 +6,9 @@
 package enums;
 
 public enum LeadRating {
+    Hot,
+    Warm,
+    Cold,
+    Other
 
 }

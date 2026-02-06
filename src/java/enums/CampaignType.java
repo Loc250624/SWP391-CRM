@@ -6,5 +6,25 @@
 package enums;
 
 public enum CampaignType {
+    EmailMarketing,
+    SocialMedia,
+    SEO,
+    PPC,
+    ContentMarketing,
+    AffiliateMarketing,
+    InfluencerMarketing,
+    EventMarketing,
+    DirectMail,
+    Telemarketing,
+    GoogleAds,
+    FacebookAds,
+    InstagramAds,
+    LinkedInAds,
+    TwitterAds,
+    YouTubeAds,
+    TiktokAds,
+    Webinars,
+    SMSMarketing,
+    Other
 
 }

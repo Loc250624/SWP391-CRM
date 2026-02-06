@@ -6,5 +6,10 @@
 package enums;
 
 public enum TicketCategory {
+    Technical,
+    Billing,
+    GeneralInquiry,
+    Feedback,
+    Other
 
 }

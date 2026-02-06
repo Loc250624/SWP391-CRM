@@ -6,5 +6,17 @@
 package enums;
 
 public enum LeadStatus {
+    New,
+    Assigned,
+    Contacted,
+    Working,
+    Qualified,
+    Unqualified,
+    Converted,
+    Connected,
+    Recycled,
+    Nurturing,
+    Lost,
+    Other
 
 }

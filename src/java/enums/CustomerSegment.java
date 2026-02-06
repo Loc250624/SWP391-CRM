@@ -6,5 +6,10 @@
 package enums;
 
 public enum CustomerSegment {
+    New,
+    Returning,
+    VIP,
+    Champion,
+    Risk
 
 }
