@@ -254,6 +254,119 @@ public class TaskDAO {
         return false;
     }
 
+    public boolean updateTaskAssignee(int taskId, int assigneeId) {
+        String sql = "UPDATE Tasks SET AssigneeID = ? WHERE TaskID = ?";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, assigneeId);
+            ps.setInt(2, taskId);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            String sqlV2 = "UPDATE tasks SET assigned_to = ?, updated_at = getdate() WHERE task_id = ?";
+            try (PreparedStatement psV2 = conn.prepareStatement(sqlV2)) {
+                psV2.setInt(1, assigneeId);
+                psV2.setInt(2, taskId);
+                return psV2.executeUpdate() > 0;
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+            }
+        }
+        return false;
+    }
+
+    public boolean updateTaskStatus(int taskId, TaskStatus status) {
+        String sql = "UPDATE Tasks SET Status = ? WHERE TaskID = ?";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, status.name());
+            ps.setInt(2, taskId);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            String sqlV2 = "UPDATE tasks SET status = ?, updated_at = getdate() WHERE task_id = ?";
+            try (PreparedStatement psV2 = conn.prepareStatement(sqlV2)) {
+                psV2.setString(1, status.name());
+                psV2.setInt(2, taskId);
+                return psV2.executeUpdate() > 0;
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+            }
+        }
+        return false;
+    }
+
+    public boolean updateTaskDeadline(int taskId, java.sql.Date dueDate) {
+        String sql = "UPDATE Tasks SET DueDate = ? WHERE TaskID = ?";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setDate(1, dueDate);
+            ps.setInt(2, taskId);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            String sqlV2 = "UPDATE tasks SET due_date = ?, updated_at = getdate() WHERE task_id = ?";
+            try (PreparedStatement psV2 = conn.prepareStatement(sqlV2)) {
+                if (dueDate != null) {
+                    psV2.setTimestamp(1, new java.sql.Timestamp(dueDate.getTime()));
+                } else {
+                    psV2.setNull(1, java.sql.Types.TIMESTAMP);
+                }
+                psV2.setInt(2, taskId);
+                return psV2.executeUpdate() > 0;
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+            }
+        }
+        return false;
+    }
+
+    public boolean updateTaskPriority(int taskId, Priority priority) {
+        String sql = "UPDATE Tasks SET Priority = ? WHERE TaskID = ?";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, priority.name());
+            ps.setInt(2, taskId);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            String sqlV2 = "UPDATE tasks SET priority = ?, updated_at = getdate() WHERE task_id = ?";
+            try (PreparedStatement psV2 = conn.prepareStatement(sqlV2)) {
+                psV2.setString(1, priority.name());
+                psV2.setInt(2, taskId);
+                return psV2.executeUpdate() > 0;
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+            }
+        }
+        return false;
+    }
+
+    public List<Task> getTasksByDueDateRange(java.sql.Date fromDate, java.sql.Date toDate) {
+        List<Task> tasks = new ArrayList<>();
+        String sql = "SELECT * FROM Tasks WHERE DueDate >= ? AND DueDate <= ?";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setDate(1, fromDate);
+            ps.setDate(2, toDate);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    tasks.add(mapResultSetToTask(rs));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            String sqlV2 = "SELECT * FROM tasks WHERE due_date >= ? AND due_date <= ?";
+            try (PreparedStatement psV2 = conn.prepareStatement(sqlV2)) {
+                psV2.setTimestamp(1, new java.sql.Timestamp(fromDate.getTime()));
+                psV2.setTimestamp(2, new java.sql.Timestamp(toDate.getTime()));
+                try (ResultSet rs2 = psV2.executeQuery()) {
+                    while (rs2.next()) {
+                        tasks.add(mapResultSetToTaskV2(rs2));
+                    }
+                }
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+            }
+        }
+        return tasks;
+    }
+
     private Task mapResultSetToTask(ResultSet rs) throws SQLException {
         return new Task(
                 rs.getInt("TaskID"),
