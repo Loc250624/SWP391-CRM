@@ -16,12 +16,23 @@ import model.Users;
 @WebServlet(name = "SaleTaskListServlet", urlPatterns = {"/sale/task/list"})
 public class SaleTaskListServlet extends HttpServlet {
 
+    // Bật/tắt bỏ qua đăng nhập khi test nhanh
+    private static final boolean BO_QUA_DANG_NHAP = true;
+
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         response.setContentType("text/html;charset=UTF-8");
         HttpSession session = request.getSession();
         Users user = (Users) session.getAttribute("user");
+
+        if (BO_QUA_DANG_NHAP && user == null) {
+            Users nguoiDungTam = new Users();
+            nguoiDungTam.setUserId(1);
+            nguoiDungTam.setDepartmentId(2);
+            session.setAttribute("user", nguoiDungTam);
+            user = nguoiDungTam;
+        }
 
 //        if (user == null) {
 //            response.sendRedirect(request.getContextPath() + "/login.jsp");

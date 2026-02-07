@@ -22,6 +22,9 @@ import model.Users;
 @WebServlet(name = "SaleTaskFormServlet", urlPatterns = {"/sale/task/form"})
 public class SaleTaskFormServlet extends HttpServlet {
 
+    // Bật/tắt bỏ qua đăng nhập khi test nhanh
+    private static final boolean BO_QUA_DANG_NHAP = true;
+
     private void napDuLieuForm(HttpServletRequest request) {
         UserDAO userDAO = new UserDAO();
         request.setAttribute("userList", userDAO.getAllUsers());
@@ -43,6 +46,15 @@ public class SaleTaskFormServlet extends HttpServlet {
         response.setContentType("text/html;charset=UTF-8");
         HttpSession session = request.getSession();
         Users user = (Users) session.getAttribute("user");
+
+        // Tạm thời bỏ qua đăng nhập để test nhanh
+        if (BO_QUA_DANG_NHAP && user == null) {
+            Users nguoiDungTam = new Users();
+            nguoiDungTam.setUserId(1);
+            nguoiDungTam.setDepartmentId(2);
+            session.setAttribute("user", nguoiDungTam);
+            user = nguoiDungTam;
+        }
 
         if (user == null) {
             response.sendRedirect(request.getContextPath() + "/login.jsp");
@@ -100,6 +112,15 @@ public class SaleTaskFormServlet extends HttpServlet {
         request.setCharacterEncoding("UTF-8");
         HttpSession session = request.getSession();
         Users user = (Users) session.getAttribute("user");
+
+        // Tạm thời bỏ qua đăng nhập để test nhanh
+        if (BO_QUA_DANG_NHAP && user == null) {
+            Users nguoiDungTam = new Users();
+            nguoiDungTam.setUserId(1);
+            nguoiDungTam.setDepartmentId(2);
+            session.setAttribute("user", nguoiDungTam);
+            user = nguoiDungTam;
+        }
 
         if (user == null) {
             response.sendRedirect(request.getContextPath() + "/login.jsp");
