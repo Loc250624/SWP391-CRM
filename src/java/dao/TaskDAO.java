@@ -5,6 +5,8 @@
 
 package dao;
 
-public class TaskDAO {
+import dbConnection.DBContext;
+
+public class TaskDAO extends DBContext{
 
 }

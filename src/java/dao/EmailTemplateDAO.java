@@ -5,6 +5,8 @@
 
 package dao;
 
-public class EmailTemplateDAO {
+import dbConnection.DBContext;
+
+public class EmailTemplateDAO extends DBContext{
 
 }

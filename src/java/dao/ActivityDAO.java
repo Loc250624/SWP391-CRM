@@ -5,6 +5,8 @@
 
 package dao;
 
-public class ActivityDAO {
+import dbConnection.DBContext;
+
+public class ActivityDAO extends DBContext{
 
 }

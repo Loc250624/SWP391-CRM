@@ -5,6 +5,8 @@
 
 package dao;
 
-public class PipelineStageDAO {
+import dbConnection.DBContext;
+
+public class PipelineStageDAO extends DBContext{
 
 }

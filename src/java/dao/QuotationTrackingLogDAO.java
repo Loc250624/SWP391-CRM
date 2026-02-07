@@ -5,6 +5,8 @@
 
 package dao;
 
-public class QuotationTrackingLogDAO {
+import dbConnection.DBContext;
+
+public class QuotationTrackingLogDAO extends DBContext{
 
 }

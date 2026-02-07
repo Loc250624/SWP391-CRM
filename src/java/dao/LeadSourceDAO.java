@@ -5,6 +5,8 @@
 
 package dao;
 
-public class LeadSourceDAO {
+import dbConnection.DBContext;
+
+public class LeadSourceDAO extends DBContext{
 
 }

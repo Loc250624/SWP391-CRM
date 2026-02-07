@@ -5,6 +5,8 @@
 
 package dao;
 
-public class EmailLogDAO {
+import dbConnection.DBContext;
+
+public class EmailLogDAO extends DBContext{
 
 }

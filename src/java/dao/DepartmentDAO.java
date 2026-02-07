@@ -5,6 +5,8 @@
 
 package dao;
 
-public class DepartmentDAO {
+import dbConnection.DBContext;
+
+public class DepartmentDAO extends DBContext{
 
 }

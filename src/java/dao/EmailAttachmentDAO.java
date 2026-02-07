@@ -5,6 +5,8 @@
 
 package dao;
 
-public class EmailAttachmentDAO {
+import dbConnection.DBContext;
+
+public class EmailAttachmentDAO extends DBContext{
 
 }

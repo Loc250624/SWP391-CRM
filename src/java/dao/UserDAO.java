@@ -5,6 +5,8 @@
 
 package dao;
 
-public class UserDAO {
+import dbConnection.DBContext;
+
+public class UserDAO extends DBContext{
 
 }

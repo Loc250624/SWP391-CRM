@@ -5,6 +5,8 @@
 
 package dao;
 
-public class CommentDAO {
+import dbConnection.DBContext;
+
+public class CommentDAO extends DBContext{
 
 }

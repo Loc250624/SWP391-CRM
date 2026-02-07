@@ -5,6 +5,8 @@
 
 package dao;
 
-public class CampaignDAO {
+import dbConnection.DBContext;
+
+public class CampaignDAO extends DBContext{
 
 }

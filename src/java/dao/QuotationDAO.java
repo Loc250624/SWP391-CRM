@@ -5,6 +5,8 @@
 
 package dao;
 
-public class QuotationDAO {
+import dbConnection.DBContext;
+
+public class QuotationDAO extends DBContext{
 
 }

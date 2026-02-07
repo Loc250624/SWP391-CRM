@@ -5,6 +5,8 @@
 
 package dao;
 
-public class AuditLogDAO {
+import dbConnection.DBContext;
+
+public class AuditLogDAO extends DBContext{
 
 }

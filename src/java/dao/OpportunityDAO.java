@@ -5,6 +5,8 @@
 
 package dao;
 
-public class OpportunityDAO {
+import dbConnection.DBContext;
+
+public class OpportunityDAO extends DBContext{
 
 }
