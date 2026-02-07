@@ -181,12 +181,43 @@
         <!-- Nhắc nhở -->
         <div class="menu4-section">
             <div class="section4-label">Nhắc nhở</div>
-            <a href="${pageContext.request.contextPath}/sale/activity/reminder" 
-               class="menu4-item ${ACTIVE_MENU=='ACT_REMINDER'?'active':''}">
+            <a href="${pageContext.request.contextPath}/sale/task/reminder" 
+               class="menu4-item ${ACTIVE_MENU=='TASK_REMINDER'?'active':''}">
                 <svg class="menu4-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
                 </svg>
                 Lịch nhắc việc
+            </a>
+            <a href="${pageContext.request.contextPath}/sale/task/calendar" 
+               class="menu4-item ${ACTIVE_MENU=='TASK_CALENDAR'?'active':''}">
+                <svg class="menu4-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                </svg>
+                Lịch công việc
+            </a>
+        </div>
+
+        <!-- Báo cáo -->
+        <div class="menu4-section">
+            <div class="section4-label">Báo cáo</div>
+            <a href="${pageContext.request.contextPath}/sale/task/report" 
+               class="menu4-item ${ACTIVE_MENU=='TASK_REPORT'?'active':''}">
+                <svg class="menu4-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"/>
+                </svg>
+                Báo cáo hoàn thành
+            </a>
+        </div>
+
+        <!-- Định kỳ -->
+        <div class="menu4-section">
+            <div class="section4-label">Định kỳ</div>
+            <a href="${pageContext.request.contextPath}/sale/task/recurring" 
+               class="menu4-item ${ACTIVE_MENU=='TASK_RECURRING'?'active':''}">
+                <svg class="menu4-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                Công việc định kỳ
             </a>
         </div>
 
