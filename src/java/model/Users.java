@@ -83,6 +83,16 @@ public class Users {
         this.lastName = lastName;
     }
 
+    public String getFullName() {
+        String ho = lastName != null ? lastName.trim() : "";
+        String ten = firstName != null ? firstName.trim() : "";
+        String ketQua = (ho + " " + ten).trim();
+        if (ketQua.isEmpty()) {
+            return email != null ? email : "";
+        }
+        return ketQua;
+    }
+
     public String getPhone() {
         return phone;
     }

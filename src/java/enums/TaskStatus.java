@@ -1,15 +1,18 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
-
 package enums;
 
 public enum TaskStatus {
-    NotStarted,
-    InProgress,
-    Completed,
-    OnHold,
-    Cancelled
+    PENDING("Chờ xử lý"),
+    IN_PROGRESS("Đang thực hiện"),
+    COMPLETED("Hoàn thành"),
+    CANCELLED("Đã hủy");
 
+    private final String vietnamese;
+
+    TaskStatus(String vietnamese) {
+        this.vietnamese = vietnamese;
+    }
+
+    public String getVietnamese() {
+        return vietnamese;
+    }
 }

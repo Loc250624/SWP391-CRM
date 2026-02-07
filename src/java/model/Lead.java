@@ -238,4 +238,8 @@ public class Lead {
         this.createdBy = createdBy;
     }
 
+    public String getName() {
+        return fullName;
+    }
+
 }
