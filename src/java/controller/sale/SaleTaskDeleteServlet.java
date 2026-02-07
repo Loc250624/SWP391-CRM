@@ -25,15 +25,20 @@ public class SaleTaskDeleteServlet extends HttpServlet {
             return;
         }
 
-        int taskId = Integer.parseInt(request.getParameter("id"));
-        TaskDAO taskDAO = new TaskDAO();
-        boolean deleted = taskDAO.deleteTask(taskId);
+        String idParam = request.getParameter("id");
+        try {
+            int taskId = Integer.parseInt(idParam);
+            TaskDAO taskDAO = new TaskDAO();
+            boolean deleted = taskDAO.deleteTask(taskId);
 
-        if (!deleted) {
-            response.sendRedirect(request.getContextPath() + "/error.jsp?message=Không thể xóa công việc.");
-            return;
+            if (!deleted) {
+                // Optionally set an error message before redirecting
+                session.setAttribute("errorMessage", "Không thể xóa công việc. Công việc không tồn tại hoặc có lỗi xảy ra.");
+            }
+        } catch (NumberFormatException e) {
+            session.setAttribute("errorMessage", "ID công việc không hợp lệ.");
         }
-
+        
         response.sendRedirect(request.getContextPath() + "/sale/task/list");
     }
 

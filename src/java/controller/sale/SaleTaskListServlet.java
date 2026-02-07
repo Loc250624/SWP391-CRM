@@ -23,10 +23,10 @@ public class SaleTaskListServlet extends HttpServlet {
         HttpSession session = request.getSession();
         Users user = (Users) session.getAttribute("user");
 
-        if (user == null) {
-            response.sendRedirect(request.getContextPath() + "/login.jsp");
-            return;
-        }
+//        if (user == null) {
+//            response.sendRedirect(request.getContextPath() + "/login.jsp");
+//            return;
+//        }
 
         TaskDAO taskDAO = new TaskDAO();
         UserDAO userDAO = new UserDAO();

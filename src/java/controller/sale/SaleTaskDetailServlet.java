@@ -33,12 +33,21 @@ public class SaleTaskDetailServlet extends HttpServlet {
             return;
         }
 
-        int taskId = Integer.parseInt(request.getParameter("id"));
-        TaskDAO taskDAO = new TaskDAO();
-        Task task = taskDAO.getTaskById(taskId);
+        String idParam = request.getParameter("id");
+        Task task;
+        try {
+            int taskId = Integer.parseInt(idParam);
+            TaskDAO taskDAO = new TaskDAO();
+            task = taskDAO.getTaskById(taskId);
+        } catch (NumberFormatException e) {
+            request.setAttribute("errorMessage", "ID công việc không hợp lệ.");
+            request.getRequestDispatcher("/view/sale/pages/task/list.jsp").forward(request, response);
+            return;
+        }
         
         if (task == null) {
-            response.sendRedirect(request.getContextPath() + "/error.jsp?message=Không tìm thấy công việc.");
+            request.setAttribute("errorMessage", "Không tìm thấy công việc với ID được cung cấp.");
+            request.getRequestDispatcher("/view/sale/pages/task/list.jsp").forward(request, response);
             return;
         }
 
@@ -61,7 +70,7 @@ public class SaleTaskDetailServlet extends HttpServlet {
                     Lead lead = leadDAO.getLeadById(entityId);
                     if (lead != null) {
                         entityName = lead.getName();
-                        entityUrl = request.getContextPath() + "/saleleaddetail?id=" + entityId;
+                        entityUrl = request.getContextPath() + "/sale/lead/detail?id=" + entityId; // Corrected URL assumption
                     }
                     break;
                 case "CUSTOMER":
@@ -69,7 +78,7 @@ public class SaleTaskDetailServlet extends HttpServlet {
                     Customer customer = customerDAO.getCustomerById(entityId);
                     if (customer != null) {
                         entityName = customer.getName();
-                        entityUrl = request.getContextPath() + "/salecustomerdetail?id=" + entityId;
+                        entityUrl = request.getContextPath() + "/sale/customer/detail?id=" + entityId; // Corrected URL assumption
                     }
                     break;
                 case "OPPORTUNITY":
@@ -77,7 +86,7 @@ public class SaleTaskDetailServlet extends HttpServlet {
                     Opportunity opportunity = opportunityDAO.getOpportunityById(entityId);
                     if (opportunity != null) {
                         entityName = opportunity.getOpportunityName();
-                        entityUrl = request.getContextPath() + "/saleopportunitydetail?id=" + entityId;
+                        entityUrl = request.getContextPath() + "/sale/opportunity/detail?id=" + entityId; // Corrected URL assumption
                     }
                     break;
             }

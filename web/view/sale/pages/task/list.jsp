@@ -13,6 +13,13 @@
     <div class="container-fluid">
         <jsp:include page="../../layout/header.jsp"/> <%-- Corrected Path --%>
         <div class="content">
+            <c:if test="${not empty sessionScope.errorMessage}">
+                <div class="alert alert-danger" role="alert">
+                    ${sessionScope.errorMessage}
+                </div>
+                <c:remove var="errorMessage" scope="session" />
+            </c:if>
+
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h3>Danh sách Công việc</h3>
                 <a href="${pageContext.request.contextPath}/sale/task/form?action=create" class="btn btn-primary">Thêm mới công việc</a>

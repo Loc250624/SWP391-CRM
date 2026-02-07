@@ -283,4 +283,8 @@ public class Customer {
         this.createdBy = createdBy;
     }
 
+    public String getName() {
+        return fullName;
+    }
+
 }
