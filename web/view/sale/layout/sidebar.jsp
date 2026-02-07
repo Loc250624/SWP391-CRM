@@ -144,19 +144,18 @@
     <!-- Menu -->
     <nav style="flex: 1; overflow-y: auto; padding: 1rem 0;">
 
-         <!-- Pipeline -->
+         <!-- Dashboard -->
         <div class="menu-section">
             <div class="section-label">Dashboard</div>
-            <a href="${pageContext.request.contextPath}/sale/dashboard" 
+            <a href="${pageContext.request.contextPath}/sale/dashboard"
                class="menu-item ${ACTIVE_MENU=='DASHBOARD'?'active':''}">
                 <svg class="menu-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"/>
                 </svg>
                 My Dashboard
             </a>
-           
         </div>
-        
+
         <!-- Pipeline -->
         <div class="menu-section">
             <div class="section-label">Pipeline</div>
@@ -166,13 +165,6 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"/>
                 </svg>
                 Pipeline Kanban
-            </a>
-            <a href="${pageContext.request.contextPath}/sale/opportunity/list" 
-               class="menu-item ${ACTIVE_MENU=='OPP_LIST'?'active':''}">
-                <svg class="menu-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/>
-                </svg>
-                Pipeline List
             </a>
             <a href="${pageContext.request.contextPath}/sale/opportunity/statistics" 
                class="menu-item ${ACTIVE_MENU=='OPP_STATS'?'active':''}">
@@ -193,15 +185,15 @@
         <!-- Opportunity -->
         <div class="menu-section">
             <div class="section-label">Opportunity</div>
-            <a href="${pageContext.request.contextPath}/sale/opportunity/create" 
-               class="menu-item ${ACTIVE_MENU=='OPP_CREATE'?'active':''}">
+            <a href="${pageContext.request.contextPath}/sale/opportunity/form" 
+               class="menu-item ${ACTIVE_MENU=='OPPORTUNITIES'?'active':''}">
                 <svg class="menu-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
                 </svg>
                 Tạo Opportunity
             </a>
-            <a href="${pageContext.request.contextPath}/sale/opportunity/list-all" 
-               class="menu-item ${ACTIVE_MENU=='OPP_LIST_ALL'?'active':''}">
+            <a href="${pageContext.request.contextPath}/sale/opportunity/list" 
+               class="menu-item ${ACTIVE_MENU=='OPP_LIST'?'active':''}">
                 <svg class="menu-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
                 </svg>
@@ -227,7 +219,7 @@
         <div class="menu-section">
             <div class="section-label">Lead</div>
             <a href="${pageContext.request.contextPath}/sale/lead/list" 
-               class="menu-item ${ACTIVE_MENU=='OPP_CREATE'?'active':''}">
+               class="menu-item ${ACTIVE_MENU=='LEAD_LIST'?'active':''}">
                 <svg class="menu-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
                 </svg>
