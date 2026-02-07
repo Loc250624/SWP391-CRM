@@ -1,0 +1,95 @@
+package controller.sale;
+
+import dao.CustomerDAO;
+import dao.LeadDAO;
+import dao.OpportunityDAO;
+import dao.TaskDAO;
+import dao.UserDAO;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
+import java.io.IOException;
+import model.Customer;
+import model.Lead;
+import model.Opportunity;
+import model.Task;
+import model.Users;
+
+@WebServlet(name = "SaleTaskDetailServlet", urlPatterns = {"/sale/task/detail"})
+public class SaleTaskDetailServlet extends HttpServlet {
+
+    @Override
+    protected void doGet(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        response.setContentType("text/html;charset=UTF-8");
+        HttpSession session = request.getSession();
+        Users user = (Users) session.getAttribute("user");
+
+        if (user == null) {
+            response.sendRedirect(request.getContextPath() + "/login.jsp");
+            return;
+        }
+
+        int taskId = Integer.parseInt(request.getParameter("id"));
+        TaskDAO taskDAO = new TaskDAO();
+        Task task = taskDAO.getTaskById(taskId);
+        
+        if (task == null) {
+            response.sendRedirect(request.getContextPath() + "/error.jsp?message=Không tìm thấy công việc.");
+            return;
+        }
+
+        UserDAO userDAO = new UserDAO();
+        Users assignee = userDAO.getUserById(task.getAssigneeId());
+        Users createdBy = userDAO.getUserById(task.getCreatedBy());
+
+        request.setAttribute("task", task);
+        request.setAttribute("assignee", assignee);
+        request.setAttribute("createdBy", createdBy);
+        
+        if (task.getRelatedToEntityType() != null && !task.getRelatedToEntityType().isEmpty()) {
+            String entityName = "";
+            String entityUrl = "#";
+            int entityId = task.getRelatedToEntityId();
+
+            switch (task.getRelatedToEntityType()) {
+                case "LEAD":
+                    LeadDAO leadDAO = new LeadDAO();
+                    Lead lead = leadDAO.getLeadById(entityId);
+                    if (lead != null) {
+                        entityName = lead.getName();
+                        entityUrl = request.getContextPath() + "/saleleaddetail?id=" + entityId;
+                    }
+                    break;
+                case "CUSTOMER":
+                    CustomerDAO customerDAO = new CustomerDAO();
+                    Customer customer = customerDAO.getCustomerById(entityId);
+                    if (customer != null) {
+                        entityName = customer.getName();
+                        entityUrl = request.getContextPath() + "/salecustomerdetail?id=" + entityId;
+                    }
+                    break;
+                case "OPPORTUNITY":
+                    OpportunityDAO opportunityDAO = new OpportunityDAO();
+                    Opportunity opportunity = opportunityDAO.getOpportunityById(entityId);
+                    if (opportunity != null) {
+                        entityName = opportunity.getOpportunityName();
+                        entityUrl = request.getContextPath() + "/saleopportunitydetail?id=" + entityId;
+                    }
+                    break;
+            }
+            request.setAttribute("relatedEntityName", entityName);
+            request.setAttribute("relatedEntityUrl", entityUrl);
+        }
+
+        request.getRequestDispatcher("/view/sale/pages/task/detail.jsp").forward(request, response);
+    }
+
+    @Override
+    public String getServletInfo() {
+        return "Servlet để hiển thị chi tiết công việc.";
+    }
+}

@@ -1,14 +1,17 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
-
 package enums;
 
 public enum Priority {
-    Low,
-    Medium,
-    High,
-    Urgent
+    LOW("Thấp"),
+    MEDIUM("Trung bình"),
+    HIGH("Cao");
 
+    private final String vietnamese;
+
+    Priority(String vietnamese) {
+        this.vietnamese = vietnamese;
+    }
+
+    public String getVietnamese() {
+        return vietnamese;
+    }
 }
