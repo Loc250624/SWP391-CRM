@@ -21,6 +21,13 @@
                 </div>
             </div>
 
+            <div class="mb-3">
+                <a href="${pageContext.request.contextPath}/sale/task/assign?id=${task.taskId}" class="btn btn-outline-info">Phan cong</a>
+                <a href="${pageContext.request.contextPath}/sale/task/status?id=${task.taskId}" class="btn btn-outline-success">Cap nhat trang thai</a>
+                <a href="${pageContext.request.contextPath}/sale/task/deadline?id=${task.taskId}" class="btn btn-outline-warning">Dat deadline</a>
+                <a href="${pageContext.request.contextPath}/sale/task/priority?id=${task.taskId}" class="btn btn-outline-secondary">Dat uu tien</a>
+            </div>
+
             <div class="card">
                 <div class="card-body">
                     <p><strong>Mô tả:</strong> ${task.description}</p>
