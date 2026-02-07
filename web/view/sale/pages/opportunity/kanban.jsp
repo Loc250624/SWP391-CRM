@@ -5,688 +5,1122 @@
 <!-- Sortable.js for Drag & Drop -->
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 
-<!-- Pipeline Header with Filters -->
-<div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
-    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-        
-        <!-- Left: Title & Stats -->
+<style>
+    /* Kanban Styles */
+    .kanban-container {
+        display: flex;
+        gap: 1.25rem;
+        overflow-x: auto;
+        padding-bottom: 1.5rem;
+        min-height: calc(100vh - 280px);
+    }
+
+    .kanban-column {
+        flex-shrink: 0;
+        width: 340px;
+        background: white;
+        border-radius: 1rem;
+        border: 1px solid #e2e8f0;
+        display: flex;
+        flex-direction: column;
+        max-height: calc(100vh - 280px);
+    }
+
+    .column-header {
+        padding: 1.25rem;
+        border-bottom: 1px solid #e2e8f0;
+        border-radius: 1rem 1rem 0 0;
+    }
+
+    .column-title {
+        display: flex;
+        align-items: center;
+        gap: 0.625rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .stage-indicator {
+        width: 0.875rem;
+        height: 0.875rem;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+
+    .stage-badge {
+        padding: 0.25rem 0.75rem;
+        border-radius: 1rem;
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: white;
+    }
+
+    .column-stats {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.8125rem;
+        color: #64748b;
+    }
+
+    .cards-container {
+        flex: 1;
+        padding: 1rem;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 0.875rem;
+    }
+
+    /* Opportunity Card */
+    .opportunity-card {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 0.875rem;
+        padding: 1.125rem;
+        cursor: move;
+        transition: all 0.2s;
+    }
+
+    .opportunity-card:hover {
+        box-shadow: 0 8px 24px rgba(59, 130, 246, 0.15);
+        transform: translateY(-2px);
+        border-color: #60a5fa;
+    }
+
+    .sortable-ghost {
+        opacity: 0.4;
+        background: #f1f5f9;
+    }
+
+    .sortable-drag {
+        opacity: 0.8;
+    }
+
+    .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: start;
+        margin-bottom: 0.875rem;
+    }
+
+    .priority-badge {
+        padding: 0.25rem 0.625rem;
+        border-radius: 0.5rem;
+        font-size: 0.6875rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.025em;
+    }
+
+    .priority-high {
+        background: linear-gradient(135deg, #fee2e2, #fecaca);
+        color: #dc2626;
+    }
+
+    .priority-medium {
+        background: linear-gradient(135deg, #fef3c7, #fde68a);
+        color: #d97706;
+    }
+
+    .priority-low {
+        background: linear-gradient(135deg, #e0e7ff, #c7d2fe);
+        color: #4f46e5;
+    }
+
+    .card-actions {
+        display: flex;
+        gap: 0.25rem;
+    }
+
+    .card-action-btn {
+        padding: 0.375rem;
+        border-radius: 0.375rem;
+        transition: background 0.15s;
+        cursor: pointer;
+    }
+
+    .card-action-btn:hover {
+        background: #f1f5f9;
+    }
+
+    .card-title {
+        font-weight: 700;
+        color: #1e293b;
+        font-size: 0.9375rem;
+        margin-bottom: 0.375rem;
+        line-height: 1.4;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .card-subtitle {
+        font-size: 0.8125rem;
+        color: #64748b;
+        margin-bottom: 0.875rem;
+    }
+
+    .card-value-section {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.875rem;
+    }
+
+    .card-value {
+        font-size: 1.25rem;
+        font-weight: 800;
+        color: #1e293b;
+    }
+
+    .card-probability {
+        display: flex;
+        align-items: center;
+        gap: 0.375rem;
+        font-size: 0.75rem;
+        color: #64748b;
+        background: #f8fafc;
+        padding: 0.25rem 0.625rem;
+        border-radius: 0.5rem;
+    }
+
+    .card-meta {
+        padding-top: 0.875rem;
+        border-top: 1px solid #f1f5f9;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .card-owner {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .owner-avatar {
+        width: 1.75rem;
+        height: 1.75rem;
+        border-radius: 0.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 700;
+        font-size: 0.6875rem;
+    }
+
+    .owner-name {
+        font-size: 0.8125rem;
+        color: #475569;
+        font-weight: 500;
+    }
+
+    .card-date {
+        display: flex;
+        align-items: center;
+        gap: 0.375rem;
+        font-size: 0.75rem;
+        color: #64748b;
+    }
+
+    .card-tags {
+        margin-top: 0.875rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.375rem;
+    }
+
+    .tag {
+        padding: 0.25rem 0.625rem;
+        border-radius: 0.5rem;
+        font-size: 0.6875rem;
+        font-weight: 600;
+    }
+
+    /* Add Card Button */
+    .add-card-btn {
+        margin: 1rem;
+        padding: 0.875rem;
+        border: 2px dashed #cbd5e1;
+        border-radius: 0.75rem;
+        color: #64748b;
+        font-weight: 600;
+        transition: all 0.2s;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+
+    .add-card-btn:hover {
+        border-color: #60a5fa;
+        color: #3b82f6;
+        background: #f8fafc;
+    }
+
+    /* Filter Panel */
+    .filter-panel {
+        background: white;
+        border-radius: 1rem;
+        border: 1px solid #e2e8f0;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .filter-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1rem;
+        margin-top: 1.5rem;
+    }
+
+    .filter-field label {
+        display: block;
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: #475569;
+        margin-bottom: 0.5rem;
+    }
+
+    .filter-input {
+        width: 100%;
+        padding: 0.625rem 0.875rem;
+        border: 1px solid #e2e8f0;
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        transition: all 0.2s;
+    }
+
+    .filter-input:focus {
+        outline: none;
+        border-color: #60a5fa;
+        box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1);
+    }
+
+    /* Header Stats */
+    .pipeline-header {
+        background: white;
+        border-radius: 1rem;
+        border: 1px solid #e2e8f0;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .header-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: start;
+        flex-wrap: wrap;
+        gap: 1.5rem;
+    }
+
+    .header-title {
+        font-size: 1.75rem;
+        font-weight: 800;
+        color: #1e293b;
+        margin-bottom: 0.75rem;
+    }
+
+    .header-stats {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1.5rem;
+        font-size: 0.875rem;
+    }
+
+    .stat-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .stat-label {
+        color: #64748b;
+    }
+
+    .stat-value {
+        font-weight: 700;
+        font-size: 1rem;
+    }
+
+    .header-actions {
+        display: flex;
+        gap: 0.75rem;
+    }
+
+    .btn {
+        padding: 0.625rem 1.25rem;
+        border-radius: 0.625rem;
+        font-weight: 600;
+        font-size: 0.875rem;
+        transition: all 0.2s;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .btn-secondary {
+        background: white;
+        border: 1px solid #e2e8f0;
+        color: #475569;
+    }
+
+    .btn-secondary:hover {
+        background: #f8fafc;
+        border-color: #cbd5e1;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #60a5fa, #3b82f6);
+        color: white;
+        border: none;
+        box-shadow: 0 2px 8px rgba(59, 130, 246, 0.25);
+    }
+
+    .btn-primary:hover {
+        box-shadow: 0 4px 16px rgba(59, 130, 246, 0.35);
+        transform: translateY(-1px);
+    }
+
+    /* Modal */
+    .modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(4px);
+        z-index: 50;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+    }
+
+    .modal-container {
+        background: white;
+        border-radius: 1.25rem;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        max-width: 48rem;
+        width: 100%;
+        max-height: 90vh;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .modal-header {
+        padding: 1.5rem;
+        border-bottom: 1px solid #e2e8f0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .modal-title {
+        font-size: 1.375rem;
+        font-weight: 800;
+        color: #1e293b;
+    }
+
+    .modal-close {
+        padding: 0.5rem;
+        border-radius: 0.5rem;
+        transition: background 0.15s;
+        cursor: pointer;
+    }
+
+    .modal-close:hover {
+        background: #f1f5f9;
+    }
+
+    .modal-body {
+        flex: 1;
+        overflow-y: auto;
+        padding: 1.5rem;
+    }
+
+    .form-section {
+        margin-bottom: 2rem;
+    }
+
+    .section-title {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1.25rem;
+    }
+
+    .form-field {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .form-label {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: #475569;
+        margin-bottom: 0.5rem;
+    }
+
+    .form-input {
+        padding: 0.75rem 1rem;
+        border: 1px solid #e2e8f0;
+        border-radius: 0.625rem;
+        font-size: 0.875rem;
+        transition: all 0.2s;
+    }
+
+    .form-input:focus {
+        outline: none;
+        border-color: #60a5fa;
+        box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1);
+    }
+
+    .form-textarea {
+        resize: vertical;
+        min-height: 100px;
+    }
+
+    .modal-footer {
+        padding: 1.25rem 1.5rem;
+        border-top: 1px solid #e2e8f0;
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.75rem;
+    }
+</style>
+
+<!-- Pipeline Header -->
+<div class="pipeline-header">
+    <div class="header-top">
         <div>
-            <h3 class="text-2xl font-bold text-slate-800 mb-2">Sales Pipeline</h3>
-            <div class="flex items-center gap-4 text-sm">
-                <span class="text-slate-600">
-                    <span class="font-semibold text-blue-600">156</span> Opportunities
-                </span>
-                <span class="text-slate-300">|</span>
-                <span class="text-slate-600">
-                    Total Value: <span class="font-semibold text-green-600">$2,450,000</span>
-                </span>
-                <span class="text-slate-300">|</span>
-                <span class="text-slate-600">
-                    Expected Close: <span class="font-semibold text-purple-600">$1,820,000</span>
-                </span>
+            <h2 class="header-title">Sales Pipeline</h2>
+            <div class="header-stats">
+                <div class="stat-item">
+                    <span class="stat-label">Total Opportunities:</span>
+                    <span class="stat-value" style="color: #3b82f6;">156</span>
+                </div>
+                <span style="color: #e2e8f0;">|</span>
+                <div class="stat-item">
+                    <span class="stat-label">Pipeline Value:</span>
+                    <span class="stat-value" style="color: #10b981;">$2,450,000</span>
+                </div>
+                <span style="color: #e2e8f0;">|</span>
+                <div class="stat-item">
+                    <span class="stat-label">Expected Close:</span>
+                    <span class="stat-value" style="color: #fb923c;">$1,820,000</span>
+                </div>
             </div>
         </div>
-        
-        <!-- Right: Actions -->
-        <div class="flex items-center gap-3">
-            <button onclick="toggleFilters()" class="px-4 py-2 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors flex items-center gap-2">
-                <svg class="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
+
+        <div class="header-actions">
+            <button onclick="toggleFilters()" class="btn btn-secondary">
+                <svg style="width: 1.125rem; height: 1.125rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
                 </svg>
-                <span class="font-medium text-slate-700">Filters</span>
+                Filters
             </button>
-            
-            <button onclick="openCreateModal()" class="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:shadow-lg transition-all flex items-center gap-2">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+
+            <button onclick="openCreateModal()" class="btn btn-primary">
+                <svg style="width: 1.125rem; height: 1.125rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
                 </svg>
-                <span class="font-medium">New Opportunity</span>
+                New Opportunity
             </button>
         </div>
     </div>
-    
-    <!-- Filters Panel (Collapsible) -->
-    <div id="filtersPanel" class="hidden mt-6 pt-6 border-t border-slate-200">
-        <form method="GET" action="${pageContext.request.contextPath}/sales/pipeline" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-            
-            <!-- Search -->
-            <div>
-                <label class="block text-sm font-medium text-slate-700 mb-2">Search</label>
-                <input type="text" name="search" value="${search}" placeholder="Company or deal name..." 
-                       class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+</div>
+
+<!-- Filters Panel -->
+<div id="filtersPanel" class="filter-panel" style="display: none;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h3 style="font-size: 1.125rem; font-weight: 700; color: #1e293b;">Filter Opportunities</h3>
+        <button onclick="toggleFilters()" style="color: #64748b;">
+            <svg style="width: 1.25rem; height: 1.25rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+        </button>
+    </div>
+
+    <form method="GET" action="${pageContext.request.contextPath}/sales/pipeline">
+        <div class="filter-grid">
+            <div class="filter-field">
+                <label>Search</label>
+                <input type="text" name="search" class="filter-input" placeholder="Company or deal name...">
             </div>
-            
-            <!-- Sales Rep -->
-            <div>
-                <label class="block text-sm font-medium text-slate-700 mb-2">Sales Rep</label>
-                <select name="salesRep" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+
+            <div class="filter-field">
+                <label>Sales Rep</label>
+                <select name="salesRep" class="filter-input">
                     <option value="">All Reps</option>
-                    <option value="john" ${salesRep == 'john' ? 'selected' : ''}>John Doe</option>
-                    <option value="jane" ${salesRep == 'jane' ? 'selected' : ''}>Jane Smith</option>
-                    <option value="mike" ${salesRep == 'mike' ? 'selected' : ''}>Mike Johnson</option>
+                    <option value="john">John Doe</option>
+                    <option value="jane">Jane Smith</option>
+                    <option value="mike">Mike Johnson</option>
                 </select>
             </div>
-            
-            <!-- Priority -->
-            <div>
-                <label class="block text-sm font-medium text-slate-700 mb-2">Priority</label>
-                <select name="priority" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+
+            <div class="filter-field">
+                <label>Priority</label>
+                <select name="priority" class="filter-input">
                     <option value="">All Priorities</option>
-                    <option value="high" ${priority == 'high' ? 'selected' : ''}>High</option>
-                    <option value="medium" ${priority == 'medium' ? 'selected' : ''}>Medium</option>
-                    <option value="low" ${priority == 'low' ? 'selected' : ''}>Low</option>
+                    <option value="high">High</option>
+                    <option value="medium">Medium</option>
+                    <option value="low">Low</option>
                 </select>
             </div>
-            
-            <!-- Value Range -->
-            <div>
-                <label class="block text-sm font-medium text-slate-700 mb-2">Min Value</label>
-                <input type="number" name="minValue" placeholder="$0" 
-                       class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+
+            <div class="filter-field">
+                <label>Min Value</label>
+                <input type="number" name="minValue" class="filter-input" placeholder="$0">
             </div>
-            
-            <div>
-                <label class="block text-sm font-medium text-slate-700 mb-2">Max Value</label>
-                <input type="number" name="maxValue" placeholder="$1,000,000" 
-                       class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+
+            <div class="filter-field">
+                <label>Max Value</label>
+                <input type="number" name="maxValue" class="filter-input" placeholder="$1,000,000">
             </div>
-            
-            <!-- Filter Actions -->
-            <div class="md:col-span-2 lg:col-span-5 flex items-center gap-3">
-                <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                    Apply Filters
-                </button>
-                <a href="${pageContext.request.contextPath}/sales/pipeline" class="px-6 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors">
-                    Clear All
-                </a>
-            </div>
-        </form>
-    </div>
+        </div>
+
+        <div style="display: flex; gap: 0.75rem; margin-top: 1.5rem;">
+            <button type="submit" class="btn btn-primary">Apply Filters</button>
+            <a href="${pageContext.request.contextPath}/sales/pipeline" class="btn btn-secondary">Clear All</a>
+        </div>
+    </form>
 </div>
 
 <!-- Kanban Board -->
-<div class="flex gap-4 overflow-x-auto pb-6" style="min-height: calc(100vh - 400px);">
-    
+<div class="kanban-container">
+
     <!-- Stage 1: Prospecting -->
-    <div class="flex-shrink-0 w-80">
-        <div class="bg-white rounded-xl shadow-sm border border-slate-200 h-full flex flex-col">
-            <!-- Stage Header -->
-            <div class="px-4 py-3 border-b border-slate-200 bg-gradient-to-r from-blue-50 to-blue-100">
-                <div class="flex items-center justify-between mb-2">
-                    <h4 class="font-semibold text-slate-800 flex items-center gap-2">
-                        <span class="w-3 h-3 bg-blue-500 rounded-full"></span>
-                        Prospecting
-                    </h4>
-                    <span class="px-2 py-1 bg-blue-600 text-white text-xs font-semibold rounded-full">45</span>
-                </div>
-                <div class="flex items-center justify-between text-xs text-slate-600">
-                    <span>Total: <span class="font-semibold text-blue-600">$450,000</span></span>
-                    <span class="text-slate-400">18.4%</span>
-                </div>
+    <div class="kanban-column">
+        <div class="column-header" style="background: linear-gradient(135deg, #dbeafe, #bfdbfe);">
+            <div class="column-title">
+                <span class="stage-indicator" style="background: #3b82f6;"></span>
+                <h4 style="font-weight: 700; color: #1e293b; flex: 1;">Prospecting</h4>
+                <span class="stage-badge" style="background: #3b82f6;">45</span>
             </div>
-            
-            <!-- Cards Container -->
-            <div class="flex-1 p-3 space-y-3 overflow-y-auto" id="prospecting-column" data-stage="prospecting">
-                
-                <!-- Opportunity Card 1 -->
-                <div class="opportunity-card bg-white border border-slate-200 rounded-lg p-4 cursor-move hover:shadow-lg transition-shadow" 
-                     data-opportunity-id="1">
-                    <!-- Priority Badge -->
-                    <div class="flex items-start justify-between mb-3">
-                        <span class="px-2 py-1 bg-red-100 text-red-700 text-xs font-semibold rounded">High Priority</span>
-                        <div class="flex items-center gap-1">
-                            <button onclick="editOpportunity(1)" class="p-1 hover:bg-slate-100 rounded">
-                                <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                                </svg>
-                            </button>
-                            <button onclick="openOptionsMenu(1)" class="p-1 hover:bg-slate-100 rounded">
-                                <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"/>
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <!-- Company & Deal Name -->
-                    <h5 class="font-semibold text-slate-800 mb-1 line-clamp-2">Enterprise Solution - Acme Corp</h5>
-                    <p class="text-sm text-slate-500 mb-3">Software Implementation</p>
-                    
-                    <!-- Deal Value -->
-                    <div class="flex items-center justify-between mb-3">
-                        <span class="text-lg font-bold text-slate-800">$85,000</span>
-                        <div class="flex items-center gap-1 text-xs text-slate-500">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
-                            </svg>
-                            <span>30%</span>
-                        </div>
-                    </div>
-                    
-                    <!-- Meta Info -->
-                    <div class="pt-3 border-t border-slate-100 flex items-center justify-between">
-                        <div class="flex items-center gap-2">
-                            <div class="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-semibold">
-                                JD
-                            </div>
-                            <span class="text-xs text-slate-600">John Doe</span>
-                        </div>
-                        <div class="flex items-center gap-1 text-xs text-slate-500">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                            </svg>
-                            <span>Feb 28</span>
-                        </div>
-                    </div>
-                    
-                    <!-- Tags -->
-                    <div class="mt-3 flex flex-wrap gap-1">
-                        <span class="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded">Enterprise</span>
-                        <span class="px-2 py-1 bg-green-100 text-green-700 text-xs rounded">Hot Lead</span>
-                    </div>
-                </div>
-                
-                <!-- Opportunity Card 2 -->
-                <div class="opportunity-card bg-white border border-slate-200 rounded-lg p-4 cursor-move hover:shadow-lg transition-shadow" 
-                     data-opportunity-id="2">
-                    <div class="flex items-start justify-between mb-3">
-                        <span class="px-2 py-1 bg-yellow-100 text-yellow-700 text-xs font-semibold rounded">Medium Priority</span>
-                        <div class="flex items-center gap-1">
-                            <button onclick="editOpportunity(2)" class="p-1 hover:bg-slate-100 rounded">
-                                <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                                </svg>
-                            </button>
-                            <button onclick="openOptionsMenu(2)" class="p-1 hover:bg-slate-100 rounded">
-                                <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"/>
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <h5 class="font-semibold text-slate-800 mb-1 line-clamp-2">Cloud Migration - Tech Startup</h5>
-                    <p class="text-sm text-slate-500 mb-3">Infrastructure Services</p>
-                    
-                    <div class="flex items-center justify-between mb-3">
-                        <span class="text-lg font-bold text-slate-800">$45,000</span>
-                        <div class="flex items-center gap-1 text-xs text-slate-500">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
-                            </svg>
-                            <span>25%</span>
-                        </div>
-                    </div>
-                    
-                    <div class="pt-3 border-t border-slate-100 flex items-center justify-between">
-                        <div class="flex items-center gap-2">
-                            <div class="w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center text-white text-xs font-semibold">
-                                JS
-                            </div>
-                            <span class="text-xs text-slate-600">Jane Smith</span>
-                        </div>
-                        <div class="flex items-center gap-1 text-xs text-slate-500">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                            </svg>
-                            <span>Mar 15</span>
-                        </div>
-                    </div>
-                    
-                    <div class="mt-3 flex flex-wrap gap-1">
-                        <span class="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded">Startup</span>
-                    </div>
-                </div>
-                
-                <!-- Add more cards as needed -->
-                
-            </div>
-            
-            <!-- Add Card Button -->
-            <div class="p-3 border-t border-slate-200">
-                <button onclick="openCreateModalInStage('prospecting')" class="w-full py-2 border-2 border-dashed border-slate-300 rounded-lg text-slate-600 hover:border-blue-500 hover:text-blue-600 transition-colors flex items-center justify-center gap-2">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-                    </svg>
-                    <span class="font-medium">Add Deal</span>
-                </button>
+            <div class="column-stats">
+                <span>Total: <strong style="color: #3b82f6;">$450K</strong></span>
+                <span style="color: #94a3b8;">18.4%</span>
             </div>
         </div>
+
+        <div class="cards-container" id="prospecting-column" data-stage="prospecting">
+
+            <!-- Card 1 -->
+            <div class="opportunity-card" data-opportunity-id="1">
+                <div class="card-header">
+                    <span class="priority-badge priority-high">High Priority</span>
+                    <div class="card-actions">
+                        <div class="card-action-btn" onclick="editOpportunity(1)">
+                            <svg style="width: 1rem; height: 1rem; color: #64748b;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                            </svg>
+                        </div>
+                        <div class="card-action-btn" onclick="openCardMenu(1)">
+                            <svg style="width: 1rem; height: 1rem; color: #64748b;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <h5 class="card-title">Enterprise ERP Solution - ABC Corp</h5>
+                <p class="card-subtitle">Software Implementation</p>
+
+                <div class="card-value-section">
+                    <span class="card-value">$85,000</span>
+                    <div class="card-probability">
+                        <svg style="width: 0.875rem; height: 0.875rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+                        </svg>
+                        30%
+                    </div>
+                </div>
+
+                <div class="card-meta">
+                    <div class="card-owner">
+                        <div class="owner-avatar" style="background: linear-gradient(135deg, #60a5fa, #3b82f6);">
+                            JD
+                        </div>
+                        <span class="owner-name">John Doe</span>
+                    </div>
+                    <div class="card-date">
+                        <svg style="width: 0.875rem; height: 0.875rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                        </svg>
+                        Feb 28
+                    </div>
+                </div>
+
+                <div class="card-tags">
+                    <span class="tag" style="background: #f3e8ff; color: #7c3aed;">Enterprise</span>
+                    <span class="tag" style="background: #dcfce7; color: #16a34a;">Hot Lead</span>
+                </div>
+            </div>
+
+            <!-- Card 2 -->
+            <div class="opportunity-card" data-opportunity-id="2">
+                <div class="card-header">
+                    <span class="priority-badge priority-medium">Medium</span>
+                    <div class="card-actions">
+                        <div class="card-action-btn" onclick="editOpportunity(2)">
+                            <svg style="width: 1rem; height: 1rem; color: #64748b;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                            </svg>
+                        </div>
+                        <div class="card-action-btn" onclick="openCardMenu(2)">
+                            <svg style="width: 1rem; height: 1rem; color: #64748b;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <h5 class="card-title">Cloud Migration Project - Tech Startup</h5>
+                <p class="card-subtitle">Infrastructure Services</p>
+
+                <div class="card-value-section">
+                    <span class="card-value">$45,000</span>
+                    <div class="card-probability">
+                        <svg style="width: 0.875rem; height: 0.875rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+                        </svg>
+                        25%
+                    </div>
+                </div>
+
+                <div class="card-meta">
+                    <div class="card-owner">
+                        <div class="owner-avatar" style="background: linear-gradient(135deg, #a78bfa, #7c3aed);">
+                            JS
+                        </div>
+                        <span class="owner-name">Jane Smith</span>
+                    </div>
+                    <div class="card-date">
+                        <svg style="width: 0.875rem; height: 0.875rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                        </svg>
+                        Mar 15
+                    </div>
+                </div>
+
+                <div class="card-tags">
+                    <span class="tag" style="background: #dbeafe; color: #2563eb;">Startup</span>
+                    <span class="tag" style="background: #fef3c7; color: #d97706;">New Market</span>
+                </div>
+            </div>
+
+            <!-- Card 3 -->
+            <div class="opportunity-card" data-opportunity-id="3">
+                <div class="card-header">
+                    <span class="priority-badge priority-low">Low</span>
+                    <div class="card-actions">
+                        <div class="card-action-btn" onclick="editOpportunity(3)">
+                            <svg style="width: 1rem; height: 1rem; color: #64748b;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                            </svg>
+                        </div>
+                        <div class="card-action-btn" onclick="openCardMenu(3)">
+                            <svg style="width: 1rem; height: 1rem; color: #64748b;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <h5 class="card-title">Marketing Automation - XYZ Ltd</h5>
+                <p class="card-subtitle">SaaS Subscription</p>
+
+                <div class="card-value-section">
+                    <span class="card-value">$28,000</span>
+                    <div class="card-probability">
+                        <svg style="width: 0.875rem; height: 0.875rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+                        </svg>
+                        20%
+                    </div>
+                </div>
+
+                <div class="card-meta">
+                    <div class="card-owner">
+                        <div class="owner-avatar" style="background: linear-gradient(135deg, #fb923c, #f97316);">
+                            MJ
+                        </div>
+                        <span class="owner-name">Mike Johnson</span>
+                    </div>
+                    <div class="card-date">
+                        <svg style="width: 0.875rem; height: 0.875rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                        </svg>
+                        Apr 10
+                    </div>
+                </div>
+
+                <div class="card-tags">
+                    <span class="tag" style="background: #ffe4e6; color: #be123c;">SMB</span>
+                </div>
+            </div>
+
+        </div>
+
+        <button class="add-card-btn" onclick="openCreateModalInStage('prospecting')">
+            <svg style="width: 1.125rem; height: 1.125rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+            Add Deal
+        </button>
     </div>
-    
+
     <!-- Stage 2: Qualification -->
-    <div class="flex-shrink-0 w-80">
-        <div class="bg-white rounded-xl shadow-sm border border-slate-200 h-full flex flex-col">
-            <div class="px-4 py-3 border-b border-slate-200 bg-gradient-to-r from-indigo-50 to-indigo-100">
-                <div class="flex items-center justify-between mb-2">
-                    <h4 class="font-semibold text-slate-800 flex items-center gap-2">
-                        <span class="w-3 h-3 bg-indigo-500 rounded-full"></span>
-                        Qualification
-                    </h4>
-                    <span class="px-2 py-1 bg-indigo-600 text-white text-xs font-semibold rounded-full">38</span>
-                </div>
-                <div class="flex items-center justify-between text-xs text-slate-600">
-                    <span>Total: <span class="font-semibold text-indigo-600">$580,000</span></span>
-                    <span class="text-slate-400">23.7%</span>
-                </div>
+    <div class="kanban-column">
+        <div class="column-header" style="background: linear-gradient(135deg, #e0e7ff, #c7d2fe);">
+            <div class="column-title">
+                <span class="stage-indicator" style="background: #6366f1;"></span>
+                <h4 style="font-weight: 700; color: #1e293b; flex: 1;">Qualification</h4>
+                <span class="stage-badge" style="background: #6366f1;">38</span>
             </div>
-            
-            <div class="flex-1 p-3 space-y-3 overflow-y-auto" id="qualification-column" data-stage="qualification">
-                <!-- Add opportunity cards here -->
-            </div>
-            
-            <div class="p-3 border-t border-slate-200">
-                <button onclick="openCreateModalInStage('qualification')" class="w-full py-2 border-2 border-dashed border-slate-300 rounded-lg text-slate-600 hover:border-indigo-500 hover:text-indigo-600 transition-colors flex items-center justify-center gap-2">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-                    </svg>
-                    <span class="font-medium">Add Deal</span>
-                </button>
+            <div class="column-stats">
+                <span>Total: <strong style="color: #6366f1;">$580K</strong></span>
+                <span style="color: #94a3b8;">23.7%</span>
             </div>
         </div>
+
+        <div class="cards-container" id="qualification-column" data-stage="qualification">
+            <!-- Add more cards here -->
+        </div>
+
+        <button class="add-card-btn" onclick="openCreateModalInStage('qualification')">
+            <svg style="width: 1.125rem; height: 1.125rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+            Add Deal
+        </button>
     </div>
-    
+
     <!-- Stage 3: Proposal -->
-    <div class="flex-shrink-0 w-80">
-        <div class="bg-white rounded-xl shadow-sm border border-slate-200 h-full flex flex-col">
-            <div class="px-4 py-3 border-b border-slate-200 bg-gradient-to-r from-purple-50 to-purple-100">
-                <div class="flex items-center justify-between mb-2">
-                    <h4 class="font-semibold text-slate-800 flex items-center gap-2">
-                        <span class="w-3 h-3 bg-purple-500 rounded-full"></span>
-                        Proposal
-                    </h4>
-                    <span class="px-2 py-1 bg-purple-600 text-white text-xs font-semibold rounded-full">28</span>
-                </div>
-                <div class="flex items-center justify-between text-xs text-slate-600">
-                    <span>Total: <span class="font-semibold text-purple-600">$620,000</span></span>
-                    <span class="text-slate-400">25.3%</span>
-                </div>
+    <div class="kanban-column">
+        <div class="column-header" style="background: linear-gradient(135deg, #f3e8ff, #e9d5ff);">
+            <div class="column-title">
+                <span class="stage-indicator" style="background: #a855f7;"></span>
+                <h4 style="font-weight: 700; color: #1e293b; flex: 1;">Proposal</h4>
+                <span class="stage-badge" style="background: #a855f7;">28</span>
             </div>
-            
-            <div class="flex-1 p-3 space-y-3 overflow-y-auto" id="proposal-column" data-stage="proposal">
-                <!-- Add opportunity cards here -->
-            </div>
-            
-            <div class="p-3 border-t border-slate-200">
-                <button onclick="openCreateModalInStage('proposal')" class="w-full py-2 border-2 border-dashed border-slate-300 rounded-lg text-slate-600 hover:border-purple-500 hover:text-purple-600 transition-colors flex items-center justify-center gap-2">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-                    </svg>
-                    <span class="font-medium">Add Deal</span>
-                </button>
+            <div class="column-stats">
+                <span>Total: <strong style="color: #a855f7;">$620K</strong></span>
+                <span style="color: #94a3b8;">25.3%</span>
             </div>
         </div>
+
+        <div class="cards-container" id="proposal-column" data-stage="proposal">
+            <!-- Add more cards here -->
+        </div>
+
+        <button class="add-card-btn" onclick="openCreateModalInStage('proposal')">
+            <svg style="width: 1.125rem; height: 1.125rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+            Add Deal
+        </button>
     </div>
-    
+
     <!-- Stage 4: Negotiation -->
-    <div class="flex-shrink-0 w-80">
-        <div class="bg-white rounded-xl shadow-sm border border-slate-200 h-full flex flex-col">
-            <div class="px-4 py-3 border-b border-slate-200 bg-gradient-to-r from-orange-50 to-orange-100">
-                <div class="flex items-center justify-between mb-2">
-                    <h4 class="font-semibold text-slate-800 flex items-center gap-2">
-                        <span class="w-3 h-3 bg-orange-500 rounded-full"></span>
-                        Negotiation
-                    </h4>
-                    <span class="px-2 py-1 bg-orange-600 text-white text-xs font-semibold rounded-full">23</span>
-                </div>
-                <div class="flex items-center justify-between text-xs text-slate-600">
-                    <span>Total: <span class="font-semibold text-orange-600">$480,000</span></span>
-                    <span class="text-slate-400">19.6%</span>
-                </div>
+    <div class="kanban-column">
+        <div class="column-header" style="background: linear-gradient(135deg, #fed7aa, #fdba74);">
+            <div class="column-title">
+                <span class="stage-indicator" style="background: #fb923c;"></span>
+                <h4 style="font-weight: 700; color: #1e293b; flex: 1;">Negotiation</h4>
+                <span class="stage-badge" style="background: #fb923c;">23</span>
             </div>
-            
-            <div class="flex-1 p-3 space-y-3 overflow-y-auto" id="negotiation-column" data-stage="negotiation">
-                <!-- Add opportunity cards here -->
-            </div>
-            
-            <div class="p-3 border-t border-slate-200">
-                <button onclick="openCreateModalInStage('negotiation')" class="w-full py-2 border-2 border-dashed border-slate-300 rounded-lg text-slate-600 hover:border-orange-500 hover:text-orange-600 transition-colors flex items-center justify-center gap-2">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-                    </svg>
-                    <span class="font-medium">Add Deal</span>
-                </button>
+            <div class="column-stats">
+                <span>Total: <strong style="color: #fb923c;">$480K</strong></span>
+                <span style="color: #94a3b8;">19.6%</span>
             </div>
         </div>
+
+        <div class="cards-container" id="negotiation-column" data-stage="negotiation">
+            <!-- Add more cards here -->
+        </div>
+
+        <button class="add-card-btn" onclick="openCreateModalInStage('negotiation')">
+            <svg style="width: 1.125rem; height: 1.125rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+            Add Deal
+        </button>
     </div>
-    
+
     <!-- Stage 5: Closing -->
-    <div class="flex-shrink-0 w-80">
-        <div class="bg-white rounded-xl shadow-sm border border-slate-200 h-full flex flex-col">
-            <div class="px-4 py-3 border-b border-slate-200 bg-gradient-to-r from-green-50 to-green-100">
-                <div class="flex items-center justify-between mb-2">
-                    <h4 class="font-semibold text-slate-800 flex items-center gap-2">
-                        <span class="w-3 h-3 bg-green-500 rounded-full"></span>
-                        Closing
-                    </h4>
-                    <span class="px-2 py-1 bg-green-600 text-white text-xs font-semibold rounded-full">22</span>
-                </div>
-                <div class="flex items-center justify-between text-xs text-slate-600">
-                    <span>Total: <span class="font-semibold text-green-600">$320,000</span></span>
-                    <span class="text-slate-400">13.0%</span>
-                </div>
+    <div class="kanban-column">
+        <div class="column-header" style="background: linear-gradient(135deg, #d1fae5, #a7f3d0);">
+            <div class="column-title">
+                <span class="stage-indicator" style="background: #10b981;"></span>
+                <h4 style="font-weight: 700; color: #1e293b; flex: 1;">Closing</h4>
+                <span class="stage-badge" style="background: #10b981;">22</span>
             </div>
-            
-            <div class="flex-1 p-3 space-y-3 overflow-y-auto" id="closing-column" data-stage="closing">
-                <!-- Add opportunity cards here -->
-            </div>
-            
-            <div class="p-3 border-t border-slate-200">
-                <button onclick="openCreateModalInStage('closing')" class="w-full py-2 border-2 border-dashed border-slate-300 rounded-lg text-slate-600 hover:border-green-500 hover:text-green-600 transition-colors flex items-center justify-center gap-2">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-                    </svg>
-                    <span class="font-medium">Add Deal</span>
-                </button>
+            <div class="column-stats">
+                <span>Total: <strong style="color: #10b981;">$320K</strong></span>
+                <span style="color: #94a3b8;">13.0%</span>
             </div>
         </div>
+
+        <div class="cards-container" id="closing-column" data-stage="closing">
+            <!-- Add more cards here -->
+        </div>
+
+        <button class="add-card-btn" onclick="openCreateModalInStage('closing')">
+            <svg style="width: 1.125rem; height: 1.125rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+            Add Deal
+        </button>
     </div>
-    
+
 </div>
 
-<!-- Create/Edit Opportunity Modal -->
-<div id="opportunityModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <!-- Modal Header -->
-        <div class="sticky top-0 bg-white px-6 py-4 border-b border-slate-200 flex items-center justify-between">
-            <h3 class="text-xl font-bold text-slate-800" id="modalTitle">Create New Opportunity</h3>
-            <button onclick="closeOpportunityModal()" class="p-2 hover:bg-slate-100 rounded-lg transition-colors">
-                <svg class="w-6 h-6 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+<!-- Create/Edit Modal -->
+<div id="opportunityModal" class="modal-overlay" style="display: none;">
+    <div class="modal-container">
+        <div class="modal-header">
+            <h3 class="modal-title" id="modalTitle">Create New Opportunity</h3>
+            <button class="modal-close" onclick="closeModal()">
+                <svg style="width: 1.5rem; height: 1.5rem; color: #64748b;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                 </svg>
             </button>
         </div>
-        
-        <!-- Modal Body -->
-        <form id="opportunityForm" class="p-6 space-y-6">
-            <input type="hidden" id="opportunityId" name="opportunityId">
-            <input type="hidden" id="modalStage" name="stage">
-            
-            <!-- Deal Information -->
-            <div class="space-y-4">
-                <h4 class="font-semibold text-slate-700 flex items-center gap-2">
-                    <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+
+        <div class="modal-body">
+            <form id="opportunityForm">
+                <input type="hidden" id="opportunityId" name="opportunityId">
+
+                <!-- Deal Information -->
+                <div class="form-section">
+                    <h4 class="section-title">
+                        <svg style="width: 1.125rem; height: 1.125rem; color: #3b82f6;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                    </svg>
-                    Deal Information
-                </h4>
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-2">Deal Name *</label>
-                        <input type="text" id="dealName" name="dealName" required
-                               class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                               placeholder="e.g., Enterprise Solution">
+                        </svg>
+                        Deal Information
+                    </h4>
+
+                    <div class="form-grid">
+                        <div class="form-field">
+                            <label class="form-label">Deal Name *</label>
+                            <input type="text" name="dealName" class="form-input" placeholder="e.g., Enterprise Solution" required>
+                        </div>
+
+                        <div class="form-field">
+                            <label class="form-label">Company Name *</label>
+                            <input type="text" name="companyName" class="form-input" placeholder="e.g., Acme Corp" required>
+                        </div>
+
+                        <div class="form-field">
+                            <label class="form-label">Deal Value ($) *</label>
+                            <input type="number" name="dealValue" class="form-input" placeholder="85000" required>
+                        </div>
+
+                        <div class="form-field">
+                            <label class="form-label">Expected Close *</label>
+                            <input type="date" name="closeDate" class="form-input" required>
+                        </div>
+
+                        <div class="form-field">
+                            <label class="form-label">Probability (%)</label>
+                            <input type="number" name="probability" class="form-input" min="0" max="100" placeholder="30">
+                        </div>
+
+                        <div class="form-field">
+                            <label class="form-label">Priority *</label>
+                            <select name="priority" class="form-input" required>
+                                <option value="low">Low Priority</option>
+                                <option value="medium" selected>Medium Priority</option>
+                                <option value="high">High Priority</option>
+                            </select>
+                        </div>
+
+                        <div class="form-field">
+                            <label class="form-label">Sales Rep *</label>
+                            <select name="salesRep" class="form-input" required>
+                                <option value="john">John Doe</option>
+                                <option value="jane">Jane Smith</option>
+                                <option value="mike">Mike Johnson</option>
+                            </select>
+                        </div>
+
+                        <div class="form-field">
+                            <label class="form-label">Stage *</label>
+                            <select name="stage" id="stageSelect" class="form-input" required>
+                                <option value="prospecting">Prospecting</option>
+                                <option value="qualification">Qualification</option>
+                                <option value="proposal">Proposal</option>
+                                <option value="negotiation">Negotiation</option>
+                                <option value="closing">Closing</option>
+                            </select>
+                        </div>
                     </div>
-                    
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-2">Company Name *</label>
-                        <input type="text" id="companyName" name="companyName" required
-                               class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                               placeholder="e.g., Acme Corp">
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-2">Deal Value ($) *</label>
-                        <input type="number" id="dealValue" name="dealValue" required
-                               class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                               placeholder="85000">
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-2">Expected Close Date *</label>
-                        <input type="date" id="closeDate" name="closeDate" required
-                               class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-2">Probability (%)</label>
-                        <input type="number" id="probability" name="probability" min="0" max="100"
-                               class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                               placeholder="30">
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-2">Priority *</label>
-                        <select id="priority" name="priority" required
-                                class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <option value="low">Low Priority</option>
-                            <option value="medium" selected>Medium Priority</option>
-                            <option value="high">High Priority</option>
-                        </select>
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-2">Sales Rep *</label>
-                        <select id="salesRep" name="salesRep" required
-                                class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <option value="john">John Doe</option>
-                            <option value="jane">Jane Smith</option>
-                            <option value="mike">Mike Johnson</option>
-                        </select>
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-2">Stage</label>
-                        <select id="stage" name="stage"
-                                class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <option value="prospecting">Prospecting</option>
-                            <option value="qualification">Qualification</option>
-                            <option value="proposal">Proposal</option>
-                            <option value="negotiation">Negotiation</option>
-                            <option value="closing">Closing</option>
-                        </select>
+
+                    <div class="form-field" style="margin-top: 1.25rem;">
+                        <label class="form-label">Description</label>
+                        <textarea name="description" class="form-input form-textarea" placeholder="Brief description of the opportunity..."></textarea>
                     </div>
                 </div>
-                
-                <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-2">Description</label>
-                    <textarea id="description" name="description" rows="3"
-                              class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                              placeholder="Brief description of the opportunity..."></textarea>
-                </div>
-            </div>
-            
-            <!-- Contact Information -->
-            <div class="space-y-4">
-                <h4 class="font-semibold text-slate-700 flex items-center gap-2">
-                    <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+
+                <!-- Contact Information -->
+                <div class="form-section">
+                    <h4 class="section-title">
+                        <svg style="width: 1.125rem; height: 1.125rem; color: #a855f7;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-                    </svg>
-                    Contact Information
-                </h4>
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-2">Contact Name</label>
-                        <input type="text" id="contactName" name="contactName"
-                               class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                               placeholder="e.g., John Smith">
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-2">Contact Email</label>
-                        <input type="email" id="contactEmail" name="contactEmail"
-                               class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                               placeholder="john@example.com">
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-2">Contact Phone</label>
-                        <input type="tel" id="contactPhone" name="contactPhone"
-                               class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                               placeholder="+1 (555) 123-4567">
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-2">Contact Role</label>
-                        <input type="text" id="contactRole" name="contactRole"
-                               class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                               placeholder="e.g., CTO">
+                        </svg>
+                        Contact Information
+                    </h4>
+
+                    <div class="form-grid">
+                        <div class="form-field">
+                            <label class="form-label">Contact Name</label>
+                            <input type="text" name="contactName" class="form-input" placeholder="e.g., John Smith">
+                        </div>
+
+                        <div class="form-field">
+                            <label class="form-label">Contact Email</label>
+                            <input type="email" name="contactEmail" class="form-input" placeholder="john@example.com">
+                        </div>
+
+                        <div class="form-field">
+                            <label class="form-label">Contact Phone</label>
+                            <input type="tel" name="contactPhone" class="form-input" placeholder="+1 (555) 123-4567">
+                        </div>
+
+                        <div class="form-field">
+                            <label class="form-label">Contact Role</label>
+                            <input type="text" name="contactRole" class="form-input" placeholder="e.g., CTO">
+                        </div>
                     </div>
                 </div>
-            </div>
-            
-            <!-- Tags -->
-            <div>
-                <label class="block text-sm font-medium text-slate-700 mb-2">Tags</label>
-                <input type="text" id="tags" name="tags"
-                       class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                       placeholder="Enterprise, Hot Lead, etc. (comma-separated)">
-            </div>
-            
-            <!-- Modal Footer -->
-            <div class="flex items-center justify-end gap-3 pt-6 border-t border-slate-200">
-                <button type="button" onclick="closeOpportunityModal()"
-                        class="px-6 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors">
-                    Cancel
-                </button>
-                <button type="submit"
-                        class="px-6 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:shadow-lg transition-all">
-                    Save Opportunity
-                </button>
-            </div>
-        </form>
+
+                <!-- Tags -->
+                <div class="form-section" style="margin-bottom: 0;">
+                    <div class="form-field">
+                        <label class="form-label">Tags</label>
+                        <input type="text" name="tags" class="form-input" placeholder="Enterprise, Hot Lead, etc. (comma-separated)">
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <div class="modal-footer">
+            <button onclick="closeModal()" class="btn btn-secondary">Cancel</button>
+            <button onclick="saveOpportunity()" class="btn btn-primary">Save Opportunity</button>
+        </div>
     </div>
 </div>
-
-<!-- Opportunity Detail View Modal -->
-<div id="detailModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-        <!-- Detail content will be loaded dynamically -->
-    </div>
-</div>
-
-
 
 <script>
-    // Initialize Sortable.js for drag & drop
-    document.addEventListener('DOMContentLoaded', function() {
-        const columns = ['prospecting', 'qualification', 'proposal', 'negotiation', 'closing'];
-        
-        columns.forEach(columnId => {
-            const column = document.getElementById(columnId + '-column');
+// Initialize Sortable
+    document.addEventListener('DOMContentLoaded', function () {
+        const stages = ['prospecting', 'qualification', 'proposal', 'negotiation', 'closing'];
+
+        stages.forEach(stage => {
+            const column = document.getElementById(stage + '-column');
             if (column) {
                 new Sortable(column, {
                     group: 'pipeline',
-                    animation: 150,
+                    animation: 200,
                     ghostClass: 'sortable-ghost',
                     dragClass: 'sortable-drag',
-                    onEnd: function(evt) {
-                        const opportunityId = evt.item.getAttribute('data-opportunity-id');
+                    easing: 'cubic-bezier(0.4, 0, 0.2, 1)',
+                    onEnd: function (evt) {
+                        const oppId = evt.item.getAttribute('data-opportunity-id');
                         const newStage = evt.to.getAttribute('data-stage');
-                        
-                        // Update stage via AJAX
-                        updateOpportunityStage(opportunityId, newStage);
+                        updateStage(oppId, newStage);
                     }
                 });
             }
         });
     });
-    
-    // Toggle filters panel
+
+// Toggle filters
     function toggleFilters() {
         const panel = document.getElementById('filtersPanel');
-        panel.classList.toggle('hidden');
+        const isHidden = panel.style.display === 'none';
+        panel.style.display = isHidden ? 'block' : 'none';
     }
-    
-    // Open create modal
+
+// Open modal
     function openCreateModal() {
         document.getElementById('modalTitle').textContent = 'Create New Opportunity';
         document.getElementById('opportunityForm').reset();
         document.getElementById('opportunityId').value = '';
-        document.getElementById('opportunityModal').classList.remove('hidden');
+        document.getElementById('opportunityModal').style.display = 'flex';
     }
-    
-    // Open create modal with pre-selected stage
+
     function openCreateModalInStage(stage) {
         openCreateModal();
-        document.getElementById('stage').value = stage;
-        document.getElementById('modalStage').value = stage;
+        document.getElementById('stageSelect').value = stage;
     }
-    
-    // Close modal
-    function closeOpportunityModal() {
-        document.getElementById('opportunityModal').classList.add('hidden');
+
+    function closeModal() {
+        document.getElementById('opportunityModal').style.display = 'none';
     }
-    
-    // Edit opportunity
+
+// Edit opportunity
     function editOpportunity(id) {
-        // Fetch opportunity data and populate form
-        // For now, just open modal
         document.getElementById('modalTitle').textContent = 'Edit Opportunity';
         document.getElementById('opportunityId').value = id;
-        document.getElementById('opportunityModal').classList.remove('hidden');
-        
-        // TODO: Fetch and populate data via AJAX
+        document.getElementById('opportunityModal').style.display = 'flex';
+        // TODO: Load data via AJAX
     }
-    
-    // Open options menu
-    function openOptionsMenu(id) {
-        // Show context menu with options: Edit, Delete, View Details, etc.
-        alert('Options menu for opportunity ' + id);
+
+// Card menu
+    function openCardMenu(id) {
+        alert('Options for opportunity ' + id);
+        // TODO: Implement context menu
     }
-    
-    // Update opportunity stage (AJAX)
-    function updateOpportunityStage(opportunityId, newStage) {
-        fetch('${pageContext.request.contextPath}/sales/pipeline', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: 'action=updateStage&opportunityId=' + opportunityId + '&newStage=' + newStage
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                console.log('Stage updated successfully');
-                // Show success notification
-                showNotification('Opportunity moved to ' + newStage, 'success');
-            } else {
-                console.error('Failed to update stage');
-                showNotification('Failed to update stage', 'error');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            showNotification('Error updating stage', 'error');
-        });
+
+// Update stage
+    function updateStage(oppId, newStage) {
+        console.log('Moving opportunity', oppId, 'to', newStage);
+        // TODO: AJAX call to update
+        window.CRM.showNotification('Opportunity moved to ' + newStage, 'success');
     }
-    
-    // Form submission
-    document.getElementById('opportunityForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        const formData = new FormData(this);
-        const opportunityId = document.getElementById('opportunityId').value;
-        const action = opportunityId ? 'updateOpportunity' : 'createOpportunity';
-        
-        formData.append('action', action);
-        
-        fetch('${pageContext.request.contextPath}/sales/pipeline', {
-            method: 'POST',
-            body: new URLSearchParams(formData)
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                closeOpportunityModal();
-                showNotification('Opportunity saved successfully', 'success');
-                // Reload page or update UI
-                location.reload();
-            } else {
-                showNotification('Failed to save opportunity', 'error');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            showNotification('Error saving opportunity', 'error');
-        });
+
+// Save opportunity
+    function saveOpportunity() {
+        const form = document.getElementById('opportunityForm');
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+        }
+
+        const formData = new FormData(form);
+        console.log('Saving opportunity...', Object.fromEntries(formData));
+
+        // TODO: AJAX call to save
+        closeModal();
+        window.CRM.showNotification('Opportunity saved successfully', 'success');
+    }
+
+// Close modal on escape
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') {
+            closeModal();
+        }
     });
-    
-    // Show notification
-    function showNotification(message, type) {
-        // Simple notification - you can enhance this
-        alert(message);
-    }
+
+// Close modal on overlay click
+    document.getElementById('opportunityModal').addEventListener('click', function (e) {
+        if (e.target === this) {
+            closeModal();
+        }
+    });
 </script>
