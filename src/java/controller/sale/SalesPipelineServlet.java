@@ -8,8 +8,8 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-@WebServlet(name = "SaleDashboardServlet", urlPatterns = {"/sale/dashboard"})
-public class SaleDashboardServlet extends HttpServlet {
+@WebServlet(name = "SalesPipelineServlet", urlPatterns = {"/sales/pipeline"})
+public class SalesPipelineServlet extends HttpServlet {
 
     protected void processRequest(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -19,10 +19,10 @@ public class SaleDashboardServlet extends HttpServlet {
             out.println("<!DOCTYPE html>");
             out.println("<html>");
             out.println("<head>");
-            out.println("<title>Servlet SaleDashboardServlet</title>");
+            out.println("<title>Servlet SalesPipelineServlet</title>");
             out.println("</head>");
             out.println("<body>");
-            out.println("<h1>Servlet SaleDashboardServlet at " + request.getContextPath() + "</h1>");
+            out.println("<h1>Servlet SalesPipelineServlet at " + request.getContextPath() + "</h1>");
             out.println("</body>");
             out.println("</html>");
         }
@@ -31,13 +31,14 @@ public class SaleDashboardServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
+        
+        
+        request.setAttribute("ACTIVE_MENU", "PIPELINE");
+        request.setAttribute("pageTitle", "Sales Pipeline");
+        request.setAttribute("CONTENT_PAGE", "/view/sale/pages/opportunity/kanban.jsp");
 
-        request.setAttribute("ACTIVE_MENU", "DASHBOARD");
-        request.setAttribute("pageTitle", "Sales Dashboard");
-        request.setAttribute("CONTENT_PAGE", "/view/sale/pages/dashboard.jsp");
         request.getRequestDispatcher("/view/sale/layout/layout.jsp")
                 .forward(request, response);
-
     }
 
     @Override
