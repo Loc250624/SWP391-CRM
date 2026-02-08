@@ -3,18 +3,20 @@ package model;
 import java.time.LocalDateTime;
 
 public class AuditLog {
+
     public int logId;
-    public Integer userId;            // nullable (system)
-    public String action;             // CREATE/UPDATE/DELETE/LOGIN/LOGOUT
-    public String entityType;         // lead/customer/ticket...
-    public Integer entityId;          // nullable
-    public String oldValues;          // nullable JSON
-    public String newValues;          // nullable JSON
-    public String ipAddress;          // nullable
-    public String userAgent;          // nullable
+    public Integer userId;
+    public String action;
+    public String entityType;
+    public Integer entityId;
+    public String oldValues;
+    public String newValues;
+    public String ipAddress;
+    public String userAgent;
     public LocalDateTime createdAt;
 
-    public AuditLog() {}
+    public AuditLog() {
+    }
 
     public AuditLog(int logId, Integer userId, String action, String entityType, Integer entityId, String oldValues, String newValues, String ipAddress, String userAgent, LocalDateTime createdAt) {
         this.logId = logId;
@@ -108,5 +110,5 @@ public class AuditLog {
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
     }
-    
+
 }

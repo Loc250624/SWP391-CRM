@@ -5,23 +5,25 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 public class Campaign {
+
     public int campaignId;
     public String campaignCode;
     public String campaignName;
-    public String campaignType;       // email/facebook/google/...
-    public String status;             // Draft/Active/...
-    public String description;        // nullable (nvarchar(max))
-    public LocalDate startDate;       // nullable
-    public LocalDate endDate;         // nullable
-    public BigDecimal budget;         // nullable
-    public BigDecimal actualCost;     // nullable
-    public Integer targetLeads;       // nullable
-    public Integer ownerId;           // nullable FK users
+    public String campaignType;
+    public String status;
+    public String description;
+    public LocalDate startDate;
+    public LocalDate endDate;
+    public BigDecimal budget;
+    public BigDecimal actualCost;
+    public Integer targetLeads;
+    public Integer ownerId;
     public LocalDateTime createdAt;
     public LocalDateTime updatedAt;
-    public Integer createdBy;         // nullable FK users
+    public Integer createdBy;
 
-    public Campaign() {}
+    public Campaign() {
+    }
 
     public Campaign(int campaignId, String campaignCode, String campaignName, String campaignType, String status, String description, LocalDate startDate, LocalDate endDate, BigDecimal budget, BigDecimal actualCost, Integer targetLeads, Integer ownerId, LocalDateTime createdAt, LocalDateTime updatedAt, Integer createdBy) {
         this.campaignId = campaignId;
@@ -160,5 +162,5 @@ public class Campaign {
     public void setCreatedBy(Integer createdBy) {
         this.createdBy = createdBy;
     }
-    
+
 }

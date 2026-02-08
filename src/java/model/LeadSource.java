@@ -3,6 +3,7 @@ package model;
 import java.time.LocalDateTime;
 
 public class LeadSource {
+
     public int sourceId;
     public String sourceCode;     // WEBSITE/FACEBOOK/...
     public String sourceName;
@@ -10,7 +11,8 @@ public class LeadSource {
     public boolean isActive;
     public LocalDateTime createdAt;
 
-    public LeadSource() {}
+    public LeadSource() {
+    }
 
     public LeadSource(int sourceId, String sourceCode, String sourceName, String description, boolean isActive, LocalDateTime createdAt) {
         this.sourceId = sourceId;
@@ -68,5 +70,5 @@ public class LeadSource {
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
     }
-    
+
 }

@@ -3,6 +3,7 @@ package model;
 import java.time.LocalDateTime;
 
 public class Lead {
+
     public int leadId;
     public String leadCode;               // LD-000001
 
@@ -33,7 +34,8 @@ public class Lead {
     public LocalDateTime updatedAt;
     public Integer createdBy;             // nullable FK users
 
-    public Lead() {}
+    public Lead() {
+    }
 
     public Lead(int leadId, String leadCode, String fullName, String email, String phone, Integer sourceId, Integer campaignId, String jobTitle, String companyName, String interests, String status, String rating, int leadScore, Integer assignedTo, LocalDateTime assignedAt, boolean isConverted, LocalDateTime convertedAt, Integer convertedCustomerId, String notes, LocalDateTime createdAt, LocalDateTime updatedAt, Integer createdBy) {
         this.leadId = leadId;
@@ -235,5 +237,9 @@ public class Lead {
     public void setCreatedBy(Integer createdBy) {
         this.createdBy = createdBy;
     }
-    
+
+    public String getName() {
+        return fullName;
+    }
+
 }

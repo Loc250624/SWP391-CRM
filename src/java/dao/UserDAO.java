@@ -1,16 +1,20 @@
 package dao;
 
 import dbConnection.DBContext;
-import model.User;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.List;
+import model.Users; 
 
-public class UserDAO {
-    
-    public User login(String email, String password) {
-        // Query nối bảng users + roles + departments để lấy Full thông tin
-        // u.* : Lấy hết cột bảng users (bao gồm cả updated_at)
+public class UserDAO extends DBContext {
+
+    /**
+     * Hàm Login: Lấy đầy đủ thông tin User + Quyền + Phòng ban
+     */
+    public Users login(String email, String password) {
         String sql = "SELECT u.*, r.role_code, d.department_name " +
                      "FROM users u " +
                      "JOIN user_roles ur ON u.user_id = ur.user_id " +
@@ -18,35 +22,103 @@ public class UserDAO {
                      "LEFT JOIN departments d ON u.department_id = d.department_id " +
                      "WHERE u.email = ? AND u.password_hash = ? AND u.status = 'Active'";
         
-        try (Connection conn = new DBContext().getConnection();
+        try (Connection conn = getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             
             ps.setString(1, email);
             ps.setString(2, password);
             
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) {
-                // Khởi tạo User với full tham số (Lưu ý thứ tự phải khớp với Constructor bên Model)
-                return new User(
-                    rs.getInt("user_id"),
-                    rs.getString("employee_code"),
-                    rs.getString("email"),
-                    rs.getString("password_hash"),
-                    rs.getString("first_name"),
-                    rs.getString("last_name"),
-                    rs.getString("phone"),
-                    rs.getString("avatar_url"),
-                    rs.getInt("department_id"),
-                    rs.getString("status"),
-                    rs.getTimestamp("created_at"),
-                    rs.getTimestamp("updated_at"), // <--- ĐÃ BỔ SUNG DÒNG NÀY
-                    rs.getString("role_code"),      
-                    rs.getString("department_name") 
-                );
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return mapResultSetToUser(rs);
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
         return null;
+    }
+
+    /**
+     * Lấy danh sách tất cả người dùng
+     */
+    public List<Users> getAllUsers() {
+        List<Users> danhSach = new ArrayList<>();
+        // Nếu muốn hiện tên phòng ban ở danh sách, hãy dùng câu SQL JOIN giống hàm login
+        String sql = "SELECT u.*, r.role_code, d.department_name " +
+                     "FROM users u " +
+                     "LEFT JOIN user_roles ur ON u.user_id = ur.user_id " +
+                     "LEFT JOIN roles r ON ur.role_id = r.role_id " +
+                     "LEFT JOIN departments d ON u.department_id = d.department_id";
+        
+        try (Connection conn = getConnection();
+             PreparedStatement st = conn.prepareStatement(sql);
+             ResultSet rs = st.executeQuery()) {
+            while (rs.next()) {
+                danhSach.add(mapResultSetToUser(rs));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return danhSach;
+    }
+
+    /**
+     * Tìm User theo ID
+     */
+    public Users getUserById(int userId) {
+        String sql = "SELECT u.*, r.role_code, d.department_name " +
+                     "FROM users u " +
+                     "LEFT JOIN user_roles ur ON u.user_id = ur.user_id " +
+                     "LEFT JOIN roles r ON ur.role_id = r.role_id " +
+                     "LEFT JOIN departments d ON u.department_id = d.department_id " +
+                     "WHERE u.user_id = ?";
+        
+        try (Connection conn = getConnection();
+             PreparedStatement st = conn.prepareStatement(sql)) {
+            st.setInt(1, userId);
+            try (ResultSet rs = st.executeQuery()) {
+                if (rs.next()) {
+                    return mapResultSetToUser(rs);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    /**
+     * Hàm hỗ trợ Map dữ liệu từ ResultSet sang Object User
+     */
+    private Users mapResultSetToUser(ResultSet rs) throws Exception {
+        Users u = new Users();
+        u.setUserId(rs.getInt("user_id"));
+        u.setEmployeeCode(rs.getString("employee_code"));
+        u.setEmail(rs.getString("email"));
+        u.setPasswordHash(rs.getString("password_hash"));
+        u.setFirstName(rs.getString("first_name"));
+        u.setLastName(rs.getString("last_name"));
+        u.setPhone(rs.getString("phone"));
+        u.setAvatarUrl(rs.getString("avatar_url"));
+        u.setDepartmentId(rs.getObject("department_id", Integer.class));
+        u.setStatus(rs.getString("status"));
+        
+        // Map ngày tháng
+        Timestamp created = rs.getTimestamp("created_at");
+        if (created != null) u.setCreatedAt(created.toLocalDateTime());
+        
+        Timestamp updated = rs.getTimestamp("updated_at");
+        if (updated != null) u.setUpdatedAt(updated.toLocalDateTime());
+
+        // Map các thông tin JOIN thêm (nếu có)
+        try {
+            u.setRoleCode(rs.getString("role_code"));
+            u.setDepartmentName(rs.getString("department_name"));
+        } catch (Exception e) {
+            // Nếu query không có join, các trường này sẽ để trống (null)
+        }
+        
+        return u;
     }
 }

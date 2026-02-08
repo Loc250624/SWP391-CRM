@@ -3,6 +3,7 @@ package model;
 import java.time.LocalDateTime;
 
 public class CampaignMember {
+
     public int memberId;
     public int campaignId;
     public Integer leadId;            // nullable
@@ -12,7 +13,8 @@ public class CampaignMember {
     public boolean hasConverted;      // default 0
     public LocalDateTime createdAt;
 
-    public CampaignMember() {}
+    public CampaignMember() {
+    }
 
     public CampaignMember(int memberId, int campaignId, Integer leadId, Integer customerId, String status, LocalDateTime respondedAt, boolean hasConverted, LocalDateTime createdAt) {
         this.memberId = memberId;
@@ -88,5 +90,5 @@ public class CampaignMember {
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
     }
-    
+
 }

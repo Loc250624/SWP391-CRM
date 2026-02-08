@@ -1,34 +1,87 @@
+/*
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
+ */
+
 package dao;
 
 import dbConnection.DBContext;
-import model.Customer;
-import java.sql.*;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.List;
+import model.Customer;
 
-public class CustomerDAO {
+public class CustomerDAO extends DBContext{
+
     public List<Customer> getAllCustomers() {
-        List<Customer> list = new ArrayList<>();
+        List<Customer> danhSach = new ArrayList<>();
         String sql = "SELECT * FROM customers";
-        try (Connection conn = new DBContext().getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
+        try (PreparedStatement st = getConnection().prepareStatement(sql);
+             ResultSet rs = st.executeQuery()) {
             while (rs.next()) {
-                list.add(new Customer(
-                    rs.getInt("customer_id"), rs.getString("customer_code"), rs.getString("full_name"),
-                    rs.getString("email"), rs.getString("phone"), rs.getTimestamp("date_of_birth"),
-                    rs.getString("gender"), rs.getString("address"), rs.getString("city"),
-                    (Integer) rs.getObject("source_id"), (Integer) rs.getObject("converted_lead_id"),
-                    rs.getString("customer_segment"), rs.getString("status"), (Integer) rs.getObject("owner_id"),
-                    (Integer) rs.getObject("total_courses"), rs.getDouble("total_spent"),
-                    rs.getTimestamp("first_purchase_date"), rs.getTimestamp("last_purchase_date"),
-                    rs.getString("purchased_courses"), rs.getDouble("health_score"),
-                    rs.getDouble("satisfaction_score"), rs.getBoolean("email_opt_out"),
-                    rs.getBoolean("sms_opt_out"), rs.getString("notes"),
-                    rs.getTimestamp("created_at"), rs.getTimestamp("updated_at"), (Integer) rs.getObject("created_by")
-                ));
+                danhSach.add(mapResultSetToCustomer(rs));
             }
-        } catch (Exception e) { e.printStackTrace(); }
-        return list;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return danhSach;
+    }
+
+    public Customer getCustomerById(int customerId) {
+        String sql = "SELECT * FROM customers WHERE customer_id = ?";
+        try (PreparedStatement st = getConnection().prepareStatement(sql)) {
+            st.setInt(1, customerId);
+            try (ResultSet rs = st.executeQuery()) {
+                if (rs.next()) {
+                    return mapResultSetToCustomer(rs);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    private Customer mapResultSetToCustomer(ResultSet rs) throws Exception {
+        Customer c = new Customer();
+        c.setCustomerId(rs.getInt("customer_id"));
+        c.setCustomerCode(rs.getString("customer_code"));
+        c.setFullName(rs.getString("full_name"));
+        c.setEmail(rs.getString("email"));
+        c.setPhone(rs.getString("phone"));
+        if (rs.getDate("date_of_birth") != null) {
+            c.setDateOfBirth(rs.getDate("date_of_birth").toLocalDate());
+        }
+        c.setGender(rs.getString("gender"));
+        c.setAddress(rs.getString("address"));
+        c.setCity(rs.getString("city"));
+        c.setSourceId(rs.getObject("source_id", Integer.class));
+        c.setConvertedLeadId(rs.getObject("converted_lead_id", Integer.class));
+        c.setCustomerSegment(rs.getString("customer_segment"));
+        c.setStatus(rs.getString("status"));
+        c.setOwnerId(rs.getObject("owner_id", Integer.class));
+        c.setTotalCourses(rs.getInt("total_courses"));
+        c.setTotalSpent(rs.getBigDecimal("total_spent"));
+        if (rs.getDate("first_purchase_date") != null) {
+            c.setFirstPurchaseDate(rs.getDate("first_purchase_date").toLocalDate());
+        }
+        if (rs.getDate("last_purchase_date") != null) {
+            c.setLastPurchaseDate(rs.getDate("last_purchase_date").toLocalDate());
+        }
+        c.setPurchasedCourses(rs.getString("purchased_courses"));
+        c.setHealthScore(rs.getObject("health_score", Integer.class));
+        c.setSatisfactionScore(rs.getObject("satisfaction_score", Integer.class));
+        c.setEmailOptOut(rs.getBoolean("email_opt_out"));
+        c.setSmsOptOut(rs.getBoolean("sms_opt_out"));
+        c.setNotes(rs.getString("notes"));
+        if (rs.getTimestamp("created_at") != null) {
+            c.setCreatedAt(rs.getTimestamp("created_at").toLocalDateTime());
+        }
+        if (rs.getTimestamp("updated_at") != null) {
+            c.setUpdatedAt(rs.getTimestamp("updated_at").toLocalDateTime());
+        }
+        c.setCreatedBy(rs.getObject("created_by", Integer.class));
+        return c;
     }
 }

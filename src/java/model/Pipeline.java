@@ -3,6 +3,7 @@ package model;
 import java.time.LocalDateTime;
 
 public class Pipeline {
+
     public int pipelineId;
     public String pipelineCode;
     public String pipelineName;
@@ -12,7 +13,8 @@ public class Pipeline {
     public LocalDateTime createdAt;
     public Integer createdBy;     // nullable FK users
 
-    public Pipeline() {}
+    public Pipeline() {
+    }
 
     public Pipeline(int pipelineId, String pipelineCode, String pipelineName, String description, boolean isDefault, boolean isActive, LocalDateTime createdAt, Integer createdBy) {
         this.pipelineId = pipelineId;
@@ -88,5 +90,5 @@ public class Pipeline {
     public void setCreatedBy(Integer createdBy) {
         this.createdBy = createdBy;
     }
-    
+
 }
