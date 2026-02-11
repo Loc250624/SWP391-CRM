@@ -1,45 +1,41 @@
 package dbConnection;
 
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 
-/**
- *
- * @author admin
- */
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.SQLException;
 
 public class DBContext {
 
-    private final String serverName = "localhost";
-    private final String dbName = "CRM_System_new"; 
-    private final String portNumber = "1433";
+
     private final String userID = "sa"; 
 //    private final String password = "123";
     private final String password = "123";
 
-    public Connection getConnection() throws Exception {
+     protected Connection connection;
+    public DBContext()
+    {
        
-        String url = "jdbc:sqlserver://" + serverName + ":" + portNumber 
-                + ";databaseName=" + dbName 
-                + ";user=" + userID 
-                + ";password=" + password
-                + ";encrypt=true;trustServerCertificate=true;";
-        
-        Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
-        return DriverManager.getConnection(url);
+        try {
+            
+            String url = "jdbc:sqlserver://localhost\\SQLEXPRESS:1433;databaseName=CRM_System;encrypt=true;trustServerCertificate=true;";
+            Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
+            connection = DriverManager.getConnection(url, userID, password);
+        } catch (ClassNotFoundException | SQLException ex) {
+            Logger.getLogger(DBContext.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
+
 
   
     public static void main(String[] args) {
         try {
             DBContext db = new DBContext();
-            if (db.getConnection() != null) {
-                System.out.println("Chúc mừng! Kết nối đến Database " + db.dbName + " thành công.");
+            if (db.connection != null) {
+                System.out.println("Chúc mừng! Kết nối đến Database thành công.");
             }
         } catch (Exception e) {
             System.err.println("Kết nối thất bại! Lỗi: " + e.getMessage());

@@ -6,10 +6,6 @@ package model;
 
 import java.time.LocalDateTime;
 
-/**
- *
- * @author hello
- */
 public class Activity {
 
     public int activityId;
