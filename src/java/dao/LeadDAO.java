@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.LocalDateTime;
 import model.Lead;
@@ -12,7 +13,7 @@ import model.Lead;
 public class LeadDAO extends DBContext {
 
     // Helper method to map ResultSet to Lead object
-    private Lead mapResultSetToLead(ResultSet rs) throws Exception {
+    private Lead mapResultSetToLead(ResultSet rs) throws SQLException {
         Lead lead = new Lead();
 
         lead.leadId = rs.getInt("lead_id");
@@ -47,13 +48,13 @@ public class LeadDAO extends DBContext {
         String sql = "SELECT * FROM leads ORDER BY created_at DESC";
 
         try {
-            PreparedStatement st = getConnection().prepareStatement(sql);
+            PreparedStatement st = connection.prepareStatement(sql);
             ResultSet rs = st.executeQuery();
 
             while (rs.next()) {
                 leadList.add(mapResultSetToLead(rs));
             }
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
         }
 
@@ -65,14 +66,14 @@ public class LeadDAO extends DBContext {
         String sql = "SELECT * FROM leads WHERE lead_id = ?";
 
         try {
-            PreparedStatement st = getConnection().prepareStatement(sql);
+            PreparedStatement st = connection.prepareStatement(sql);
             st.setInt(1, leadId);
             ResultSet rs = st.executeQuery();
 
             if (rs.next()) {
                 return mapResultSetToLead(rs);
             }
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
         }
 
@@ -84,7 +85,7 @@ public class LeadDAO extends DBContext {
         String sql = "SELECT TOP 1 lead_code FROM leads ORDER BY lead_id DESC";
 
         try {
-            PreparedStatement st = getConnection().prepareStatement(sql);
+            PreparedStatement st = connection.prepareStatement(sql);
             ResultSet rs = st.executeQuery();
 
             if (rs.next()) {
@@ -96,7 +97,7 @@ public class LeadDAO extends DBContext {
                 // First lead
                 return "LD-000001";
             }
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
         }
 
@@ -117,7 +118,7 @@ public class LeadDAO extends DBContext {
                 lead.leadCode = generateLeadCode();
             }
 
-            PreparedStatement st = getConnection().prepareStatement(sql);
+            PreparedStatement st = connection.prepareStatement(sql);
 
             st.setString(1, lead.leadCode);
             st.setString(2, lead.fullName);
@@ -172,7 +173,7 @@ public class LeadDAO extends DBContext {
             int rowsAffected = st.executeUpdate();
             return rowsAffected > 0;
 
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
             return false;
         }
@@ -186,7 +187,7 @@ public class LeadDAO extends DBContext {
                      "notes = ?, updated_at = ? WHERE lead_id = ?";
 
         try {
-            PreparedStatement st = getConnection().prepareStatement(sql);
+            PreparedStatement st = connection.prepareStatement(sql);
 
             st.setString(1, lead.fullName);
             st.setString(2, lead.email);
@@ -230,7 +231,7 @@ public class LeadDAO extends DBContext {
             int rowsAffected = st.executeUpdate();
             return rowsAffected > 0;
 
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
             return false;
         }
@@ -241,13 +242,13 @@ public class LeadDAO extends DBContext {
         String sql = "DELETE FROM leads WHERE lead_id = ?";
 
         try {
-            PreparedStatement st = getConnection().prepareStatement(sql);
+            PreparedStatement st = connection.prepareStatement(sql);
             st.setInt(1, leadId);
 
             int rowsAffected = st.executeUpdate();
             return rowsAffected > 0;
 
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
             return false;
         }
@@ -259,14 +260,14 @@ public class LeadDAO extends DBContext {
         String sql = "SELECT * FROM leads WHERE status = ? ORDER BY created_at DESC";
 
         try {
-            PreparedStatement st = getConnection().prepareStatement(sql);
+            PreparedStatement st = connection.prepareStatement(sql);
             st.setString(1, status);
             ResultSet rs = st.executeQuery();
 
             while (rs.next()) {
                 leadList.add(mapResultSetToLead(rs));
             }
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
         }
 
@@ -279,14 +280,14 @@ public class LeadDAO extends DBContext {
         String sql = "SELECT * FROM leads WHERE assigned_to = ? ORDER BY created_at DESC";
 
         try {
-            PreparedStatement st = getConnection().prepareStatement(sql);
+            PreparedStatement st = connection.prepareStatement(sql);
             st.setInt(1, userId);
             ResultSet rs = st.executeQuery();
 
             while (rs.next()) {
                 leadList.add(mapResultSetToLead(rs));
             }
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
         }
 
@@ -299,7 +300,7 @@ public class LeadDAO extends DBContext {
         String sql = "SELECT * FROM leads WHERE created_by = ? OR assigned_to = ? ORDER BY created_at DESC";
 
         try {
-            PreparedStatement st = getConnection().prepareStatement(sql);
+            PreparedStatement st = connection.prepareStatement(sql);
             st.setInt(1, userId);
             st.setInt(2, userId);
             ResultSet rs = st.executeQuery();
@@ -307,7 +308,7 @@ public class LeadDAO extends DBContext {
             while (rs.next()) {
                 leadList.add(mapResultSetToLead(rs));
             }
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
         }
 

@@ -3,6 +3,7 @@ package dao;
 import dbConnection.DBContext;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import model.Campaign;
@@ -15,7 +16,7 @@ public class CampaignDAO extends DBContext {
         String sql = "SELECT * FROM campaigns WHERE status IN ('Planning', 'Active') ORDER BY campaign_name";
 
         try {
-            PreparedStatement st = getConnection().prepareStatement(sql);
+            PreparedStatement st = connection.prepareStatement(sql);
             ResultSet rs = st.executeQuery();
 
             while (rs.next()) {
@@ -45,7 +46,7 @@ public class CampaignDAO extends DBContext {
 
                 campaignList.add(campaign);
             }
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
         }
 
@@ -57,7 +58,7 @@ public class CampaignDAO extends DBContext {
         String sql = "SELECT * FROM campaigns WHERE campaign_id = ?";
 
         try {
-            PreparedStatement st = getConnection().prepareStatement(sql);
+            PreparedStatement st = connection.prepareStatement(sql);
             st.setInt(1, campaignId);
             ResultSet rs = st.executeQuery();
 
@@ -87,7 +88,7 @@ public class CampaignDAO extends DBContext {
 
                 return campaign;
             }
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
         }
 

@@ -4,6 +4,7 @@ import dbConnection.DBContext;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
@@ -11,9 +12,6 @@ import model.Users;
 
 public class UserDAO extends DBContext {
 
-    /**
-     * Hàm Login: Lấy đầy đủ thông tin User + Quyền + Phòng ban
-     */
     public Users login(String email, String password) {
         String sql = "SELECT u.*, r.role_code, d.department_name " +
                      "FROM users u " +
@@ -22,7 +20,7 @@ public class UserDAO extends DBContext {
                      "LEFT JOIN departments d ON u.department_id = d.department_id " +
                      "WHERE u.email = ? AND u.password_hash = ? AND u.status = 'Active'";
         
-        try (Connection conn = getConnection();
+        try (Connection conn = connection;
              PreparedStatement ps = conn.prepareStatement(sql)) {
             
             ps.setString(1, email);
@@ -33,15 +31,13 @@ public class UserDAO extends DBContext {
                     return mapResultSetToUser(rs);
                 }
             }
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
         }
         return null;
     }
 
-    /**
-     * Lấy danh sách tất cả người dùng
-     */
+  
     public List<Users> getAllUsers() {
         List<Users> danhSach = new ArrayList<>();
         // Nếu muốn hiện tên phòng ban ở danh sách, hãy dùng câu SQL JOIN giống hàm login
@@ -51,21 +47,19 @@ public class UserDAO extends DBContext {
                      "LEFT JOIN roles r ON ur.role_id = r.role_id " +
                      "LEFT JOIN departments d ON u.department_id = d.department_id";
         
-        try (Connection conn = getConnection();
+        try (Connection conn = connection;
              PreparedStatement st = conn.prepareStatement(sql);
              ResultSet rs = st.executeQuery()) {
             while (rs.next()) {
                 danhSach.add(mapResultSetToUser(rs));
             }
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
         }
         return danhSach;
     }
 
-    /**
-     * Tìm User theo ID
-     */
+    
     public Users getUserById(int userId) {
         String sql = "SELECT u.*, r.role_code, d.department_name " +
                      "FROM users u " +
@@ -74,7 +68,7 @@ public class UserDAO extends DBContext {
                      "LEFT JOIN departments d ON u.department_id = d.department_id " +
                      "WHERE u.user_id = ?";
         
-        try (Connection conn = getConnection();
+        try (Connection conn = connection;
              PreparedStatement st = conn.prepareStatement(sql)) {
             st.setInt(1, userId);
             try (ResultSet rs = st.executeQuery()) {
@@ -82,16 +76,13 @@ public class UserDAO extends DBContext {
                     return mapResultSetToUser(rs);
                 }
             }
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
         }
         return null;
     }
 
-    /**
-     * Hàm hỗ trợ Map dữ liệu từ ResultSet sang Object User
-     */
-    private Users mapResultSetToUser(ResultSet rs) throws Exception {
+    private Users mapResultSetToUser(ResultSet rs) throws SQLException {
         Users u = new Users();
         u.setUserId(rs.getInt("user_id"));
         u.setEmployeeCode(rs.getString("employee_code"));
@@ -112,12 +103,7 @@ public class UserDAO extends DBContext {
         if (updated != null) u.setUpdatedAt(updated.toLocalDateTime());
 
         // Map các thông tin JOIN thêm (nếu có)
-        try {
-            u.setRoleCode(rs.getString("role_code"));
-            u.setDepartmentName(rs.getString("department_name"));
-        } catch (Exception e) {
-            // Nếu query không có join, các trường này sẽ để trống (null)
-        }
+       
         
         return u;
     }

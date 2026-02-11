@@ -8,6 +8,7 @@ package dao;
 import dbConnection.DBContext;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import model.Customer;
@@ -17,12 +18,12 @@ public class CustomerDAO extends DBContext{
     public List<Customer> getAllCustomers() {
         List<Customer> danhSach = new ArrayList<>();
         String sql = "SELECT * FROM customers";
-        try (PreparedStatement st = getConnection().prepareStatement(sql);
+        try (PreparedStatement st = connection.prepareStatement(sql);
              ResultSet rs = st.executeQuery()) {
             while (rs.next()) {
                 danhSach.add(mapResultSetToCustomer(rs));
             }
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
         }
         return danhSach;
@@ -30,20 +31,20 @@ public class CustomerDAO extends DBContext{
 
     public Customer getCustomerById(int customerId) {
         String sql = "SELECT * FROM customers WHERE customer_id = ?";
-        try (PreparedStatement st = getConnection().prepareStatement(sql)) {
+        try (PreparedStatement st = connection.prepareStatement(sql)) {
             st.setInt(1, customerId);
             try (ResultSet rs = st.executeQuery()) {
                 if (rs.next()) {
                     return mapResultSetToCustomer(rs);
                 }
             }
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
         }
         return null;
     }
 
-    private Customer mapResultSetToCustomer(ResultSet rs) throws Exception {
+    private Customer mapResultSetToCustomer(ResultSet rs) throws SQLException {
         Customer c = new Customer();
         c.setCustomerId(rs.getInt("customer_id"));
         c.setCustomerCode(rs.getString("customer_code"));
