@@ -1,0 +1,327 @@
+package controller.sale;
+
+import dao.CampaignDAO;
+import dao.LeadDAO;
+import dao.LeadSourceDAO;
+import dao.OpportunityDAO;
+import dao.PipelineDAO;
+import dao.PipelineStageDAO;
+import model.Campaign;
+import model.Lead;
+import model.LeadSource;
+import model.Opportunity;
+import model.Pipeline;
+import model.PipelineStage;
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.List;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
+
+@WebServlet(name = "SaleOpportunityFormServlet", urlPatterns = {"/sale/opportunity/form"})
+public class SaleOpportunityFormServlet extends HttpServlet {
+
+    private OpportunityDAO opportunityDAO = new OpportunityDAO();
+    private PipelineDAO pipelineDAO = new PipelineDAO();
+    private PipelineStageDAO stageDAO = new PipelineStageDAO();
+    private LeadDAO leadDAO = new LeadDAO();
+    private LeadSourceDAO leadSourceDAO = new LeadSourceDAO();
+    private CampaignDAO campaignDAO = new CampaignDAO();
+
+    @Override
+    protected void doGet(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+
+        // Get current user ID
+        Integer currentUserId = 1;
+        HttpSession session = request.getSession(false);
+        if (session != null && session.getAttribute("userId") != null) {
+            try {
+                currentUserId = (Integer) session.getAttribute("userId");
+            } catch (Exception e) {
+                // Use default
+            }
+        }
+
+        // Get opportunity ID if editing
+        String oppIdParam = request.getParameter("id");
+        Opportunity opportunity = null;
+
+        if (oppIdParam != null && !oppIdParam.isEmpty()) {
+            // Edit mode
+            try {
+                int opportunityId = Integer.parseInt(oppIdParam);
+                opportunity = opportunityDAO.getOpportunityById(opportunityId);
+
+                if (opportunity == null) {
+                    request.setAttribute("error", "Opportunity not found!");
+                    response.sendRedirect(request.getContextPath() + "/sale/opportunity/list");
+                    return;
+                }
+
+                // Check permission: user can only edit opportunities they own or created
+                boolean hasPermission = (opportunity.getOwnerId() != null && opportunity.getOwnerId().equals(currentUserId))
+                        || (opportunity.getCreatedBy() != null && opportunity.getCreatedBy().equals(currentUserId));
+
+                if (!hasPermission) {
+                    response.sendRedirect(request.getContextPath() + "/sale/opportunity/list?error=no_permission");
+                    return;
+                }
+
+                request.setAttribute("mode", "edit");
+                request.setAttribute("opportunity", opportunity);
+            } catch (NumberFormatException e) {
+                request.setAttribute("error", "Invalid opportunity ID!");
+                response.sendRedirect(request.getContextPath() + "/sale/opportunity/list");
+                return;
+            }
+        } else {
+            // Create mode
+            request.setAttribute("mode", "create");
+
+            // Check if converting from lead
+            String leadIdParam = request.getParameter("leadId");
+            if (leadIdParam != null && !leadIdParam.isEmpty()) {
+                try {
+                    int leadId = Integer.parseInt(leadIdParam);
+                    Lead lead = leadDAO.getLeadById(leadId);
+                    if (lead != null) {
+                        // Pre-fill opportunity from lead
+                        opportunity = new Opportunity();
+                        opportunity.setLeadId(leadId);
+                        opportunity.setOpportunityName(lead.getFullName() + " - " + lead.getCompanyName());
+                        opportunity.setSourceId(lead.getSourceId());
+                        opportunity.setCampaignId(lead.getCampaignId());
+                        opportunity.setNotes("Converted from Lead: " + lead.getLeadCode());
+
+                        request.setAttribute("opportunity", opportunity);
+                        request.setAttribute("convertFromLead", true);
+                        request.setAttribute("lead", lead);
+                    }
+                } catch (NumberFormatException e) {
+                    // Ignore invalid lead ID
+                }
+            }
+        }
+
+        // Load dropdown data
+        List<Pipeline> pipelines = pipelineDAO.getAllActivePipelines();
+        List<LeadSource> sources = leadSourceDAO.getAllActiveSources();
+        List<Campaign> campaigns = campaignDAO.getAllActiveCampaigns();
+
+        request.setAttribute("pipelines", pipelines);
+        request.setAttribute("sources", sources);
+        request.setAttribute("campaigns", campaigns);
+
+        // If editing, load stages for the selected pipeline
+        if (opportunity != null && opportunity.getPipelineId() != 0) {
+            List<PipelineStage> stages = stageDAO.getStagesByPipelineId(opportunity.getPipelineId());
+            request.setAttribute("stages", stages);
+        }
+
+        // Set page metadata
+        request.setAttribute("ACTIVE_MENU", "OPPORTUNITIES");
+        request.setAttribute("pageTitle", oppIdParam != null ? "Edit Opportunity" : "Create New Opportunity");
+        request.setAttribute("CONTENT_PAGE", "/view/sale/pages/opportunity/form.jsp");
+
+        // Forward to layout
+        request.getRequestDispatcher("/view/sale/layout/layout.jsp").forward(request, response);
+    }
+
+    @Override
+    protected void doPost(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+
+        request.setCharacterEncoding("UTF-8");
+        response.setCharacterEncoding("UTF-8");
+
+        // Get current user ID
+        Integer currentUserId = 1;
+        HttpSession session = request.getSession(false);
+        if (session != null && session.getAttribute("userId") != null) {
+            try {
+                currentUserId = (Integer) session.getAttribute("userId");
+            } catch (Exception e) {
+                // Use default
+            }
+        }
+
+        // Get form parameters
+        String oppIdParam = request.getParameter("opportunityId");
+        String opportunityName = request.getParameter("opportunityName");
+        String leadIdParam = request.getParameter("leadId");
+        String pipelineIdParam = request.getParameter("pipelineId");
+        String stageIdParam = request.getParameter("stageId");
+        String estimatedValueParam = request.getParameter("estimatedValue");
+        String probabilityParam = request.getParameter("probability");
+        String expectedCloseDateParam = request.getParameter("expectedCloseDate");
+        String status = request.getParameter("status");
+        String sourceIdParam = request.getParameter("sourceId");
+        String campaignIdParam = request.getParameter("campaignId");
+        String notes = request.getParameter("notes");
+
+        // Validation
+        if (opportunityName == null || opportunityName.trim().isEmpty()) {
+            request.setAttribute("error", "Opportunity name is required!");
+            doGet(request, response);
+            return;
+        }
+
+        if (pipelineIdParam == null || pipelineIdParam.isEmpty()) {
+            request.setAttribute("error", "Pipeline is required!");
+            doGet(request, response);
+            return;
+        }
+
+        // Create or update Opportunity object
+        Opportunity opportunity = new Opportunity();
+        boolean isEdit = false;
+
+        if (oppIdParam != null && !oppIdParam.isEmpty()) {
+            // Edit mode
+            isEdit = true;
+            try {
+                opportunity.setOpportunityId(Integer.parseInt(oppIdParam));
+            } catch (NumberFormatException e) {
+                request.setAttribute("error", "Invalid opportunity ID!");
+                doGet(request, response);
+                return;
+            }
+        }
+
+        // Set opportunity properties
+        opportunity.setOpportunityName(opportunityName.trim());
+
+        // Lead ID
+        if (leadIdParam != null && !leadIdParam.isEmpty()) {
+            try {
+                opportunity.setLeadId(Integer.parseInt(leadIdParam));
+            } catch (NumberFormatException e) {
+                opportunity.setLeadId(null);
+            }
+        } else {
+            opportunity.setLeadId(null);
+        }
+
+        // Pipeline ID (required)
+        try {
+            int pipelineId = Integer.parseInt(pipelineIdParam);
+            opportunity.setPipelineId(pipelineId);
+
+            // Stage ID - if not provided, use first stage of pipeline
+            if (stageIdParam != null && !stageIdParam.isEmpty()) {
+                opportunity.setStageId(Integer.parseInt(stageIdParam));
+            } else {
+                // Get first stage of pipeline
+                PipelineStage firstStage = stageDAO.getFirstStageByPipelineId(pipelineId);
+                if (firstStage != null) {
+                    opportunity.setStageId(firstStage.getStageId());
+                } else {
+                    request.setAttribute("error", "No stages found for selected pipeline!");
+                    doGet(request, response);
+                    return;
+                }
+            }
+        } catch (NumberFormatException e) {
+            request.setAttribute("error", "Invalid pipeline or stage!");
+            doGet(request, response);
+            return;
+        }
+
+        // Estimated value
+        if (estimatedValueParam != null && !estimatedValueParam.trim().isEmpty()) {
+            try {
+                opportunity.setEstimatedValue(new BigDecimal(estimatedValueParam));
+            } catch (NumberFormatException e) {
+                opportunity.setEstimatedValue(BigDecimal.ZERO);
+            }
+        } else {
+            opportunity.setEstimatedValue(BigDecimal.ZERO);
+        }
+
+        // Probability (0-100)
+        if (probabilityParam != null && !probabilityParam.trim().isEmpty()) {
+            try {
+                int prob = Integer.parseInt(probabilityParam);
+                opportunity.setProbability(Math.max(0, Math.min(100, prob))); // Clamp to 0-100
+            } catch (NumberFormatException e) {
+                opportunity.setProbability(0);
+            }
+        } else {
+            opportunity.setProbability(0);
+        }
+
+        // Expected close date
+        if (expectedCloseDateParam != null && !expectedCloseDateParam.trim().isEmpty()) {
+            try {
+                opportunity.setExpectedCloseDate(LocalDate.parse(expectedCloseDateParam));
+            } catch (Exception e) {
+                opportunity.setExpectedCloseDate(null);
+            }
+        } else {
+            opportunity.setExpectedCloseDate(null);
+        }
+
+        // Status
+        opportunity.setStatus(status != null && !status.isEmpty() ? status : "Open");
+
+        // Source and Campaign
+        if (sourceIdParam != null && !sourceIdParam.isEmpty()) {
+            try {
+                opportunity.setSourceId(Integer.parseInt(sourceIdParam));
+            } catch (NumberFormatException e) {
+                opportunity.setSourceId(null);
+            }
+        } else {
+            opportunity.setSourceId(null);
+        }
+
+        if (campaignIdParam != null && !campaignIdParam.isEmpty()) {
+            try {
+                opportunity.setCampaignId(Integer.parseInt(campaignIdParam));
+            } catch (NumberFormatException e) {
+                opportunity.setCampaignId(null);
+            }
+        } else {
+            opportunity.setCampaignId(null);
+        }
+
+        // Notes
+        opportunity.setNotes(notes != null && !notes.trim().isEmpty() ? notes.trim() : null);
+
+        // Owner and creator
+        opportunity.setOwnerId(currentUserId);
+        if (!isEdit) {
+            opportunity.setCreatedBy(currentUserId);
+        }
+
+        // Save to database
+        boolean success;
+        if (isEdit) {
+            success = opportunityDAO.updateOpportunity(opportunity);
+        } else {
+            success = opportunityDAO.insertOpportunity(opportunity);
+        }
+
+        if (success) {
+            // Success - redirect to list with success message
+            response.sendRedirect(request.getContextPath() + "/sale/opportunity/list?success="
+                    + (isEdit ? "updated" : "created"));
+        } else {
+            // Error - show form again with error message
+            request.setAttribute("error", "Failed to save opportunity. Please try again.");
+            request.setAttribute("opportunity", opportunity);
+            doGet(request, response);
+        }
+    }
+
+    @Override
+    public String getServletInfo() {
+        return "Opportunity Form Servlet - Handles create and edit opportunity operations";
+    }
+}
