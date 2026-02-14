@@ -263,6 +263,7 @@
                 <div class="d-grid gap-2">
                     <a href="${pageContext.request.contextPath}/sale/opportunity/form?id=${opportunity.opportunityId}" class="btn btn-outline-primary btn-sm text-start"><i class="bi bi-pencil me-2"></i>Chinh sua</a>
                     <a href="${pageContext.request.contextPath}/sale/opportunity/kanban?pipeline=${opportunity.pipelineId}" class="btn btn-outline-info btn-sm text-start"><i class="bi bi-kanban me-2"></i>Xem tren Kanban</a>
+                    <a href="${pageContext.request.contextPath}/sale/opportunity/history?oppId=${opportunity.opportunityId}" class="btn btn-outline-secondary btn-sm text-start"><i class="bi bi-clock-history me-2"></i>Lich su thay doi</a>
                     <button onclick="deleteOpp(${opportunity.opportunityId}, '${opportunity.opportunityName}')" class="btn btn-outline-danger btn-sm text-start"><i class="bi bi-trash me-2"></i>Xoa opportunity</button>
                 </div>
             </div>

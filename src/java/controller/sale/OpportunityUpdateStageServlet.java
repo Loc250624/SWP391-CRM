@@ -1,6 +1,7 @@
 package controller.sale;
 
 import dao.OpportunityDAO;
+import dao.OpportunityHistoryDAO;
 import model.Opportunity;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -9,11 +10,13 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 
 @WebServlet(name = "OpportunityUpdateStageServlet", urlPatterns = {"/sale/opportunity/updateStage"})
 public class OpportunityUpdateStageServlet extends HttpServlet {
 
     private OpportunityDAO opportunityDAO = new OpportunityDAO();
+    private OpportunityHistoryDAO historyDAO = new OpportunityHistoryDAO();
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
@@ -46,11 +49,28 @@ public class OpportunityUpdateStageServlet extends HttpServlet {
                 return;
             }
 
+            // Block if already Won/Lost
+            if ("Won".equals(opportunity.getStatus()) || "Lost".equals(opportunity.getStatus())) {
+                out.print("{\"success\": false, \"message\": \"Opportunity da dong (Won/Lost), khong the thay doi.\"}");
+                return;
+            }
+
+            // Log stage change
+            int oldStageId = opportunity.getStageId();
+
             // Update the stage
             opportunity.setStageId(stageId);
             boolean updated = opportunityDAO.updateOpportunity(opportunity);
 
             if (updated) {
+                // Log history
+                Integer userId = 1;
+                HttpSession session = request.getSession(false);
+                if (session != null && session.getAttribute("userId") != null) {
+                    try { userId = (Integer) session.getAttribute("userId"); } catch (Exception e) { }
+                }
+                historyDAO.logChange(opportunityId, "stage_id", String.valueOf(oldStageId), String.valueOf(stageId), userId);
+
                 out.print("{\"success\": true, \"message\": \"Stage updated successfully\"}");
             } else {
                 out.print("{\"success\": false, \"message\": \"Failed to update stage\"}");

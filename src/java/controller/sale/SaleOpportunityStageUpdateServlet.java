@@ -1,6 +1,9 @@
 package controller.sale;
 
 import dao.OpportunityDAO;
+import dao.OpportunityHistoryDAO;
+import dao.PipelineStageDAO;
+import model.PipelineStage;
 import java.io.IOException;
 import java.io.PrintWriter;
 import jakarta.servlet.ServletException;
@@ -15,6 +18,8 @@ import model.Opportunity;
 public class SaleOpportunityStageUpdateServlet extends HttpServlet {
 
     private OpportunityDAO opportunityDAO = new OpportunityDAO();
+    private OpportunityHistoryDAO historyDAO = new OpportunityHistoryDAO();
+    private PipelineStageDAO stageDAO = new PipelineStageDAO();
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
@@ -61,11 +66,41 @@ public class SaleOpportunityStageUpdateServlet extends HttpServlet {
                 return;
             }
 
+            // Block if opportunity is already Won or Lost
+            if ("Won".equals(opp.getStatus()) || "Lost".equals(opp.getStatus())) {
+                out.print("{\"success\":false,\"message\":\"Opportunity da dong (Won/Lost), khong the thay doi.\"}");
+                return;
+            }
+
+            // Check target stage type
+            PipelineStage targetStage = stageDAO.getStageById(newStageId);
+            String targetStageType = targetStage != null ? targetStage.getStageType() : "open";
+
+            int oldStageId = opp.getStageId();
+            String oldStatus = opp.getStatus();
             opp.setStageId(newStageId);
+
+            // Update status based on stage type
+            if ("won".equals(targetStageType)) {
+                opp.setStatus("Won");
+            } else if ("lost".equals(targetStageType)) {
+                opp.setStatus("Lost");
+            }
+
+            // Accept won/lost reason from request
+            String reason = request.getParameter("reason");
+            if (reason != null && !reason.trim().isEmpty()) {
+                opp.setWonLostReason(reason.trim());
+            }
+
             boolean success = opportunityDAO.updateOpportunity(opp);
 
             if (success) {
-                out.print("{\"success\":true,\"message\":\"Stage updated\"}");
+                historyDAO.logChange(oppId, "stage_id", String.valueOf(oldStageId), String.valueOf(newStageId), currentUserId);
+                if (!oldStatus.equals(opp.getStatus())) {
+                    historyDAO.logChange(oppId, "status", oldStatus, opp.getStatus(), currentUserId);
+                }
+                out.print("{\"success\":true,\"message\":\"Stage updated\",\"newStatus\":\"" + opp.getStatus() + "\"}");
             } else {
                 response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
                 out.print("{\"success\":false,\"message\":\"Update failed\"}");
