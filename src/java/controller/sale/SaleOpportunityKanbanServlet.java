@@ -22,26 +22,24 @@ import jakarta.servlet.http.HttpSession;
 @WebServlet(name = "SaleOpportunityKanbanServlet", urlPatterns = {"/sale/opportunity/kanban"})
 public class SaleOpportunityKanbanServlet extends HttpServlet {
 
-    private OpportunityDAO opportunityDAO = new OpportunityDAO();
-    private PipelineDAO pipelineDAO = new PipelineDAO();
-    private PipelineStageDAO stageDAO = new PipelineStageDAO();
+    private final OpportunityDAO opportunityDAO = new OpportunityDAO();
+    private final PipelineDAO pipelineDAO = new PipelineDAO();
+    private final PipelineStageDAO stageDAO = new PipelineStageDAO();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        // Get current user ID from session (default = 1)
         Integer currentUserId = 1;
         HttpSession session = request.getSession(false);
         if (session != null && session.getAttribute("userId") != null) {
             try {
                 currentUserId = (Integer) session.getAttribute("userId");
             } catch (Exception e) {
-                // Use default
             }
         }
 
-        // Get pipeline selection (optional - default to first active pipeline)
+        // Get pipeline selection
         String pipelineIdParam = request.getParameter("pipeline");
         Pipeline selectedPipeline = null;
 
@@ -50,16 +48,13 @@ public class SaleOpportunityKanbanServlet extends HttpServlet {
                 int pipelineId = Integer.parseInt(pipelineIdParam);
                 selectedPipeline = pipelineDAO.getPipelineById(pipelineId);
             } catch (NumberFormatException e) {
-                // Ignore invalid pipeline ID
             }
         }
 
-        // If no pipeline selected, use default pipeline
         if (selectedPipeline == null) {
             selectedPipeline = pipelineDAO.getDefaultPipeline();
         }
 
-        // If still no pipeline, get the first active one
         if (selectedPipeline == null) {
             List<Pipeline> pipelines = pipelineDAO.getAllActivePipelines();
             if (pipelines != null && !pipelines.isEmpty()) {
@@ -67,51 +62,44 @@ public class SaleOpportunityKanbanServlet extends HttpServlet {
             }
         }
 
-        // Load all active pipelines for dropdown
         List<Pipeline> allPipelines = pipelineDAO.getAllActivePipelines();
-        if (allPipelines == null) {
-            allPipelines = new ArrayList<>();
-        }
+        if (allPipelines == null) allPipelines = new ArrayList<>();
 
-        // If we have a selected pipeline, load stages and opportunities
         List<PipelineStage> stages = new ArrayList<>();
         Map<Integer, List<Opportunity>> opportunitiesByStage = new HashMap<>();
         Map<Integer, BigDecimal> valueByStage = new HashMap<>();
         BigDecimal totalPipelineValue = BigDecimal.ZERO;
         int totalOpportunities = 0;
+        int wonCount = 0;
+        int totalClosed = 0;
 
         if (selectedPipeline != null) {
-            // Load stages for this pipeline
             stages = stageDAO.getStagesByPipelineId(selectedPipeline.getPipelineId());
-            if (stages == null) {
-                stages = new ArrayList<>();
-            }
+            if (stages == null) stages = new ArrayList<>();
 
-            // Load opportunities grouped by stage
             for (PipelineStage stage : stages) {
-                List<Opportunity> stageOpportunities = opportunityDAO.getOpportunitiesByStageAndUser(
+                List<Opportunity> stageOpps = opportunityDAO.getOpportunitiesByStageAndUser(
                         stage.getStageId(), currentUserId);
+                if (stageOpps == null) stageOpps = new ArrayList<>();
 
-                if (stageOpportunities == null) {
-                    stageOpportunities = new ArrayList<>();
-                }
+                opportunitiesByStage.put(stage.getStageId(), stageOpps);
 
-                opportunitiesByStage.put(stage.getStageId(), stageOpportunities);
-
-                // Calculate value for this stage
                 BigDecimal stageValue = BigDecimal.ZERO;
-                for (Opportunity opp : stageOpportunities) {
+                for (Opportunity opp : stageOpps) {
                     if (opp.getEstimatedValue() != null) {
                         stageValue = stageValue.add(opp.getEstimatedValue());
                     }
+                    if ("Won".equals(opp.getStatus())) wonCount++;
+                    if ("Won".equals(opp.getStatus()) || "Lost".equals(opp.getStatus())) totalClosed++;
                 }
                 valueByStage.put(stage.getStageId(), stageValue);
                 totalPipelineValue = totalPipelineValue.add(stageValue);
-                totalOpportunities += stageOpportunities.size();
+                totalOpportunities += stageOpps.size();
             }
         }
 
-        // Set attributes
+        int winRate = totalClosed > 0 ? (wonCount * 100 / totalClosed) : 0;
+
         request.setAttribute("selectedPipeline", selectedPipeline);
         request.setAttribute("allPipelines", allPipelines);
         request.setAttribute("stages", stages);
@@ -119,18 +107,11 @@ public class SaleOpportunityKanbanServlet extends HttpServlet {
         request.setAttribute("valueByStage", valueByStage);
         request.setAttribute("totalPipelineValue", totalPipelineValue);
         request.setAttribute("totalOpportunities", totalOpportunities);
+        request.setAttribute("winRate", winRate);
 
-        // Page metadata
         request.setAttribute("ACTIVE_MENU", "OPP_KANBAN");
         request.setAttribute("pageTitle", "Pipeline Kanban View");
         request.setAttribute("CONTENT_PAGE", "/view/sale/pages/opportunity/kanban.jsp");
-
-        // Forward to layout
         request.getRequestDispatcher("/view/sale/layout/layout.jsp").forward(request, response);
-    }
-
-    @Override
-    public String getServletInfo() {
-        return "Opportunity Kanban Servlet - Displays Kanban board view of opportunities";
     }
 }

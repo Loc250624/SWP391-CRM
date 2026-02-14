@@ -2,162 +2,186 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <!DOCTYPE html>
 <html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${pageTitle != null ? pageTitle : 'Sales Pipeline'} - CRM Pro</title>
-    
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Chart.js (if needed) -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    
-    <!-- Font Awesome (optional) -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-        
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: 'Inter', sans-serif;
-            background: #f8fafc;
-        }
-        
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-        }
-        
-        ::-webkit-scrollbar-track {
-            background: #f1f5f9;
-            border-radius: 4px;
-        }
-        
-        ::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
-            border-radius: 4px;
-        }
-        
-        ::-webkit-scrollbar-thumb:hover {
-            background: #94a3b8;
-        }
-        
-        /* Smooth transitions */
-        * {
-            transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
-        }
-        
-        /* Layout Structure */
-        .app-layout {
-            display: flex;
-            min-height: 100vh;
-            background: #f8fafc;
-        }
-        
-        .main-content {
-            flex: 1;
-            margin-left: 16rem; /* sidebar width */
-            margin-top: 4rem; /* header height */
-        }
-        
-        .content-wrapper {
-            padding: 1.5rem;
-            min-height: calc(100vh - 4rem);
-        }
-        
-        /* Responsive */
-        @media (max-width: 1024px) {
-            .main-content {
-                margin-left: 0;
-            }
-        }
-    </style>
-    
-    <!-- Additional Custom CSS -->
-    <c:if test="${not empty customCSS}">
-        <style>${customCSS}</style>
-    </c:if>
-</head>
-<body>
-    
-    <div class="app-layout">
-        
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>${pageTitle != null ? pageTitle : 'Sales Pipeline'} - CRM Pro</title>
+
+        <!-- Bootstrap CSS -->
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+        <!-- Bootstrap Icons -->
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+        <!-- Custom Page CSS -->
+        <c:if test="${not empty customCSS}">
+            <style>${customCSS}</style>
+        </c:if>
+    </head>
+    <body class="bg-light">
+
         <!-- Sidebar -->
         <jsp:include page="sidebar.jsp"/>
-        
+
         <!-- Header -->
         <jsp:include page="header.jsp"/>
-        
-        <!-- Main Content Area -->
-        <main class="main-content">
-            <div class="content-wrapper">
-                
-                <!-- Page Content -->
+
+        <!-- Main Content Wrapper -->
+        <main style="margin-left: 260px; margin-top: 64px; min-height: calc(100vh - 64px);">
+            <!-- Page Content -->
+            <div class="p-4">
                 <c:choose>
                     <c:when test="${not empty CONTENT_PAGE}">
                         <jsp:include page="${CONTENT_PAGE}" />
                     </c:when>
                     <c:otherwise>
-                        <!-- Default Content -->
-                        <div style="text-align: center; padding: 3rem; color: #94a3b8;">
-                            <svg style="width: 4rem; height: 4rem; margin: 0 auto 1rem; color: #cbd5e1;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                            </svg>
-                            <h3 style="font-size: 1.125rem; font-weight: 600; color: #64748b; margin-bottom: 0.5rem;">
-                                No Content Page Specified
-                            </h3>
-                            <p style="font-size: 0.875rem;">
-                                Please set CONTENT_PAGE variable
-                            </p>
+                        <!-- Default Empty State -->
+                        <div class="card shadow-sm">
+                            <div class="card-body text-center py-5">
+                                <div class="mb-3">
+                                    <i class="bi bi-file-earmark-text text-muted" style="font-size: 4rem;"></i>
+                                </div>
+                                <h5 class="text-muted">No Content Page Specified</h5>
+                                <p class="text-muted small mb-0">Please set CONTENT_PAGE variable</p>
+                            </div>
                         </div>
                     </c:otherwise>
                 </c:choose>
-                
             </div>
+
         </main>
-        
-    </div>
-    
-    <!-- JavaScript Libraries -->
-    <script>
-        // Global utility functions
-        window.CRM = {
-            showNotification: function(message, type = 'success') {
-                // Implement notification system
-                console.log(`[${type.toUpperCase()}] ${message}`);
-            },
-            
-            confirmAction: function(message, callback) {
-                if (confirm(message)) {
-                    callback();
+
+        <!-- Toast Container for Notifications -->
+        <div class="toast-container position-fixed bottom-0 end-0 p-3" id="toastContainer"></div>
+
+        <!-- Bootstrap JS Bundle -->
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+        <!-- Global CRM Utilities -->
+        <script>
+            // CRM Global Object
+            window.CRM = {
+                // Context Path
+                contextPath: '${pageContext.request.contextPath}',
+
+                // Show Toast Notification
+                showToast: function (message, type = 'success') {
+                    const toastContainer = document.getElementById('toastContainer');
+                    const toastId = 'toast-' + Date.now();
+
+                    const iconMap = {
+                        success: 'bi-check-circle-fill text-success',
+                        error: 'bi-x-circle-fill text-danger',
+                        warning: 'bi-exclamation-triangle-fill text-warning',
+                        info: 'bi-info-circle-fill text-info'
+                    };
+
+                    const toastHTML = `
+                        <div id="${toastId}" class="toast align-items-center border-0" role="alert">
+                            <div class="d-flex">
+                                <div class="toast-body d-flex align-items-center gap-2">
+                                    <i class="bi ${iconMap[type] || iconMap.info}"></i>
+                                    <span>${message}</span>
+                                </div>
+                                <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast"></button>
+                            </div>
+                        </div>
+                    `;
+
+                    toastContainer.insertAdjacentHTML('beforeend', toastHTML);
+                    const toastElement = document.getElementById(toastId);
+                    const toast = new bootstrap.Toast(toastElement, {delay: 4000});
+                    toast.show();
+
+                    toastElement.addEventListener('hidden.bs.toast', () => toastElement.remove());
+                },
+
+                // Confirm Dialog
+                confirm: function (message, callback) {
+                    if (confirm(message)) {
+                        callback();
+                    }
+                },
+
+                // Format Currency (VND)
+                formatCurrency: function (amount) {
+                    return new Intl.NumberFormat('vi-VN', {
+                        style: 'currency',
+                        currency: 'VND'
+                    }).format(amount);
+                },
+
+                // Format Number
+                formatNumber: function (number) {
+                    return new Intl.NumberFormat('vi-VN').format(number);
+                },
+
+                // Format Date
+                formatDate: function (date, format = 'short') {
+                    const options = format === 'long'
+                            ? {weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'}
+                    : {year: 'numeric', month: '2-digit', day: '2-digit'};
+                    return new Intl.DateTimeFormat('vi-VN', options).format(new Date(date));
+                },
+
+                // Format DateTime
+                formatDateTime: function (date) {
+                    return new Intl.DateTimeFormat('vi-VN', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    }).format(new Date(date));
+                },
+
+                // AJAX Helper
+                ajax: function (url, options = {}) {
+                    const defaultOptions = {
+                        method: 'GET',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    };
+
+                    return fetch(this.contextPath + url, {...defaultOptions, ...options})
+                            .then(response => {
+                                if (!response.ok)
+                                    throw new Error('Network response was not ok');
+                                return response.json();
+                            });
+                },
+
+                // Initialize Tooltips
+                initTooltips: function () {
+                    const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+                    tooltipTriggerList.forEach(el => new bootstrap.Tooltip(el));
+                },
+
+                // Initialize Popovers
+                initPopovers: function () {
+                    const popoverTriggerList = document.querySelectorAll('[data-bs-toggle="popover"]');
+                    popoverTriggerList.forEach(el => new bootstrap.Popover(el));
                 }
-            },
-            
-            formatCurrency: function(amount) {
-                return new Intl.NumberFormat('vi-VN', {
-                    style: 'currency',
-                    currency: 'VND'
-                }).format(amount);
-            },
-            
-            formatDate: function(date) {
-                return new Intl.DateTimeFormat('vi-VN').format(new Date(date));
-            }
-        };
-    </script>
-    
-    <!-- Additional Custom JS -->
-    <c:if test="${not empty customJS}">
-        <script>${customJS}</script>
-    </c:if>
-    
-</body>
+            };
+
+            // Auto-init on DOM ready
+            document.addEventListener('DOMContentLoaded', function () {
+                CRM.initTooltips();
+                CRM.initPopovers();
+            });
+        </script>
+
+        <!-- Additional Custom JS -->
+        <c:if test="${not empty customJS}">
+            <script>${customJS}</script>
+        </c:if>
+
+        <!-- Page Specific JS -->
+        <c:if test="${not empty pageScript}">
+            <script>${pageScript}</script>
+        </c:if>
+
+    </body>
 </html>

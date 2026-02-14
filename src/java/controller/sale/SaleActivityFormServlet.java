@@ -52,8 +52,11 @@ public class SaleActivityFormServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
     throws ServletException, IOException {
-        processRequest(request, response);
-    } 
+        request.setAttribute("ACTIVE_MENU", "ACT_FORM");
+        request.setAttribute("pageTitle", "Log Activity");
+        request.setAttribute("CONTENT_PAGE", "/view/sale/pages/activity/form.jsp");
+        request.getRequestDispatcher("/view/sale/layout/layout.jsp").forward(request, response);
+    }
 
     /** 
      * Handles the HTTP <code>POST</code> method.

@@ -52,8 +52,11 @@ public class SaleProposalDetailServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
     throws ServletException, IOException {
-        processRequest(request, response);
-    } 
+        request.setAttribute("ACTIVE_MENU", "PROP_LIST");
+        request.setAttribute("pageTitle", "Proposal Detail");
+        request.setAttribute("CONTENT_PAGE", "/view/sale/pages/proposal/detail.jsp");
+        request.getRequestDispatcher("/view/sale/layout/layout.jsp").forward(request, response);
+    }
 
     /** 
      * Handles the HTTP <code>POST</code> method.

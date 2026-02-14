@@ -2,556 +2,699 @@
 <%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <%@taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt"%>
 
-<!-- Sortable.js for Drag & Drop -->
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 
 <style>
-    /* Kanban Styles */
-    .kanban-container {
+    /* ===== Jira-inspired Kanban ===== */
+    .kb-toolbar {
+        background: #fff;
+        border-radius: 8px;
+        padding: 10px 16px;
+        margin-bottom: 16px;
+        box-shadow: 0 1px 3px rgba(0,0,0,.06);
+    }
+    .kb-stats {
         display: flex;
-        gap: 1.25rem;
-        overflow-x: auto;
-        padding-bottom: 1.5rem;
-        min-height: calc(100vh - 280px);
+        gap: 20px;
+    }
+    .kb-stat {
+        text-align: center;
+    }
+    .kb-stat-val {
+        font-size: 1.25rem;
+        font-weight: 700;
+        line-height: 1.2;
+    }
+    .kb-stat-label {
+        font-size: .7rem;
+        color: #6b778c;
+        text-transform: uppercase;
+        letter-spacing: .3px;
     }
 
-    .kanban-column {
-        flex-shrink: 0;
-        width: 340px;
-        background: white;
-        border-radius: 1rem;
-        border: 1px solid #e2e8f0;
+    /* Board */
+    .kb-board {
+        display: flex;
+        gap: 8px;
+        overflow-x: auto;
+        padding-bottom: 8px;
+        align-items: flex-start;
+    }
+    .kb-board::-webkit-scrollbar {
+        height: 6px;
+    }
+    .kb-board::-webkit-scrollbar-thumb {
+        background: #c1c7d0;
+        border-radius: 3px;
+    }
+
+    /* Columns - flex equally, shrink when needed */
+    .kb-col {
+        background: #f4f5f7;
+        border-radius: 6px;
         display: flex;
         flex-direction: column;
+        min-width: 0;
+        flex: 1 1 0;
         max-height: calc(100vh - 280px);
     }
-
-    .column-header {
-        padding: 1.25rem;
-        border-bottom: 1px solid #e2e8f0;
-        border-radius: 1rem 1rem 0 0;
+    .kb-col-head {
+        padding: 10px 10px 8px;
+        flex-shrink: 0;
     }
-
-    .column-title {
+    .kb-col-title {
+        font-size: .75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: .4px;
+        color: #5e6c84;
         display: flex;
         align-items: center;
-        gap: 0.625rem;
-        margin-bottom: 0.75rem;
+        gap: 6px;
     }
-
-    .stage-indicator {
-        width: 0.875rem;
-        height: 0.875rem;
+    .kb-col-count {
+        background: #dfe1e6;
+        color: #44546f;
+        border-radius: 10px;
+        font-size: .65rem;
+        font-weight: 700;
+        padding: 1px 7px;
+        min-width: 20px;
+        text-align: center;
+    }
+    .kb-col-value {
+        font-size: .68rem;
+        color: #8993a4;
+        margin-top: 2px;
+    }
+    .kb-col-dot {
+        width: 8px;
+        height: 8px;
         border-radius: 50%;
         flex-shrink: 0;
     }
 
-    .stage-badge {
-        padding: 0.25rem 0.75rem;
-        border-radius: 1rem;
-        font-size: 0.75rem;
-        font-weight: 700;
-        color: white;
-    }
-
-    .column-stats {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        font-size: 0.8125rem;
-        color: #64748b;
-    }
-
-    .cards-container {
+    /* Cards area - scrollable */
+    .kb-cards {
+        padding: 0 6px 6px;
         flex: 1;
-        padding: 1rem;
         overflow-y: auto;
-        display: flex;
-        flex-direction: column;
-        gap: 0.875rem;
+        min-height: 60px;
+    }
+    .kb-cards::-webkit-scrollbar {
+        width: 4px;
+    }
+    .kb-cards::-webkit-scrollbar-thumb {
+        background: #c1c7d0;
+        border-radius: 2px;
     }
 
-    /* Opportunity Card */
-    .opportunity-card {
-        background: white;
-        border: 1px solid #e2e8f0;
-        border-radius: 0.875rem;
-        padding: 1.125rem;
-        cursor: move;
-        transition: all 0.2s;
+    /* Card */
+    .kb-card {
+        background: #fff;
+        border-radius: 4px;
+        padding: 8px 10px;
+        margin-bottom: 6px;
+        box-shadow: 0 1px 1px rgba(9,30,66,.13), 0 0 1px rgba(9,30,66,.2);
+        cursor: grab;
+        transition: background .12s, box-shadow .12s;
+        position: relative;
+    }
+    .kb-card:hover {
+        background: #ebecf0;
+        box-shadow: 0 2px 4px rgba(9,30,66,.18), 0 0 1px rgba(9,30,66,.2);
+    }
+    .kb-card.sortable-ghost {
+        opacity: .35;
+        background: #deebff;
+    }
+    .kb-card.sortable-chosen {
+        box-shadow: 0 8px 16px rgba(9,30,66,.25);
+        transform: rotate(2deg);
     }
 
-    .opportunity-card:hover {
-        box-shadow: 0 8px 24px rgba(59, 130, 246, 0.15);
-        transform: translateY(-2px);
-        border-color: #60a5fa;
-    }
-
-    .sortable-ghost {
-        opacity: 0.4;
-        background: #f1f5f9;
-    }
-
-    .sortable-drag {
-        opacity: 0.8;
-    }
-
-    .card-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: start;
-        margin-bottom: 0.875rem;
-    }
-
-    .card-title {
-        font-weight: 700;
-        color: #1e293b;
-        font-size: 0.9375rem;
-        margin-bottom: 0.375rem;
-        line-height: 1.4;
+    .kb-card-title {
+        font-size: .8rem;
+        font-weight: 500;
+        color: #172b4d;
+        line-height: 1.3;
+        margin-bottom: 4px;
         display: -webkit-box;
         -webkit-line-clamp: 2;
         -webkit-box-orient: vertical;
         overflow: hidden;
     }
-
-    .card-code {
-        font-size: 0.75rem;
-        color: #64748b;
-        margin-bottom: 0.875rem;
+    .kb-card-title a {
+        color: inherit;
+        text-decoration: none;
     }
-
-    .card-value-section {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 0.875rem;
+    .kb-card-title a:hover {
+        color: #0052cc;
     }
-
-    .card-value {
-        font-size: 1.25rem;
-        font-weight: 800;
-        color: #10b981;
+    .kb-card-code {
+        font-size: .65rem;
+        color: #8993a4;
     }
-
-    .card-probability {
-        display: flex;
-        align-items: center;
-        gap: 0.375rem;
-        font-size: 0.75rem;
-        color: #64748b;
-        background: #f8fafc;
-        padding: 0.25rem 0.625rem;
-        border-radius: 0.5rem;
-    }
-
-    .card-meta {
-        padding-top: 0.875rem;
-        border-top: 1px solid #f1f5f9;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        font-size: 0.75rem;
-        color: #64748b;
-    }
-
-    .empty-column {
-        text-align: center;
-        padding: 2rem 1rem;
-        color: #94a3b8;
-        font-size: 0.875rem;
-    }
-
-    /* Add Card Button */
-    .add-card-btn {
-        margin: 1rem;
-        padding: 0.875rem;
-        border: 2px dashed #cbd5e1;
-        border-radius: 0.75rem;
-        color: #64748b;
+    .kb-card-value {
+        font-size: .75rem;
         font-weight: 600;
-        transition: all 0.2s;
-        cursor: pointer;
+        color: #36b37e;
+    }
+    .kb-card-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: 6px;
+    }
+    .kb-card-meta {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .kb-card-prob {
+        font-size: .65rem;
+        color: #8993a4;
+    }
+    .kb-card-date {
+        font-size: .65rem;
+        color: #8993a4;
+        display: flex;
+        align-items: center;
+        gap: 2px;
+    }
+    .kb-card-avatar {
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        background: #dfe1e6;
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 0.5rem;
-        background: white;
-    }
-
-    .add-card-btn:hover {
-        border-color: #60a5fa;
-        color: #3b82f6;
-        background: #f8fafc;
-    }
-
-    /* Pipeline Selector */
-    .pipeline-selector {
-        background: white;
-        border-radius: 1rem;
-        border: 1px solid #e2e8f0;
-        padding: 1.25rem;
-        margin-bottom: 1.5rem;
-    }
-
-    .pipeline-selector label {
-        display: block;
-        font-size: 0.875rem;
-        font-weight: 600;
-        color: #475569;
-        margin-bottom: 0.5rem;
-    }
-
-    .pipeline-selector select {
-        width: 100%;
-        max-width: 400px;
-        padding: 0.625rem 0.875rem;
-        border: 1px solid #e2e8f0;
-        border-radius: 0.5rem;
-        font-size: 0.875rem;
-        transition: all 0.2s;
-    }
-
-    .pipeline-selector select:focus {
-        outline: none;
-        border-color: #60a5fa;
-        box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1);
-    }
-
-    /* Header Stats */
-    .pipeline-header {
-        background: white;
-        border-radius: 1rem;
-        border: 1px solid #e2e8f0;
-        padding: 1.5rem;
-        margin-bottom: 1.5rem;
-    }
-
-    .header-top {
-        display: flex;
-        justify-content: space-between;
-        align-items: start;
-        flex-wrap: wrap;
-        gap: 1.5rem;
-    }
-
-    .header-title {
-        font-size: 1.75rem;
-        font-weight: 800;
-        color: #1e293b;
-        margin-bottom: 0.75rem;
-    }
-
-    .header-stats {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 1.5rem;
-        font-size: 0.875rem;
-    }
-
-    .stat-item {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-
-    .stat-label {
-        color: #64748b;
-    }
-
-    .stat-value {
+        font-size: .6rem;
         font-weight: 700;
-        font-size: 1rem;
+        color: #44546f;
     }
 
-    .header-actions {
-        display: flex;
-        gap: 0.75rem;
+    /* Priority dot on card */
+    .kb-prob-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        display: inline-block;
+    }
+    .kb-prob-high {
+        background: #36b37e;
+    }
+    .kb-prob-med {
+        background: #ffab00;
+    }
+    .kb-prob-low {
+        background: #ff5630;
     }
 
-    .btn {
-        padding: 0.625rem 1.25rem;
-        border-radius: 0.625rem;
-        font-weight: 600;
-        font-size: 0.875rem;
-        transition: all 0.2s;
-        cursor: pointer;
+    /* Empty column */
+    .kb-empty {
+        text-align: center;
+        padding: 20px 10px;
+        color: #b3bac5;
+        font-size: .75rem;
+    }
+
+    /* Add deal button */
+    .kb-add-btn {
         display: flex;
         align-items: center;
-        gap: 0.5rem;
+        justify-content: center;
+        gap: 4px;
+        width: 100%;
+        padding: 6px;
+        margin-top: 2px;
+        border: 1px dashed #c1c7d0;
+        border-radius: 4px;
+        background: transparent;
+        color: #6b778c;
+        font-size: .72rem;
+        cursor: pointer;
+        transition: all .15s;
         text-decoration: none;
     }
-
-    .btn-secondary {
-        background: white;
-        border: 1px solid #e2e8f0;
-        color: #475569;
+    .kb-add-btn:hover {
+        background: #fff;
+        border-color: #0052cc;
+        color: #0052cc;
     }
 
-    .btn-secondary:hover {
-        background: #f8fafc;
-        border-color: #cbd5e1;
+    /* Modal detail styles */
+    .opp-modal-header {
+        border-bottom: 3px solid #0052cc;
     }
-
-    .btn-primary {
-        background: linear-gradient(135deg, #60a5fa, #3b82f6);
-        color: white;
-        border: none;
-        box-shadow: 0 2px 8px rgba(59, 130, 246, 0.25);
+    .opp-detail-label {
+        font-size: .75rem;
+        color: #6b778c;
+        text-transform: uppercase;
+        letter-spacing: .3px;
+        margin-bottom: 2px;
     }
-
-    .btn-primary:hover {
-        box-shadow: 0 4px 16px rgba(59, 130, 246, 0.35);
-        transform: translateY(-1px);
+    .opp-detail-value {
+        font-size: .9rem;
+        font-weight: 500;
+        color: #172b4d;
     }
-
-    /* Alert Messages */
-    .alert {
-        padding: 1rem 1.25rem;
-        border-radius: 0.75rem;
-        margin-bottom: 1.5rem;
+    .opp-stage-progress {
         display: flex;
+        gap: 3px;
         align-items: center;
-        gap: 0.75rem;
-        font-weight: 600;
-        font-size: 0.875rem;
     }
-
-    .alert-info {
-        background: linear-gradient(135deg, #dbeafe, #bfdbfe);
-        color: #1e40af;
+    .opp-stage-step {
+        flex: 1;
+        height: 6px;
+        border-radius: 3px;
+        background: #dfe1e6;
     }
-
-    .alert-warning {
-        background: linear-gradient(135deg, #fef3c7, #fde68a);
-        color: #d97706;
+    .opp-stage-step.active {
+        background: #0052cc;
+    }
+    .opp-stage-step.passed {
+        background: #36b37e;
+    }
+    .opp-kpi-box {
+        text-align: center;
+        padding: 12px 8px;
+        background: #f4f5f7;
+        border-radius: 8px;
+    }
+    .opp-kpi-box .value {
+        font-size: 1.1rem;
+        font-weight: 700;
+    }
+    .opp-kpi-box .label {
+        font-size: .7rem;
+        color: #6b778c;
     }
 </style>
 
-<!-- Pipeline Header -->
-<div class="pipeline-header">
-    <div class="header-top">
+<!-- Compact Header -->
+<div class="kb-toolbar d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div class="d-flex align-items-center gap-3">
         <div>
-            <h2 class="header-title">Pipeline Kanban View</h2>
-            <div class="header-stats">
-                <div class="stat-item">
-                    <span class="stat-label">Total Opportunities:</span>
-                    <span class="stat-value" style="color: #3b82f6;">${totalOpportunities}</span>
-                </div>
-                <span style="color: #e2e8f0;">|</span>
-                <div class="stat-item">
-                    <span class="stat-label">Pipeline Value:</span>
-                    <span class="stat-value" style="color: #10b981;">
-                        <fmt:formatNumber value="${totalPipelineValue}" type="currency" currencySymbol="$" maxFractionDigits="0"/>
-                    </span>
-                </div>
-                <span style="color: #e2e8f0;">|</span>
-                <div class="stat-item">
-                    <span class="stat-label">Stages:</span>
-                    <span class="stat-value" style="color: #a855f7;">${stages.size()}</span>
-                </div>
+            <h5 class="mb-0 fw-bold" style="font-size: 1.1rem;">
+                <i class="bi bi-kanban me-1 text-primary"></i>
+                <c:choose>
+                    <c:when test="${not empty selectedPipeline}">${selectedPipeline.pipelineName}</c:when>
+                    <c:otherwise>Pipeline</c:otherwise>
+                </c:choose>
+            </h5>
+        </div>
+        <form method="GET" action="${pageContext.request.contextPath}/sale/opportunity/kanban">
+            <select name="pipeline" class="form-select form-select-sm" onchange="this.form.submit()" style="width: 170px; font-size: .8rem;">
+                <c:forEach var="p" items="${allPipelines}">
+                    <option value="${p.pipelineId}" ${selectedPipeline != null && selectedPipeline.pipelineId == p.pipelineId ? 'selected' : ''}>${p.pipelineName}</option>
+                </c:forEach>
+            </select>
+        </form>
+    </div>
+
+    <div class="d-flex align-items-center gap-3">
+        <!-- Inline Stats -->
+        <div class="kb-stats d-none d-md-flex">
+            <div class="kb-stat">
+                <div class="kb-stat-val text-primary">${totalOpportunities}</div>
+                <div class="kb-stat-label">Deals</div>
+            </div>
+            <div class="kb-stat">
+                <div class="kb-stat-val text-success"><fmt:formatNumber value="${totalPipelineValue}" type="number" groupingUsed="true" maxFractionDigits="0"/></div>
+                <div class="kb-stat-label">Pipeline (VND)</div>
+            </div>
+            <div class="kb-stat">
+                <div class="kb-stat-val text-warning">${winRate}%</div>
+                <div class="kb-stat-label">Win rate</div>
             </div>
         </div>
 
-        <div class="header-actions">
-            <a href="${pageContext.request.contextPath}/sale/opportunity/list" class="btn btn-secondary">
-                <svg style="width: 1.125rem; height: 1.125rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/>
-                </svg>
-                List View
-            </a>
+        <div class="vr d-none d-md-block"></div>
 
-            <a href="${pageContext.request.contextPath}/sale/opportunity/form" class="btn btn-primary">
-                <svg style="width: 1.125rem; height: 1.125rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-                </svg>
-                New Opportunity
-            </a>
+        <div class="d-flex gap-1">
+            <a href="${pageContext.request.contextPath}/sale/opportunity/list" class="btn btn-outline-secondary btn-sm" style="font-size:.75rem;"><i class="bi bi-list-ul"></i></a>
+            <a href="${pageContext.request.contextPath}/sale/opportunity/form" class="btn btn-primary btn-sm" style="font-size:.75rem;"><i class="bi bi-plus-lg me-1"></i>Tao deal</a>
         </div>
     </div>
 </div>
 
-<!-- Pipeline Selector -->
-<div class="pipeline-selector">
-    <label>Select Pipeline</label>
-    <form method="GET" action="${pageContext.request.contextPath}/sale/opportunity/kanban">
-        <select name="pipeline" onchange="this.form.submit()">
-            <c:forEach var="pipeline" items="${allPipelines}">
-                <option value="${pipeline.pipelineId}"
-                        <c:if test="${selectedPipeline.pipelineId == pipeline.pipelineId}">selected</c:if>>
-                    ${pipeline.pipelineName}
-                </option>
-            </c:forEach>
-        </select>
-    </form>
-</div>
-
 <!-- Kanban Board -->
 <c:choose>
-    <c:when test="${empty selectedPipeline}">
-        <div class="alert alert-warning">
-            <svg style="width: 1.25rem; height: 1.25rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-            </svg>
-            <span>No pipeline found. Please create a pipeline first.</span>
-        </div>
-    </c:when>
-    <c:when test="${empty stages}">
-        <div class="alert alert-info">
-            <svg style="width: 1.25rem; height: 1.25rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-            </svg>
-            <span>No stages defined for this pipeline. Please add stages first.</span>
-        </div>
-    </c:when>
-    <c:otherwise>
-        <div class="kanban-container">
-            <c:forEach var="stage" items="${stages}" varStatus="status">
-                <div class="kanban-column">
-                    <!-- Column Header -->
-                    <div class="column-header" style="background: ${not empty stage.colorCode ? stage.colorCode : (status.index % 5 == 0 ? 'linear-gradient(135deg, #dbeafe, #bfdbfe)' : status.index % 5 == 1 ? 'linear-gradient(135deg, #e0e7ff, #c7d2fe)' : status.index % 5 == 2 ? 'linear-gradient(135deg, #f3e8ff, #e9d5ff)' : status.index % 5 == 3 ? 'linear-gradient(135deg, #fed7aa, #fdba74)' : 'linear-gradient(135deg, #d1fae5, #a7f3d0)')};">
-                        <div class="column-title">
-                            <span class="stage-indicator" style="background: ${not empty stage.colorCode ? stage.colorCode : (status.index % 5 == 0 ? '#3b82f6' : status.index % 5 == 1 ? '#6366f1' : status.index % 5 == 2 ? '#a855f7' : status.index % 5 == 3 ? '#fb923c' : '#10b981')};"></span>
-                            <h4 style="font-weight: 700; color: #1e293b; flex: 1;">${stage.stageName}</h4>
-                            <span class="stage-badge" style="background: ${not empty stage.colorCode ? stage.colorCode : (status.index % 5 == 0 ? '#3b82f6' : status.index % 5 == 1 ? '#6366f1' : status.index % 5 == 2 ? '#a855f7' : status.index % 5 == 3 ? '#fb923c' : '#10b981')};">
-                                ${opportunitiesByStage[stage.stageId].size()}
-                            </span>
+    <c:when test="${not empty stages}">
+        <div class="kb-board">
+            <c:forEach var="stage" items="${stages}">
+                <c:set var="stageColor" value="${not empty stage.colorCode ? stage.colorCode : '#6b778c'}" />
+                <c:set var="stageOpps" value="${opportunitiesByStage[stage.stageId]}" />
+                <c:set var="stageCount" value="${not empty stageOpps ? stageOpps.size() : 0}" />
+
+                <div class="kb-col">
+                    <div class="kb-col-head">
+                        <div class="kb-col-title">
+                            <span class="kb-col-dot" style="background: ${stageColor};"></span>
+                            ${stage.stageName}
+                            <span class="kb-col-count">${stageCount}</span>
                         </div>
-                        <div class="column-stats">
-                            <span>Total: <strong style="color: ${not empty stage.colorCode ? stage.colorCode : (status.index % 5 == 0 ? '#3b82f6' : status.index % 5 == 1 ? '#6366f1' : status.index % 5 == 2 ? '#a855f7' : status.index % 5 == 3 ? '#fb923c' : '#10b981')};">
-                                <fmt:formatNumber value="${valueByStage[stage.stageId]}" type="currency" currencySymbol="$" maxFractionDigits="0"/>
-                            </strong></span>
+                        <div class="kb-col-value">
+                            <c:choose>
+                                <c:when test="${not empty valueByStage[stage.stageId] and valueByStage[stage.stageId] > 0}">
+                                    <fmt:formatNumber value="${valueByStage[stage.stageId]}" type="number" groupingUsed="true" maxFractionDigits="0"/>d
+                                </c:when>
+                                <c:otherwise>0d</c:otherwise>
+                            </c:choose>
                         </div>
                     </div>
 
-                    <!-- Cards Container -->
-                    <div class="cards-container" id="stage-${stage.stageId}-column" data-stage-id="${stage.stageId}">
+                    <div class="kb-col-actions" style="padding: 0 6px 4px;">
+                        <a href="${pageContext.request.contextPath}/sale/opportunity/form?pipeline=${selectedPipeline.pipelineId}&stage=${stage.stageId}" class="kb-add-btn">
+                            <i class="bi bi-plus"></i>Tao deal
+                        </a>
+                    </div>
+
+                    <div class="kb-cards" id="stage-${stage.stageId}" data-stage-id="${stage.stageId}">
                         <c:choose>
-                            <c:when test="${empty opportunitiesByStage[stage.stageId]}">
-                                <div class="empty-column">
-                                    <svg style="width: 2rem; height: 2rem; margin: 0 auto 0.5rem; display: block;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
-                                    </svg>
-                                    No opportunities
-                                </div>
-                            </c:when>
-                            <c:otherwise>
-                                <c:forEach var="opp" items="${opportunitiesByStage[stage.stageId]}">
-                                    <div class="opportunity-card" data-opportunity-id="${opp.opportunityId}">
-                                        <h5 class="card-title">${opp.opportunityName}</h5>
-                                        <div class="card-code">${opp.opportunityCode}</div>
-
-                                        <div class="card-value-section">
-                                            <span class="card-value">
-                                                <fmt:formatNumber value="${opp.estimatedValue}" type="currency" currencySymbol="$" maxFractionDigits="0"/>
-                                            </span>
-                                            <div class="card-probability">
-                                                <svg style="width: 0.875rem; height: 0.875rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
-                                                </svg>
-                                                ${opp.probability}%
-                                            </div>
+                            <c:when test="${not empty stageOpps}">
+                                <c:forEach var="opp" items="${stageOpps}">
+                                    <div class="kb-card" data-opp-id="${opp.opportunityId}"
+                                         data-name="${opp.opportunityName}"
+                                         data-code="${opp.opportunityCode}"
+                                         data-value="${opp.estimatedValue}"
+                                         data-prob="${opp.probability}"
+                                         data-status="${opp.status}"
+                                         data-stage="${stage.stageName}"
+                                         data-stage-color="${stageColor}"
+                                         data-stage-order="${stage.stageOrder}"
+                                         data-close-date="${opp.expectedCloseDate}"
+                                         data-actual-close="${opp.actualCloseDate}"
+                                         data-notes="${opp.notes}"
+                                         data-reason="${opp.wonLostReason}"
+                                         data-created="${opp.createdAt}"
+                                         data-updated="${opp.updatedAt}"
+                                         onclick="showOppDetail(this)" style="cursor:pointer;">
+                                        <div class="kb-card-title">${opp.opportunityName}</div>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span class="kb-card-code">${opp.opportunityCode}</span>
+                                            <c:if test="${not empty opp.estimatedValue and opp.estimatedValue > 0}">
+                                                <span class="kb-card-value"><fmt:formatNumber value="${opp.estimatedValue}" type="number" groupingUsed="true" maxFractionDigits="0"/>d</span>
+                                            </c:if>
                                         </div>
-
-                                        <div class="card-meta">
-                                            <span>
+                                        <div class="kb-card-footer">
+                                            <div class="kb-card-meta">
+                                                <span class="kb-card-prob">
+                                                    <span class="kb-prob-dot <c:choose><c:when test='${opp.probability >= 70}'>kb-prob-high</c:when><c:when test='${opp.probability >= 40}'>kb-prob-med</c:when><c:otherwise>kb-prob-low</c:otherwise></c:choose>"></span>
+                                                    ${opp.probability}%
+                                                </span>
                                                 <c:if test="${not empty opp.expectedCloseDate}">
-                                                    <svg style="width: 0.875rem; height: 0.875rem; display: inline;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                                                    </svg>
-                                                    ${opp.expectedCloseDate}
-                                                </c:if>
-                                                <c:if test="${empty opp.expectedCloseDate}">
-                                                    No close date
-                                                </c:if>
-                                            </span>
-                                            <span style="font-weight: 600; color: ${opp.status == 'Open' ? '#3b82f6' : opp.status == 'Won' ? '#10b981' : '#ef4444'};">${opp.status}</span>
+                                                    <span class="kb-card-date"><i class="bi bi-calendar3"></i>${opp.expectedCloseDate.toString().substring(5)}</span>
+                                                    </c:if>
+                                            </div>
+                                            <div class="kb-card-avatar" title="Owner">${opp.opportunityName.substring(0,1)}</div>
                                         </div>
                                     </div>
                                 </c:forEach>
-                            </c:otherwise>
-                        </c:choose>
+                            </c:when>
+                            <c:otherwise>
+                                <div class="kb-empty"><i class="bi bi-inbox"></i><br>Trong</div>
+                                </c:otherwise>
+                            </c:choose>
                     </div>
-
-                    <!-- Add Card Button -->
-                    <a href="${pageContext.request.contextPath}/sale/opportunity/form?pipelineId=${selectedPipeline.pipelineId}&stageId=${stage.stageId}" class="add-card-btn">
-                        <svg style="width: 1.125rem; height: 1.125rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-                        </svg>
-                        Add Deal
-                    </a>
                 </div>
             </c:forEach>
+        </div>
+    </c:when>
+    <c:otherwise>
+        <div class="text-center py-5">
+            <i class="bi bi-kanban text-muted" style="font-size: 3rem;"></i>
+            <p class="text-muted mt-3 mb-1">Chua co pipeline hoac stage nao</p>
+            <small class="text-muted">Vui long cau hinh pipeline va stages trong he thong</small>
         </div>
     </c:otherwise>
 </c:choose>
 
+<!-- Opportunity Detail Modal -->
+<div class="modal fade" id="oppDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header opp-modal-header py-2">
+                <div>
+                    <h6 class="modal-title fw-bold mb-0" id="mdl-name"></h6>
+                    <small class="text-muted" id="mdl-code"></small>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Stage & Status -->
+                <div class="d-flex align-items-center gap-2 mb-3">
+                    <span class="badge" id="mdl-status-badge"></span>
+                    <span class="text-muted small"><i class="bi bi-arrow-right me-1"></i>Stage: <strong id="mdl-stage"></strong></span>
+                </div>
+
+                <!-- KPI Row -->
+                <div class="row g-2 mb-3">
+                    <div class="col-4">
+                        <div class="opp-kpi-box">
+                            <div class="value text-success" id="mdl-value">0</div>
+                            <div class="label">Gia tri (VND)</div>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="opp-kpi-box">
+                            <div class="value text-primary" id="mdl-prob">0%</div>
+                            <div class="label">Xac suat</div>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="opp-kpi-box">
+                            <div class="value text-warning" id="mdl-forecast">0</div>
+                            <div class="label">Du bao</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Probability Bar -->
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <small class="text-muted fw-semibold">Tien do xac suat</small>
+                        <small class="fw-bold" id="mdl-prob-text"></small>
+                    </div>
+                    <div class="progress" style="height: 8px;">
+                        <div class="progress-bar" id="mdl-prob-bar" style="width:0%;"></div>
+                    </div>
+                </div>
+
+                <!-- Detail Info -->
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="opp-detail-label">Ngay dong du kien</div>
+                        <div class="opp-detail-value" id="mdl-close-date">-</div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="opp-detail-label">Ngay dong thuc te</div>
+                        <div class="opp-detail-value" id="mdl-actual-close">-</div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="opp-detail-label">Ngay tao</div>
+                        <div class="opp-detail-value" id="mdl-created">-</div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="opp-detail-label">Cap nhat</div>
+                        <div class="opp-detail-value" id="mdl-updated">-</div>
+                    </div>
+                    <div id="mdl-reason-wrap" class="col-12" style="display:none;">
+                        <div class="opp-detail-label">Ly do Won/Lost</div>
+                        <div class="opp-detail-value" id="mdl-reason"></div>
+                    </div>
+                    <div id="mdl-notes-wrap" class="col-12" style="display:none;">
+                        <div class="opp-detail-label">Ghi chu</div>
+                        <div class="opp-detail-value p-2 bg-light rounded" id="mdl-notes" style="white-space:pre-wrap; font-size:.85rem;"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer py-2">
+                <a id="mdl-link-detail" href="#" class="btn btn-outline-primary btn-sm"><i class="bi bi-eye me-1"></i>Xem chi tiet</a>
+                <a id="mdl-link-edit" href="#" class="btn btn-outline-secondary btn-sm"><i class="bi bi-pencil me-1"></i>Chinh sua</a>
+                <button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal">Dong</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
-// Initialize Sortable with dynamic stages
-document.addEventListener('DOMContentLoaded', function () {
-    <c:if test="${not empty stages}">
-        // Initialize Sortable for each stage column
-        <c:forEach var="stage" items="${stages}">
-            const column_${stage.stageId} = document.getElementById('stage-${stage.stageId}-column');
-            if (column_${stage.stageId}) {
-                new Sortable(column_${stage.stageId}, {
-                    group: 'pipeline',
-                    animation: 200,
-                    ghostClass: 'sortable-ghost',
-                    dragClass: 'sortable-drag',
-                    easing: 'cubic-bezier(0.4, 0, 0.2, 1)',
-                    onEnd: function (evt) {
-                        const oppId = evt.item.getAttribute('data-opportunity-id');
-                        const newStageId = evt.to.getAttribute('data-stage-id');
-                        updateStage(oppId, newStageId);
-                    }
-                });
-            }
-        </c:forEach>
-    </c:if>
-});
+    document.querySelectorAll('.kb-cards').forEach(function (el) {
+        new Sortable(el, {
+            group: 'kanban',
+            animation: 150,
+            easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
+            ghostClass: 'sortable-ghost',
+            chosenClass: 'sortable-chosen',
+            dragClass: 'sortable-drag',
+            delayOnTouchOnly: true,
+            delay: 80,
+            onEnd: function (evt) {
+                var oppId = evt.item.getAttribute('data-opp-id');
+                var newStageId = evt.to.getAttribute('data-stage-id');
+                var oldStageId = evt.from.getAttribute('data-stage-id');
 
-// Update stage via AJAX
-function updateStage(oppId, newStageId) {
-    console.log('Moving opportunity', oppId, 'to stage', newStageId);
+                if (newStageId === oldStageId)
+                    return;
 
-    // Make AJAX call to update opportunity stage
-    fetch('${pageContext.request.contextPath}/sale/opportunity/updateStage', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: 'opportunityId=' + oppId + '&stageId=' + newStageId
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            console.log('Stage updated successfully');
-            // Optionally show a success notification
-            if (window.CRM && window.CRM.showNotification) {
-                window.CRM.showNotification('Opportunity moved successfully', 'success');
+                // Update counts visually
+                updateColumnCount(evt.from);
+                updateColumnCount(evt.to);
+
+                // Remove empty message if target had one
+                var emptyMsg = evt.to.querySelector('.kb-empty');
+                if (emptyMsg)
+                    emptyMsg.remove();
+
+                // Show empty message if source is now empty
+                if (evt.from.querySelectorAll('.kb-card').length === 0) {
+                    evt.from.innerHTML = '<div class="kb-empty"><i class="bi bi-inbox"></i><br>Trong</div>';
+                }
+
+                fetch('${pageContext.request.contextPath}/sale/opportunity/stage', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                    body: 'opportunityId=' + oppId + '&stageId=' + newStageId
+                })
+                        .then(function (r) {
+                            return r.json();
+                        })
+                        .then(function (data) {
+                            if (!data.success) {
+                                alert('Loi: ' + data.message);
+                                location.reload();
+                            }
+                        })
+                        .catch(function () {
+                            alert('Loi ket noi');
+                            location.reload();
+                        });
             }
+        });
+    });
+
+    function updateColumnCount(container) {
+        var col = container.closest('.kb-col');
+        var count = container.querySelectorAll('.kb-card').length;
+        var badge = col.querySelector('.kb-col-count');
+        if (badge)
+            badge.textContent = count;
+    }
+
+    // --- Opportunity Detail Modal ---
+    var oppModal = null;
+    var isDragging = false;
+
+    function getOppModal() {
+        if (!oppModal) {
+            oppModal = new bootstrap.Modal(document.getElementById('oppDetailModal'));
+        }
+        return oppModal;
+    }
+
+    // Prevent modal from opening during drag
+    document.querySelectorAll('.kb-card').forEach(function (card) {
+        card.addEventListener('mousedown', function () {
+            isDragging = false;
+        });
+        card.addEventListener('mousemove', function () {
+            isDragging = true;
+        });
+    });
+
+    function showOppDetail(card) {
+        if (isDragging)
+            return;
+
+        var oppId = card.getAttribute('data-opp-id');
+        var name = card.getAttribute('data-name') || '';
+        var code = card.getAttribute('data-code') || '';
+        var value = parseFloat(card.getAttribute('data-value')) || 0;
+        var prob = parseInt(card.getAttribute('data-prob')) || 0;
+        var status = card.getAttribute('data-status') || 'Open';
+        var stage = card.getAttribute('data-stage') || '';
+        var closeDate = card.getAttribute('data-close-date') || '';
+        var actualClose = card.getAttribute('data-actual-close') || '';
+        var notes = card.getAttribute('data-notes') || '';
+        var reason = card.getAttribute('data-reason') || '';
+        var created = card.getAttribute('data-created') || '';
+        var updated = card.getAttribute('data-updated') || '';
+
+        // Set modal content
+        document.getElementById('mdl-name').textContent = name;
+        document.getElementById('mdl-code').textContent = code;
+        document.getElementById('mdl-stage').textContent = stage;
+
+        // Status badge
+        var statusBadge = document.getElementById('mdl-status-badge');
+        var statusMap = {
+            'Open': ['bg-info-subtle text-info', 'Open'],
+            'InProgress': ['bg-primary-subtle text-primary', 'In Progress'],
+            'Won': ['bg-success', 'Won'],
+            'Lost': ['bg-danger', 'Lost'],
+            'OnHold': ['bg-warning-subtle text-warning', 'On Hold'],
+            'Cancelled': ['bg-secondary', 'Cancelled']
+        };
+        var sc = statusMap[status] || ['bg-secondary', status];
+        statusBadge.className = 'badge ' + sc[0];
+        statusBadge.textContent = sc[1];
+
+        // KPI
+        document.getElementById('mdl-value').textContent = formatNumber(value) + 'd';
+        document.getElementById('mdl-prob').textContent = prob + '%';
+        var forecast = Math.round(value * prob / 100);
+        document.getElementById('mdl-forecast').textContent = formatNumber(forecast) + 'd';
+
+        // Probability bar
+        document.getElementById('mdl-prob-text').textContent = prob + '%';
+        var bar = document.getElementById('mdl-prob-bar');
+        bar.style.width = prob + '%';
+        bar.className = 'progress-bar ' + (prob >= 70 ? 'bg-success' : prob >= 40 ? 'bg-warning' : 'bg-danger');
+
+        // Dates
+        document.getElementById('mdl-close-date').textContent = (closeDate && closeDate !== 'null') ? closeDate : '-';
+        document.getElementById('mdl-actual-close').textContent = (actualClose && actualClose !== 'null') ? actualClose : '-';
+        document.getElementById('mdl-created').textContent = formatDateTime(created);
+        document.getElementById('mdl-updated').textContent = formatDateTime(updated);
+
+        // Reason
+        var reasonWrap = document.getElementById('mdl-reason-wrap');
+        if (reason && reason !== 'null') {
+            reasonWrap.style.display = '';
+            document.getElementById('mdl-reason').textContent = reason;
         } else {
-            console.error('Failed to update stage:', data.message);
-            // Reload page to revert the drag
-            location.reload();
+            reasonWrap.style.display = 'none';
         }
-    })
-    .catch(error => {
-        console.error('Error updating stage:', error);
-        // Reload page to revert the drag
-        location.reload();
-    });
-}
 
-// Click on card to edit
-document.querySelectorAll('.opportunity-card').forEach(card => {
-    card.addEventListener('click', function(e) {
-        // Only navigate if not dragging
-        if (!e.target.closest('.sortable-ghost') && !e.target.closest('.sortable-drag')) {
-            const oppId = this.getAttribute('data-opportunity-id');
-            window.location.href = '${pageContext.request.contextPath}/sale/opportunity/form?id=' + oppId;
+        // Notes
+        var notesWrap = document.getElementById('mdl-notes-wrap');
+        if (notes && notes !== 'null') {
+            notesWrap.style.display = '';
+            document.getElementById('mdl-notes').textContent = notes;
+        } else {
+            notesWrap.style.display = 'none';
         }
-    });
-});
+
+        // Links
+        var ctx = '${pageContext.request.contextPath}';
+        document.getElementById('mdl-link-detail').href = ctx + '/sale/opportunity/detail?id=' + oppId;
+        document.getElementById('mdl-link-edit').href = ctx + '/sale/opportunity/form?id=' + oppId;
+
+        getOppModal().show();
+    }
+
+    function formatNumber(num) {
+        return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    }
+
+    function formatDateTime(dt) {
+        if (!dt || dt === 'null')
+            return '-';
+        var s = dt.toString();
+        if (s.length >= 16)
+            return s.substring(0, 16).replace('T', ' ');
+        return s;
+    }
 </script>
