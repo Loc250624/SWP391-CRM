@@ -84,6 +84,21 @@ public class SaleOpportunityFormServlet extends HttpServlet {
             // Create mode
             request.setAttribute("mode", "create");
 
+            // Pre-select pipeline/stage from kanban
+            String preSelPipeline = request.getParameter("pipeline");
+            String preSelStage = request.getParameter("stage");
+            if (preSelPipeline != null && !preSelPipeline.isEmpty()) {
+                try {
+                    int pId = Integer.parseInt(preSelPipeline);
+                    request.setAttribute("preSelectedPipelineId", pId);
+                    List<PipelineStage> preStages = stageDAO.getStagesByPipelineId(pId);
+                    request.setAttribute("stages", preStages);
+                    if (preSelStage != null && !preSelStage.isEmpty()) {
+                        request.setAttribute("preSelectedStageId", Integer.parseInt(preSelStage));
+                    }
+                } catch (NumberFormatException e) { }
+            }
+
             // Check if converting from lead
             String leadIdParam = request.getParameter("leadId");
             if (leadIdParam != null && !leadIdParam.isEmpty()) {
@@ -125,7 +140,7 @@ public class SaleOpportunityFormServlet extends HttpServlet {
         }
 
         // Set page metadata
-        request.setAttribute("ACTIVE_MENU", "OPPORTUNITIES");
+        request.setAttribute("ACTIVE_MENU", "OPP_FORM");
         request.setAttribute("pageTitle", oppIdParam != null ? "Edit Opportunity" : "Create New Opportunity");
         request.setAttribute("CONTENT_PAGE", "/view/sale/pages/opportunity/form.jsp");
 
