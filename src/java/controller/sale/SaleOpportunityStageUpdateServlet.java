@@ -1,18 +1,25 @@
 package controller.sale;
 
+import dao.CustomerDAO;
+import dao.LeadDAO;
 import dao.OpportunityDAO;
 import dao.OpportunityHistoryDAO;
+import dao.PipelineDAO;
 import dao.PipelineStageDAO;
+import model.Customer;
+import model.Lead;
+import model.Opportunity;
+import model.Pipeline;
 import model.PipelineStage;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.math.BigDecimal;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
-import model.Opportunity;
 
 @WebServlet(name = "SaleOpportunityStageUpdateServlet", urlPatterns = {"/sale/opportunity/stage"})
 public class SaleOpportunityStageUpdateServlet extends HttpServlet {
@@ -20,6 +27,9 @@ public class SaleOpportunityStageUpdateServlet extends HttpServlet {
     private OpportunityDAO opportunityDAO = new OpportunityDAO();
     private OpportunityHistoryDAO historyDAO = new OpportunityHistoryDAO();
     private PipelineStageDAO stageDAO = new PipelineStageDAO();
+    private PipelineDAO pipelineDAO = new PipelineDAO();
+    private LeadDAO leadDAO = new LeadDAO();
+    private CustomerDAO customerDAO = new CustomerDAO();
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
@@ -100,7 +110,46 @@ public class SaleOpportunityStageUpdateServlet extends HttpServlet {
                 if (!oldStatus.equals(opp.getStatus())) {
                     historyDAO.logChange(oppId, "status", oldStatus, opp.getStatus(), currentUserId);
                 }
-                out.print("{\"success\":true,\"message\":\"Stage updated\",\"newStatus\":\"" + opp.getStatus() + "\"}");
+
+                // Auto-convert lead to customer when Won on LEAD_CONVERSION pipeline
+                boolean leadConverted = false;
+                if ("Won".equals(opp.getStatus()) && opp.getLeadId() != null) {
+                    Pipeline pipeline = pipelineDAO.getPipelineById(opp.getPipelineId());
+                    if (pipeline != null && "LEAD_CONVERSION".equals(pipeline.getPipelineCode())) {
+                        Lead lead = leadDAO.getLeadById(opp.getLeadId());
+                        if (lead != null && !lead.isIsConverted()) {
+                            // Create customer from lead
+                            Customer newCustomer = new Customer();
+                            newCustomer.setFullName(lead.getFullName());
+                            newCustomer.setEmail(lead.getEmail());
+                            newCustomer.setPhone(lead.getPhone());
+                            newCustomer.setSourceId(lead.getSourceId());
+                            newCustomer.setConvertedLeadId(lead.getLeadId());
+                            newCustomer.setCustomerSegment("New");
+                            newCustomer.setStatus("Active");
+                            newCustomer.setOwnerId(currentUserId);
+                            newCustomer.setCreatedBy(currentUserId);
+                            newCustomer.setTotalCourses(0);
+                            newCustomer.setTotalSpent(BigDecimal.ZERO);
+                            newCustomer.setNotes("Tu dong chuyen doi tu Lead: " + lead.getLeadCode());
+
+                            boolean customerCreated = customerDAO.insertCustomer(newCustomer);
+                            if (customerCreated && newCustomer.getCustomerId() > 0) {
+                                // Mark lead as converted
+                                leadDAO.markLeadConverted(lead.getLeadId(), newCustomer.getCustomerId());
+                                // Link customer to opportunity
+                                opp.setCustomerId(newCustomer.getCustomerId());
+                                opportunityDAO.updateOpportunity(opp);
+                                leadConverted = true;
+                            }
+                        }
+                    }
+                }
+
+                String msg = leadConverted
+                        ? "Stage updated. Lead da duoc chuyen doi thanh Customer!"
+                        : "Stage updated";
+                out.print("{\"success\":true,\"message\":\"" + msg + "\",\"newStatus\":\"" + opp.getStatus() + "\",\"leadConverted\":" + leadConverted + "}");
             } else {
                 response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
                 out.print("{\"success\":false,\"message\":\"Update failed\"}");

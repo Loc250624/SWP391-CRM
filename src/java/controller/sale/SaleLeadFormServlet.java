@@ -119,9 +119,51 @@ public class SaleLeadFormServlet extends HttpServlet {
 
         // Validation
         if (fullName == null || fullName.trim().isEmpty()) {
-            request.setAttribute("error", "Full name is required!");
+            request.setAttribute("error", "Ho ten la bat buoc!");
             doGet(request, response);
             return;
+        }
+        if (fullName.trim().length() > 150) {
+            request.setAttribute("error", "Ho ten khong duoc vuot qua 150 ky tu!");
+            doGet(request, response);
+            return;
+        }
+        if (email != null && !email.trim().isEmpty()) {
+            if (!email.trim().matches("^[\\w.%+-]+@[\\w.-]+\\.[a-zA-Z]{2,}$")) {
+                request.setAttribute("error", "Email khong hop le!");
+                doGet(request, response);
+                return;
+            }
+            if (email.trim().length() > 255) {
+                request.setAttribute("error", "Email khong duoc vuot qua 255 ky tu!");
+                doGet(request, response);
+                return;
+            }
+        }
+        if (phone != null && !phone.trim().isEmpty()) {
+            if (!phone.trim().matches("^[0-9+\\-()\\s]{7,20}$")) {
+                request.setAttribute("error", "So dien thoai khong hop le!");
+                doGet(request, response);
+                return;
+            }
+        }
+        if (status != null && !status.isEmpty()) {
+            try {
+                LeadStatus.valueOf(status);
+            } catch (IllegalArgumentException e) {
+                request.setAttribute("error", "Trang thai khong hop le!");
+                doGet(request, response);
+                return;
+            }
+        }
+        if (rating != null && !rating.isEmpty()) {
+            try {
+                LeadRating.valueOf(rating);
+            } catch (IllegalArgumentException e) {
+                request.setAttribute("error", "Rating khong hop le!");
+                doGet(request, response);
+                return;
+            }
         }
 
         // Create or update Lead object

@@ -209,15 +209,58 @@ public class SaleOpportunityFormServlet extends HttpServlet {
 
         // Validation
         if (opportunityName == null || opportunityName.trim().isEmpty()) {
-            request.setAttribute("error", "Opportunity name is required!");
+            request.setAttribute("error", "Ten opportunity la bat buoc!");
+            doGet(request, response);
+            return;
+        }
+        if (opportunityName.trim().length() > 255) {
+            request.setAttribute("error", "Ten opportunity khong duoc vuot qua 255 ky tu!");
             doGet(request, response);
             return;
         }
 
         if (pipelineIdParam == null || pipelineIdParam.isEmpty()) {
-            request.setAttribute("error", "Pipeline is required!");
+            request.setAttribute("error", "Pipeline la bat buoc!");
             doGet(request, response);
             return;
+        }
+
+        if (estimatedValueParam != null && !estimatedValueParam.trim().isEmpty()) {
+            try {
+                BigDecimal val = new BigDecimal(estimatedValueParam.trim());
+                if (val.compareTo(BigDecimal.ZERO) < 0) {
+                    request.setAttribute("error", "Gia tri uoc tinh khong duoc am!");
+                    doGet(request, response);
+                    return;
+                }
+            } catch (NumberFormatException e) {
+                request.setAttribute("error", "Gia tri uoc tinh khong hop le!");
+                doGet(request, response);
+                return;
+            }
+        }
+
+        if (expectedCloseDateParam != null && !expectedCloseDateParam.trim().isEmpty()) {
+            try {
+                LocalDate closeDate = LocalDate.parse(expectedCloseDateParam.trim());
+                if (closeDate.isBefore(LocalDate.now())) {
+                    request.setAttribute("error", "Ngay dong du kien khong duoc o qua khu!");
+                    doGet(request, response);
+                    return;
+                }
+            } catch (Exception e) {
+                request.setAttribute("error", "Ngay dong du kien khong hop le!");
+                doGet(request, response);
+                return;
+            }
+        }
+
+        if (status != null && !status.isEmpty()) {
+            if (!"Open".equals(status) && !"InProgress".equals(status) && !"Won".equals(status) && !"Lost".equals(status)) {
+                request.setAttribute("error", "Trang thai khong hop le!");
+                doGet(request, response);
+                return;
+            }
         }
 
         // Create or update Opportunity object

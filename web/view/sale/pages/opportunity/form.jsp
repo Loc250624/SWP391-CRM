@@ -277,12 +277,22 @@
             return;
         }
 
-        // Redirect to reload form with selected pipeline stages
-        var currentUrl = new URL(window.location.href);
-        var form = document.getElementById('oppForm');
-        // Simple: submit form to reload with pipeline context
-        // For now, we just clear stage selection - stages will be loaded on next page load
-        stageSelect.innerHTML = '<option value="">-- Luu de cap nhat stage --</option>';
+        fetch('${pageContext.request.contextPath}/sale/api/stages?pipelineId=' + pipelineId)
+                .then(function (res) {
+                    return res.json();
+                })
+                .then(function (stages) {
+                    stageSelect.innerHTML = '<option value="">-- Tu dong chon stage dau --</option>';
+                    stages.forEach(function (s) {
+                        var opt = document.createElement('option');
+                        opt.value = s.stageId;
+                        opt.textContent = s.stageName + ' (' + s.probability + '%)';
+                        stageSelect.appendChild(opt);
+                    });
+                })
+                .catch(function () {
+                    stageSelect.innerHTML = '<option value="">-- Loi tai stages --</option>';
+                });
     }
 
     document.getElementById('oppForm').addEventListener('submit', function () {

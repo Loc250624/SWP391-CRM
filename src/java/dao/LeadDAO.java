@@ -237,6 +237,21 @@ public class LeadDAO extends DBContext {
         }
     }
 
+    // Mark lead as converted to customer
+    public boolean markLeadConverted(int leadId, int customerId) {
+        String sql = "UPDATE leads SET is_converted = 1, converted_at = GETDATE(), " +
+                     "converted_customer_id = ?, status = 'Converted', updated_at = GETDATE() WHERE lead_id = ?";
+        try {
+            PreparedStatement st = connection.prepareStatement(sql);
+            st.setInt(1, customerId);
+            st.setInt(2, leadId);
+            return st.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
     // Delete lead (soft delete recommended - update status instead)
     public boolean deleteLead(int leadId) {
         String sql = "DELETE FROM leads WHERE lead_id = ?";

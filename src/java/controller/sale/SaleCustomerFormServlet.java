@@ -1,12 +1,14 @@
 package controller.sale;
 
 import dao.CustomerDAO;
+import dao.CustomerTagDAO;
 import dao.LeadSourceDAO;
 import enums.CustomerSegment;
 import enums.CustomerStatus;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -15,6 +17,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import model.Customer;
+import model.CustomerTag;
 import model.LeadSource;
 
 @WebServlet(name = "SaleCustomerFormServlet", urlPatterns = {"/sale/customer/form"})
@@ -22,6 +25,7 @@ public class SaleCustomerFormServlet extends HttpServlet {
 
     private CustomerDAO customerDAO = new CustomerDAO();
     private LeadSourceDAO leadSourceDAO = new LeadSourceDAO();
+    private CustomerTagDAO customerTagDAO = new CustomerTagDAO();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -59,6 +63,10 @@ public class SaleCustomerFormServlet extends HttpServlet {
 
                 request.setAttribute("mode", "edit");
                 request.setAttribute("customer", customer);
+
+                // Load assigned tags for this customer
+                List<Integer> assignedTagIds = customerTagDAO.getTagIdsByCustomerId(customer.getCustomerId());
+                request.setAttribute("assignedTagIds", assignedTagIds);
             } catch (NumberFormatException e) {
                 response.sendRedirect(request.getContextPath() + "/sale/customer/list");
                 return;
@@ -72,6 +80,10 @@ public class SaleCustomerFormServlet extends HttpServlet {
 
         List<LeadSource> sources = leadSourceDAO.getAllActiveSources();
         request.setAttribute("leadSources", sources);
+
+        // Load all active tags
+        List<CustomerTag> allTags = customerTagDAO.getAllActiveTags();
+        request.setAttribute("allTags", allTags);
 
         request.setAttribute("ACTIVE_MENU", "CUSTOMER_FORM");
         request.setAttribute("pageTitle", customerIdParam != null ? "Edit Customer" : "Create New Customer");
@@ -100,12 +112,69 @@ public class SaleCustomerFormServlet extends HttpServlet {
         String notes = request.getParameter("notes");
         String emailOptOutStr = request.getParameter("emailOptOut");
         String smsOptOutStr = request.getParameter("smsOptOut");
+        String[] tagIdParams = request.getParameterValues("tagIds");
 
         // Validation
         if (fullName == null || fullName.trim().isEmpty()) {
             request.setAttribute("error", "Ho ten la bat buoc!");
             doGet(request, response);
             return;
+        }
+        if (fullName.trim().length() > 150) {
+            request.setAttribute("error", "Ho ten khong duoc vuot qua 150 ky tu!");
+            doGet(request, response);
+            return;
+        }
+        if (email != null && !email.trim().isEmpty()) {
+            if (!email.trim().matches("^[\\w.%+-]+@[\\w.-]+\\.[a-zA-Z]{2,}$")) {
+                request.setAttribute("error", "Email khong hop le!");
+                doGet(request, response);
+                return;
+            }
+            if (email.trim().length() > 255) {
+                request.setAttribute("error", "Email khong duoc vuot qua 255 ky tu!");
+                doGet(request, response);
+                return;
+            }
+        }
+        if (phone != null && !phone.trim().isEmpty()) {
+            if (!phone.trim().matches("^[0-9+\\-()\\s]{7,20}$")) {
+                request.setAttribute("error", "So dien thoai khong hop le!");
+                doGet(request, response);
+                return;
+            }
+        }
+        if (dobStr != null && !dobStr.trim().isEmpty()) {
+            try {
+                LocalDate dob = LocalDate.parse(dobStr);
+                if (dob.isAfter(LocalDate.now())) {
+                    request.setAttribute("error", "Ngay sinh khong duoc o tuong lai!");
+                    doGet(request, response);
+                    return;
+                }
+            } catch (Exception e) {
+                request.setAttribute("error", "Ngay sinh khong hop le!");
+                doGet(request, response);
+                return;
+            }
+        }
+        if (status != null && !status.isEmpty()) {
+            try {
+                CustomerStatus.valueOf(status);
+            } catch (IllegalArgumentException e) {
+                request.setAttribute("error", "Trang thai khong hop le!");
+                doGet(request, response);
+                return;
+            }
+        }
+        if (customerSegment != null && !customerSegment.isEmpty()) {
+            try {
+                CustomerSegment.valueOf(customerSegment);
+            } catch (IllegalArgumentException e) {
+                request.setAttribute("error", "Phan khuc khong hop le!");
+                doGet(request, response);
+                return;
+            }
         }
 
         Customer customer = new Customer();
@@ -175,6 +244,18 @@ public class SaleCustomerFormServlet extends HttpServlet {
         }
 
         if (success) {
+            // Save tag assignments
+            List<Integer> tagIds = new ArrayList<>();
+            if (tagIdParams != null) {
+                for (String tid : tagIdParams) {
+                    try {
+                        tagIds.add(Integer.parseInt(tid));
+                    } catch (NumberFormatException e) {
+                    }
+                }
+            }
+            customerTagDAO.assignTags(customer.getCustomerId(), tagIds, currentUserId);
+
             response.sendRedirect(request.getContextPath() + "/sale/customer/list?success=" +
                     (isEdit ? "updated" : "created"));
         } else {

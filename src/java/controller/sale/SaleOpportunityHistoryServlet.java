@@ -121,6 +121,17 @@ public class SaleOpportunityHistoryServlet extends HttpServlet {
             historyList = filtered;
         }
 
+        // KPI counts (before pagination)
+        int totalStageChanges = 0, totalStatusChanges = 0, totalValueChanges = 0;
+        for (OpportunityHistory h : historyList) {
+            if ("stage_id".equals(h.getFieldName())) totalStageChanges++;
+            else if ("status".equals(h.getFieldName())) totalStatusChanges++;
+            else if ("estimated_value".equals(h.getFieldName())) totalValueChanges++;
+        }
+        request.setAttribute("totalStageChanges", totalStageChanges);
+        request.setAttribute("totalStatusChanges", totalStatusChanges);
+        request.setAttribute("totalValueChanges", totalValueChanges);
+
         // Pagination
         int pageSize = 20;
         int totalItems = historyList.size();
