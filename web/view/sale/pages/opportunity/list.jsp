@@ -2,525 +2,255 @@
 <%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <%@taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt"%>
 
-<style>
-    /* Stats Cards */
-    .stats-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 1rem;
-        margin-bottom: 1.5rem;
-    }
-
-    .stat-card {
-        background: white;
-        border-radius: 0.875rem;
-        border: 1px solid #e2e8f0;
-        padding: 1.25rem;
-        transition: all 0.2s;
-    }
-
-    .stat-card:hover {
-        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
-        transform: translateY(-2px);
-    }
-
-    .stat-label {
-        font-size: 0.8125rem;
-        color: #64748b;
-        font-weight: 500;
-        margin-bottom: 0.5rem;
-    }
-
-    .stat-value {
-        font-size: 1.5rem;
-        font-weight: 800;
-        color: #1e293b;
-    }
-
-    /* List Header */
-    .list-header {
-        background: white;
-        border-radius: 1rem;
-        border: 1px solid #e2e8f0;
-        padding: 1.5rem;
-        margin-bottom: 1.5rem;
-    }
-
-    .header-row {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 1rem;
-    }
-
-    .page-title {
-        font-size: 1.75rem;
-        font-weight: 800;
-        color: #1e293b;
-    }
-
-    .header-actions {
-        display: flex;
-        gap: 0.75rem;
-    }
-
-    .btn {
-        padding: 0.625rem 1.25rem;
-        border-radius: 0.625rem;
-        font-weight: 600;
-        font-size: 0.875rem;
-        transition: all 0.2s;
-        cursor: pointer;
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        border: none;
-        text-decoration: none;
-    }
-
-    .btn-primary {
-        background: linear-gradient(135deg, #60a5fa, #3b82f6);
-        color: white;
-        box-shadow: 0 2px 8px rgba(59, 130, 246, 0.25);
-    }
-
-    .btn-primary:hover {
-        box-shadow: 0 4px 16px rgba(59, 130, 246, 0.35);
-        transform: translateY(-1px);
-    }
-
-    .btn-secondary {
-        background: white;
-        border: 1px solid #e2e8f0;
-        color: #475569;
-    }
-
-    .btn-secondary:hover {
-        background: #f8fafc;
-        border-color: #cbd5e1;
-    }
-
-    /* Filters */
-    .filters-container {
-        background: white;
-        border-radius: 1rem;
-        border: 1px solid #e2e8f0;
-        padding: 1.5rem;
-        margin-bottom: 1.5rem;
-    }
-
-    .filter-field {
-        margin-bottom: 1rem;
-    }
-
-    .filter-field label {
-        display: block;
-        font-size: 0.875rem;
-        font-weight: 600;
-        color: #475569;
-        margin-bottom: 0.5rem;
-    }
-
-    .filter-input {
-        width: 100%;
-        padding: 0.625rem 0.875rem;
-        border: 1px solid #e2e8f0;
-        border-radius: 0.5rem;
-        font-size: 0.875rem;
-        transition: all 0.2s;
-    }
-
-    .filter-input:focus {
-        outline: none;
-        border-color: #60a5fa;
-        box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1);
-    }
-
-    /* Table */
-    .table-container {
-        background: white;
-        border-radius: 1rem;
-        border: 1px solid #e2e8f0;
-        overflow: hidden;
-    }
-
-    .table-wrapper {
-        overflow-x: auto;
-    }
-
-    table {
-        width: 100%;
-        border-collapse: collapse;
-    }
-
-    thead {
-        background: linear-gradient(135deg, #f8fafc, #f1f5f9);
-        border-bottom: 2px solid #e2e8f0;
-    }
-
-    th {
-        padding: 1rem 1.25rem;
-        text-align: left;
-        font-size: 0.8125rem;
-        font-weight: 700;
-        color: #475569;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        white-space: nowrap;
-    }
-
-    tbody tr {
-        border-bottom: 1px solid #f1f5f9;
-        transition: background 0.15s;
-    }
-
-    tbody tr:hover {
-        background: #f8fafc;
-    }
-
-    td {
-        padding: 1rem 1.25rem;
-        font-size: 0.875rem;
-        color: #1e293b;
-    }
-
-    .opp-name {
-        font-weight: 600;
-        color: #1e293b;
-        margin-bottom: 0.25rem;
-    }
-
-    .opp-code {
-        font-size: 0.75rem;
-        color: #64748b;
-    }
-
-    .value-cell {
-        font-weight: 700;
-        color: #10b981;
-        font-size: 0.9375rem;
-    }
-
-    .status-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.375rem;
-        padding: 0.375rem 0.75rem;
-        border-radius: 0.5rem;
-        font-size: 0.75rem;
-        font-weight: 700;
-        white-space: nowrap;
-    }
-
-    .status-open {
-        background: linear-gradient(135deg, #dbeafe, #bfdbfe);
-        color: #1e40af;
-    }
-
-    .status-won {
-        background: linear-gradient(135deg, #d1fae5, #a7f3d0);
-        color: #15803d;
-    }
-
-    .status-lost {
-        background: linear-gradient(135deg, #fee2e2, #fecaca);
-        color: #dc2626;
-    }
-
-    .actions-cell {
-        display: flex;
-        gap: 0.375rem;
-    }
-
-    .action-btn {
-        padding: 0.5rem;
-        border-radius: 0.5rem;
-        transition: background 0.15s;
-        cursor: pointer;
-        border: none;
-        background: transparent;
-    }
-
-    .action-btn:hover {
-        background: #f1f5f9;
-    }
-
-    .action-btn svg {
-        width: 1rem;
-        height: 1rem;
-        color: #64748b;
-    }
-
-    .action-btn:hover svg {
-        color: #3b82f6;
-    }
-
-    /* Empty State */
-    .empty-state {
-        text-align: center;
-        padding: 4rem 2rem;
-    }
-
-    .empty-icon {
-        width: 4rem;
-        height: 4rem;
-        margin: 0 auto 1.5rem;
-        color: #cbd5e1;
-    }
-
-    .empty-title {
-        font-size: 1.25rem;
-        font-weight: 700;
-        color: #475569;
-        margin-bottom: 0.5rem;
-    }
-
-    .empty-text {
-        font-size: 0.875rem;
-        color: #64748b;
-        margin-bottom: 1.5rem;
-    }
-
-    /* Success/Error Messages */
-    .alert {
-        padding: 1rem 1.25rem;
-        border-radius: 0.75rem;
-        margin-bottom: 1.5rem;
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        font-weight: 600;
-        font-size: 0.875rem;
-    }
-
-    .alert-success {
-        background: linear-gradient(135deg, #d1fae5, #a7f3d0);
-        color: #15803d;
-    }
-
-    .alert-error {
-        background: linear-gradient(135deg, #fee2e2, #fecaca);
-        color: #dc2626;
-    }
-</style>
-
-<!-- Success/Error Messages -->
-<c:if test="${param.success == 'created'}">
-    <div class="alert alert-success">
-        <svg style="width: 1.25rem; height: 1.25rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-        </svg>
-        <span>Opportunity created successfully!</span>
-    </div>
-</c:if>
-
-<c:if test="${param.success == 'updated'}">
-    <div class="alert alert-success">
-        <svg style="width: 1.25rem; height: 1.25rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-        </svg>
-        <span>Opportunity updated successfully!</span>
-    </div>
-</c:if>
-
-<c:if test="${param.error == 'no_permission'}">
-    <div class="alert alert-error">
-        <svg style="width: 1.25rem; height: 1.25rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-        </svg>
-        <span>You don't have permission to access that opportunity.</span>
-    </div>
-</c:if>
-
 <!-- Page Header -->
-<div class="list-header">
-    <div class="header-row">
-        <div>
-            <h1 class="page-title">Opportunity List</h1>
-            <p style="font-size: 0.875rem; color: #64748b; margin-top: 0.5rem;">
-                Manage all sales opportunities in one place
-            </p>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="mb-1 fw-bold">Quan ly Opportunity</h4>
+        <p class="text-muted mb-0">Danh sach co hoi kinh doanh</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="${pageContext.request.contextPath}/sale/opportunity/kanban" class="btn btn-outline-primary btn-sm"><i class="bi bi-kanban me-1"></i>Kanban</a>
+        <a href="${pageContext.request.contextPath}/sale/opportunity/form" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i>Them Opportunity</a>
+    </div>
+</div>
+
+<!-- Messages -->
+<c:if test="${not empty successMessage}">
+    <div class="alert alert-success alert-dismissible fade show d-flex align-items-center" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i>${successMessage}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+</c:if>
+<c:if test="${param.error == 'no_permission'}">
+    <div class="alert alert-danger alert-dismissible fade show d-flex align-items-center" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>Ban khong co quyen truy cap opportunity nay!
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+</c:if>
+
+<!-- KPI Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-xl-3 col-md-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="bg-primary bg-opacity-10 rounded-3 p-2 me-3"><i class="bi bi-briefcase text-primary fs-4"></i></div>
+                    <div class="flex-grow-1">
+                        <small class="text-muted">Tong Opportunity</small>
+                        <h4 class="mb-0 fw-bold">${totalOpportunities}</h4>
+                    </div>
+                </div>
+            </div>
         </div>
-
-        <div class="header-actions">
-            <a href="${pageContext.request.contextPath}/sale/opportunity/kanban" class="btn btn-secondary">
-                <svg style="width: 1.125rem; height: 1.125rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"/>
-                </svg>
-                Kanban View
-            </a>
-
-            <a href="${pageContext.request.contextPath}/sale/opportunity/form" class="btn btn-primary">
-                <svg style="width: 1.125rem; height: 1.125rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-                </svg>
-                New Opportunity
-            </a>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="bg-success bg-opacity-10 rounded-3 p-2 me-3"><i class="bi bi-cash-stack text-success fs-4"></i></div>
+                    <div class="flex-grow-1">
+                        <small class="text-muted">Tong gia tri</small>
+                        <h4 class="mb-0 fw-bold"><fmt:formatNumber value="${totalValue}" type="number" groupingUsed="true" maxFractionDigits="0"/>d</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="bg-info bg-opacity-10 rounded-3 p-2 me-3"><i class="bi bi-hourglass-split text-info fs-4"></i></div>
+                    <div class="flex-grow-1">
+                        <small class="text-muted">Dang mo</small>
+                        <h4 class="mb-0 fw-bold">${openCount}</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="bg-warning bg-opacity-10 rounded-3 p-2 me-3"><i class="bi bi-trophy text-warning fs-4"></i></div>
+                    <div class="flex-grow-1">
+                        <small class="text-muted">Won / Lost</small>
+                        <h4 class="mb-0 fw-bold"><span class="text-success">${wonCount}</span> / <span class="text-danger">${lostCount}</span></h4>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
 
-<!-- Stats Cards -->
-<div class="stats-grid">
-    <div class="stat-card">
-        <div class="stat-label">Total Opportunities</div>
-        <div class="stat-value" style="color: #3b82f6;">${totalOpportunities}</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-label">Total Value</div>
-        <div class="stat-value" style="color: #10b981;">
-            <fmt:formatNumber value="${totalValue}" type="currency" currencySymbol="$" maxFractionDigits="0"/>
-        </div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-label">Open</div>
-        <div class="stat-value" style="color: #3b82f6;">${openCount}</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-label">Won</div>
-        <div class="stat-value" style="color: #10b981;">${wonCount}</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-label">Lost</div>
-        <div class="stat-value" style="color: #ef4444;">${lostCount}</div>
-    </div>
-</div>
-
-<!-- Filters -->
-<c:if test="${not empty pipelines}">
-    <div class="filters-container">
-        <h3 style="font-size: 1.125rem; font-weight: 700; color: #1e293b; margin-bottom: 1rem;">Filter by Pipeline</h3>
-        <form method="GET" action="${pageContext.request.contextPath}/sale/opportunity/list">
-            <div class="filter-field">
-                <label>Select Pipeline</label>
-                <select name="pipeline" class="filter-input" onchange="this.form.submit()">
-                    <option value="">All Pipelines</option>
-                    <c:forEach var="pipeline" items="${pipelines}">
-                        <option value="${pipeline.pipelineId}"
-                                <c:if test="${selectedPipelineId == pipeline.pipelineId}">selected</c:if>>
-                            ${pipeline.pipelineName}
-                        </option>
+<!-- Filter -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body py-3">
+        <form method="GET" action="${pageContext.request.contextPath}/sale/opportunity/list" class="row g-2 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label small text-muted mb-1">Tim kiem</label>
+                <input type="text" name="search" class="form-control form-control-sm" placeholder="Ten, ma opportunity..." value="${searchQuery}">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small text-muted mb-1">Pipeline</label>
+                <select name="pipeline" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <option value="">Tat ca</option>
+                    <c:forEach var="p" items="${pipelines}">
+                        <option value="${p.pipelineId}" ${selectedPipelineId == p.pipelineId ? 'selected' : ''}>${p.pipelineName}</option>
                     </c:forEach>
                 </select>
             </div>
+            <div class="col-md-2">
+                <label class="form-label small text-muted mb-1">Trang thai</label>
+                <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <option value="">Tat ca</option>
+                    <option value="Open" ${filterStatus == 'Open' ? 'selected' : ''}>Open</option>
+                    <option value="InProgress" ${filterStatus == 'InProgress' ? 'selected' : ''}>In Progress</option>
+                    <option value="Won" ${filterStatus == 'Won' ? 'selected' : ''}>Won</option>
+                    <option value="Lost" ${filterStatus == 'Lost' ? 'selected' : ''}>Lost</option>
+                    <option value="OnHold" ${filterStatus == 'OnHold' ? 'selected' : ''}>On Hold</option>
+                    <option value="Cancelled" ${filterStatus == 'Cancelled' ? 'selected' : ''}>Cancelled</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-outline-primary btn-sm w-100"><i class="bi bi-search me-1"></i>Loc</button>
+            </div>
+            <div class="col-md-2">
+                <a href="${pageContext.request.contextPath}/sale/opportunity/list" class="btn btn-outline-secondary btn-sm w-100"><i class="bi bi-arrow-counterclockwise me-1"></i>Xoa loc</a>
+            </div>
         </form>
     </div>
-</c:if>
+</div>
 
 <!-- Table -->
-<div class="table-container">
-    <c:choose>
-        <c:when test="${empty opportunities}">
-            <div class="empty-state">
-                <svg class="empty-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
-                </svg>
-                <div class="empty-title">No opportunities found</div>
-                <div class="empty-text">Start by creating your first opportunity</div>
-                <a href="${pageContext.request.contextPath}/sale/opportunity/form" class="btn btn-primary">
-                    <svg style="width: 1.125rem; height: 1.125rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-                    </svg>
-                    Create Opportunity
-                </a>
-            </div>
-        </c:when>
-        <c:otherwise>
-            <div class="table-wrapper">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Code</th>
-                            <th>Opportunity Name</th>
-                            <th>Pipeline</th>
-                            <th>Stage</th>
-                            <th>Value</th>
-                            <th>Probability</th>
-                            <th>Status</th>
-                            <th>Close Date</th>
-                            <th style="width: 120px;">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <c:forEach var="opp" items="${opportunities}">
+<div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+        <c:choose>
+            <c:when test="${not empty opportunities}">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light">
                             <tr>
-                                <td>
-                                    <div class="opp-code">${opp.opportunityCode}</div>
-                                </td>
-                                <td>
-                                    <div class="opp-name">${opp.opportunityName}</div>
-                                </td>
-                                <td>
-                                    <c:forEach var="pipeline" items="${pipelines}">
-                                        <c:if test="${pipeline.pipelineId == opp.pipelineId}">
-                                            ${pipeline.pipelineName}
-                                        </c:if>
-                                    </c:forEach>
-                                </td>
-                                <td>
-                                    Stage ID: ${opp.stageId}
-                                </td>
-                                <td class="value-cell">
-                                    <fmt:formatNumber value="${opp.estimatedValue}" type="currency" currencySymbol="$" maxFractionDigits="0"/>
-                                </td>
-                                <td>
-                                    ${opp.probability}%
-                                </td>
-                                <td>
-                                    <c:choose>
-                                        <c:when test="${opp.status == 'Open'}">
-                                            <span class="status-badge status-open">
-                                                <span style="width: 0.5rem; height: 0.5rem; background: #3b82f6; border-radius: 50%; display: inline-block;"></span>
-                                                Open
-                                            </span>
-                                        </c:when>
-                                        <c:when test="${opp.status == 'Won'}">
-                                            <span class="status-badge status-won">
-                                                <span style="width: 0.5rem; height: 0.5rem; background: #10b981; border-radius: 50%; display: inline-block;"></span>
-                                                Won
-                                            </span>
-                                        </c:when>
-                                        <c:when test="${opp.status == 'Lost'}">
-                                            <span class="status-badge status-lost">
-                                                <span style="width: 0.5rem; height: 0.5rem; background: #ef4444; border-radius: 50%; display: inline-block;"></span>
-                                                Lost
-                                            </span>
-                                        </c:when>
-                                        <c:otherwise>
-                                            <span class="status-badge status-open">${opp.status}</span>
-                                        </c:otherwise>
-                                    </c:choose>
-                                </td>
-                                <td>
-                                    <c:if test="${not empty opp.expectedCloseDate}">
-                                        ${opp.expectedCloseDate}
-                                    </c:if>
-                                    <c:if test="${empty opp.expectedCloseDate}">
-                                        -
-                                    </c:if>
-                                </td>
-                                <td>
-                                    <div class="actions-cell">
-                                        <a href="${pageContext.request.contextPath}/sale/opportunity/form?id=${opp.opportunityId}" class="action-btn" title="Edit">
-                                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                                            </svg>
-                                        </a>
-                                    </div>
-                                </td>
+                                <th class="ps-3">Opportunity</th>
+                                <th>Pipeline / Stage</th>
+                                <th class="text-end">Gia tri</th>
+                                <th class="text-center">Xac suat</th>
+                                <th class="text-center">Trang thai</th>
+                                <th class="text-center">Ngay dong du kien</th>
+                                <th class="text-center" style="width: 140px;">Thao tac</th>
                             </tr>
-                        </c:forEach>
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- Pagination Info -->
-            <div style="padding: 1.25rem 1.5rem; border-top: 1px solid #e2e8f0;">
-                <div style="font-size: 0.875rem; color: #64748b;">
-                    Showing <strong>${opportunities.size()}</strong> opportunities
+                        </thead>
+                        <tbody>
+                            <c:forEach var="opp" items="${opportunities}">
+                                <tr>
+                                    <td class="ps-3">
+                                        <div class="fw-semibold">${opp.opportunityName}</div>
+                                        <small class="text-muted">${opp.opportunityCode}</small>
+                                    </td>
+                                    <td>
+                                        <div><small class="text-muted">${pipelineNameMap[opp.pipelineId]}</small></div>
+                                        <span class="badge bg-primary-subtle text-primary">${stageNameMap[opp.stageId]}</span>
+                                    </td>
+                                    <td class="text-end">
+                                        <c:choose>
+                                            <c:when test="${not empty opp.estimatedValue and opp.estimatedValue > 0}">
+                                                <span class="fw-semibold text-success"><fmt:formatNumber value="${opp.estimatedValue}" type="number" groupingUsed="true" maxFractionDigits="0"/>d</span>
+                                            </c:when>
+                                            <c:otherwise><span class="text-muted">0</span></c:otherwise>
+                                        </c:choose>
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="d-flex align-items-center justify-content-center gap-1">
+                                            <div class="progress" style="width: 50px; height: 6px;">
+                                                <div class="progress-bar
+                                                    <c:choose>
+                                                        <c:when test="${opp.probability >= 70}">bg-success</c:when>
+                                                        <c:when test="${opp.probability >= 40}">bg-warning</c:when>
+                                                        <c:otherwise>bg-danger</c:otherwise>
+                                                    </c:choose>" style="width: ${opp.probability}%;"></div>
+                                            </div>
+                                            <small class="fw-bold">${opp.probability}%</small>
+                                        </div>
+                                    </td>
+                                    <td class="text-center">
+                                        <c:choose>
+                                            <c:when test="${opp.status == 'Open'}"><span class="badge bg-info-subtle text-info">Open</span></c:when>
+                                            <c:when test="${opp.status == 'InProgress'}"><span class="badge bg-primary-subtle text-primary">In Progress</span></c:when>
+                                            <c:when test="${opp.status == 'Won'}"><span class="badge bg-success">Won</span></c:when>
+                                            <c:when test="${opp.status == 'Lost'}"><span class="badge bg-danger">Lost</span></c:when>
+                                            <c:when test="${opp.status == 'OnHold'}"><span class="badge bg-warning-subtle text-warning">On Hold</span></c:when>
+                                            <c:when test="${opp.status == 'Cancelled'}"><span class="badge bg-secondary">Cancelled</span></c:when>
+                                            <c:otherwise><span class="badge bg-secondary">${opp.status}</span></c:otherwise>
+                                        </c:choose>
+                                    </td>
+                                    <td class="text-center">
+                                        <small>
+                                        <c:choose>
+                                            <c:when test="${not empty opp.expectedCloseDate}">${opp.expectedCloseDate}</c:when>
+                                            <c:otherwise><span class="text-muted">-</span></c:otherwise>
+                                        </c:choose>
+                                        </small>
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="${pageContext.request.contextPath}/sale/opportunity/detail?id=${opp.opportunityId}" class="btn btn-outline-primary btn-sm" title="Xem"><i class="bi bi-eye"></i></a>
+                                            <a href="${pageContext.request.contextPath}/sale/opportunity/form?id=${opp.opportunityId}" class="btn btn-outline-secondary btn-sm" title="Sua"><i class="bi bi-pencil"></i></a>
+                                            <button onclick="deleteOpp(${opp.opportunityId}, '${opp.opportunityName}')" class="btn btn-outline-danger btn-sm" title="Xoa"><i class="bi bi-trash"></i></button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </c:forEach>
+                        </tbody>
+                    </table>
                 </div>
-            </div>
-        </c:otherwise>
-    </c:choose>
+            </c:when>
+            <c:otherwise>
+                <div class="text-center py-5">
+                    <i class="bi bi-briefcase text-muted" style="font-size: 3rem;"></i>
+                    <p class="text-muted mt-3 mb-2">Chua co opportunity nao</p>
+                    <a href="${pageContext.request.contextPath}/sale/opportunity/form" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i>Them Opportunity</a>
+                </div>
+            </c:otherwise>
+        </c:choose>
+    </div>
+    <!-- Pagination -->
+    <c:if test="${totalPages > 1}">
+        <div class="card-footer bg-transparent d-flex justify-content-between align-items-center">
+            <small class="text-muted">Hien thi ${(currentPage - 1) * 10 + 1}-${currentPage * 10 > totalItems ? totalItems : currentPage * 10} / ${totalItems} opportunity</small>
+            <nav>
+                <ul class="pagination pagination-sm mb-0">
+                    <li class="page-item ${currentPage == 1 ? 'disabled' : ''}">
+                        <a class="page-link" href="${pageContext.request.contextPath}/sale/opportunity/list?page=${currentPage - 1}&pipeline=${selectedPipelineId}&status=${filterStatus}&search=${searchQuery}"><i class="bi bi-chevron-left"></i></a>
+                    </li>
+                    <c:forEach begin="1" end="${totalPages}" var="i">
+                        <c:if test="${i == 1 || i == totalPages || (i >= currentPage - 2 && i <= currentPage + 2)}">
+                            <li class="page-item ${i == currentPage ? 'active' : ''}">
+                                <a class="page-link" href="${pageContext.request.contextPath}/sale/opportunity/list?page=${i}&pipeline=${selectedPipelineId}&status=${filterStatus}&search=${searchQuery}">${i}</a>
+                            </li>
+                        </c:if>
+                        <c:if test="${(i == currentPage - 3 && i > 1) || (i == currentPage + 3 && i < totalPages)}">
+                            <li class="page-item disabled"><span class="page-link">...</span></li>
+                        </c:if>
+                    </c:forEach>
+                    <li class="page-item ${currentPage == totalPages ? 'disabled' : ''}">
+                        <a class="page-link" href="${pageContext.request.contextPath}/sale/opportunity/list?page=${currentPage + 1}&pipeline=${selectedPipelineId}&status=${filterStatus}&search=${searchQuery}"><i class="bi bi-chevron-right"></i></a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </c:if>
 </div>
+
+<script>
+    function deleteOpp(oppId, oppName) {
+        if (confirm('Ban co chac muon xoa opportunity "' + oppName + '"?\nHanh dong nay khong the hoan tac.')) {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '${pageContext.request.contextPath}/sale/opportunity/list';
+            form.innerHTML = '<input type="hidden" name="action" value="delete"><input type="hidden" name="opportunityId" value="' + oppId + '">';
+            document.body.appendChild(form);
+            form.submit();
+        }
+    }
+</script>
