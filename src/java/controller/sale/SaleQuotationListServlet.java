@@ -52,8 +52,11 @@ public class SaleQuotationListServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
     throws ServletException, IOException {
-        processRequest(request, response);
-    } 
+        request.setAttribute("ACTIVE_MENU", "QUOT_LIST");
+        request.setAttribute("pageTitle", "Quotation List");
+        request.setAttribute("CONTENT_PAGE", "/view/sale/pages/quotation/list.jsp");
+        request.getRequestDispatcher("/view/sale/layout/layout.jsp").forward(request, response);
+    }
 
     /** 
      * Handles the HTTP <code>POST</code> method.

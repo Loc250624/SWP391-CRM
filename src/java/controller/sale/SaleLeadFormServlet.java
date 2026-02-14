@@ -88,7 +88,7 @@ public class SaleLeadFormServlet extends HttpServlet {
         request.setAttribute("campaigns", campaigns);
 
         // Set page metadata
-        request.setAttribute("ACTIVE_MENU", "LEADS");
+        request.setAttribute("ACTIVE_MENU", "LEAD_FORM");
         request.setAttribute("pageTitle", leadIdParam != null ? "Edit Lead" : "Create New Lead");
         request.setAttribute("CONTENT_PAGE", "/view/sale/pages/lead/form.jsp");
 

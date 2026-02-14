@@ -105,10 +105,22 @@ public class SaleLeadDetailServlet extends HttpServlet {
                 out.flush();
 
             } else {
-                // Regular page view (not used for now, but kept for future)
+                // Regular page view
+                // Get related data
+                LeadSource source = null;
+                Campaign campaign = null;
+                if (lead.getSourceId() != null) {
+                    source = leadSourceDAO.getSourceById(lead.getSourceId());
+                }
+                if (lead.getCampaignId() != null) {
+                    campaign = campaignDAO.getCampaignById(lead.getCampaignId());
+                }
+
                 request.setAttribute("lead", lead);
+                request.setAttribute("sourceName", source != null ? source.getSourceName() : null);
+                request.setAttribute("campaignName", campaign != null ? campaign.getCampaignName() : null);
                 request.setAttribute("ACTIVE_MENU", "LEAD_LIST");
-                request.setAttribute("pageTitle", "Lead Detail");
+                request.setAttribute("pageTitle", "Lead Detail - " + lead.getFullName());
                 request.setAttribute("CONTENT_PAGE", "/view/sale/pages/lead/detail.jsp");
                 request.getRequestDispatcher("/view/sale/layout/layout.jsp").forward(request, response);
             }

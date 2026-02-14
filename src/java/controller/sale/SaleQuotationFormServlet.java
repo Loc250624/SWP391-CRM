@@ -52,8 +52,11 @@ public class SaleQuotationFormServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
     throws ServletException, IOException {
-        processRequest(request, response);
-    } 
+        request.setAttribute("ACTIVE_MENU", "QUOT_FORM");
+        request.setAttribute("pageTitle", "Create Quotation");
+        request.setAttribute("CONTENT_PAGE", "/view/sale/pages/quotation/form.jsp");
+        request.getRequestDispatcher("/view/sale/layout/layout.jsp").forward(request, response);
+    }
 
     /** 
      * Handles the HTTP <code>POST</code> method.

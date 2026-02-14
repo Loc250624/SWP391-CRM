@@ -1,80 +1,104 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/JSP_Servlet/Servlet.java to edit this template
- */
-
 package controller.sale;
 
+import dao.OpportunityDAO;
+import dao.PipelineDAO;
+import dao.PipelineStageDAO;
+import model.Opportunity;
+import model.Pipeline;
+import model.PipelineStage;
 import java.io.IOException;
-import java.io.PrintWriter;
+import java.math.BigDecimal;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 
-
-@WebServlet(name="SaleOpportunityForecastServlet", urlPatterns={"/sale/opportunity/forecast"})
+@WebServlet(name = "SaleOpportunityForecastServlet", urlPatterns = {"/sale/opportunity/forecast"})
 public class SaleOpportunityForecastServlet extends HttpServlet {
-   
-    /** 
-     * Processes requests for both HTTP <code>GET</code> and <code>POST</code> methods.
-     * @param request servlet request
-     * @param response servlet response
-     * @throws ServletException if a servlet-specific error occurs
-     * @throws IOException if an I/O error occurs
-     */
-    protected void processRequest(HttpServletRequest request, HttpServletResponse response)
-    throws ServletException, IOException {
-        response.setContentType("text/html;charset=UTF-8");
-        try (PrintWriter out = response.getWriter()) {
-            /* TODO output your page here. You may use following sample code. */
-            out.println("<!DOCTYPE html>");
-            out.println("<html>");
-            out.println("<head>");
-            out.println("<title>Servlet SaleOpportunityForecastServlet</title>");  
-            out.println("</head>");
-            out.println("<body>");
-            out.println("<h1>Servlet SaleOpportunityForecastServlet at " + request.getContextPath () + "</h1>");
-            out.println("</body>");
-            out.println("</html>");
-        }
-    } 
 
-    // <editor-fold defaultstate="collapsed" desc="HttpServlet methods. Click on the + sign on the left to edit the code.">
-    /** 
-     * Handles the HTTP <code>GET</code> method.
-     * @param request servlet request
-     * @param response servlet response
-     * @throws ServletException if a servlet-specific error occurs
-     * @throws IOException if an I/O error occurs
-     */
+    private OpportunityDAO opportunityDAO = new OpportunityDAO();
+    private PipelineStageDAO stageDAO = new PipelineStageDAO();
+
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
-    throws ServletException, IOException {
-        processRequest(request, response);
-    } 
+            throws ServletException, IOException {
 
-    /** 
-     * Handles the HTTP <code>POST</code> method.
-     * @param request servlet request
-     * @param response servlet response
-     * @throws ServletException if a servlet-specific error occurs
-     * @throws IOException if an I/O error occurs
-     */
-    @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response)
-    throws ServletException, IOException {
-        processRequest(request, response);
+        Integer currentUserId = 1;
+        HttpSession session = request.getSession(false);
+        if (session != null && session.getAttribute("userId") != null) {
+            try {
+                currentUserId = (Integer) session.getAttribute("userId");
+            } catch (Exception e) {
+            }
+        }
+
+        List<Opportunity> allOpps = opportunityDAO.getOpportunitiesBySalesUser(currentUserId);
+        if (allOpps == null) allOpps = new java.util.ArrayList<>();
+
+        // Calculate forecast metrics
+        BigDecimal totalPipeline = BigDecimal.ZERO;
+        BigDecimal weightedForecast = BigDecimal.ZERO;
+        BigDecimal wonValue = BigDecimal.ZERO;
+        BigDecimal lostValue = BigDecimal.ZERO;
+        int openCount = 0, wonCount = 0, lostCount = 0, totalCount = allOpps.size();
+
+        // Value by stage
+        Map<Integer, BigDecimal> valueByStage = new HashMap<>();
+        Map<Integer, Integer> countByStage = new HashMap<>();
+
+        for (Opportunity opp : allOpps) {
+            BigDecimal val = opp.getEstimatedValue() != null ? opp.getEstimatedValue() : BigDecimal.ZERO;
+
+            if ("Won".equals(opp.getStatus())) {
+                wonValue = wonValue.add(val);
+                wonCount++;
+            } else if ("Lost".equals(opp.getStatus())) {
+                lostValue = lostValue.add(val);
+                lostCount++;
+            } else if (!"Cancelled".equals(opp.getStatus())) {
+                totalPipeline = totalPipeline.add(val);
+                weightedForecast = weightedForecast.add(val.multiply(BigDecimal.valueOf(opp.getProbability())).divide(BigDecimal.valueOf(100), 0, BigDecimal.ROUND_HALF_UP));
+                openCount++;
+            }
+
+            int stageId = opp.getStageId();
+            valueByStage.merge(stageId, val, BigDecimal::add);
+            countByStage.merge(stageId, 1, Integer::sum);
+        }
+
+        int winRate = (wonCount + lostCount) > 0 ? (wonCount * 100 / (wonCount + lostCount)) : 0;
+
+        // Load stage names
+        List<PipelineStage> stages = stageDAO.getAllStages();
+        Map<Integer, String> stageNameMap = new HashMap<>();
+        if (stages != null) {
+            for (PipelineStage s : stages) {
+                stageNameMap.put(s.getStageId(), s.getStageName());
+            }
+        }
+
+        request.setAttribute("totalPipeline", totalPipeline);
+        request.setAttribute("weightedForecast", weightedForecast);
+        request.setAttribute("wonValue", wonValue);
+        request.setAttribute("lostValue", lostValue);
+        request.setAttribute("openCount", openCount);
+        request.setAttribute("wonCount", wonCount);
+        request.setAttribute("lostCount", lostCount);
+        request.setAttribute("totalCount", totalCount);
+        request.setAttribute("winRate", winRate);
+        request.setAttribute("valueByStage", valueByStage);
+        request.setAttribute("countByStage", countByStage);
+        request.setAttribute("stageNameMap", stageNameMap);
+        request.setAttribute("opportunities", allOpps);
+
+        request.setAttribute("ACTIVE_MENU", "OPP_FORECAST");
+        request.setAttribute("pageTitle", "Sales Forecast");
+        request.setAttribute("CONTENT_PAGE", "/view/sale/pages/opportunity/forecast.jsp");
+        request.getRequestDispatcher("/view/sale/layout/layout.jsp").forward(request, response);
     }
-
-    /** 
-     * Returns a short description of the servlet.
-     * @return a String containing servlet description
-     */
-    @Override
-    public String getServletInfo() {
-        return "Short description";
-    }// </editor-fold>
-
 }

@@ -52,8 +52,11 @@ public class SaleActivityListServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
     throws ServletException, IOException {
-        processRequest(request, response);
-    } 
+        request.setAttribute("ACTIVE_MENU", "ACT_LIST");
+        request.setAttribute("pageTitle", "Activity List");
+        request.setAttribute("CONTENT_PAGE", "/view/sale/pages/activity/list.jsp");
+        request.getRequestDispatcher("/view/sale/layout/layout.jsp").forward(request, response);
+    }
 
     /** 
      * Handles the HTTP <code>POST</code> method.
