@@ -200,7 +200,7 @@ public class OpportunityDAO extends DBContext {
                 opp.setOpportunityCode(generateOpportunityCode());
             }
 
-            PreparedStatement stmt = connection.prepareStatement(sql);
+            PreparedStatement stmt = connection.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS);
             stmt.setString(1, opp.getOpportunityCode());
             stmt.setString(2, opp.getOpportunityName());
             setNullableInt(stmt, 3, opp.getLeadId());
@@ -220,6 +220,12 @@ public class OpportunityDAO extends DBContext {
             setNullableInt(stmt, 17, opp.getCreatedBy());
 
             int rowsAffected = stmt.executeUpdate();
+            if (rowsAffected > 0) {
+                ResultSet generatedKeys = stmt.getGeneratedKeys();
+                if (generatedKeys.next()) {
+                    opp.setOpportunityId(generatedKeys.getInt(1));
+                }
+            }
             return rowsAffected > 0;
 
         } catch (SQLException e) {

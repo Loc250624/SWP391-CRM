@@ -164,11 +164,11 @@
                                         <div class="d-flex align-items-center justify-content-center gap-1">
                                             <div class="progress" style="width: 50px; height: 6px;">
                                                 <div class="progress-bar
-                                                    <c:choose>
-                                                        <c:when test="${opp.probability >= 70}">bg-success</c:when>
-                                                        <c:when test="${opp.probability >= 40}">bg-warning</c:when>
-                                                        <c:otherwise>bg-danger</c:otherwise>
-                                                    </c:choose>" style="width: ${opp.probability}%;"></div>
+                                                     <c:choose>
+                                                         <c:when test="${opp.probability >= 70}">bg-success</c:when>
+                                                         <c:when test="${opp.probability >= 40}">bg-warning</c:when>
+                                                         <c:otherwise>bg-danger</c:otherwise>
+                                                     </c:choose>" style="width: ${opp.probability}%;"></div>
                                             </div>
                                             <small class="fw-bold">${opp.probability}%</small>
                                         </div>
@@ -186,10 +186,10 @@
                                     </td>
                                     <td class="text-center">
                                         <small>
-                                        <c:choose>
-                                            <c:when test="${not empty opp.expectedCloseDate}">${opp.expectedCloseDate}</c:when>
-                                            <c:otherwise><span class="text-muted">-</span></c:otherwise>
-                                        </c:choose>
+                                            <c:choose>
+                                                <c:when test="${not empty opp.expectedCloseDate}">${opp.expectedCloseDate}</c:when>
+                                                <c:otherwise><span class="text-muted">-</span></c:otherwise>
+                                            </c:choose>
                                         </small>
                                     </td>
                                     <td class="text-center">
@@ -231,8 +231,8 @@
                         </c:if>
                         <c:if test="${(i == currentPage - 3 && i > 1) || (i == currentPage + 3 && i < totalPages)}">
                             <li class="page-item disabled"><span class="page-link">...</span></li>
-                        </c:if>
-                    </c:forEach>
+                            </c:if>
+                        </c:forEach>
                     <li class="page-item ${currentPage == totalPages ? 'disabled' : ''}">
                         <a class="page-link" href="${pageContext.request.contextPath}/sale/opportunity/list?page=${currentPage + 1}&pipeline=${selectedPipelineId}&status=${filterStatus}&search=${searchQuery}"><i class="bi bi-chevron-right"></i></a>
                     </li>

@@ -291,6 +291,20 @@
         font-size: .7rem;
         color: #6b778c;
     }
+
+    /* Locked card (Won/Lost) */
+    .kb-card.kb-locked {
+        opacity: .7;
+        cursor: default !important;
+        border-left: 3px solid #6c757d;
+    }
+    .kb-card.kb-locked .kb-card-title { color: #6c757d; }
+    .kb-locked-badge {
+        font-size: .6rem;
+        font-weight: 700;
+        padding: 1px 6px;
+        border-radius: 3px;
+    }
 </style>
 
 <!-- Compact Header -->
@@ -372,11 +386,11 @@
                         </a>
                     </div>
 
-                    <div class="kb-cards" id="stage-${stage.stageId}" data-stage-id="${stage.stageId}">
+                    <div class="kb-cards" id="stage-${stage.stageId}" data-stage-id="${stage.stageId}" data-stage-type="${stage.stageType}">
                         <c:choose>
                             <c:when test="${not empty stageOpps}">
                                 <c:forEach var="opp" items="${stageOpps}">
-                                    <div class="kb-card" data-opp-id="${opp.opportunityId}"
+                                    <div class="kb-card${opp.status == 'Won' || opp.status == 'Lost' ? ' kb-locked' : ''}" data-opp-id="${opp.opportunityId}"
                                          data-name="${opp.opportunityName}"
                                          data-code="${opp.opportunityCode}"
                                          data-value="${opp.estimatedValue}"
@@ -392,7 +406,11 @@
                                          data-created="${opp.createdAt}"
                                          data-updated="${opp.updatedAt}"
                                          onclick="showOppDetail(this)" style="cursor:pointer;">
-                                        <div class="kb-card-title">${opp.opportunityName}</div>
+                                        <div class="kb-card-title">
+                                            ${opp.opportunityName}
+                                            <c:if test="${opp.status == 'Won'}"><span class="kb-locked-badge bg-success text-white ms-1">Won</span></c:if>
+                                            <c:if test="${opp.status == 'Lost'}"><span class="kb-locked-badge bg-danger text-white ms-1">Lost</span></c:if>
+                                        </div>
                                         <div class="d-flex justify-content-between align-items-center">
                                             <span class="kb-card-code">${opp.opportunityCode}</span>
                                             <c:if test="${not empty opp.estimatedValue and opp.estimatedValue > 0}">
@@ -520,7 +538,36 @@
     </div>
 </div>
 
+<!-- Won/Lost Confirmation Modal -->
+<div class="modal fade" id="confirmCloseModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header py-2" id="confirmCloseHeader">
+                <h6 class="modal-title fw-bold" id="confirmCloseTitle"></h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-3" id="confirmCloseMsg"></p>
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">Ly do (khong bat buoc)</label>
+                    <textarea class="form-control form-control-sm" id="confirmCloseReason" rows="3" placeholder="Nhap ly do..."></textarea>
+                </div>
+                <div class="alert alert-warning small py-2 mb-0">
+                    <i class="bi bi-exclamation-triangle me-1"></i>Sau khi xac nhan, trang thai se <strong>khong the thay doi</strong> lai duoc.
+                </div>
+            </div>
+            <div class="modal-footer py-2">
+                <button type="button" class="btn btn-light btn-sm" id="confirmCloseCancel" data-bs-dismiss="modal">Huy</button>
+                <button type="button" class="btn btn-sm" id="confirmCloseBtn">Xac nhan</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
+    // Pending close action (for won/lost confirmation)
+    var pendingClose = null;
+
     document.querySelectorAll('.kb-cards').forEach(function (el) {
         new Sortable(el, {
             group: 'kanban',
@@ -531,49 +578,93 @@
             dragClass: 'sortable-drag',
             delayOnTouchOnly: true,
             delay: 80,
+            filter: '.kb-locked',
+            onMove: function (evt) {
+                // Prevent dragging locked (Won/Lost) cards
+                if (evt.dragged.classList.contains('kb-locked')) return false;
+            },
             onEnd: function (evt) {
-                var oppId = evt.item.getAttribute('data-opp-id');
+                var card = evt.item;
+                var oppId = card.getAttribute('data-opp-id');
+                var oppName = card.getAttribute('data-name');
                 var newStageId = evt.to.getAttribute('data-stage-id');
                 var oldStageId = evt.from.getAttribute('data-stage-id');
+                var targetStageType = evt.to.getAttribute('data-stage-type');
 
                 if (newStageId === oldStageId)
                     return;
 
-                // Update counts visually
-                updateColumnCount(evt.from);
-                updateColumnCount(evt.to);
+                // If target is won/lost, show confirmation
+                if (targetStageType === 'won' || targetStageType === 'lost') {
+                    pendingClose = {
+                        card: card,
+                        oppId: oppId,
+                        newStageId: newStageId,
+                        oldStageId: oldStageId,
+                        fromEl: evt.from,
+                        toEl: evt.to,
+                        stageType: targetStageType
+                    };
 
-                // Remove empty message if target had one
-                var emptyMsg = evt.to.querySelector('.kb-empty');
-                if (emptyMsg)
-                    emptyMsg.remove();
+                    var isWon = targetStageType === 'won';
+                    var header = document.getElementById('confirmCloseHeader');
+                    header.style.borderBottom = '3px solid ' + (isWon ? '#27ae60' : '#c0392b');
+                    document.getElementById('confirmCloseTitle').textContent = isWon ? 'Xac nhan Thanh cong' : 'Xac nhan That bai';
+                    document.getElementById('confirmCloseMsg').innerHTML = (isWon
+                            ? 'Ban co chac muon danh dau <strong>' + oppName + '</strong> la <span class="text-success fw-bold">Thanh cong (Won)</span>?'
+                            : 'Ban co chac muon danh dau <strong>' + oppName + '</strong> la <span class="text-danger fw-bold">That bai (Lost)</span>?');
+                    document.getElementById('confirmCloseReason').value = '';
+                    var btn = document.getElementById('confirmCloseBtn');
+                    btn.className = 'btn btn-sm ' + (isWon ? 'btn-success' : 'btn-danger');
+                    btn.textContent = isWon ? 'Xac nhan Won' : 'Xac nhan Lost';
 
-                // Show empty message if source is now empty
-                if (evt.from.querySelectorAll('.kb-card').length === 0) {
-                    evt.from.innerHTML = '<div class="kb-empty"><i class="bi bi-inbox"></i><br>Trong</div>';
+                    getConfirmModal().show();
+                    return;
                 }
 
-                fetch('${pageContext.request.contextPath}/sale/opportunity/stage', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-                    body: 'opportunityId=' + oppId + '&stageId=' + newStageId
-                })
-                        .then(function (r) {
-                            return r.json();
-                        })
-                        .then(function (data) {
-                            if (!data.success) {
-                                alert('Loi: ' + data.message);
-                                location.reload();
-                            }
-                        })
-                        .catch(function () {
-                            alert('Loi ket noi');
-                            location.reload();
-                        });
+                // Normal stage move
+                performStageUpdate(oppId, newStageId, oldStageId, evt.from, evt.to, null);
             }
         });
     });
+
+    function performStageUpdate(oppId, newStageId, oldStageId, fromEl, toEl, reason) {
+        // Update counts visually
+        updateColumnCount(fromEl);
+        updateColumnCount(toEl);
+
+        // Remove empty message if target had one
+        var emptyMsg = toEl.querySelector('.kb-empty');
+        if (emptyMsg) emptyMsg.remove();
+
+        // Show empty message if source is now empty
+        if (fromEl.querySelectorAll('.kb-card').length === 0) {
+            fromEl.innerHTML = '<div class="kb-empty"><i class="bi bi-inbox"></i><br>Trong</div>';
+        }
+
+        var body = 'opportunityId=' + oppId + '&stageId=' + newStageId;
+        if (reason) body += '&reason=' + encodeURIComponent(reason);
+
+        fetch('${pageContext.request.contextPath}/sale/opportunity/stage', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: body
+        })
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    if (!data.success) {
+                        alert('Loi: ' + data.message);
+                        location.reload();
+                    } else if (data.newStatus === 'Won' || data.newStatus === 'Lost') {
+                        // Mark card as locked
+                        location.reload();
+                    }
+                })
+                .catch(function () {
+                    alert('Loi ket noi');
+                    location.reload();
+                });
+    }
 
     function updateColumnCount(container) {
         var col = container.closest('.kb-col');
@@ -582,6 +673,48 @@
         if (badge)
             badge.textContent = count;
     }
+
+    // --- Won/Lost Confirmation Modal ---
+    var confirmModal = null;
+    function getConfirmModal() {
+        if (!confirmModal) {
+            confirmModal = new bootstrap.Modal(document.getElementById('confirmCloseModal'));
+        }
+        return confirmModal;
+    }
+
+    // Confirm button handler
+    document.getElementById('confirmCloseBtn').addEventListener('click', function () {
+        if (!pendingClose) return;
+        var reason = document.getElementById('confirmCloseReason').value;
+        performStageUpdate(
+                pendingClose.oppId,
+                pendingClose.newStageId,
+                pendingClose.oldStageId,
+                pendingClose.fromEl,
+                pendingClose.toEl,
+                reason
+                );
+        getConfirmModal().hide();
+        pendingClose = null;
+    });
+
+    // Cancel: revert the card back
+    document.getElementById('confirmCloseModal').addEventListener('hidden.bs.modal', function () {
+        if (pendingClose) {
+            // Move card back to original column
+            pendingClose.fromEl.appendChild(pendingClose.card);
+            updateColumnCount(pendingClose.fromEl);
+            updateColumnCount(pendingClose.toEl);
+            // Check empty
+            if (pendingClose.toEl.querySelectorAll('.kb-card').length === 0) {
+                pendingClose.toEl.innerHTML = '<div class="kb-empty"><i class="bi bi-inbox"></i><br>Trong</div>';
+            }
+            var emptyFrom = pendingClose.fromEl.querySelector('.kb-empty');
+            if (emptyFrom) emptyFrom.remove();
+            pendingClose = null;
+        }
+    });
 
     // --- Opportunity Detail Modal ---
     var oppModal = null;

@@ -82,6 +82,22 @@ public class SaleOpportunityKanbanServlet extends HttpServlet {
                         stage.getStageId(), currentUserId);
                 if (stageOpps == null) stageOpps = new ArrayList<>();
 
+                // Filter by pipeline type
+                String pipelineCode = selectedPipeline.getPipelineCode();
+                if ("LEAD_CONVERSION".equals(pipelineCode)) {
+                    List<Opportunity> filtered = new ArrayList<>();
+                    for (Opportunity o : stageOpps) {
+                        if (o.getLeadId() != null && o.getCustomerId() == null) filtered.add(o);
+                    }
+                    stageOpps = filtered;
+                } else if ("UPSELL".equals(pipelineCode)) {
+                    List<Opportunity> filtered = new ArrayList<>();
+                    for (Opportunity o : stageOpps) {
+                        if (o.getCustomerId() != null) filtered.add(o);
+                    }
+                    stageOpps = filtered;
+                }
+
                 opportunitiesByStage.put(stage.getStageId(), stageOpps);
 
                 BigDecimal stageValue = BigDecimal.ZERO;

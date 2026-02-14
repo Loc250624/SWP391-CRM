@@ -1,17 +1,20 @@
 package controller.sale;
 
 import dao.CampaignDAO;
+import dao.CustomerDAO;
 import dao.LeadDAO;
 import dao.LeadSourceDAO;
 import dao.OpportunityDAO;
 import dao.PipelineDAO;
 import dao.PipelineStageDAO;
 import model.Campaign;
+import model.Customer;
 import model.Lead;
 import model.LeadSource;
 import model.Opportunity;
 import model.Pipeline;
 import model.PipelineStage;
+import dao.OpportunityHistoryDAO;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -32,6 +35,8 @@ public class SaleOpportunityFormServlet extends HttpServlet {
     private LeadDAO leadDAO = new LeadDAO();
     private LeadSourceDAO leadSourceDAO = new LeadSourceDAO();
     private CampaignDAO campaignDAO = new CampaignDAO();
+    private CustomerDAO customerDAO = new CustomerDAO();
+    private OpportunityHistoryDAO historyDAO = new OpportunityHistoryDAO();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -75,6 +80,20 @@ public class SaleOpportunityFormServlet extends HttpServlet {
 
                 request.setAttribute("mode", "edit");
                 request.setAttribute("opportunity", opportunity);
+
+                // Load associated lead/customer name for display
+                if (opportunity.getLeadId() != null) {
+                    Lead linkedLead = leadDAO.getLeadById(opportunity.getLeadId());
+                    if (linkedLead != null) {
+                        request.setAttribute("linkedLead", linkedLead);
+                    }
+                }
+                if (opportunity.getCustomerId() != null) {
+                    Customer linkedCustomer = customerDAO.getCustomerById(opportunity.getCustomerId());
+                    if (linkedCustomer != null) {
+                        request.setAttribute("linkedCustomer", linkedCustomer);
+                    }
+                }
             } catch (NumberFormatException e) {
                 request.setAttribute("error", "Invalid opportunity ID!");
                 response.sendRedirect(request.getContextPath() + "/sale/opportunity/list");
@@ -96,7 +115,8 @@ public class SaleOpportunityFormServlet extends HttpServlet {
                     if (preSelStage != null && !preSelStage.isEmpty()) {
                         request.setAttribute("preSelectedStageId", Integer.parseInt(preSelStage));
                     }
-                } catch (NumberFormatException e) { }
+                } catch (NumberFormatException e) {
+                }
             }
 
             // Check if converting from lead
@@ -129,9 +149,15 @@ public class SaleOpportunityFormServlet extends HttpServlet {
         List<LeadSource> sources = leadSourceDAO.getAllActiveSources();
         List<Campaign> campaigns = campaignDAO.getAllActiveCampaigns();
 
+        // Load leads and customers for selection (create mode only)
+        List<Lead> leads = leadDAO.getLeadsBySalesUser(currentUserId);
+        List<Customer> customers = customerDAO.getCustomersBySalesUser(currentUserId);
+
         request.setAttribute("pipelines", pipelines);
         request.setAttribute("sources", sources);
         request.setAttribute("campaigns", campaigns);
+        request.setAttribute("leads", leads);
+        request.setAttribute("customers", customers);
 
         // If editing, load stages for the selected pipeline
         if (opportunity != null && opportunity.getPipelineId() != 0) {
@@ -170,6 +196,7 @@ public class SaleOpportunityFormServlet extends HttpServlet {
         String oppIdParam = request.getParameter("opportunityId");
         String opportunityName = request.getParameter("opportunityName");
         String leadIdParam = request.getParameter("leadId");
+        String customerIdParam = request.getParameter("customerId");
         String pipelineIdParam = request.getParameter("pipelineId");
         String stageIdParam = request.getParameter("stageId");
         String estimatedValueParam = request.getParameter("estimatedValue");
@@ -195,13 +222,16 @@ public class SaleOpportunityFormServlet extends HttpServlet {
 
         // Create or update Opportunity object
         Opportunity opportunity = new Opportunity();
+        Opportunity oldOpp = null;
         boolean isEdit = false;
 
         if (oppIdParam != null && !oppIdParam.isEmpty()) {
             // Edit mode
             isEdit = true;
             try {
-                opportunity.setOpportunityId(Integer.parseInt(oppIdParam));
+                int oppId = Integer.parseInt(oppIdParam);
+                opportunity.setOpportunityId(oppId);
+                oldOpp = opportunityDAO.getOpportunityById(oppId);
             } catch (NumberFormatException e) {
                 request.setAttribute("error", "Invalid opportunity ID!");
                 doGet(request, response);
@@ -209,18 +239,44 @@ public class SaleOpportunityFormServlet extends HttpServlet {
             }
         }
 
+        // Block editing Won/Lost opportunities
+        if (isEdit && oldOpp != null && ("Won".equals(oldOpp.getStatus()) || "Lost".equals(oldOpp.getStatus()))) {
+            request.setAttribute("error", "Opportunity da dong (" + oldOpp.getStatus() + "), khong the chinh sua!");
+            doGet(request, response);
+            return;
+        }
+
         // Set opportunity properties
         opportunity.setOpportunityName(opportunityName.trim());
 
-        // Lead ID
-        if (leadIdParam != null && !leadIdParam.isEmpty()) {
-            try {
-                opportunity.setLeadId(Integer.parseInt(leadIdParam));
-            } catch (NumberFormatException e) {
-                opportunity.setLeadId(null);
-            }
+        // Lead ID & Customer ID
+        if (isEdit && oldOpp != null) {
+            // Edit mode: keep original lead_id and customer_id (cannot change)
+            opportunity.setLeadId(oldOpp.getLeadId());
+            opportunity.setCustomerId(oldOpp.getCustomerId());
         } else {
-            opportunity.setLeadId(null);
+            // Create mode: must have either leadId or customerId
+            Integer parsedLeadId = null;
+            Integer parsedCustomerId = null;
+            if (leadIdParam != null && !leadIdParam.isEmpty()) {
+                try {
+                    parsedLeadId = Integer.parseInt(leadIdParam);
+                } catch (NumberFormatException e) {
+                }
+            }
+            if (customerIdParam != null && !customerIdParam.isEmpty()) {
+                try {
+                    parsedCustomerId = Integer.parseInt(customerIdParam);
+                } catch (NumberFormatException e) {
+                }
+            }
+            if (parsedLeadId == null && parsedCustomerId == null) {
+                request.setAttribute("error", "Phai chon Lead hoac Customer cho opportunity!");
+                doGet(request, response);
+                return;
+            }
+            opportunity.setLeadId(parsedLeadId);
+            opportunity.setCustomerId(parsedCustomerId);
         }
 
         // Pipeline ID (required)
@@ -324,6 +380,46 @@ public class SaleOpportunityFormServlet extends HttpServlet {
         }
 
         if (success) {
+            // Log history for edit
+            if (isEdit && oldOpp != null) {
+                int oppId = opportunity.getOpportunityId();
+                String oldName = oldOpp.getOpportunityName() != null ? oldOpp.getOpportunityName() : "";
+                String newName = opportunity.getOpportunityName() != null ? opportunity.getOpportunityName() : "";
+                historyDAO.logChange(oppId, "opportunity_name", oldName, newName, currentUserId);
+
+                historyDAO.logChange(oppId, "pipeline_id", String.valueOf(oldOpp.getPipelineId()), String.valueOf(opportunity.getPipelineId()), currentUserId);
+                historyDAO.logChange(oppId, "stage_id", String.valueOf(oldOpp.getStageId()), String.valueOf(opportunity.getStageId()), currentUserId);
+
+                String oldVal = oldOpp.getEstimatedValue() != null ? oldOpp.getEstimatedValue().toPlainString() : "0";
+                String newVal = opportunity.getEstimatedValue() != null ? opportunity.getEstimatedValue().toPlainString() : "0";
+                historyDAO.logChange(oppId, "estimated_value", oldVal, newVal, currentUserId);
+
+                historyDAO.logChange(oppId, "probability", String.valueOf(oldOpp.getProbability()), String.valueOf(opportunity.getProbability()), currentUserId);
+
+                String oldStatus = oldOpp.getStatus() != null ? oldOpp.getStatus() : "";
+                String newStatus = opportunity.getStatus() != null ? opportunity.getStatus() : "";
+                historyDAO.logChange(oppId, "status", oldStatus, newStatus, currentUserId);
+
+                String oldClose = oldOpp.getExpectedCloseDate() != null ? oldOpp.getExpectedCloseDate().toString() : "";
+                String newClose = opportunity.getExpectedCloseDate() != null ? opportunity.getExpectedCloseDate().toString() : "";
+                historyDAO.logChange(oppId, "expected_close_date", oldClose, newClose, currentUserId);
+
+                String oldNotes = oldOpp.getNotes() != null ? oldOpp.getNotes() : "";
+                String newNotes = opportunity.getNotes() != null ? opportunity.getNotes() : "";
+                historyDAO.logChange(oppId, "notes", oldNotes, newNotes, currentUserId);
+
+                String oldSource = oldOpp.getSourceId() != null ? String.valueOf(oldOpp.getSourceId()) : "";
+                String newSource = opportunity.getSourceId() != null ? String.valueOf(opportunity.getSourceId()) : "";
+                historyDAO.logChange(oppId, "source_id", oldSource, newSource, currentUserId);
+
+                String oldCampaign = oldOpp.getCampaignId() != null ? String.valueOf(oldOpp.getCampaignId()) : "";
+                String newCampaign = opportunity.getCampaignId() != null ? String.valueOf(opportunity.getCampaignId()) : "";
+                historyDAO.logChange(oppId, "campaign_id", oldCampaign, newCampaign, currentUserId);
+            } else if (!isEdit) {
+                // Log creation
+                historyDAO.logChange(opportunity.getOpportunityId(), "status", null, "Created", currentUserId);
+            }
+
             // Success - redirect to list with success message
             response.sendRedirect(request.getContextPath() + "/sale/opportunity/list?success="
                     + (isEdit ? "updated" : "created"));
