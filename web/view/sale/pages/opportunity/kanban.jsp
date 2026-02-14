@@ -656,7 +656,9 @@
                         alert('Loi: ' + data.message);
                         location.reload();
                     } else if (data.newStatus === 'Won' || data.newStatus === 'Lost') {
-                        // Mark card as locked
+                        if (data.leadConverted) {
+                            alert('Lead da duoc tu dong chuyen doi thanh Customer!');
+                        }
                         location.reload();
                     }
                 })

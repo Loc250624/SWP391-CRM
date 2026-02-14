@@ -175,6 +175,37 @@
                 </div>
             </div>
 
+            <!-- Tags -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-transparent border-0">
+                    <h6 class="mb-0 fw-semibold"><i class="bi bi-bookmark-star me-2"></i>Tags</h6>
+                </div>
+                <div class="card-body">
+                    <c:if test="${not empty allTags}">
+                        <div class="d-flex flex-wrap gap-2">
+                            <c:forEach var="tag" items="${allTags}">
+                                <c:set var="tagChecked" value=""/>
+                                <c:if test="${not empty assignedTagIds}">
+                                    <c:forEach var="aid" items="${assignedTagIds}">
+                                        <c:if test="${aid == tag.tagId}"><c:set var="tagChecked" value="checked"/></c:if>
+                                    </c:forEach>
+                                </c:if>
+                                <label class="tag-checkbox-label" style="cursor:pointer;">
+                                    <input type="checkbox" name="tagIds" value="${tag.tagId}" class="d-none tag-cb" ${tagChecked}>
+                                    <span class="badge rounded-pill px-3 py-2 tag-badge"
+                                          style="background-color: ${tag.tagColor}20; color: ${tag.tagColor}; border: 1.5px solid ${tag.tagColor};">
+                                        <i class="bi bi-bookmark-fill me-1"></i>${tag.tagName}
+                                    </span>
+                                </label>
+                            </c:forEach>
+                        </div>
+                    </c:if>
+                    <c:if test="${empty allTags}">
+                        <p class="text-muted small mb-0">Chua co tag nao.</p>
+                    </c:if>
+                </div>
+            </div>
+
             <!-- Action Buttons -->
             <div class="card border-0 shadow-sm">
                 <div class="card-body">
@@ -201,5 +232,22 @@
         var btn = document.getElementById('submitBtn');
         btn.disabled = true;
         btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Dang luu...';
+    });
+
+    // Tag checkbox toggle styling
+    document.querySelectorAll('.tag-cb').forEach(function (cb) {
+        function updateStyle() {
+            var badge = cb.nextElementSibling;
+            var color = badge.style.color;
+            if (cb.checked) {
+                badge.style.backgroundColor = color;
+                badge.style.color = '#fff';
+            } else {
+                badge.style.backgroundColor = color + '20';
+                badge.style.color = color;
+            }
+        }
+        cb.addEventListener('change', updateStyle);
+        updateStyle();
     });
 </script>

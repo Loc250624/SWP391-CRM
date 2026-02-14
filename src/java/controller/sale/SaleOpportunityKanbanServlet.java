@@ -85,15 +85,17 @@ public class SaleOpportunityKanbanServlet extends HttpServlet {
                 // Filter by pipeline type
                 String pipelineCode = selectedPipeline.getPipelineCode();
                 if ("LEAD_CONVERSION".equals(pipelineCode)) {
+                    // Show opps from leads (including converted ones that now have customerId)
                     List<Opportunity> filtered = new ArrayList<>();
                     for (Opportunity o : stageOpps) {
-                        if (o.getLeadId() != null && o.getCustomerId() == null) filtered.add(o);
+                        if (o.getLeadId() != null) filtered.add(o);
                     }
                     stageOpps = filtered;
                 } else if ("UPSELL".equals(pipelineCode)) {
+                    // Show opps for existing customers (exclude lead-converted opps)
                     List<Opportunity> filtered = new ArrayList<>();
                     for (Opportunity o : stageOpps) {
-                        if (o.getCustomerId() != null) filtered.add(o);
+                        if (o.getCustomerId() != null && o.getLeadId() == null) filtered.add(o);
                     }
                     stageOpps = filtered;
                 }

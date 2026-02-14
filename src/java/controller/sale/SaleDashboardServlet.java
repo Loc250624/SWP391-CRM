@@ -80,6 +80,15 @@ public class SaleDashboardServlet extends HttpServlet {
         List<Opportunity> allOpps = opportunityDAO.getOpportunitiesBySalesUser(currentUserId);
         if (allOpps == null) allOpps = new ArrayList<>();
 
+        // Build stage type map for accurate Won/Lost counting
+        List<PipelineStage> allStagesForType = stageDAO.getAllStages();
+        Map<Integer, String> stageTypeMap = new HashMap<>();
+        if (allStagesForType != null) {
+            for (PipelineStage s : allStagesForType) {
+                stageTypeMap.put(s.getStageId(), s.getStageType() != null ? s.getStageType() : "open");
+            }
+        }
+
         int totalOpps = allOpps.size();
         BigDecimal totalPipelineValue = BigDecimal.ZERO;
         BigDecimal wonValue = BigDecimal.ZERO;
@@ -92,11 +101,13 @@ public class SaleDashboardServlet extends HttpServlet {
         for (Opportunity opp : allOpps) {
             BigDecimal val = opp.getEstimatedValue() != null ? opp.getEstimatedValue() : BigDecimal.ZERO;
             String st = opp.getStatus();
+            String sType = stageTypeMap.getOrDefault(opp.getStageId(), "open");
 
-            if ("Won".equals(st)) {
+            // Count by status OR stage type (whichever indicates Won/Lost)
+            if ("Won".equals(st) || "won".equals(sType)) {
                 wonValue = wonValue.add(val);
                 wonCount++;
-            } else if ("Lost".equals(st)) {
+            } else if ("Lost".equals(st) || "lost".equals(sType)) {
                 lostValue = lostValue.add(val);
                 lostCount++;
             } else if (!"Cancelled".equals(st)) {

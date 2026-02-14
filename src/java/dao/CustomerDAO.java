@@ -9,6 +9,7 @@ import dbConnection.DBContext;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import model.Customer;
@@ -87,7 +88,7 @@ public class CustomerDAO extends DBContext{
                      "total_courses, total_spent, health_score, satisfaction_score, " +
                      "email_opt_out, sms_opt_out, notes, created_at, updated_at, created_by) " +
                      "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        try (PreparedStatement st = connection.prepareStatement(sql)) {
+        try (PreparedStatement st = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             if (c.getCustomerCode() == null || c.getCustomerCode().isEmpty()) {
                 c.setCustomerCode(generateCustomerCode());
             }
@@ -143,7 +144,16 @@ public class CustomerDAO extends DBContext{
             } else {
                 st.setNull(23, java.sql.Types.INTEGER);
             }
-            return st.executeUpdate() > 0;
+            int rowsAffected = st.executeUpdate();
+            if (rowsAffected > 0) {
+                try (ResultSet generatedKeys = st.getGeneratedKeys()) {
+                    if (generatedKeys.next()) {
+                        c.setCustomerId(generatedKeys.getInt(1));
+                    }
+                }
+                return true;
+            }
+            return false;
         } catch (SQLException e) {
             e.printStackTrace();
             return false;

@@ -6,7 +6,7 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
         <h4 class="mb-1 fw-bold">Sales Dashboard</h4>
-        <p class="text-muted mb-0">Tong quan hoat dong ban hang cua ban</p>
+        <p class="text-muted mb-0">Tổng quan hoạt động của bạn</p>
     </div>
     <div class="d-flex gap-2">
         <a href="${pageContext.request.contextPath}/sale/opportunity/kanban" class="btn btn-outline-primary btn-sm"><i class="bi bi-kanban me-1"></i>Kanban</a>
@@ -22,11 +22,11 @@
                 <div class="d-flex align-items-center mb-2">
                     <div class="bg-primary bg-opacity-10 rounded-3 p-2 me-3"><i class="bi bi-funnel text-primary fs-4"></i></div>
                     <div>
-                        <small class="text-muted">Pipeline dang mo</small>
+                        <small class="text-muted">Pipeline đang mở</small>
                         <h4 class="mb-0 fw-bold"><fmt:formatNumber value="${totalPipelineValue}" type="number" groupingUsed="true" maxFractionDigits="0"/>d</h4>
                     </div>
                 </div>
-                <small class="text-muted">${openCount} co hoi dang mo</small>
+                <small class="text-muted">${openCount} cơ hội đang mở</small>
             </div>
         </div>
     </div>
@@ -36,7 +36,7 @@
                 <div class="d-flex align-items-center mb-2">
                     <div class="bg-success bg-opacity-10 rounded-3 p-2 me-3"><i class="bi bi-trophy text-success fs-4"></i></div>
                     <div>
-                        <small class="text-muted">Da thang (Won)</small>
+                        <small class="text-muted">Đã thắng (Win)</small>
                         <h4 class="mb-0 fw-bold text-success"><fmt:formatNumber value="${wonValue}" type="number" groupingUsed="true" maxFractionDigits="0"/>d</h4>
                     </div>
                 </div>
@@ -50,11 +50,11 @@
                 <div class="d-flex align-items-center mb-2">
                     <div class="bg-warning bg-opacity-10 rounded-3 p-2 me-3"><i class="bi bi-graph-up-arrow text-warning fs-4"></i></div>
                     <div>
-                        <small class="text-muted">Du bao (co trong so)</small>
+                        <small class="text-muted">Dự báo</small>
                         <h4 class="mb-0 fw-bold"><fmt:formatNumber value="${weightedForecast}" type="number" groupingUsed="true" maxFractionDigits="0"/>d</h4>
                     </div>
                 </div>
-                <small class="text-muted">${totalOpps} tong opportunity</small>
+                <small class="text-muted">${totalOpps} tổng opportunity</small>
             </div>
         </div>
     </div>
@@ -64,11 +64,11 @@
                 <div class="d-flex align-items-center mb-2">
                     <div class="bg-info bg-opacity-10 rounded-3 p-2 me-3"><i class="bi bi-cash-stack text-info fs-4"></i></div>
                     <div>
-                        <small class="text-muted">Doanh thu (tu Customer)</small>
+                        <small class="text-muted">Doanh thu</small>
                         <h4 class="mb-0 fw-bold"><fmt:formatNumber value="${totalRevenue}" type="number" groupingUsed="true" maxFractionDigits="0"/>d</h4>
                     </div>
                 </div>
-                <small class="text-muted">${totalCoursesSold} khoa hoc da ban</small>
+                <small class="text-muted">${totalCoursesSold} khóa học đã bán</small>
             </div>
         </div>
     </div>
@@ -81,7 +81,7 @@
     <div class="col-lg-4">
         <div class="card border-0 shadow-sm h-100">
             <div class="card-header bg-transparent border-0">
-                <h6 class="mb-0 fw-semibold"><i class="bi bi-pie-chart me-2"></i>Ty le Won / Lost</h6>
+                <h6 class="mb-0 fw-semibold"><i class="bi bi-pie-chart me-2"></i>Tỷ lệ Win / Lost</h6>
             </div>
             <div class="card-body">
                 <!-- Win Rate Visual -->
@@ -97,7 +97,7 @@
                 <div class="d-flex justify-content-around">
                     <div class="text-center">
                         <div class="fs-5 fw-bold text-success">${wonCount}</div>
-                        <small class="text-muted">Won</small>
+                        <small class="text-muted">Win</small>
                         <div class="small text-success fw-semibold"><fmt:formatNumber value="${wonValue}" type="number" groupingUsed="true" maxFractionDigits="0"/>d</div>
                     </div>
                     <div class="text-center">
@@ -120,26 +120,26 @@
         <div class="card border-0 shadow-sm h-100">
             <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
                 <h6 class="mb-0 fw-semibold"><i class="bi bi-people me-2"></i>Lead</h6>
-                <a href="${pageContext.request.contextPath}/sale/lead/list" class="btn btn-sm btn-link text-decoration-none p-0">Xem tat ca</a>
+                <a href="${pageContext.request.contextPath}/sale/lead/list" class="btn btn-sm btn-link text-decoration-none p-0">Xem tất cả</a>
             </div>
             <div class="card-body">
                 <div class="row g-2 mb-3">
                     <div class="col-6">
                         <div class="text-center p-2 bg-light rounded-3">
                             <div class="fs-4 fw-bold text-primary">${totalLeads}</div>
-                            <small class="text-muted">Tong Lead</small>
+                            <small class="text-muted">Tổng Lead</small>
                         </div>
                     </div>
                     <div class="col-6">
                         <div class="text-center p-2 bg-light rounded-3">
                             <div class="fs-4 fw-bold text-info">${newLeads}</div>
-                            <small class="text-muted">Moi (New)</small>
+                            <small class="text-muted">Mới (New)</small>
                         </div>
                     </div>
                     <div class="col-6">
                         <div class="text-center p-2 bg-light rounded-3">
                             <div class="fs-4 fw-bold text-success">${convertedLeads}</div>
-                            <small class="text-muted">Da chuyen doi</small>
+                            <small class="text-muted">Đã chuyển đổi</small>
                         </div>
                     </div>
                     <div class="col-6">
@@ -152,7 +152,7 @@
                 <!-- Conversion Rate -->
                 <div>
                     <div class="d-flex justify-content-between mb-1">
-                        <small class="fw-semibold">Ty le chuyen doi</small>
+                        <small class="fw-semibold">Tỷ lệ chuyển đổi</small>
                         <small class="fw-bold">${leadConversionRate}%</small>
                     </div>
                     <div class="progress" style="height: 8px;">
@@ -174,20 +174,20 @@
         <div class="card border-0 shadow-sm h-100">
             <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
                 <h6 class="mb-0 fw-semibold"><i class="bi bi-building me-2"></i>Customer</h6>
-                <a href="${pageContext.request.contextPath}/sale/customer/list" class="btn btn-sm btn-link text-decoration-none p-0">Xem tat ca</a>
+                <a href="${pageContext.request.contextPath}/sale/customer/list" class="btn btn-sm btn-link text-decoration-none p-0">Xem tất cả</a>
             </div>
             <div class="card-body">
                 <div class="row g-2 mb-3">
                     <div class="col-6">
                         <div class="text-center p-2 bg-light rounded-3">
                             <div class="fs-4 fw-bold text-primary">${totalCustomers}</div>
-                            <small class="text-muted">Tong KH</small>
+                            <small class="text-muted">Tổng khách hàng</small>
                         </div>
                     </div>
                     <div class="col-6">
                         <div class="text-center p-2 bg-light rounded-3">
                             <div class="fs-4 fw-bold text-success">${activeCustomers}</div>
-                            <small class="text-muted">Active</small>
+                            <small class="text-muted">Hoạt động</small>
                         </div>
                     </div>
                     <div class="col-6">
@@ -205,10 +205,10 @@
                 </div>
                 <div>
                     <div class="d-flex justify-content-between mb-1">
-                        <small class="fw-semibold">Tong doanh thu</small>
+                        <small class="fw-semibold">Tổng doanh thu</small>
                         <small class="fw-bold text-success"><fmt:formatNumber value="${totalRevenue}" type="number" groupingUsed="true" maxFractionDigits="0"/>d</small>
                     </div>
-                    <small class="text-muted">${totalCoursesSold} khoa hoc da ban</small>
+                    <small class="text-muted">${totalCoursesSold} Khóa học đã bán</small>
                 </div>
             </div>
         </div>
