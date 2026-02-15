@@ -58,10 +58,10 @@
         <div class="card border-0 shadow-sm h-100">
             <div class="card-body">
                 <div class="d-flex align-items-center mb-3">
-                    <div class="bg-info bg-opacity-10 rounded-3 p-2 me-3"><i class="bi bi-plus-circle text-info fs-4"></i></div>
+                    <div class="bg-info bg-opacity-10 rounded-3 p-2 me-3"><i class="bi bi-person-check text-info fs-4"></i></div>
                     <div class="flex-grow-1">
-                        <small class="text-muted">Lead moi (New)</small>
-                        <h3 class="mb-0 fw-bold">${newLeads}</h3>
+                        <small class="text-muted">Assigned</small>
+                        <h3 class="mb-0 fw-bold">${assignedLeads}</h3>
                     </div>
                 </div>
             </div>
@@ -102,14 +102,11 @@
             <span class="text-muted small me-1"><i class="bi bi-funnel me-1"></i>Loc:</span>
             <select class="form-select form-select-sm" style="width:auto;" name="status" onchange="this.form.submit()">
                 <option value="">Tat ca trang thai</option>
-                <option value="New" ${filterStatus == 'New' ? 'selected' : ''}>New</option>
                 <option value="Assigned" ${filterStatus == 'Assigned' ? 'selected' : ''}>Assigned</option>
-                <option value="Contacted" ${filterStatus == 'Contacted' ? 'selected' : ''}>Contacted</option>
-                <option value="Working" ${filterStatus == 'Working' ? 'selected' : ''}>Working</option>
-                <option value="Qualified" ${filterStatus == 'Qualified' ? 'selected' : ''}>Qualified</option>
                 <option value="Unqualified" ${filterStatus == 'Unqualified' ? 'selected' : ''}>Unqualified</option>
+                <option value="Recycled" ${filterStatus == 'Recycled' ? 'selected' : ''}>Recycled</option>
+                <option value="Nurturing" ${filterStatus == 'Nurturing' ? 'selected' : ''}>Nurturing</option>
                 <option value="Converted" ${filterStatus == 'Converted' ? 'selected' : ''}>Converted</option>
-                <option value="Lost" ${filterStatus == 'Lost' ? 'selected' : ''}>Lost</option>
             </select>
             <select class="form-select form-select-sm" style="width:auto;" name="rating" onchange="this.form.submit()">
                 <option value="">Tat ca rating</option>
@@ -205,14 +202,11 @@
                                     </td>
                                     <td>
                                         <c:choose>
-                                            <c:when test="${lead.status == 'New'}"><span class="badge bg-info-subtle text-info">New</span></c:when>
-                                            <c:when test="${lead.status == 'Assigned'}"><span class="badge bg-secondary-subtle text-secondary">Assigned</span></c:when>
-                                            <c:when test="${lead.status == 'Contacted'}"><span class="badge bg-primary-subtle text-primary">Contacted</span></c:when>
-                                            <c:when test="${lead.status == 'Working'}"><span class="badge bg-warning-subtle text-warning">Working</span></c:when>
-                                            <c:when test="${lead.status == 'Qualified'}"><span class="badge bg-success-subtle text-success">Qualified</span></c:when>
+                                            <c:when test="${lead.status == 'Assigned'}"><span class="badge bg-primary-subtle text-primary">Assigned</span></c:when>
                                             <c:when test="${lead.status == 'Unqualified'}"><span class="badge bg-secondary-subtle text-secondary">Unqualified</span></c:when>
+                                            <c:when test="${lead.status == 'Recycled'}"><span class="badge bg-warning-subtle text-warning">Recycled</span></c:when>
+                                            <c:when test="${lead.status == 'Nurturing'}"><span class="badge bg-info-subtle text-info">Nurturing</span></c:when>
                                             <c:when test="${lead.status == 'Converted'}"><span class="badge bg-success">Converted</span></c:when>
-                                            <c:when test="${lead.status == 'Lost'}"><span class="badge bg-danger-subtle text-danger">Lost</span></c:when>
                                             <c:otherwise><span class="badge bg-secondary-subtle text-secondary">${lead.status}</span></c:otherwise>
                                         </c:choose>
                                     </td>
@@ -296,7 +290,7 @@
 
 <script>
     function deleteLead(leadId, leadName) {
-        if (confirm('Ban co chac muon xoa lead "' + leadName + '"?\nHanh dong nay khong the hoan tac.')) {
+        if (confirm('Ban co chac muon xoa lead "' + leadName + '"?\nLuu y: Tat ca Opportunity lien quan cung se bi huy (Cancelled).')) {
             const form = document.createElement('form');
             form.method = 'POST';
             form.action = '${pageContext.request.contextPath}/sale/lead/list';

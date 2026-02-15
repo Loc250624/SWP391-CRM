@@ -118,6 +118,13 @@ public class SaleOpportunityKanbanServlet extends HttpServlet {
 
         int winRate = totalClosed > 0 ? (wonCount * 100 / totalClosed) : 0;
 
+        // Build stageCodeMap for JSP (stageId -> stageCode)
+        Map<Integer, String> stageCodeMap = new HashMap<>();
+        for (PipelineStage stage : stages) {
+            stageCodeMap.put(stage.getStageId(), stage.getStageCode());
+        }
+
+        request.setAttribute("stageCodeMap", stageCodeMap);
         request.setAttribute("selectedPipeline", selectedPipeline);
         request.setAttribute("allPipelines", allPipelines);
         request.setAttribute("stages", stages);

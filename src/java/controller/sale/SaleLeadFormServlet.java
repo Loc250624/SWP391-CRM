@@ -5,8 +5,13 @@ import dao.LeadDAO;
 import dao.LeadSourceDAO;
 import enums.LeadRating;
 import enums.LeadStatus;
+import util.EnumHelper;
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -23,6 +28,11 @@ public class SaleLeadFormServlet extends HttpServlet {
     private LeadDAO leadDAO = new LeadDAO();
     private LeadSourceDAO leadSourceDAO = new LeadSourceDAO();
     private CampaignDAO campaignDAO = new CampaignDAO();
+
+    // Allowed status transitions from Assigned
+    private static final Set<String> ALLOWED_UPDATE_STATUSES = new HashSet<>(
+            Arrays.asList(LeadStatus.Assigned.name(), LeadStatus.Unqualified.name(),
+                    LeadStatus.Recycled.name(), LeadStatus.Nurturing.name(), LeadStatus.Delete.name()));
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -148,9 +158,7 @@ public class SaleLeadFormServlet extends HttpServlet {
             }
         }
         if (status != null && !status.isEmpty()) {
-            try {
-                LeadStatus.valueOf(status);
-            } catch (IllegalArgumentException e) {
+            if (!EnumHelper.isValidIgnoreCase(LeadStatus.class, status)) {
                 request.setAttribute("error", "Trang thai khong hop le!");
                 doGet(request, response);
                 return;
@@ -182,6 +190,16 @@ public class SaleLeadFormServlet extends HttpServlet {
             }
         }
 
+        // Get current user ID
+        Integer currentUserId = 1;
+        HttpSession session = request.getSession(false);
+        if (session != null && session.getAttribute("userId") != null) {
+            try {
+                currentUserId = (Integer) session.getAttribute("userId");
+            } catch (Exception e) {
+            }
+        }
+
         // Set lead properties
         lead.setFullName(fullName != null ? fullName.trim() : null);
         lead.setEmail(email != null && !email.trim().isEmpty() ? email.trim() : null);
@@ -189,47 +207,52 @@ public class SaleLeadFormServlet extends HttpServlet {
         lead.setCompanyName(companyName != null && !companyName.trim().isEmpty() ? companyName.trim() : null);
         lead.setJobTitle(jobTitle != null && !jobTitle.trim().isEmpty() ? jobTitle.trim() : null);
         lead.setInterests(interests != null && !interests.trim().isEmpty() ? interests.trim() : null);
-        lead.setStatus(status != null && !status.isEmpty() ? status : "New");
         lead.setRating(rating != null && !rating.isEmpty() ? rating : null);
         lead.setNotes(notes != null && !notes.trim().isEmpty() ? notes.trim() : null);
         lead.setLeadScore(0);
         lead.setIsConverted(false);
 
+        if (isEdit) {
+            // Validate status transition: only allow Assigned -> Unqualified, Recycled, Nurturing, Delete
+            Lead existing = leadDAO.getLeadById(lead.getLeadId());
+            if (existing == null) {
+                request.setAttribute("error", "Lead khong ton tai!");
+                doGet(request, response);
+                return;
+            }
+            String newStatus = (status != null && !status.isEmpty()) ? status : existing.getStatus();
+            if (!ALLOWED_UPDATE_STATUSES.contains(newStatus)) {
+                request.setAttribute("error", "Chi co the chuyen trang thai sang: Assigned, Unqualified, Recycled, Nurturing hoac Delete!");
+                request.setAttribute("lead", existing);
+                doGet(request, response);
+                return;
+            }
+            lead.setStatus(newStatus);
+
+            // If status is Delete, soft delete and cancel related opps
+            if (LeadStatus.Delete.name().equals(newStatus)) {
+                leadDAO.deleteLead(lead.getLeadId());
+                response.sendRedirect(request.getContextPath() + "/sale/lead/list?success=deleted");
+                return;
+            }
+        } else {
+            // Create mode: default status = Assigned, assignedTo = current user
+            lead.setStatus(LeadStatus.Assigned.name());
+            lead.setAssignedTo(currentUserId);
+            lead.setAssignedAt(LocalDateTime.now());
+            lead.setCreatedBy(currentUserId);
+        }
+
         // Set source and campaign
         if (sourceIdParam != null && !sourceIdParam.isEmpty()) {
-            try {
-                lead.setSourceId(Integer.parseInt(sourceIdParam));
-            } catch (NumberFormatException e) {
-                lead.setSourceId(null);
-            }
+            try { lead.setSourceId(Integer.parseInt(sourceIdParam)); } catch (NumberFormatException e) { lead.setSourceId(null); }
         } else {
             lead.setSourceId(null);
         }
-
         if (campaignIdParam != null && !campaignIdParam.isEmpty()) {
-            try {
-                lead.setCampaignId(Integer.parseInt(campaignIdParam));
-            } catch (NumberFormatException e) {
-                lead.setCampaignId(null);
-            }
+            try { lead.setCampaignId(Integer.parseInt(campaignIdParam)); } catch (NumberFormatException e) { lead.setCampaignId(null); }
         } else {
             lead.setCampaignId(null);
-        }
-
-        // Get current user ID from session (or use default userId = 1 for now)
-        Integer currentUserId = 1; // TODO: Get from session after implementing authentication
-
-        HttpSession session = request.getSession(false);
-        if (session != null && session.getAttribute("userId") != null) {
-            try {
-                currentUserId = (Integer) session.getAttribute("userId");
-            } catch (Exception e) {
-                // Use default userId = 1
-            }
-        }
-
-        if (!isEdit) {
-            lead.setCreatedBy(currentUserId);
         }
 
         // Save to database

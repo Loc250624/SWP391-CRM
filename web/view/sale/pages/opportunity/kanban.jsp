@@ -397,12 +397,15 @@
                                          data-prob="${opp.probability}"
                                          data-status="${opp.status}"
                                          data-stage="${stage.stageName}"
+                                         data-stage-code="${stageCodeMap[stage.stageId]}"
                                          data-stage-color="${stageColor}"
                                          data-stage-order="${stage.stageOrder}"
                                          data-close-date="${opp.expectedCloseDate}"
                                          data-actual-close="${opp.actualCloseDate}"
                                          data-notes="${opp.notes}"
                                          data-reason="${opp.wonLostReason}"
+                                         data-lead-id="${opp.leadId}"
+                                         data-customer-id="${opp.customerId}"
                                          data-created="${opp.createdAt}"
                                          data-updated="${opp.updatedAt}"
                                          onclick="showOppDetail(this)" style="cursor:pointer;">
@@ -532,6 +535,7 @@
             <div class="modal-footer py-2">
                 <a id="mdl-link-detail" href="#" class="btn btn-outline-primary btn-sm"><i class="bi bi-eye me-1"></i>Xem chi tiet</a>
                 <a id="mdl-link-edit" href="#" class="btn btn-outline-secondary btn-sm"><i class="bi bi-pencil me-1"></i>Chinh sua</a>
+                <a id="mdl-link-quotation" href="#" class="btn btn-success btn-sm" style="display:none;"><i class="bi bi-file-earmark-text me-1"></i>Tao de xuat</a>
                 <button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal">Dong</button>
             </div>
         </div>
@@ -549,8 +553,9 @@
             <div class="modal-body">
                 <p class="mb-3" id="confirmCloseMsg"></p>
                 <div class="mb-3">
-                    <label class="form-label small fw-semibold">Ly do (khong bat buoc)</label>
+                    <label class="form-label small fw-semibold" id="confirmCloseReasonLabel">Ly do <span id="reasonRequiredMark" class="text-danger" style="display:none;">*</span></label>
                     <textarea class="form-control form-control-sm" id="confirmCloseReason" rows="3" placeholder="Nhap ly do..."></textarea>
+                    <div class="invalid-feedback" id="reasonError">Vui long nhap ly do.</div>
                 </div>
                 <div class="alert alert-warning small py-2 mb-0">
                     <i class="bi bi-exclamation-triangle me-1"></i>Sau khi xac nhan, trang thai se <strong>khong the thay doi</strong> lai duoc.
@@ -614,6 +619,9 @@
                             ? 'Ban co chac muon danh dau <strong>' + oppName + '</strong> la <span class="text-success fw-bold">Thanh cong (Won)</span>?'
                             : 'Ban co chac muon danh dau <strong>' + oppName + '</strong> la <span class="text-danger fw-bold">That bai (Lost)</span>?');
                     document.getElementById('confirmCloseReason').value = '';
+                    document.getElementById('confirmCloseReason').classList.remove('is-invalid');
+                    // LOST requires reason, WON does not
+                    document.getElementById('reasonRequiredMark').style.display = isWon ? 'none' : 'inline';
                     var btn = document.getElementById('confirmCloseBtn');
                     btn.className = 'btn btn-sm ' + (isWon ? 'btn-success' : 'btn-danger');
                     btn.textContent = isWon ? 'Xac nhan Won' : 'Xac nhan Lost';
@@ -643,7 +651,7 @@
         }
 
         var body = 'opportunityId=' + oppId + '&stageId=' + newStageId;
-        if (reason) body += '&reason=' + encodeURIComponent(reason);
+        if (reason) body += '&wonLostReason=' + encodeURIComponent(reason);
 
         fetch('${pageContext.request.contextPath}/sale/opportunity/stage', {
             method: 'POST',
@@ -688,7 +696,13 @@
     // Confirm button handler
     document.getElementById('confirmCloseBtn').addEventListener('click', function () {
         if (!pendingClose) return;
-        var reason = document.getElementById('confirmCloseReason').value;
+        var reason = document.getElementById('confirmCloseReason').value.trim();
+        // Validate: LOST requires reason
+        if (pendingClose.stageType === 'lost' && !reason) {
+            document.getElementById('confirmCloseReason').classList.add('is-invalid');
+            return;
+        }
+        document.getElementById('confirmCloseReason').classList.remove('is-invalid');
         performStageUpdate(
                 pendingClose.oppId,
                 pendingClose.newStageId,
@@ -816,6 +830,16 @@
         var ctx = '${pageContext.request.contextPath}';
         document.getElementById('mdl-link-detail').href = ctx + '/sale/opportunity/detail?id=' + oppId;
         document.getElementById('mdl-link-edit').href = ctx + '/sale/opportunity/form?id=' + oppId;
+
+        // Quotation button - show only for DEMO, NEGOTIATION, PROPOSED stages
+        var stageCode = card.getAttribute('data-stage-code') || '';
+        var quotBtn = document.getElementById('mdl-link-quotation');
+        if (stageCode === 'DEMO' || stageCode === 'NEGOTIATION' || stageCode === 'PROPOSED') {
+            quotBtn.style.display = '';
+            quotBtn.href = ctx + '/sale/quotation/form?oppId=' + oppId;
+        } else {
+            quotBtn.style.display = 'none';
+        }
 
         getOppModal().show();
     }

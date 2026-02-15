@@ -98,19 +98,25 @@
                 <div class="card-body">
                     <div class="mb-3">
                         <label class="form-label fw-medium">Trang thai <span class="text-danger">*</span></label>
-                        <select class="form-select" id="status" name="status" required>
-                            <option value="">-- Chon trang thai --</option>
-                            <c:forEach var="statusEnum" items="${leadStatuses}">
-                                <option value="${statusEnum}" <c:if test="${lead.status == statusEnum.toString()}">selected</c:if>>${statusEnum}</option>
-                            </c:forEach>
-                            <c:if test="${empty leadStatuses}">
-                                <option value="New">New</option>
-                                <option value="Contacted">Contacted</option>
-                                <option value="Qualified">Qualified</option>
-                                <option value="Converted">Converted</option>
-                                <option value="Lost">Lost</option>
-                            </c:if>
-                        </select>
+                        <c:choose>
+                            <c:when test="${mode == 'edit'}">
+                                <!-- Edit mode: only allow Assigned, Unqualified, Recycled, Nurturing, Delete -->
+                                <select class="form-select" id="status" name="status" required>
+                                    <option value="Assigned" ${lead.status == 'Assigned' ? 'selected' : ''}>Assigned</option>
+                                    <option value="Unqualified" ${lead.status == 'Unqualified' ? 'selected' : ''}>Unqualified</option>
+                                    <option value="Recycled" ${lead.status == 'Recycled' ? 'selected' : ''}>Recycled</option>
+                                    <option value="Nurturing" ${lead.status == 'Nurturing' ? 'selected' : ''}>Nurturing</option>
+                                    <option value="Delete" ${lead.status == 'Delete' ? 'selected' : ''}>Delete (Xoa)</option>
+                                </select>
+                                <div class="form-text">Chi co the chuyen sang: Unqualified, Recycled, Nurturing hoac Delete</div>
+                            </c:when>
+                            <c:otherwise>
+                                <!-- Create mode: default Assigned, hidden -->
+                                <input type="hidden" name="status" value="Assigned">
+                                <div class="form-control bg-light"><span class="badge bg-primary">Assigned</span> (Mac dinh)</div>
+                                <div class="form-text">Lead moi se tu dong o trang thai Assigned</div>
+                            </c:otherwise>
+                        </c:choose>
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-medium">Rating</label>

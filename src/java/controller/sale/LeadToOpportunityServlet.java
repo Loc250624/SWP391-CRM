@@ -1,6 +1,7 @@
 package controller.sale;
 
 import dao.LeadDAO;
+import enums.LeadStatus;
 import model.Lead;
 import java.io.IOException;
 import jakarta.servlet.ServletException;
@@ -91,7 +92,7 @@ public class LeadToOpportunityServlet extends HttpServlet {
             Lead lead = leadDAO.getLeadById(leadId);
             if (lead != null) {
                 lead.setIsConverted(true);
-                lead.setStatus("Converted");
+                lead.setStatus(LeadStatus.Converted.name());
                 leadDAO.updateLead(lead);
             }
 

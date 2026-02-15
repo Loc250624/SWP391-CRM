@@ -15,6 +15,8 @@ import model.Opportunity;
 import model.Pipeline;
 import model.PipelineStage;
 import dao.OpportunityHistoryDAO;
+import enums.OpportunityStatus;
+import util.EnumHelper;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -256,7 +258,7 @@ public class SaleOpportunityFormServlet extends HttpServlet {
         }
 
         if (status != null && !status.isEmpty()) {
-            if (!"Open".equals(status) && !"InProgress".equals(status) && !"Won".equals(status) && !"Lost".equals(status)) {
+            if (!EnumHelper.isValidIgnoreCase(OpportunityStatus.class, status)) {
                 request.setAttribute("error", "Trang thai khong hop le!");
                 doGet(request, response);
                 return;
@@ -283,7 +285,7 @@ public class SaleOpportunityFormServlet extends HttpServlet {
         }
 
         // Block editing Won/Lost opportunities
-        if (isEdit && oldOpp != null && ("Won".equals(oldOpp.getStatus()) || "Lost".equals(oldOpp.getStatus()))) {
+        if (isEdit && oldOpp != null && (OpportunityStatus.Won.name().equals(oldOpp.getStatus()) || OpportunityStatus.Lost.name().equals(oldOpp.getStatus()))) {
             request.setAttribute("error", "Opportunity da dong (" + oldOpp.getStatus() + "), khong the chinh sua!");
             doGet(request, response);
             return;
@@ -382,7 +384,7 @@ public class SaleOpportunityFormServlet extends HttpServlet {
         }
 
         // Status
-        opportunity.setStatus(status != null && !status.isEmpty() ? status : "Open");
+        opportunity.setStatus(status != null && !status.isEmpty() ? status : OpportunityStatus.Open.name());
 
         // Source and Campaign
         if (sourceIdParam != null && !sourceIdParam.isEmpty()) {

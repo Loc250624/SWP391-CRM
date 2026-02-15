@@ -17,6 +17,7 @@ public enum LeadStatus {
     Recycled,
     Nurturing,
     Lost,
+    Delete,
     Other
 
 }
