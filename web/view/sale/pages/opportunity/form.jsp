@@ -1,6 +1,64 @@
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
 <%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 
+<style>
+    .contact-table-wrap {
+        max-height: 280px;
+        overflow-y: auto;
+        border: 1px solid #dee2e6;
+        border-radius: 6px;
+    }
+    .contact-table-wrap::-webkit-scrollbar { width: 5px; }
+    .contact-table-wrap::-webkit-scrollbar-thumb { background: #c1c7d0; border-radius: 3px; }
+    .contact-table {
+        margin-bottom: 0;
+        font-size: .8rem;
+    }
+    .contact-table thead { position: sticky; top: 0; z-index: 1; }
+    .contact-table tbody tr {
+        cursor: pointer;
+        transition: background .1s;
+    }
+    .contact-table tbody tr:hover { background: #e9ecef !important; }
+    .contact-table tbody tr.selected-row {
+        background: #d0e8ff !important;
+        border-left: 3px solid #0d6efd;
+    }
+    .contact-table tbody tr.selected-row td:first-child { padding-left: 9px; }
+    .selected-contact-preview {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 12px;
+        background: #f0f7ff;
+        border: 1px solid #b6d4fe;
+        border-radius: 6px;
+    }
+    .selected-contact-preview .avatar {
+        width: 36px; height: 36px;
+        border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        font-weight: 700; font-size: .75rem; color: #fff; flex-shrink: 0;
+    }
+    .selected-contact-preview .info { flex: 1; min-width: 0; }
+    .selected-contact-preview .name { font-weight: 600; font-size: .85rem; }
+    .selected-contact-preview .meta { font-size: .72rem; color: #6b778c; }
+    .contact-search-box {
+        position: relative;
+    }
+    .contact-search-box i {
+        position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
+        color: #8993a4; font-size: .8rem;
+    }
+    .contact-search-box input {
+        padding-left: 32px;
+        font-size: .8rem;
+    }
+    .empty-table-msg {
+        text-align: center; padding: 24px 12px; color: #8993a4; font-size: .8rem;
+    }
+</style>
+
 <!-- Page Header -->
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
@@ -42,6 +100,12 @@
         <input type="hidden" name="opportunityId" value="${opportunity.opportunityId}">
     </c:if>
 
+    <!-- Hidden inputs for selected lead/customer -->
+    <input type="hidden" name="leadId" id="hiddenLeadId"
+           value="${not empty opportunity ? opportunity.leadId : ''}">
+    <input type="hidden" name="customerId" id="hiddenCustomerId"
+           value="${not empty opportunity ? opportunity.customerId : ''}">
+
     <div class="row g-4">
         <!-- Main -->
         <div class="col-lg-8">
@@ -49,8 +113,8 @@
             <div class="card border-0 shadow-sm mb-4">
                 <div class="card-header bg-transparent border-0">
                     <h6 class="mb-0 fw-semibold"><i class="bi bi-person-lines-fill me-2"></i>Lead / Customer <c:if test="${mode != 'edit'}"><span class="text-danger">*</span></c:if></h6>
-                    </div>
-                    <div class="card-body">
+                </div>
+                <div class="card-body">
                     <c:choose>
                         <c:when test="${mode == 'edit'}">
                             <!-- Edit mode: read-only display -->
@@ -86,7 +150,7 @@
                             <small class="text-muted mt-2 d-block"><i class="bi bi-info-circle me-1"></i>Khong the thay doi Lead/Customer sau khi tao. Chi co the cap nhat Customer khi convert tu Lead.</small>
                         </c:when>
                         <c:otherwise>
-                            <!-- Create mode: select lead or customer -->
+                            <!-- Create mode: searchable table -->
                             <div class="row g-3">
                                 <div class="col-12">
                                     <div class="btn-group btn-group-sm w-100 mb-3" role="group">
@@ -102,27 +166,144 @@
                                         <label class="btn btn-outline-success" for="typeFromCustomer"><i class="bi bi-building me-1"></i>Tu Customer</label>
                                     </div>
                                 </div>
-                                <!-- Lead selector -->
-                                <div class="col-12" id="leadSelectDiv">
-                                    <label class="form-label small">Chon Lead <span class="text-danger">*</span></label>
-                                    <select name="leadId" class="form-select form-select-sm" id="leadSelect">
-                                        <option value="">-- Chon lead --</option>
-                                        <c:forEach var="ld" items="${leads}">
-                                            <c:if test="${!ld.isConverted}">
-                                                <option value="${ld.leadId}">${ld.fullName} - ${not empty ld.companyName ? ld.companyName : 'N/A'} (${ld.leadCode})</option>
-                                            </c:if>
-                                        </c:forEach>
-                                    </select>
+
+                                <!-- Selected preview -->
+                                <div class="col-12" id="selectedPreview" style="display:none;">
+                                    <div class="selected-contact-preview">
+                                        <div class="avatar" id="previewAvatar">?</div>
+                                        <div class="info">
+                                            <div class="name" id="previewName"></div>
+                                            <div class="meta" id="previewMeta"></div>
+                                        </div>
+                                        <button type="button" class="btn btn-outline-danger btn-sm" onclick="clearSelection()" title="Bo chon">
+                                            <i class="bi bi-x-lg"></i>
+                                        </button>
+                                    </div>
                                 </div>
-                                <!-- Customer selector -->
-                                <div class="col-12" id="customerSelectDiv" style="display:none;">
-                                    <label class="form-label small">Chon Customer <span class="text-danger">*</span></label>
-                                    <select name="customerId" class="form-select form-select-sm" id="customerSelect">
-                                        <option value="">-- Chon customer --</option>
-                                        <c:forEach var="cust" items="${customers}">
-                                            <option value="${cust.customerId}">${cust.fullName}</option>
-                                        </c:forEach>
-                                    </select>
+
+                                <!-- Lead table -->
+                                <div class="col-12" id="leadTableDiv">
+                                    <label class="form-label small fw-medium">Chon Lead <span class="text-danger">*</span></label>
+                                    <div class="contact-search-box mb-2">
+                                        <i class="bi bi-search"></i>
+                                        <input type="text" class="form-control form-control-sm" id="leadSearchInput"
+                                               placeholder="Tim theo ten, email, SDT, cong ty, ma lead...">
+                                    </div>
+                                    <div class="contact-table-wrap">
+                                        <table class="table table-hover contact-table">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th style="width:35px;"></th>
+                                                    <th>Ho ten</th>
+                                                    <th>Lien he</th>
+                                                    <th>Cong ty</th>
+                                                    <th>Trang thai</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="leadTableBody">
+                                                <c:set var="hasLeads" value="false"/>
+                                                <c:forEach var="ld" items="${leads}">
+                                                    <c:if test="${!ld.isConverted}">
+                                                        <c:set var="hasLeads" value="true"/>
+                                                        <tr class="lead-row"
+                                                            data-id="${ld.leadId}"
+                                                            data-name="${ld.fullName}"
+                                                            data-email="${ld.email}"
+                                                            data-phone="${ld.phone}"
+                                                            data-company="${ld.companyName}"
+                                                            data-code="${ld.leadCode}"
+                                                            data-status="${ld.status}"
+                                                            onclick="selectLead(this)">
+                                                            <td class="text-center"><i class="bi bi-circle text-muted" style="font-size:.6rem;"></i></td>
+                                                            <td>
+                                                                <div class="fw-medium">${ld.fullName}</div>
+                                                                <small class="text-muted">${ld.leadCode}</small>
+                                                            </td>
+                                                            <td>
+                                                                <c:if test="${not empty ld.email}"><small class="d-block text-truncate" style="max-width:150px;"><i class="bi bi-envelope me-1"></i>${ld.email}</small></c:if>
+                                                                <c:if test="${not empty ld.phone}"><small class="d-block"><i class="bi bi-telephone me-1"></i>${ld.phone}</small></c:if>
+                                                            </td>
+                                                            <td><small>${not empty ld.companyName ? ld.companyName : '-'}</small></td>
+                                                            <td>
+                                                                <c:choose>
+                                                                    <c:when test="${ld.status == 'Assigned'}"><span class="badge bg-primary-subtle text-primary" style="font-size:.65rem;">Assigned</span></c:when>
+                                                                    <c:when test="${ld.status == 'Qualified'}"><span class="badge bg-success-subtle text-success" style="font-size:.65rem;">Qualified</span></c:when>
+                                                                    <c:when test="${ld.status == 'Contacted'}"><span class="badge bg-info-subtle text-info" style="font-size:.65rem;">Contacted</span></c:when>
+                                                                    <c:when test="${ld.status == 'Working'}"><span class="badge bg-warning-subtle text-warning" style="font-size:.65rem;">Working</span></c:when>
+                                                                    <c:otherwise><span class="badge bg-secondary-subtle text-secondary" style="font-size:.65rem;">${ld.status}</span></c:otherwise>
+                                                                </c:choose>
+                                                            </td>
+                                                        </tr>
+                                                    </c:if>
+                                                </c:forEach>
+                                                <c:if test="${!hasLeads}">
+                                                    <tr><td colspan="5" class="empty-table-msg"><i class="bi bi-inbox me-1"></i>Chua co lead nao</td></tr>
+                                                </c:if>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <small class="text-muted mt-1 d-block" id="leadCountText"></small>
+                                </div>
+
+                                <!-- Customer table -->
+                                <div class="col-12" id="customerTableDiv" style="display:none;">
+                                    <label class="form-label small fw-medium">Chon Customer <span class="text-danger">*</span></label>
+                                    <div class="contact-search-box mb-2">
+                                        <i class="bi bi-search"></i>
+                                        <input type="text" class="form-control form-control-sm" id="customerSearchInput"
+                                               placeholder="Tim theo ten, email, SDT, ma customer...">
+                                    </div>
+                                    <div class="contact-table-wrap">
+                                        <table class="table table-hover contact-table">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th style="width:35px;"></th>
+                                                    <th>Ho ten</th>
+                                                    <th>Lien he</th>
+                                                    <th>Phan khuc</th>
+                                                    <th>Trang thai</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="customerTableBody">
+                                                <c:choose>
+                                                    <c:when test="${not empty customers}">
+                                                        <c:forEach var="cust" items="${customers}">
+                                                            <tr class="customer-row"
+                                                                data-id="${cust.customerId}"
+                                                                data-name="${cust.fullName}"
+                                                                data-email="${cust.email}"
+                                                                data-phone="${cust.phone}"
+                                                                data-code="${cust.customerCode}"
+                                                                data-segment="${cust.customerSegment}"
+                                                                data-status="${cust.status}"
+                                                                onclick="selectCustomer(this)">
+                                                                <td class="text-center"><i class="bi bi-circle text-muted" style="font-size:.6rem;"></i></td>
+                                                                <td>
+                                                                    <div class="fw-medium">${cust.fullName}</div>
+                                                                    <small class="text-muted">${cust.customerCode}</small>
+                                                                </td>
+                                                                <td>
+                                                                    <c:if test="${not empty cust.email}"><small class="d-block text-truncate" style="max-width:150px;"><i class="bi bi-envelope me-1"></i>${cust.email}</small></c:if>
+                                                                    <c:if test="${not empty cust.phone}"><small class="d-block"><i class="bi bi-telephone me-1"></i>${cust.phone}</small></c:if>
+                                                                </td>
+                                                                <td><small>${not empty cust.customerSegment ? cust.customerSegment : '-'}</small></td>
+                                                                <td>
+                                                                    <c:choose>
+                                                                        <c:when test="${cust.status == 'Active'}"><span class="badge bg-success-subtle text-success" style="font-size:.65rem;">Active</span></c:when>
+                                                                        <c:otherwise><span class="badge bg-secondary-subtle text-secondary" style="font-size:.65rem;">${cust.status}</span></c:otherwise>
+                                                                    </c:choose>
+                                                                </td>
+                                                            </tr>
+                                                        </c:forEach>
+                                                    </c:when>
+                                                    <c:otherwise>
+                                                        <tr><td colspan="5" class="empty-table-msg"><i class="bi bi-inbox me-1"></i>Chua co customer nao</td></tr>
+                                                    </c:otherwise>
+                                                </c:choose>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <small class="text-muted mt-1 d-block" id="customerCountText"></small>
                                 </div>
                             </div>
                         </c:otherwise>
@@ -267,72 +448,212 @@
 </form>
 
 <script>
-    // Load stages dynamically when pipeline changes
+    // ===== Load stages dynamically =====
     function loadStages(pipelineId) {
         var stageSelect = document.getElementById('stageSelect');
         stageSelect.innerHTML = '<option value="">-- Dang tai... --</option>';
-
         if (!pipelineId) {
             stageSelect.innerHTML = '<option value="">-- Chon pipeline truoc --</option>';
             return;
         }
-
         fetch('${pageContext.request.contextPath}/sale/api/stages?pipelineId=' + pipelineId)
-                .then(function (res) {
-                    return res.json();
-                })
-                .then(function (stages) {
-                    stageSelect.innerHTML = '<option value="">-- Tu dong chon stage dau --</option>';
-                    stages.forEach(function (s) {
-                        var opt = document.createElement('option');
-                        opt.value = s.stageId;
-                        opt.textContent = s.stageName + ' (' + s.probability + '%)';
-                        stageSelect.appendChild(opt);
-                    });
-                })
-                .catch(function () {
-                    stageSelect.innerHTML = '<option value="">-- Loi tai stages --</option>';
+            .then(function(res) { return res.json(); })
+            .then(function(stages) {
+                stageSelect.innerHTML = '<option value="">-- Tu dong chon stage dau --</option>';
+                stages.forEach(function(s) {
+                    var opt = document.createElement('option');
+                    opt.value = s.stageId;
+                    opt.textContent = s.stageName + ' (' + s.probability + '%)';
+                    stageSelect.appendChild(opt);
                 });
+            })
+            .catch(function() {
+                stageSelect.innerHTML = '<option value="">-- Loi tai stages --</option>';
+            });
     }
 
-    document.getElementById('oppForm').addEventListener('submit', function () {
+    // ===== Contact selection logic =====
+    var typeFromLead = document.getElementById('typeFromLead');
+    var typeFromCustomer = document.getElementById('typeFromCustomer');
+    var leadTableDiv = document.getElementById('leadTableDiv');
+    var customerTableDiv = document.getElementById('customerTableDiv');
+    var hiddenLeadId = document.getElementById('hiddenLeadId');
+    var hiddenCustomerId = document.getElementById('hiddenCustomerId');
+    var selectedPreview = document.getElementById('selectedPreview');
+
+    function toggleContactType() {
+        if (!typeFromLead || !typeFromCustomer) return;
+        clearSelection();
+        if (typeFromLead.checked) {
+            if (leadTableDiv) leadTableDiv.style.display = '';
+            if (customerTableDiv) customerTableDiv.style.display = 'none';
+        } else {
+            if (leadTableDiv) leadTableDiv.style.display = 'none';
+            if (customerTableDiv) customerTableDiv.style.display = '';
+        }
+    }
+
+    function selectLead(row) {
+        var id = row.getAttribute('data-id');
+        var name = row.getAttribute('data-name') || '';
+        var email = row.getAttribute('data-email') || '';
+        var phone = row.getAttribute('data-phone') || '';
+        var company = row.getAttribute('data-company') || '';
+        var code = row.getAttribute('data-code') || '';
+
+        // Set hidden value
+        hiddenLeadId.value = id;
+        hiddenCustomerId.value = '';
+
+        // Highlight row
+        document.querySelectorAll('.lead-row').forEach(function(r) {
+            r.classList.remove('selected-row');
+            r.querySelector('td:first-child i').className = 'bi bi-circle text-muted';
+            r.querySelector('td:first-child i').style.fontSize = '.6rem';
+        });
+        row.classList.add('selected-row');
+        row.querySelector('td:first-child i').className = 'bi bi-check-circle-fill text-primary';
+        row.querySelector('td:first-child i').style.fontSize = '.8rem';
+
+        // Show preview
+        showPreview(name, code, email, phone, company, 'bg-primary');
+    }
+
+    function selectCustomer(row) {
+        var id = row.getAttribute('data-id');
+        var name = row.getAttribute('data-name') || '';
+        var email = row.getAttribute('data-email') || '';
+        var phone = row.getAttribute('data-phone') || '';
+        var code = row.getAttribute('data-code') || '';
+        var segment = row.getAttribute('data-segment') || '';
+
+        // Set hidden value
+        hiddenCustomerId.value = id;
+        hiddenLeadId.value = '';
+
+        // Highlight row
+        document.querySelectorAll('.customer-row').forEach(function(r) {
+            r.classList.remove('selected-row');
+            r.querySelector('td:first-child i').className = 'bi bi-circle text-muted';
+            r.querySelector('td:first-child i').style.fontSize = '.6rem';
+        });
+        row.classList.add('selected-row');
+        row.querySelector('td:first-child i').className = 'bi bi-check-circle-fill text-success';
+        row.querySelector('td:first-child i').style.fontSize = '.8rem';
+
+        // Show preview
+        var meta = code;
+        if (segment) meta += ' | ' + segment;
+        showPreview(name, code, email, phone, '', 'bg-success');
+    }
+
+    function showPreview(name, code, email, phone, company, avatarClass) {
+        if (!selectedPreview) return;
+        var initial = name ? name.charAt(0).toUpperCase() : '?';
+        document.getElementById('previewAvatar').className = 'avatar ' + avatarClass;
+        document.getElementById('previewAvatar').textContent = initial;
+        document.getElementById('previewName').textContent = name;
+
+        var metaParts = [code];
+        if (email) metaParts.push(email);
+        if (phone) metaParts.push(phone);
+        if (company) metaParts.push(company);
+        document.getElementById('previewMeta').textContent = metaParts.join(' | ');
+
+        selectedPreview.style.display = '';
+    }
+
+    function clearSelection() {
+        if (hiddenLeadId) hiddenLeadId.value = '';
+        if (hiddenCustomerId) hiddenCustomerId.value = '';
+        if (selectedPreview) selectedPreview.style.display = 'none';
+
+        document.querySelectorAll('.lead-row, .customer-row').forEach(function(r) {
+            r.classList.remove('selected-row');
+            r.querySelector('td:first-child i').className = 'bi bi-circle text-muted';
+            r.querySelector('td:first-child i').style.fontSize = '.6rem';
+        });
+    }
+
+    // ===== Search / Filter =====
+    function setupSearch(inputId, rowClass, countTextId) {
+        var input = document.getElementById(inputId);
+        if (!input) return;
+        input.addEventListener('input', function() {
+            var query = this.value.trim().toLowerCase();
+            var rows = document.querySelectorAll('.' + rowClass);
+            var visible = 0;
+            rows.forEach(function(row) {
+                var name = (row.getAttribute('data-name') || '').toLowerCase();
+                var email = (row.getAttribute('data-email') || '').toLowerCase();
+                var phone = (row.getAttribute('data-phone') || '').toLowerCase();
+                var company = (row.getAttribute('data-company') || '').toLowerCase();
+                var code = (row.getAttribute('data-code') || '').toLowerCase();
+                var segment = (row.getAttribute('data-segment') || '').toLowerCase();
+                var match = !query
+                    || name.indexOf(query) !== -1
+                    || email.indexOf(query) !== -1
+                    || phone.indexOf(query) !== -1
+                    || company.indexOf(query) !== -1
+                    || code.indexOf(query) !== -1
+                    || segment.indexOf(query) !== -1;
+                row.style.display = match ? '' : 'none';
+                if (match) visible++;
+            });
+            var countEl = document.getElementById(countTextId);
+            if (countEl) {
+                countEl.textContent = query ? ('Hien thi ' + visible + ' / ' + rows.length + ' ket qua') : (rows.length + ' ban ghi');
+            }
+        });
+        // Init count
+        var rows = document.querySelectorAll('.' + rowClass);
+        var countEl = document.getElementById(countTextId);
+        if (countEl && rows.length > 0) {
+            countEl.textContent = rows.length + ' ban ghi';
+        }
+    }
+
+    setupSearch('leadSearchInput', 'lead-row', 'leadCountText');
+    setupSearch('customerSearchInput', 'customer-row', 'customerCountText');
+
+    // ===== Toggle listeners =====
+    if (typeFromLead) typeFromLead.addEventListener('change', toggleContactType);
+    if (typeFromCustomer) typeFromCustomer.addEventListener('change', toggleContactType);
+
+    // ===== Init on load =====
+    (function() {
+        // If convertFromLead, pre-select the lead row
+        var preLeadId = (hiddenLeadId ? hiddenLeadId.value : '') || '';
+        var preCustId = (hiddenCustomerId ? hiddenCustomerId.value : '') || '';
+
+        if (preLeadId) {
+            var row = document.querySelector('.lead-row[data-id="' + preLeadId + '"]');
+            if (row) selectLead(row);
+        } else if (preCustId) {
+            if (typeFromCustomer) typeFromCustomer.checked = true;
+            toggleContactType();
+            var row = document.querySelector('.customer-row[data-id="' + preCustId + '"]');
+            if (row) selectCustomer(row);
+        } else {
+            toggleContactType();
+        }
+    })();
+
+    // ===== Form submit =====
+    document.getElementById('oppForm').addEventListener('submit', function(e) {
+        // Validate contact selection in create mode
+        var mode = '${mode}';
+        if (mode !== 'edit') {
+            var leadId = hiddenLeadId ? hiddenLeadId.value : '';
+            var custId = hiddenCustomerId ? hiddenCustomerId.value : '';
+            if (!leadId && !custId) {
+                e.preventDefault();
+                alert('Vui long chon mot Lead hoac Customer!');
+                return;
+            }
+        }
         var btn = document.getElementById('submitBtn');
         btn.disabled = true;
         btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Dang luu...';
     });
-
-    // Toggle lead/customer selector (create mode only)
-    var typeFromLead = document.getElementById('typeFromLead');
-    var typeFromCustomer = document.getElementById('typeFromCustomer');
-    var leadDiv = document.getElementById('leadSelectDiv');
-    var customerDiv = document.getElementById('customerSelectDiv');
-    var leadSel = document.getElementById('leadSelect');
-    var customerSel = document.getElementById('customerSelect');
-
-    function toggleContactType() {
-        if (!typeFromLead || !typeFromCustomer)
-            return;
-        if (typeFromLead.checked) {
-            if (leadDiv)
-                leadDiv.style.display = '';
-            if (customerDiv)
-                customerDiv.style.display = 'none';
-            if (customerSel)
-                customerSel.value = '';
-        } else {
-            if (leadDiv)
-                leadDiv.style.display = 'none';
-            if (customerDiv)
-                customerDiv.style.display = '';
-            if (leadSel)
-                leadSel.value = '';
-        }
-    }
-
-    if (typeFromLead)
-        typeFromLead.addEventListener('change', toggleContactType);
-    if (typeFromCustomer)
-        typeFromCustomer.addEventListener('change', toggleContactType);
-    // Init on load
-    toggleContactType();
 </script>

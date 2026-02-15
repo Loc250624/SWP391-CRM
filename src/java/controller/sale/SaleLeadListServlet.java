@@ -2,6 +2,7 @@ package controller.sale;
 
 import dao.LeadDAO;
 import dao.LeadSourceDAO;
+import enums.LeadStatus;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
@@ -48,9 +49,14 @@ public class SaleLeadListServlet extends HttpServlet {
             leadList = new java.util.ArrayList<>();
         }
 
+        // Filter out deleted leads from display
+        leadList = leadList.stream()
+                .filter(l -> !LeadStatus.Delete.name().equals(l.getStatus()))
+                .collect(Collectors.toList());
+
         // Calculate statistics BEFORE filtering (show total counts)
         int totalLeads = leadList.size();
-        long newLeads = leadList.stream().filter(l -> "New".equals(l.getStatus())).count();
+        long assignedLeads = leadList.stream().filter(l -> LeadStatus.Assigned.name().equals(l.getStatus())).count();
         long hotLeads = leadList.stream().filter(l -> "Hot".equals(l.getRating())).count();
         long convertedLeads = leadList.stream().filter(l -> l.isIsConverted()).count();
 
@@ -110,7 +116,7 @@ public class SaleLeadListServlet extends HttpServlet {
         // Pass data to JSP
         request.setAttribute("leadList", pagedList);
         request.setAttribute("totalLeads", totalLeads);
-        request.setAttribute("newLeads", newLeads);
+        request.setAttribute("assignedLeads", assignedLeads);
         request.setAttribute("hotLeads", hotLeads);
         request.setAttribute("convertedLeads", convertedLeads);
         request.setAttribute("leadSources", sources);

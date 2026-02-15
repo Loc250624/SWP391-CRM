@@ -252,17 +252,22 @@ public class LeadDAO extends DBContext {
         }
     }
 
-    // Delete lead (soft delete recommended - update status instead)
+    // Soft delete lead: set status = 'Delete' and cancel related opportunities
     public boolean deleteLead(int leadId) {
-        String sql = "DELETE FROM leads WHERE lead_id = ?";
+        String sqlLead = "UPDATE leads SET status = 'Delete', updated_at = GETDATE() WHERE lead_id = ?";
+        String sqlOpp = "UPDATE opportunities SET status = 'Cancelled', updated_at = GETDATE() WHERE lead_id = ?";
 
         try {
-            PreparedStatement st = connection.prepareStatement(sql);
+            PreparedStatement st = connection.prepareStatement(sqlLead);
             st.setInt(1, leadId);
+            int rows = st.executeUpdate();
 
-            int rowsAffected = st.executeUpdate();
-            return rowsAffected > 0;
+            // Cancel all opportunities linked to this lead
+            PreparedStatement st2 = connection.prepareStatement(sqlOpp);
+            st2.setInt(1, leadId);
+            st2.executeUpdate();
 
+            return rows > 0;
         } catch (SQLException e) {
             e.printStackTrace();
             return false;
