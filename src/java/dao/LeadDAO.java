@@ -254,7 +254,7 @@ public class LeadDAO extends DBContext {
 
     // Soft delete lead: set status = 'Delete' and cancel related opportunities
     public boolean deleteLead(int leadId) {
-        String sqlLead = "UPDATE leads SET status = 'Delete', updated_at = GETDATE() WHERE lead_id = ?";
+        String sqlLead = "UPDATE leads SET status = 'Inactive', updated_at = GETDATE() WHERE lead_id = ?";
         String sqlOpp = "UPDATE opportunities SET status = 'Cancelled', updated_at = GETDATE() WHERE lead_id = ?";
 
         try {
@@ -298,6 +298,46 @@ public class LeadDAO extends DBContext {
     public List<Lead> getLeadsByAssignedUser(int userId) {
         List<Lead> leadList = new ArrayList<>();
         String sql = "SELECT * FROM leads WHERE assigned_to = ? ORDER BY created_at DESC";
+
+        try {
+            PreparedStatement st = connection.prepareStatement(sql);
+            st.setInt(1, userId);
+            ResultSet rs = st.executeQuery();
+
+            while (rs.next()) {
+                leadList.add(mapResultSetToLead(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return leadList;
+    }
+
+    // Get leads assigned to user (excluding New, Delete, and converted leads)
+    public List<Lead> getAssignedLeads(int userId) {
+        List<Lead> leadList = new ArrayList<>();
+        String sql = "SELECT * FROM leads WHERE assigned_to = ? AND status != 'New' AND status != 'Inactive' AND converted_customer_id IS NULL ORDER BY created_at DESC";
+
+        try {
+            PreparedStatement st = connection.prepareStatement(sql);
+            st.setInt(1, userId);
+            ResultSet rs = st.executeQuery();
+
+            while (rs.next()) {
+                leadList.add(mapResultSetToLead(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return leadList;
+    }
+
+    // Get leads created by user (excluding New, Delete, and converted leads)
+    public List<Lead> getCreatedLeads(int userId) {
+        List<Lead> leadList = new ArrayList<>();
+        String sql = "SELECT * FROM leads WHERE created_by = ? AND status != 'New' AND status != 'Inactive' AND converted_customer_id IS NULL ORDER BY created_at DESC";
 
         try {
             PreparedStatement st = connection.prepareStatement(sql);

@@ -39,6 +39,16 @@
     </div>
 </c:if>
 
+<!-- Tabs -->
+<ul class="nav nav-tabs mb-4">
+    <li class="nav-item">
+        <a class="nav-link ${activeTab == 'assigned' ? 'active' : ''}" href="${pageContext.request.contextPath}/sale/lead/list?tab=assigned">Lead duoc giao</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link ${activeTab == 'created' ? 'active' : ''}" href="${pageContext.request.contextPath}/sale/lead/list?tab=created">Lead toi tao</a>
+    </li>
+</ul>
+
 <!-- KPI Cards -->
 <div class="row g-3 mb-4">
     <div class="col-xl-3 col-md-6">
@@ -99,6 +109,7 @@
 <div class="card border-0 shadow-sm mb-4">
     <div class="card-body py-2">
         <form method="GET" action="${pageContext.request.contextPath}/sale/lead/list" class="d-flex gap-2 align-items-center flex-wrap" id="filterForm">
+            <input type="hidden" name="tab" value="${activeTab}">
             <span class="text-muted small me-1"><i class="bi bi-funnel me-1"></i>Loc:</span>
             <select class="form-select form-select-sm" style="width:auto;" name="status" onchange="this.form.submit()">
                 <option value="">Tat ca trang thai</option>
@@ -120,7 +131,7 @@
                 <button type="submit" class="btn btn-outline-secondary"><i class="bi bi-search"></i></button>
             </div>
             <c:if test="${not empty filterStatus || not empty filterRating || not empty searchQuery}">
-                <a href="${pageContext.request.contextPath}/sale/lead/list" class="btn btn-outline-secondary btn-sm"><i class="bi bi-x-lg me-1"></i>Xoa loc</a>
+                <a href="${pageContext.request.contextPath}/sale/lead/list?tab=${activeTab}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-x-lg me-1"></i>Xoa loc</a>
             </c:if>
         </form>
     </div>
@@ -142,7 +153,7 @@
                     </p>
                     <c:choose>
                         <c:when test="${not empty filterStatus || not empty filterRating || not empty searchQuery}">
-                            <a href="${pageContext.request.contextPath}/sale/lead/list" class="btn btn-outline-primary btn-sm"><i class="bi bi-x-lg me-1"></i>Xoa bo loc</a>
+                            <a href="${pageContext.request.contextPath}/sale/lead/list?tab=${activeTab}" class="btn btn-outline-primary btn-sm"><i class="bi bi-x-lg me-1"></i>Xoa bo loc</a>
                         </c:when>
                         <c:otherwise>
                             <a href="${pageContext.request.contextPath}/sale/lead/form" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i>Tao Lead</a>
@@ -249,7 +260,7 @@
                                             <div class="btn-group btn-group-sm">
                                                 <a href="${pageContext.request.contextPath}/sale/lead/detail?id=${lead.leadId}" class="btn btn-outline-primary btn-sm" title="Xem chi tiet"><i class="bi bi-eye"></i></a>
                                             <a href="${pageContext.request.contextPath}/sale/lead/form?id=${lead.leadId}" class="btn btn-outline-secondary btn-sm" title="Chinh sua"><i class="bi bi-pencil"></i></a>
-                                            <button onclick="deleteLead(${lead.leadId}, '${lead.fullName}')" class="btn btn-outline-danger btn-sm" title="Xoa"><i class="bi bi-trash"></i></button>
+                                            <button onclick="showInactiveModal(${lead.leadId}, '${lead.fullName}', '${lead.leadCode}')" class="btn btn-outline-danger btn-sm" title="Vo hieu hoa"><i class="bi bi-x-circle"></i></button>
                                         </div>
                                     </td>
                                 </tr>
@@ -267,12 +278,12 @@
             <nav>
                 <ul class="pagination pagination-sm mb-0">
                     <li class="page-item ${currentPage == 1 ? 'disabled' : ''}">
-                        <a class="page-link" href="${pageContext.request.contextPath}/sale/lead/list?page=${currentPage - 1}&status=${filterStatus}&rating=${filterRating}&search=${searchQuery}"><i class="bi bi-chevron-left"></i></a>
+                        <a class="page-link" href="${pageContext.request.contextPath}/sale/lead/list?page=${currentPage - 1}&tab=${activeTab}&status=${filterStatus}&rating=${filterRating}&search=${searchQuery}"><i class="bi bi-chevron-left"></i></a>
                     </li>
                     <c:forEach begin="1" end="${totalPages}" var="i">
                         <c:if test="${i == 1 || i == totalPages || (i >= currentPage - 2 && i <= currentPage + 2)}">
                             <li class="page-item ${i == currentPage ? 'active' : ''}">
-                                <a class="page-link" href="${pageContext.request.contextPath}/sale/lead/list?page=${i}&status=${filterStatus}&rating=${filterRating}&search=${searchQuery}">${i}</a>
+                                <a class="page-link" href="${pageContext.request.contextPath}/sale/lead/list?page=${i}&tab=${activeTab}&status=${filterStatus}&rating=${filterRating}&search=${searchQuery}">${i}</a>
                             </li>
                         </c:if>
                         <c:if test="${(i == currentPage - 3 && i > 1) || (i == currentPage + 3 && i < totalPages)}">
@@ -280,7 +291,7 @@
                         </c:if>
                     </c:forEach>
                     <li class="page-item ${currentPage == totalPages ? 'disabled' : ''}">
-                        <a class="page-link" href="${pageContext.request.contextPath}/sale/lead/list?page=${currentPage + 1}&status=${filterStatus}&rating=${filterRating}&search=${searchQuery}"><i class="bi bi-chevron-right"></i></a>
+                        <a class="page-link" href="${pageContext.request.contextPath}/sale/lead/list?page=${currentPage + 1}&tab=${activeTab}&status=${filterStatus}&rating=${filterRating}&search=${searchQuery}"><i class="bi bi-chevron-right"></i></a>
                     </li>
                 </ul>
             </nav>
@@ -288,19 +299,91 @@
     </c:if>
 </div>
 
+<!-- Inactive Confirmation Modal -->
+<div class="modal fade" id="inactiveListModal" tabindex="-1" aria-labelledby="inactiveListModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="inactiveListModalLabel"><i class="bi bi-exclamation-triangle me-2"></i>Xac nhan vo hieu hoa Lead</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning d-flex align-items-start mb-3">
+                    <i class="bi bi-exclamation-triangle-fill me-2 mt-1"></i>
+                    <div>
+                        <strong>Canh bao:</strong> Vo hieu hoa lead <strong id="inactiveLeadName"></strong> (<span id="inactiveLeadCode"></span>) se:
+                        <ul class="mb-0 mt-1">
+                            <li>Chuyen lead sang trang thai <strong>Inactive</strong></li>
+                            <li>Dong (Cancelled) <strong>tat ca Opportunity</strong> lien quan</li>
+                            <li>Cac Opportunity bi dong se <strong>chi co the xem</strong>, khong the chinh sua</li>
+                        </ul>
+                    </div>
+                </div>
+                <div id="inactiveOppList">
+                    <div class="text-center py-3">
+                        <span class="spinner-border spinner-border-sm me-1"></span>Dang tai danh sach Opportunity...
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Huy</button>
+                <form method="POST" action="${pageContext.request.contextPath}/sale/lead/form" class="d-inline" id="inactiveForm">
+                    <input type="hidden" name="action" value="inactive">
+                    <input type="hidden" name="leadId" id="inactiveLeadId" value="">
+                    <button type="submit" class="btn btn-danger"><i class="bi bi-x-circle me-1"></i>Xac nhan vo hieu hoa</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
-    function deleteLead(leadId, leadName) {
-        if (confirm('Ban co chac muon xoa lead "' + leadName + '"?\nLuu y: Tat ca Opportunity lien quan cung se bi huy (Cancelled).')) {
-            const form = document.createElement('form');
-            form.method = 'POST';
-            form.action = '${pageContext.request.contextPath}/sale/lead/list';
-            form.innerHTML = '<input type="hidden" name="action" value="delete"><input type="hidden" name="leadId" value="' + leadId + '">';
-            document.body.appendChild(form);
-            form.submit();
-        }
+    function showInactiveModal(leadId, leadName, leadCode) {
+        document.getElementById('inactiveLeadName').textContent = '"' + leadName + '"';
+        document.getElementById('inactiveLeadCode').textContent = leadCode;
+        document.getElementById('inactiveLeadId').value = leadId;
+
+        // Fetch opportunities for this lead
+        var oppListDiv = document.getElementById('inactiveOppList');
+        oppListDiv.innerHTML = '<div class="text-center py-3"><span class="spinner-border spinner-border-sm me-1"></span>Dang tai danh sach Opportunity...</div>';
+
+        fetch('${pageContext.request.contextPath}/sale/lead/opportunities?leadId=' + leadId)
+            .then(function(resp) { return resp.json(); })
+            .then(function(opps) {
+                if (opps.length === 0) {
+                    oppListDiv.innerHTML = '<p class="text-muted mb-0"><i class="bi bi-info-circle me-1"></i>Lead nay khong co Opportunity nao.</p>';
+                } else {
+                    var html = '<h6 class="fw-semibold mb-2">Cac Opportunity se bi dong:</h6>';
+                    html += '<div class="table-responsive"><table class="table table-sm table-bordered mb-0">';
+                    html += '<thead class="table-light"><tr><th>Ma OPP</th><th>Ten Opportunity</th><th>Trang thai</th><th>Gia tri</th></tr></thead><tbody>';
+                    opps.forEach(function(opp) {
+                        var statusBadge = '<span class="badge bg-secondary">' + opp.status + '</span>';
+                        if (opp.status === 'Open') statusBadge = '<span class="badge bg-primary-subtle text-primary">Open</span>';
+                        else if (opp.status === 'InProgress') statusBadge = '<span class="badge bg-info-subtle text-info">In Progress</span>';
+                        else if (opp.status === 'Won') statusBadge = '<span class="badge bg-success">Won</span>';
+                        else if (opp.status === 'Lost') statusBadge = '<span class="badge bg-danger">Lost</span>';
+                        else if (opp.status === 'OnHold') statusBadge = '<span class="badge bg-warning-subtle text-warning">On Hold</span>';
+                        else if (opp.status === 'Cancelled') statusBadge = '<span class="badge bg-secondary">Cancelled</span>';
+
+                        var value = opp.estimatedValue ? Number(opp.estimatedValue).toLocaleString('vi-VN') + ' VND' : '-';
+                        html += '<tr><td><span class="fw-semibold text-primary">' + opp.opportunityCode + '</span></td>';
+                        html += '<td>' + opp.opportunityName + '</td>';
+                        html += '<td>' + statusBadge + '</td>';
+                        html += '<td>' + value + '</td></tr>';
+                    });
+                    html += '</tbody></table></div>';
+                    oppListDiv.innerHTML = html;
+                }
+            })
+            .catch(function() {
+                oppListDiv.innerHTML = '<p class="text-muted mb-0"><i class="bi bi-info-circle me-1"></i>Khong the tai danh sach Opportunity.</p>';
+            });
+
+        var modal = new bootstrap.Modal(document.getElementById('inactiveListModal'));
+        modal.show();
     }
 
-// Check all checkbox
+    // Check all checkbox
     document.getElementById('checkAll')?.addEventListener('change', function () {
         document.querySelectorAll('.row-check').forEach(function (cb) {
             cb.checked = this.checked;
