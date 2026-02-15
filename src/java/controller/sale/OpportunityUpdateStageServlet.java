@@ -10,7 +10,7 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
+import util.SessionHelper;
 
 @WebServlet(name = "OpportunityUpdateStageServlet", urlPatterns = {"/sale/opportunity/updateStage"})
 public class OpportunityUpdateStageServlet extends HttpServlet {
@@ -64,11 +64,7 @@ public class OpportunityUpdateStageServlet extends HttpServlet {
 
             if (updated) {
                 // Log history
-                Integer userId = 1;
-                HttpSession session = request.getSession(false);
-                if (session != null && session.getAttribute("userId") != null) {
-                    try { userId = (Integer) session.getAttribute("userId"); } catch (Exception e) { }
-                }
+                Integer userId = SessionHelper.getLoggedInUserId(request);
                 historyDAO.logChange(opportunityId, "stage_id", String.valueOf(oldStageId), String.valueOf(stageId), userId);
 
                 out.print("{\"success\": true, \"message\": \"Stage updated successfully\"}");

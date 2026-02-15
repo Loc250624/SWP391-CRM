@@ -8,7 +8,7 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
+import util.SessionHelper;
 import model.Customer;
 import model.LeadSource;
 
@@ -32,13 +32,10 @@ public class SaleCustomerDetailServlet extends HttpServlet {
         try {
             int customerId = Integer.parseInt(customerIdParam);
 
-            Integer currentUserId = 1;
-            HttpSession session = request.getSession(false);
-            if (session != null && session.getAttribute("userId") != null) {
-                try {
-                    currentUserId = (Integer) session.getAttribute("userId");
-                } catch (Exception e) {
-                }
+            Integer currentUserId = SessionHelper.getLoggedInUserId(request);
+            if (currentUserId == null) {
+                response.sendRedirect(request.getContextPath() + "/login");
+                return;
             }
 
             Customer customer = customerDAO.getCustomerById(customerId);

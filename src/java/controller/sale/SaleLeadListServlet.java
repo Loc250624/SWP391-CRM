@@ -13,9 +13,9 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
 import model.Lead;
 import model.LeadSource;
+import util.SessionHelper;
 
 @WebServlet(name = "SaleLeadListServlet", urlPatterns = {"/sale/lead/list"})
 public class SaleLeadListServlet extends HttpServlet {
@@ -27,15 +27,10 @@ public class SaleLeadListServlet extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        // Get current user ID (default = 1 for now)
-        Integer currentUserId = 1;
-        HttpSession session = request.getSession(false);
-        if (session != null && session.getAttribute("userId") != null) {
-            try {
-                currentUserId = (Integer) session.getAttribute("userId");
-            } catch (Exception e) {
-                // Use default userId = 1
-            }
+        Integer currentUserId = SessionHelper.getLoggedInUserId(request);
+        if (currentUserId == null) {
+            response.sendRedirect(request.getContextPath() + "/login");
+            return;
         }
 
         // Get filter parameters
@@ -51,7 +46,7 @@ public class SaleLeadListServlet extends HttpServlet {
 
         // Filter out deleted leads from display
         leadList = leadList.stream()
-                .filter(l -> !LeadStatus.Delete.name().equals(l.getStatus()))
+                .filter(l -> !LeadStatus.Inactive.name().equals(l.getStatus()))
                 .collect(Collectors.toList());
 
         // Calculate statistics BEFORE filtering (show total counts)
@@ -79,10 +74,10 @@ public class SaleLeadListServlet extends HttpServlet {
             String query = searchQuery.trim().toLowerCase();
             leadList = leadList.stream()
                     .filter(l -> (l.getFullName() != null && l.getFullName().toLowerCase().contains(query))
-                            || (l.getEmail() != null && l.getEmail().toLowerCase().contains(query))
-                            || (l.getPhone() != null && l.getPhone().contains(query))
-                            || (l.getCompanyName() != null && l.getCompanyName().toLowerCase().contains(query))
-                            || (l.getLeadCode() != null && l.getLeadCode().toLowerCase().contains(query)))
+                    || (l.getEmail() != null && l.getEmail().toLowerCase().contains(query))
+                    || (l.getPhone() != null && l.getPhone().contains(query))
+                    || (l.getCompanyName() != null && l.getCompanyName().toLowerCase().contains(query))
+                    || (l.getLeadCode() != null && l.getLeadCode().toLowerCase().contains(query)))
                     .collect(Collectors.toList());
         }
 
@@ -102,9 +97,14 @@ public class SaleLeadListServlet extends HttpServlet {
         int currentPage = 1;
         String pageParam = request.getParameter("page");
         if (pageParam != null) {
-            try { currentPage = Math.max(1, Integer.parseInt(pageParam)); } catch (NumberFormatException e) { }
+            try {
+                currentPage = Math.max(1, Integer.parseInt(pageParam));
+            } catch (NumberFormatException e) {
+            }
         }
-        if (currentPage > totalPages && totalPages > 0) currentPage = totalPages;
+        if (currentPage > totalPages && totalPages > 0) {
+            currentPage = totalPages;
+        }
         int fromIndex = (currentPage - 1) * pageSize;
         int toIndex = Math.min(fromIndex + pageSize, totalItems);
         List<Lead> pagedList = totalItems > 0 ? leadList.subList(fromIndex, toIndex) : leadList;
@@ -150,15 +150,10 @@ public class SaleLeadListServlet extends HttpServlet {
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        // Get current user ID
-        Integer currentUserId = 1;
-        HttpSession session = request.getSession(false);
-        if (session != null && session.getAttribute("userId") != null) {
-            try {
-                currentUserId = (Integer) session.getAttribute("userId");
-            } catch (Exception e) {
-                // Use default
-            }
+        Integer currentUserId = SessionHelper.getLoggedInUserId(request);
+        if (currentUserId == null) {
+            response.sendRedirect(request.getContextPath() + "/login");
+            return;
         }
 
         // Handle delete action

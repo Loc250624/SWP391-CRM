@@ -17,7 +17,7 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
+import util.SessionHelper;
 import model.Campaign;
 import model.Lead;
 import model.LeadSource;
@@ -29,24 +29,16 @@ public class SaleLeadFormServlet extends HttpServlet {
     private LeadSourceDAO leadSourceDAO = new LeadSourceDAO();
     private CampaignDAO campaignDAO = new CampaignDAO();
 
-    // Allowed status transitions from Assigned
     private static final Set<String> ALLOWED_UPDATE_STATUSES = new HashSet<>(
-            Arrays.asList(LeadStatus.Assigned.name(), LeadStatus.Unqualified.name(),
-                    LeadStatus.Recycled.name(), LeadStatus.Nurturing.name(), LeadStatus.Delete.name()));
+            Arrays.asList(LeadStatus.Assigned.name(), LeadStatus.Unqualified.name(), LeadStatus.Nurturing.name(), LeadStatus.Inactive.name()));
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-
-        // Get current user ID
-        Integer currentUserId = 1;
-        HttpSession session = request.getSession(false);
-        if (session != null && session.getAttribute("userId") != null) {
-            try {
-                currentUserId = (Integer) session.getAttribute("userId");
-            } catch (Exception e) {
-                // Use default
-            }
+        Integer currentUserId = SessionHelper.getLoggedInUserId(request);
+        if (currentUserId == null) {
+            response.sendRedirect(request.getContextPath() + "/login");
+            return;
         }
 
         // Get lead ID if editing
@@ -190,14 +182,10 @@ public class SaleLeadFormServlet extends HttpServlet {
             }
         }
 
-        // Get current user ID
-        Integer currentUserId = 1;
-        HttpSession session = request.getSession(false);
-        if (session != null && session.getAttribute("userId") != null) {
-            try {
-                currentUserId = (Integer) session.getAttribute("userId");
-            } catch (Exception e) {
-            }
+        Integer currentUserId = SessionHelper.getLoggedInUserId(request);
+        if (currentUserId == null) {
+            response.sendRedirect(request.getContextPath() + "/login");
+            return;
         }
 
         // Set lead properties
@@ -230,7 +218,7 @@ public class SaleLeadFormServlet extends HttpServlet {
             lead.setStatus(newStatus);
 
             // If status is Delete, soft delete and cancel related opps
-            if (LeadStatus.Delete.name().equals(newStatus)) {
+            if (LeadStatus.Inactive.name().equals(newStatus)) {
                 leadDAO.deleteLead(lead.getLeadId());
                 response.sendRedirect(request.getContextPath() + "/sale/lead/list?success=deleted");
                 return;
@@ -245,12 +233,20 @@ public class SaleLeadFormServlet extends HttpServlet {
 
         // Set source and campaign
         if (sourceIdParam != null && !sourceIdParam.isEmpty()) {
-            try { lead.setSourceId(Integer.parseInt(sourceIdParam)); } catch (NumberFormatException e) { lead.setSourceId(null); }
+            try {
+                lead.setSourceId(Integer.parseInt(sourceIdParam));
+            } catch (NumberFormatException e) {
+                lead.setSourceId(null);
+            }
         } else {
             lead.setSourceId(null);
         }
         if (campaignIdParam != null && !campaignIdParam.isEmpty()) {
-            try { lead.setCampaignId(Integer.parseInt(campaignIdParam)); } catch (NumberFormatException e) { lead.setCampaignId(null); }
+            try {
+                lead.setCampaignId(Integer.parseInt(campaignIdParam));
+            } catch (NumberFormatException e) {
+                lead.setCampaignId(null);
+            }
         } else {
             lead.setCampaignId(null);
         }
@@ -265,8 +261,8 @@ public class SaleLeadFormServlet extends HttpServlet {
 
         if (success) {
             // Success - redirect to list with success message
-            response.sendRedirect(request.getContextPath() + "/sale/lead/list?success=" +
-                                (isEdit ? "updated" : "created"));
+            response.sendRedirect(request.getContextPath() + "/sale/lead/list?success="
+                    + (isEdit ? "updated" : "created"));
         } else {
             // Error - show form again with error message
             request.setAttribute("error", "Failed to save lead. Please try again.");
