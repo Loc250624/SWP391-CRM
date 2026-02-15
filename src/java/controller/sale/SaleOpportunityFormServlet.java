@@ -75,6 +75,15 @@ public class SaleOpportunityFormServlet extends HttpServlet {
                     return;
                 }
 
+                // Block editing Cancelled/Won/Lost opportunities (redirect to detail view)
+                String oppStatus = opportunity.getStatus();
+                if (OpportunityStatus.Cancelled.name().equals(oppStatus)
+                        || OpportunityStatus.Won.name().equals(oppStatus)
+                        || OpportunityStatus.Lost.name().equals(oppStatus)) {
+                    response.sendRedirect(request.getContextPath() + "/sale/opportunity/detail?id=" + opportunity.getOpportunityId() + "&error=closed");
+                    return;
+                }
+
                 request.setAttribute("mode", "edit");
                 request.setAttribute("opportunity", opportunity);
 
@@ -274,8 +283,10 @@ public class SaleOpportunityFormServlet extends HttpServlet {
             }
         }
 
-        // Block editing Won/Lost opportunities
-        if (isEdit && oldOpp != null && (OpportunityStatus.Won.name().equals(oldOpp.getStatus()) || OpportunityStatus.Lost.name().equals(oldOpp.getStatus()))) {
+        // Block editing Won/Lost/Cancelled opportunities
+        if (isEdit && oldOpp != null && (OpportunityStatus.Won.name().equals(oldOpp.getStatus())
+                || OpportunityStatus.Lost.name().equals(oldOpp.getStatus())
+                || OpportunityStatus.Cancelled.name().equals(oldOpp.getStatus()))) {
             request.setAttribute("error", "Opportunity da dong (" + oldOpp.getStatus() + "), khong the chinh sua!");
             doGet(request, response);
             return;
