@@ -83,7 +83,7 @@
         <div class="col-lg-6">
             <div class="card">
                 <div class="card-header bg-white">
-                    <h5 class="mb-0"><i class="bi bi-pie-chart me-2"></i>Tổng quan trạng thái</h5>
+                    <h5 class="mb-0"><i class="bi bi-pie-chart me-2"></i>Tổng quan công việc</h5>
                 </div>
                 <div class="card-body">
                     <div class="mb-3">
@@ -183,7 +183,7 @@
     <!-- Employee Performance -->
     <div class="card">
         <div class="card-header bg-white">
-            <h5 class="mb-0"><i class="bi bi-people me-2"></i>Hiệu suất theo nhân viên</h5>
+            <h5 class="mb-0"><i class="bi bi-people me-2"></i>Hiệu suất của nhân viên</h5>
         </div>
         <div class="card-body">
             <div class="table-responsive">
@@ -195,7 +195,7 @@
                             <th class="text-center">Hoàn thành</th>
                             <th class="text-center">Đang làm</th>
                             <th class="text-center">Chờ xử lý</th>
-                            <th class="text-center">Quá hạn</th>
+                            <th class="text-center">Bị quá hạn</th>
                             <th class="text-center">Tỷ lệ hoàn thành</th>
                         </tr>
                     </thead>
