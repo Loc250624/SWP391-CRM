@@ -1,4 +1,4 @@
-package controller.customersuccess;
+package controller.auth;
 
 import java.io.IOException;
 import jakarta.servlet.ServletException;
@@ -8,23 +8,20 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
-@WebServlet(name = "CustomerSuccessHome", urlPatterns = {"/support/dashboard"})
-public class CustomerSuccessHome extends HttpServlet {
+@WebServlet(name = "LogoutServlet", urlPatterns = {"/logout"})
+public class LogoutServlet extends HttpServlet {
 
-    @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
         HttpSession session = request.getSession(false);
-        if (session != null && session.getAttribute("user") != null) {
 
-            request.setAttribute("contentPage", "/view/customersuccess/dashboard.jsp");
+        if (session != null) {
 
-            request.getRequestDispatcher("/view/customersuccess/main_layout.jsp").forward(request, response);
-
-        } else {
-            response.sendRedirect(request.getContextPath() + "/login");
+            session.invalidate();
         }
+
+        response.sendRedirect(request.getContextPath() + "/login");
     }
 
     @Override
