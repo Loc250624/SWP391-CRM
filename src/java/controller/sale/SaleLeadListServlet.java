@@ -33,21 +33,27 @@ public class SaleLeadListServlet extends HttpServlet {
             return;
         }
 
+        // Get tab parameter (default: assigned)
+        String tab = request.getParameter("tab");
+        if (tab == null || (!tab.equals("assigned") && !tab.equals("created"))) {
+            tab = "assigned";
+        }
+
         // Get filter parameters
         String statusFilter = request.getParameter("status");
         String ratingFilter = request.getParameter("rating");
         String searchQuery = request.getParameter("search");
 
-        // Load leads - only leads created by or assigned to current user
-        List<Lead> leadList = leadDAO.getLeadsBySalesUser(currentUserId);
+        // Load leads based on active tab
+        List<Lead> leadList;
+        if ("created".equals(tab)) {
+            leadList = leadDAO.getCreatedLeads(currentUserId);
+        } else {
+            leadList = leadDAO.getAssignedLeads(currentUserId);
+        }
         if (leadList == null) {
             leadList = new java.util.ArrayList<>();
         }
-
-        // Filter out deleted leads from display
-        leadList = leadList.stream()
-                .filter(l -> !LeadStatus.Inactive.name().equals(l.getStatus()))
-                .collect(Collectors.toList());
 
         // Calculate statistics BEFORE filtering (show total counts)
         int totalLeads = leadList.size();
@@ -126,6 +132,7 @@ public class SaleLeadListServlet extends HttpServlet {
         request.setAttribute("filterStatus", statusFilter);
         request.setAttribute("filterRating", ratingFilter);
         request.setAttribute("searchQuery", searchQuery);
+        request.setAttribute("activeTab", tab);
 
         // Success/error messages
         String success = request.getParameter("success");
@@ -134,7 +141,7 @@ public class SaleLeadListServlet extends HttpServlet {
         } else if ("updated".equals(success)) {
             request.setAttribute("successMessage", "Cap nhat lead thanh cong!");
         } else if ("deleted".equals(success)) {
-            request.setAttribute("successMessage", "Xoa lead thanh cong!");
+            request.setAttribute("successMessage", "Vo hieu hoa lead thanh cong! Tat ca Opportunity lien quan da bi dong.");
         }
 
         // Set page metadata
