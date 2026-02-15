@@ -22,7 +22,7 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
+import util.SessionHelper;
 
 @WebServlet(name = "SaleDashboardServlet", urlPatterns = {"/sale/dashboard"})
 public class SaleDashboardServlet extends HttpServlet {
@@ -37,18 +37,16 @@ public class SaleDashboardServlet extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        Integer currentUserId = 1;
-        HttpSession session = request.getSession(false);
-        if (session != null && session.getAttribute("userId") != null) {
-            try {
-                currentUserId = (Integer) session.getAttribute("userId");
-            } catch (Exception e) {
-            }
+        Integer currentUserId = SessionHelper.getLoggedInUserId(request);
+        if (currentUserId == null) {
+            response.sendRedirect(request.getContextPath() + "/login");
+            return;
         }
-
         // === LEADS ===
         List<Lead> allLeads = leadDAO.getLeadsBySalesUser(currentUserId);
-        if (allLeads == null) allLeads = new ArrayList<>();
+        if (allLeads == null) {
+            allLeads = new ArrayList<>();
+        }
 
         int totalLeads = allLeads.size();
         long newLeads = allLeads.stream().filter(l -> "New".equals(l.getStatus())).count();
@@ -62,7 +60,9 @@ public class SaleDashboardServlet extends HttpServlet {
 
         // === CUSTOMERS ===
         List<Customer> allCustomers = customerDAO.getCustomersBySalesUser(currentUserId);
-        if (allCustomers == null) allCustomers = new ArrayList<>();
+        if (allCustomers == null) {
+            allCustomers = new ArrayList<>();
+        }
 
         int totalCustomers = allCustomers.size();
         long activeCustomers = allCustomers.stream().filter(c -> "Active".equals(c.getStatus())).count();
@@ -72,13 +72,17 @@ public class SaleDashboardServlet extends HttpServlet {
         BigDecimal totalRevenue = BigDecimal.ZERO;
         int totalCoursesSold = 0;
         for (Customer c : allCustomers) {
-            if (c.getTotalSpent() != null) totalRevenue = totalRevenue.add(c.getTotalSpent());
+            if (c.getTotalSpent() != null) {
+                totalRevenue = totalRevenue.add(c.getTotalSpent());
+            }
             totalCoursesSold += c.getTotalCourses();
         }
 
         // === OPPORTUNITIES ===
         List<Opportunity> allOpps = opportunityDAO.getOpportunitiesBySalesUser(currentUserId);
-        if (allOpps == null) allOpps = new ArrayList<>();
+        if (allOpps == null) {
+            allOpps = new ArrayList<>();
+        }
 
         // Build stage type map for accurate Won/Lost counting
         List<PipelineStage> allStagesForType = stageDAO.getAllStages();
@@ -124,8 +128,12 @@ public class SaleDashboardServlet extends HttpServlet {
         // Recent opportunities (last 5, sorted by updatedAt desc)
         recentOpps = allOpps.stream()
                 .sorted((a, b) -> {
-                    if (b.getUpdatedAt() == null) return -1;
-                    if (a.getUpdatedAt() == null) return 1;
+                    if (b.getUpdatedAt() == null) {
+                        return -1;
+                    }
+                    if (a.getUpdatedAt() == null) {
+                        return 1;
+                    }
                     return b.getUpdatedAt().compareTo(a.getUpdatedAt());
                 })
                 .limit(5)
@@ -136,9 +144,14 @@ public class SaleDashboardServlet extends HttpServlet {
         Pipeline defaultPipeline = null;
         if (pipelines != null && !pipelines.isEmpty()) {
             for (Pipeline p : pipelines) {
-                if (p.isIsDefault()) { defaultPipeline = p; break; }
+                if (p.isIsDefault()) {
+                    defaultPipeline = p;
+                    break;
+                }
             }
-            if (defaultPipeline == null) defaultPipeline = pipelines.get(0);
+            if (defaultPipeline == null) {
+                defaultPipeline = pipelines.get(0);
+            }
         }
 
         List<PipelineStage> stages = new ArrayList<>();
@@ -147,7 +160,9 @@ public class SaleDashboardServlet extends HttpServlet {
 
         if (defaultPipeline != null) {
             stages = stageDAO.getStagesByPipelineId(defaultPipeline.getPipelineId());
-            if (stages == null) stages = new ArrayList<>();
+            if (stages == null) {
+                stages = new ArrayList<>();
+            }
 
             for (Opportunity opp : allOpps) {
                 if (opp.getPipelineId() == defaultPipeline.getPipelineId()
@@ -164,11 +179,15 @@ public class SaleDashboardServlet extends HttpServlet {
         List<PipelineStage> allStages = stageDAO.getAllStages();
         Map<Integer, String> stageNameMap = new HashMap<>();
         if (allStages != null) {
-            for (PipelineStage s : allStages) stageNameMap.put(s.getStageId(), s.getStageName());
+            for (PipelineStage s : allStages) {
+                stageNameMap.put(s.getStageId(), s.getStageName());
+            }
         }
         Map<Integer, String> pipelineNameMap = new HashMap<>();
         if (pipelines != null) {
-            for (Pipeline p : pipelines) pipelineNameMap.put(p.getPipelineId(), p.getPipelineName());
+            for (Pipeline p : pipelines) {
+                pipelineNameMap.put(p.getPipelineId(), p.getPipelineName());
+            }
         }
 
         // === SET ATTRIBUTES ===

@@ -26,7 +26,7 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
+import util.SessionHelper;
 
 @WebServlet(name = "SaleOpportunityStageUpdateServlet", urlPatterns = {"/sale/opportunity/stage"})
 public class SaleOpportunityStageUpdateServlet extends HttpServlet {
@@ -46,13 +46,11 @@ public class SaleOpportunityStageUpdateServlet extends HttpServlet {
         response.setContentType("application/json;charset=UTF-8");
         PrintWriter out = response.getWriter();
 
-        Integer currentUserId = 1;
-        HttpSession session = request.getSession(false);
-        if (session != null && session.getAttribute("userId") != null) {
-            try {
-                currentUserId = (Integer) session.getAttribute("userId");
-            } catch (Exception e) {
-            }
+        Integer currentUserId = SessionHelper.getLoggedInUserId(request);
+        if (currentUserId == null) {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            out.print("{\"success\":false,\"message\":\"Not logged in\"}");
+            return;
         }
 
         String oppIdParam = request.getParameter("opportunityId");
@@ -278,9 +276,6 @@ public class SaleOpportunityStageUpdateServlet extends HttpServlet {
         return false;
     }
 
-    /**
-     * Apply opp status changes based on target stage.
-     */
     private void applyStatusSideEffects(String targetStageCode, String targetStageType, Opportunity opp, Lead lead, boolean isLeadConversion) {
         if ("won".equals(targetStageType)) {
             opp.setStatus(OpportunityStatus.Won.name());
@@ -296,21 +291,18 @@ public class SaleOpportunityStageUpdateServlet extends HttpServlet {
         }
     }
 
-    /**
-     * Update lead status based on stage transition (LEAD_CONVERSION pipeline only).
-     */
     private void updateLeadStatus(String targetStageCode, String targetStageType, Lead lead) {
         String newLeadStatus = null;
 
         if ("lost".equals(targetStageType)) {
-            newLeadStatus = LeadStatus.Lost.name();
+            newLeadStatus = LeadStatus.Unqualified.name();
         } else {
             switch (targetStageCode) {
                 case "CONTACTED":
-                    newLeadStatus = LeadStatus.Contacted.name();
+                    newLeadStatus = LeadStatus.Working.name();
                     break;
                 case "QUALIFIED":
-                    newLeadStatus = LeadStatus.Qualified.name();
+                    newLeadStatus = LeadStatus.Working.name();
                     break;
                 case "DEMO":
                 case "NEGOTIATION":

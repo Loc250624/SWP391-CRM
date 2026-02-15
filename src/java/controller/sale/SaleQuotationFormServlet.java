@@ -24,7 +24,7 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
+import util.SessionHelper;
 
 @WebServlet(name = "SaleQuotationFormServlet", urlPatterns = {"/sale/quotation/form"})
 public class SaleQuotationFormServlet extends HttpServlet {
@@ -32,14 +32,7 @@ public class SaleQuotationFormServlet extends HttpServlet {
     private static final Set<String> ALLOWED_STAGE_CODES = new HashSet<>(Arrays.asList("DEMO", "NEGOTIATION", "PROPOSED"));
 
     private Integer getCurrentUserId(HttpServletRequest request) {
-        HttpSession session = request.getSession(false);
-        if (session != null && session.getAttribute("userId") != null) {
-            try {
-                return (Integer) session.getAttribute("userId");
-            } catch (Exception e) {
-            }
-        }
-        return 1;
+        return SessionHelper.getLoggedInUserId(request);
     }
 
     @Override
