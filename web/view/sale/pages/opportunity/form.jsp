@@ -201,42 +201,38 @@
                                                 </tr>
                                             </thead>
                                             <tbody id="leadTableBody">
-                                                <c:set var="hasLeads" value="false"/>
                                                 <c:forEach var="ld" items="${leads}">
-                                                    <c:if test="${!ld.isConverted}">
-                                                        <c:set var="hasLeads" value="true"/>
-                                                        <tr class="lead-row"
-                                                            data-id="${ld.leadId}"
-                                                            data-name="${ld.fullName}"
-                                                            data-email="${ld.email}"
-                                                            data-phone="${ld.phone}"
-                                                            data-company="${ld.companyName}"
-                                                            data-code="${ld.leadCode}"
-                                                            data-status="${ld.status}"
-                                                            onclick="selectLead(this)">
-                                                            <td class="text-center"><i class="bi bi-circle text-muted" style="font-size:.6rem;"></i></td>
-                                                            <td>
-                                                                <div class="fw-medium">${ld.fullName}</div>
-                                                                <small class="text-muted">${ld.leadCode}</small>
-                                                            </td>
-                                                            <td>
-                                                                <c:if test="${not empty ld.email}"><small class="d-block text-truncate" style="max-width:150px;"><i class="bi bi-envelope me-1"></i>${ld.email}</small></c:if>
-                                                                <c:if test="${not empty ld.phone}"><small class="d-block"><i class="bi bi-telephone me-1"></i>${ld.phone}</small></c:if>
-                                                            </td>
-                                                            <td><small>${not empty ld.companyName ? ld.companyName : '-'}</small></td>
-                                                            <td>
-                                                                <c:choose>
-                                                                    <c:when test="${ld.status == 'Assigned'}"><span class="badge bg-primary-subtle text-primary" style="font-size:.65rem;">Assigned</span></c:when>
-                                                                    <c:when test="${ld.status == 'Qualified'}"><span class="badge bg-success-subtle text-success" style="font-size:.65rem;">Qualified</span></c:when>
-                                                                    <c:when test="${ld.status == 'Contacted'}"><span class="badge bg-info-subtle text-info" style="font-size:.65rem;">Contacted</span></c:when>
-                                                                    <c:when test="${ld.status == 'Working'}"><span class="badge bg-warning-subtle text-warning" style="font-size:.65rem;">Working</span></c:when>
-                                                                    <c:otherwise><span class="badge bg-secondary-subtle text-secondary" style="font-size:.65rem;">${ld.status}</span></c:otherwise>
-                                                                </c:choose>
-                                                            </td>
-                                                        </tr>
-                                                    </c:if>
+                                                    <tr class="lead-row"
+                                                        data-id="${ld.leadId}"
+                                                        data-name="${ld.fullName}"
+                                                        data-email="${ld.email}"
+                                                        data-phone="${ld.phone}"
+                                                        data-company="${ld.companyName}"
+                                                        data-code="${ld.leadCode}"
+                                                        data-status="${ld.status}"
+                                                        onclick="selectLead(this)">
+                                                        <td class="text-center"><i class="bi bi-circle text-muted" style="font-size:.6rem;"></i></td>
+                                                        <td>
+                                                            <div class="fw-medium">${ld.fullName}</div>
+                                                            <small class="text-muted">${ld.leadCode}</small>
+                                                        </td>
+                                                        <td>
+                                                            <c:if test="${not empty ld.email}"><small class="d-block text-truncate" style="max-width:150px;"><i class="bi bi-envelope me-1"></i>${ld.email}</small></c:if>
+                                                            <c:if test="${not empty ld.phone}"><small class="d-block"><i class="bi bi-telephone me-1"></i>${ld.phone}</small></c:if>
+                                                        </td>
+                                                        <td><small>${not empty ld.companyName ? ld.companyName : '-'}</small></td>
+                                                        <td>
+                                                            <c:choose>
+                                                                <c:when test="${ld.status == 'Assigned'}"><span class="badge bg-primary-subtle text-primary" style="font-size:.65rem;">Assigned</span></c:when>
+                                                                <c:when test="${ld.status == 'Working'}"><span class="badge bg-warning-subtle text-warning" style="font-size:.65rem;">Working</span></c:when>
+                                                                <c:when test="${ld.status == 'Unqualified'}"><span class="badge bg-danger-subtle text-danger" style="font-size:.65rem;">Unqualified</span></c:when>
+                                                                <c:when test="${ld.status == 'Nurturing'}"><span class="badge bg-info-subtle text-info" style="font-size:.65rem;">Nurturing</span></c:when>
+                                                                <c:otherwise><span class="badge bg-secondary-subtle text-secondary" style="font-size:.65rem;">${ld.status}</span></c:otherwise>
+                                                            </c:choose>
+                                                        </td>
+                                                    </tr>
                                                 </c:forEach>
-                                                <c:if test="${!hasLeads}">
+                                                <c:if test="${empty leads}">
                                                     <tr><td colspan="5" class="empty-table-msg"><i class="bi bi-inbox me-1"></i>Chua co lead nao</td></tr>
                                                 </c:if>
                                             </tbody>

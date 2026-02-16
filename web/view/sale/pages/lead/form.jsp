@@ -195,7 +195,7 @@
                         <c:otherwise>Tao Lead</c:otherwise>
                     </c:choose>
                 </button>
-                <c:if test="${mode == 'edit'}">
+                <c:if test="${mode == 'edit' && lead.status != 'Inactive'}">
                     <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#inactiveModal">
                         <i class="bi bi-x-circle me-1"></i>Vo hieu hoa Lead
                     </button>
@@ -208,141 +208,141 @@
 
 <!-- Inactive Confirmation Modal (edit mode only) -->
 <c:if test="${mode == 'edit'}">
-<div class="modal fade" id="inactiveModal" tabindex="-1" aria-labelledby="inactiveModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header bg-danger text-white">
-                <h5 class="modal-title" id="inactiveModalLabel"><i class="bi bi-exclamation-triangle me-2"></i>Xac nhan vo hieu hoa Lead</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <div class="alert alert-warning d-flex align-items-start mb-3">
-                    <i class="bi bi-exclamation-triangle-fill me-2 mt-1"></i>
-                    <div>
-                        <strong>Canh bao:</strong> Vo hieu hoa lead <strong>"${lead.fullName}"</strong> (${lead.leadCode}) se:
-                        <ul class="mb-0 mt-1">
-                            <li>Chuyen lead sang trang thai <strong>Inactive</strong></li>
-                            <li>Dong (Cancelled) <strong>tat ca Opportunity</strong> lien quan</li>
-                            <li>Cac Opportunity bi dong se <strong>chi co the xem</strong>, khong the chinh sua</li>
-                        </ul>
-                    </div>
+    <div class="modal fade" id="inactiveModal" tabindex="-1" aria-labelledby="inactiveModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title" id="inactiveModalLabel"><i class="bi bi-exclamation-triangle me-2"></i>Xac nhan vo hieu hoa Lead</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-
-                <c:choose>
-                    <c:when test="${not empty leadOpportunities}">
-                        <h6 class="fw-semibold mb-2">Cac Opportunity se bi dong:</h6>
-                        <div class="table-responsive">
-                            <table class="table table-sm table-bordered mb-0">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th>Ma OPP</th>
-                                        <th>Ten Opportunity</th>
-                                        <th>Trang thai</th>
-                                        <th>Gia tri</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <c:forEach var="opp" items="${leadOpportunities}">
-                                        <tr>
-                                            <td><span class="fw-semibold text-primary">${opp.opportunityCode}</span></td>
-                                            <td>${opp.opportunityName}</td>
-                                            <td>
-                                                <c:choose>
-                                                    <c:when test="${opp.status == 'Open'}"><span class="badge bg-primary-subtle text-primary">Open</span></c:when>
-                                                    <c:when test="${opp.status == 'InProgress'}"><span class="badge bg-info-subtle text-info">In Progress</span></c:when>
-                                                    <c:when test="${opp.status == 'Won'}"><span class="badge bg-success">Won</span></c:when>
-                                                    <c:when test="${opp.status == 'Lost'}"><span class="badge bg-danger">Lost</span></c:when>
-                                                    <c:when test="${opp.status == 'OnHold'}"><span class="badge bg-warning-subtle text-warning">On Hold</span></c:when>
-                                                    <c:when test="${opp.status == 'Cancelled'}"><span class="badge bg-secondary">Cancelled</span></c:when>
-                                                    <c:otherwise><span class="badge bg-secondary">${opp.status}</span></c:otherwise>
-                                                </c:choose>
-                                            </td>
-                                            <td>
-                                                <c:choose>
-                                                    <c:when test="${opp.estimatedValue != null}">
-                                                        <fmt:formatNumber value="${opp.estimatedValue}" type="number" groupingUsed="true"/> VND
-                                                    </c:when>
-                                                    <c:otherwise>-</c:otherwise>
-                                                </c:choose>
-                                            </td>
-                                        </tr>
-                                    </c:forEach>
-                                </tbody>
-                            </table>
+                <div class="modal-body">
+                    <div class="alert alert-warning d-flex align-items-start mb-3">
+                        <i class="bi bi-exclamation-triangle-fill me-2 mt-1"></i>
+                        <div>
+                            <strong>Canh bao:</strong> Vo hieu hoa lead <strong>"${lead.fullName}"</strong> (${lead.leadCode}) se:
+                            <ul class="mb-0 mt-1">
+                                <li>Chuyen lead sang trang thai <strong>Inactive</strong></li>
+                                <li>Dong (Cancelled) <strong>tat ca Opportunity</strong> lien quan</li>
+                                <li>Cac Opportunity bi dong se <strong>chi co the xem</strong>, khong the chinh sua</li>
+                            </ul>
                         </div>
-                    </c:when>
-                    <c:otherwise>
-                        <p class="text-muted mb-0"><i class="bi bi-info-circle me-1"></i>Lead nay khong co Opportunity nao.</p>
-                    </c:otherwise>
-                </c:choose>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Huy</button>
-                <form method="POST" action="${pageContext.request.contextPath}/sale/lead/form" class="d-inline">
-                    <input type="hidden" name="action" value="inactive">
-                    <input type="hidden" name="leadId" value="${lead.leadId}">
-                    <button type="submit" class="btn btn-danger"><i class="bi bi-x-circle me-1"></i>Xac nhan vo hieu hoa</button>
-                </form>
+                    </div>
+
+                    <c:choose>
+                        <c:when test="${not empty leadOpportunities}">
+                            <h6 class="fw-semibold mb-2">Cac Opportunity se bi dong:</h6>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-bordered mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Ma OPP</th>
+                                            <th>Ten Opportunity</th>
+                                            <th>Trang thai</th>
+                                            <th>Gia tri</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <c:forEach var="opp" items="${leadOpportunities}">
+                                            <tr>
+                                                <td><span class="fw-semibold text-primary">${opp.opportunityCode}</span></td>
+                                                <td>${opp.opportunityName}</td>
+                                                <td>
+                                                    <c:choose>
+                                                        <c:when test="${opp.status == 'Open'}"><span class="badge bg-primary-subtle text-primary">Open</span></c:when>
+                                                        <c:when test="${opp.status == 'InProgress'}"><span class="badge bg-info-subtle text-info">In Progress</span></c:when>
+                                                        <c:when test="${opp.status == 'Won'}"><span class="badge bg-success">Won</span></c:when>
+                                                        <c:when test="${opp.status == 'Lost'}"><span class="badge bg-danger">Lost</span></c:when>
+                                                        <c:when test="${opp.status == 'OnHold'}"><span class="badge bg-warning-subtle text-warning">On Hold</span></c:when>
+                                                        <c:when test="${opp.status == 'Cancelled'}"><span class="badge bg-secondary">Cancelled</span></c:when>
+                                                        <c:otherwise><span class="badge bg-secondary">${opp.status}</span></c:otherwise>
+                                                    </c:choose>
+                                                </td>
+                                                <td>
+                                                    <c:choose>
+                                                        <c:when test="${opp.estimatedValue != null}">
+                                                            <fmt:formatNumber value="${opp.estimatedValue}" type="number" groupingUsed="true"/> VND
+                                                        </c:when>
+                                                        <c:otherwise>-</c:otherwise>
+                                                    </c:choose>
+                                                </td>
+                                            </tr>
+                                        </c:forEach>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </c:when>
+                        <c:otherwise>
+                            <p class="text-muted mb-0"><i class="bi bi-info-circle me-1"></i>Lead nay khong co Opportunity nao.</p>
+                        </c:otherwise>
+                    </c:choose>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Huy</button>
+                    <form method="POST" action="${pageContext.request.contextPath}/sale/lead/form" class="d-inline">
+                        <input type="hidden" name="action" value="inactive">
+                        <input type="hidden" name="leadId" value="${lead.leadId}">
+                        <button type="submit" class="btn btn-danger"><i class="bi bi-x-circle me-1"></i>Xac nhan vo hieu hoa</button>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
-</div>
 </c:if>
 
 <script>
-document.getElementById('leadForm').addEventListener('submit', function(e) {
-    var errors = [];
-    var fullName = document.getElementById('fullName').value.trim();
-    var email = document.getElementById('email').value.trim();
-    var phone = document.getElementById('phone').value.trim();
-    var companyName = document.getElementById('companyName').value.trim();
-    var jobTitle = document.getElementById('jobTitle').value.trim();
-    var interests = document.getElementById('interests').value.trim();
-    var notes = document.getElementById('notes').value.trim();
+    document.getElementById('leadForm').addEventListener('submit', function (e) {
+        var errors = [];
+        var fullName = document.getElementById('fullName').value.trim();
+        var email = document.getElementById('email').value.trim();
+        var phone = document.getElementById('phone').value.trim();
+        var companyName = document.getElementById('companyName').value.trim();
+        var jobTitle = document.getElementById('jobTitle').value.trim();
+        var interests = document.getElementById('interests').value.trim();
+        var notes = document.getElementById('notes').value.trim();
 
-    if (!fullName) {
-        errors.push('Ho ten la bat buoc!');
-    } else if (fullName.length > 150) {
-        errors.push('Ho ten khong duoc vuot qua 150 ky tu!');
-    }
-
-    if (email) {
-        var emailRegex = /^[\w.%+-]+@[\w.-]+\.[a-zA-Z]{2,}$/;
-        if (!emailRegex.test(email)) {
-            errors.push('Email khong hop le!');
-        } else if (email.length > 255) {
-            errors.push('Email khong duoc vuot qua 255 ky tu!');
+        if (!fullName) {
+            errors.push('Ho ten la bat buoc!');
+        } else if (fullName.length > 150) {
+            errors.push('Ho ten khong duoc vuot qua 150 ky tu!');
         }
-    }
 
-    if (phone) {
-        var phoneRegex = /^[0-9+\-() ]{7,20}$/;
-        if (!phoneRegex.test(phone)) {
-            errors.push('So dien thoai khong hop le (7-20 ky tu, chi gom so va +, -, (, ))!');
+        if (email) {
+            var emailRegex = /^[\w.%+-]+@[\w.-]+\.[a-zA-Z]{2,}$/;
+            if (!emailRegex.test(email)) {
+                errors.push('Email khong hop le!');
+            } else if (email.length > 255) {
+                errors.push('Email khong duoc vuot qua 255 ky tu!');
+            }
         }
-    }
 
-    if (companyName && companyName.length > 255) {
-        errors.push('Ten cong ty khong duoc vuot qua 255 ky tu!');
-    }
-    if (jobTitle && jobTitle.length > 150) {
-        errors.push('Chuc danh khong duoc vuot qua 150 ky tu!');
-    }
-    if (interests && interests.length > 500) {
-        errors.push('So thich khong duoc vuot qua 500 ky tu!');
-    }
-    if (notes && notes.length > 2000) {
-        errors.push('Ghi chu khong duoc vuot qua 2000 ky tu!');
-    }
+        if (phone) {
+            var phoneRegex = /^[0-9+\-() ]{7,20}$/;
+            if (!phoneRegex.test(phone)) {
+                errors.push('So dien thoai khong hop le (7-20 ky tu, chi gom so va +, -, (, ))!');
+            }
+        }
 
-    if (errors.length > 0) {
-        e.preventDefault();
-        alert(errors.join('\n'));
-        return;
-    }
+        if (companyName && companyName.length > 255) {
+            errors.push('Ten cong ty khong duoc vuot qua 255 ky tu!');
+        }
+        if (jobTitle && jobTitle.length > 150) {
+            errors.push('Chuc danh khong duoc vuot qua 150 ky tu!');
+        }
+        if (interests && interests.length > 500) {
+            errors.push('So thich khong duoc vuot qua 500 ky tu!');
+        }
+        if (notes && notes.length > 2000) {
+            errors.push('Ghi chu khong duoc vuot qua 2000 ky tu!');
+        }
 
-    var btn = document.getElementById('submitBtn');
-    btn.disabled = true;
-    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Dang luu...';
-});
+        if (errors.length > 0) {
+            e.preventDefault();
+            alert(errors.join('\n'));
+            return;
+        }
+
+        var btn = document.getElementById('submitBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Dang luu...';
+    });
 </script>
