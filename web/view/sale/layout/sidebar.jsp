@@ -18,7 +18,7 @@
     </div>
 
     <!-- Menu -->
-    <nav class="flex-grow-1 overflow-auto py-2">
+    <nav class="flex-grow-1 overflow-auto py-2" id="sidebarNav">
 
         <!-- Dashboard -->
         <div class="mb-1">
@@ -270,3 +270,20 @@
         color: #0d6efd !important;
     }
 </style>
+
+<!-- Sidebar scroll persistence -->
+<script>
+    (function() {
+        var nav = document.getElementById('sidebarNav');
+        if (!nav) return;
+
+        // Restore scroll position
+        var saved = sessionStorage.getItem('sidebarScroll');
+        if (saved) nav.scrollTop = parseInt(saved, 10);
+
+        // Save scroll position on scroll
+        nav.addEventListener('scroll', function() {
+            sessionStorage.setItem('sidebarScroll', nav.scrollTop);
+        });
+    })();
+</script>
