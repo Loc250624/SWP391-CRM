@@ -156,7 +156,7 @@ public class SaleOpportunityFormServlet extends HttpServlet {
         List<Campaign> campaigns = campaignDAO.getAllActiveCampaigns();
 
         // Load leads and customers for selection (create mode only)
-        List<Lead> leads = leadDAO.getLeadsBySalesUser(currentUserId);
+        List<Lead> leads = leadDAO.getLeadsForOpportunity(currentUserId);
         List<Customer> customers = customerDAO.getCustomersBySalesUser(currentUserId);
 
         request.setAttribute("pipelines", pipelines);
@@ -214,8 +214,8 @@ public class SaleOpportunityFormServlet extends HttpServlet {
             doGet(request, response);
             return;
         }
-        if (opportunityName.trim().length() > 255) {
-            request.setAttribute("error", "Ten opportunity khong duoc vuot qua 255 ky tu!");
+        if (opportunityName.trim().length() > 200) {
+            request.setAttribute("error", "Ten opportunity khong duoc vuot qua 200 ky tu!");
             doGet(request, response);
             return;
         }
@@ -387,6 +387,14 @@ public class SaleOpportunityFormServlet extends HttpServlet {
         // Status
         opportunity.setStatus(status != null && !status.isEmpty() ? status : OpportunityStatus.Open.name());
 
+        // Auto-transition Open → InProgress when stage is beyond first stage
+        if (OpportunityStatus.Open.name().equals(opportunity.getStatus())) {
+            PipelineStage selectedStage = stageDAO.getStageById(opportunity.getStageId());
+            if (selectedStage != null && selectedStage.getStageOrder() > 1) {
+                opportunity.setStatus(OpportunityStatus.InProgress.name());
+            }
+        }
+
         // Source and Campaign
         if (sourceIdParam != null && !sourceIdParam.isEmpty()) {
             try {
@@ -464,6 +472,30 @@ public class SaleOpportunityFormServlet extends HttpServlet {
             } else if (!isEdit) {
                 // Log creation
                 historyDAO.logChange(opportunity.getOpportunityId(), "status", null, "Created", currentUserId);
+            }
+
+            // Lead status transition on create
+            if (!isEdit && opportunity.getLeadId() != null) {
+                Lead lead = leadDAO.getLeadById(opportunity.getLeadId());
+                if (lead != null) {
+                    String leadStatus = lead.getStatus();
+                    List<Opportunity> existingOpps = opportunityDAO.getOpportunitiesByLeadId(lead.getLeadId());
+
+                    // T1: Lead has no other opps → Assigned → Working
+                    if (existingOpps.size() <= 1 && "Assigned".equals(leadStatus)) {
+                        leadDAO.updateLeadStatus(lead.getLeadId(), "Working");
+                    }
+                    // T2: Lead had opps but all Lost → Unqualified/Nurturing → Working
+                    else if ("Unqualified".equals(leadStatus) || "Nurturing".equals(leadStatus)) {
+                        boolean allLost = existingOpps.stream()
+                            .filter(o -> o.getOpportunityId() != opportunity.getOpportunityId())
+                            .allMatch(o -> "Lost".equals(o.getStatus()));
+                        if (allLost) {
+                            leadDAO.updateLeadStatus(lead.getLeadId(), "Working");
+                        }
+                    }
+                    // T3: Lead has active opp → no status change
+                }
             }
 
             // Success - redirect to list with success message

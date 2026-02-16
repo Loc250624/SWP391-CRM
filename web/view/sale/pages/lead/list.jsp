@@ -114,10 +114,12 @@
             <select class="form-select form-select-sm" style="width:auto;" name="status" onchange="this.form.submit()">
                 <option value="">Tat ca trang thai</option>
                 <option value="Assigned" ${filterStatus == 'Assigned' ? 'selected' : ''}>Assigned</option>
+                <option value="Working" ${filterStatus == 'Working' ? 'selected' : ''}>Working</option>
                 <option value="Unqualified" ${filterStatus == 'Unqualified' ? 'selected' : ''}>Unqualified</option>
-                <option value="Recycled" ${filterStatus == 'Recycled' ? 'selected' : ''}>Recycled</option>
                 <option value="Nurturing" ${filterStatus == 'Nurturing' ? 'selected' : ''}>Nurturing</option>
                 <option value="Converted" ${filterStatus == 'Converted' ? 'selected' : ''}>Converted</option>
+                <option value="Inactive" ${filterStatus == 'Inactive' ? 'selected' : ''}>Inactive</option>
+
             </select>
             <select class="form-select form-select-sm" style="width:auto;" name="rating" onchange="this.form.submit()">
                 <option value="">Tat ca rating</option>
@@ -260,7 +262,9 @@
                                             <div class="btn-group btn-group-sm">
                                                 <a href="${pageContext.request.contextPath}/sale/lead/detail?id=${lead.leadId}" class="btn btn-outline-primary btn-sm" title="Xem chi tiet"><i class="bi bi-eye"></i></a>
                                             <a href="${pageContext.request.contextPath}/sale/lead/form?id=${lead.leadId}" class="btn btn-outline-secondary btn-sm" title="Chinh sua"><i class="bi bi-pencil"></i></a>
-                                            <button onclick="showInactiveModal(${lead.leadId}, '${lead.fullName}', '${lead.leadCode}')" class="btn btn-outline-danger btn-sm" title="Vo hieu hoa"><i class="bi bi-x-circle"></i></button>
+                                                <c:if test="${lead.status != 'Inactive'}">
+                                                <button onclick="showInactiveModal(${lead.leadId}, '${lead.fullName}', '${lead.leadCode}')" class="btn btn-outline-danger btn-sm" title="Vo hieu hoa"><i class="bi bi-x-circle"></i></button>
+                                                </c:if>
                                         </div>
                                     </td>
                                 </tr>
@@ -288,8 +292,8 @@
                         </c:if>
                         <c:if test="${(i == currentPage - 3 && i > 1) || (i == currentPage + 3 && i < totalPages)}">
                             <li class="page-item disabled"><span class="page-link">...</span></li>
-                        </c:if>
-                    </c:forEach>
+                            </c:if>
+                        </c:forEach>
                     <li class="page-item ${currentPage == totalPages ? 'disabled' : ''}">
                         <a class="page-link" href="${pageContext.request.contextPath}/sale/lead/list?page=${currentPage + 1}&tab=${activeTab}&status=${filterStatus}&rating=${filterRating}&search=${searchQuery}"><i class="bi bi-chevron-right"></i></a>
                     </li>
@@ -348,36 +352,44 @@
         oppListDiv.innerHTML = '<div class="text-center py-3"><span class="spinner-border spinner-border-sm me-1"></span>Dang tai danh sach Opportunity...</div>';
 
         fetch('${pageContext.request.contextPath}/sale/lead/opportunities?leadId=' + leadId)
-            .then(function(resp) { return resp.json(); })
-            .then(function(opps) {
-                if (opps.length === 0) {
-                    oppListDiv.innerHTML = '<p class="text-muted mb-0"><i class="bi bi-info-circle me-1"></i>Lead nay khong co Opportunity nao.</p>';
-                } else {
-                    var html = '<h6 class="fw-semibold mb-2">Cac Opportunity se bi dong:</h6>';
-                    html += '<div class="table-responsive"><table class="table table-sm table-bordered mb-0">';
-                    html += '<thead class="table-light"><tr><th>Ma OPP</th><th>Ten Opportunity</th><th>Trang thai</th><th>Gia tri</th></tr></thead><tbody>';
-                    opps.forEach(function(opp) {
-                        var statusBadge = '<span class="badge bg-secondary">' + opp.status + '</span>';
-                        if (opp.status === 'Open') statusBadge = '<span class="badge bg-primary-subtle text-primary">Open</span>';
-                        else if (opp.status === 'InProgress') statusBadge = '<span class="badge bg-info-subtle text-info">In Progress</span>';
-                        else if (opp.status === 'Won') statusBadge = '<span class="badge bg-success">Won</span>';
-                        else if (opp.status === 'Lost') statusBadge = '<span class="badge bg-danger">Lost</span>';
-                        else if (opp.status === 'OnHold') statusBadge = '<span class="badge bg-warning-subtle text-warning">On Hold</span>';
-                        else if (opp.status === 'Cancelled') statusBadge = '<span class="badge bg-secondary">Cancelled</span>';
+                .then(function (resp) {
+                    return resp.json();
+                })
+                .then(function (opps) {
+                    if (opps.length === 0) {
+                        oppListDiv.innerHTML = '<p class="text-muted mb-0"><i class="bi bi-info-circle me-1"></i>Lead nay khong co Opportunity nao.</p>';
+                    } else {
+                        var html = '<h6 class="fw-semibold mb-2">Cac Opportunity se bi dong:</h6>';
+                        html += '<div class="table-responsive"><table class="table table-sm table-bordered mb-0">';
+                        html += '<thead class="table-light"><tr><th>Ma OPP</th><th>Ten Opportunity</th><th>Trang thai</th><th>Gia tri</th></tr></thead><tbody>';
+                        opps.forEach(function (opp) {
+                            var statusBadge = '<span class="badge bg-secondary">' + opp.status + '</span>';
+                            if (opp.status === 'Open')
+                                statusBadge = '<span class="badge bg-primary-subtle text-primary">Open</span>';
+                            else if (opp.status === 'InProgress')
+                                statusBadge = '<span class="badge bg-info-subtle text-info">In Progress</span>';
+                            else if (opp.status === 'Won')
+                                statusBadge = '<span class="badge bg-success">Won</span>';
+                            else if (opp.status === 'Lost')
+                                statusBadge = '<span class="badge bg-danger">Lost</span>';
+                            else if (opp.status === 'OnHold')
+                                statusBadge = '<span class="badge bg-warning-subtle text-warning">On Hold</span>';
+                            else if (opp.status === 'Cancelled')
+                                statusBadge = '<span class="badge bg-secondary">Cancelled</span>';
 
-                        var value = opp.estimatedValue ? Number(opp.estimatedValue).toLocaleString('vi-VN') + ' VND' : '-';
-                        html += '<tr><td><span class="fw-semibold text-primary">' + opp.opportunityCode + '</span></td>';
-                        html += '<td>' + opp.opportunityName + '</td>';
-                        html += '<td>' + statusBadge + '</td>';
-                        html += '<td>' + value + '</td></tr>';
-                    });
-                    html += '</tbody></table></div>';
-                    oppListDiv.innerHTML = html;
-                }
-            })
-            .catch(function() {
-                oppListDiv.innerHTML = '<p class="text-muted mb-0"><i class="bi bi-info-circle me-1"></i>Khong the tai danh sach Opportunity.</p>';
-            });
+                            var value = opp.estimatedValue ? Number(opp.estimatedValue).toLocaleString('vi-VN') + ' VND' : '-';
+                            html += '<tr><td><span class="fw-semibold text-primary">' + opp.opportunityCode + '</span></td>';
+                            html += '<td>' + opp.opportunityName + '</td>';
+                            html += '<td>' + statusBadge + '</td>';
+                            html += '<td>' + value + '</td></tr>';
+                        });
+                        html += '</tbody></table></div>';
+                        oppListDiv.innerHTML = html;
+                    }
+                })
+                .catch(function () {
+                    oppListDiv.innerHTML = '<p class="text-muted mb-0"><i class="bi bi-info-circle me-1"></i>Khong the tai danh sach Opportunity.</p>';
+                });
 
         var modal = new bootstrap.Modal(document.getElementById('inactiveListModal'));
         modal.show();
