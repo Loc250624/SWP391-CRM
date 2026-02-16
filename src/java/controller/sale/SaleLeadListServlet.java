@@ -137,7 +137,7 @@ public class SaleLeadListServlet extends HttpServlet {
         // Success/error messages
         String success = request.getParameter("success");
         if ("created".equals(success)) {
-            request.setAttribute("successMessage", "Tao lead thanh cong!");
+            request.setAttribute("successMessage", "Tạo lead thành công!");
         } else if ("updated".equals(success)) {
             request.setAttribute("successMessage", "Cap nhat lead thanh cong!");
         } else if ("deleted".equals(success)) {
