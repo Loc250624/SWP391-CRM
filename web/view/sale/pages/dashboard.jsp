@@ -247,7 +247,7 @@
                                     <c:forEach var="stage" items="${stages}">
                                         <c:set var="sc" value="${countByStage[stage.stageId] != null ? countByStage[stage.stageId] : 0}" />
                                         <c:set var="sv" value="${valueByStage[stage.stageId] != null ? valueByStage[stage.stageId] : 0}" />
-                                        <c:set var="barPct" value="${totalPipelineValue > 0 ? (sv * 100 / totalPipelineValue) : 0}" />
+                                        <c:set var="barPct" value="${totalStageValue > 0 ? (sv * 100 / totalStageValue) : 0}" />
                                         <tr>
                                             <td>
                                                 <div class="d-flex align-items-center gap-2">
@@ -259,11 +259,21 @@
                                                 </div>
                                             </td>
                                             <td class="text-center">
-                                                <span class="badge bg-primary-subtle text-primary">${sc} deal</span>
+                                                <c:choose>
+                                                    <c:when test="${stage.stageType == 'won'}"><span class="badge bg-success">${sc} deal</span></c:when>
+                                                    <c:when test="${stage.stageType == 'lost'}"><span class="badge bg-danger">${sc} deal</span></c:when>
+                                                    <c:otherwise><span class="badge bg-primary-subtle text-primary">${sc} deal</span></c:otherwise>
+                                                </c:choose>
                                             </td>
                                             <td class="text-end fw-semibold">
                                                 <c:choose>
-                                                    <c:when test="${sv > 0}"><fmt:formatNumber value="${sv}" type="number" groupingUsed="true" maxFractionDigits="0"/>d</c:when>
+                                                    <c:when test="${sv > 0}">
+                                                        <c:choose>
+                                                            <c:when test="${stage.stageType == 'won'}"><span class="text-success"><fmt:formatNumber value="${sv}" type="number" groupingUsed="true" maxFractionDigits="0"/>d</span></c:when>
+                                                            <c:when test="${stage.stageType == 'lost'}"><span class="text-danger"><fmt:formatNumber value="${sv}" type="number" groupingUsed="true" maxFractionDigits="0"/>d</span></c:when>
+                                                            <c:otherwise><fmt:formatNumber value="${sv}" type="number" groupingUsed="true" maxFractionDigits="0"/>d</c:otherwise>
+                                                        </c:choose>
+                                                    </c:when>
                                                     <c:otherwise><span class="text-muted">0</span></c:otherwise>
                                                 </c:choose>
                                             </td>

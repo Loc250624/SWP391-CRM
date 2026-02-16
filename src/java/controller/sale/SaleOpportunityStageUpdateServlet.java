@@ -21,6 +21,7 @@ import java.io.PrintWriter;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -159,9 +160,38 @@ public class SaleOpportunityStageUpdateServlet extends HttpServlet {
                         newCustomer.setStatus("Active");
                         newCustomer.setOwnerId(currentUserId);
                         newCustomer.setCreatedBy(currentUserId);
-                        newCustomer.setTotalCourses(0);
-                        newCustomer.setTotalSpent(BigDecimal.ZERO);
-                        newCustomer.setNotes("Tu dong chuyen doi tu Lead: " + lead.getLeadCode());
+
+                        // Enrich customer from best quotation
+                        Quotation bestQuotation = getBestQuotation(opp.getOpportunityId());
+                        if (bestQuotation != null) {
+                            newCustomer.setTotalSpent(bestQuotation.getTotalAmount() != null ? bestQuotation.getTotalAmount() : BigDecimal.ZERO);
+
+                            // Get quotation items to extract course info
+                            List<Map<String, Object>> items = quotationDAO.getItemsByQuotationId(bestQuotation.getQuotationId());
+                            int totalCourses = 0;
+                            StringBuilder courseNames = new StringBuilder();
+                            for (Map<String, Object> item : items) {
+                                Integer courseId = (Integer) item.get("courseId");
+                                if (courseId != null) {
+                                    Integer qty = (Integer) item.get("quantity");
+                                    totalCourses += (qty != null ? qty : 1);
+                                    String courseName = (String) item.get("courseName");
+                                    if (courseName != null && !courseName.isEmpty()) {
+                                        if (courseNames.length() > 0) courseNames.append(", ");
+                                        courseNames.append(courseName);
+                                    }
+                                }
+                            }
+                            newCustomer.setTotalCourses(totalCourses);
+                            newCustomer.setPurchasedCourses(courseNames.length() > 0 ? courseNames.toString() : null);
+                            newCustomer.setFirstPurchaseDate(LocalDate.now());
+                            newCustomer.setLastPurchaseDate(LocalDate.now());
+                            newCustomer.setNotes("Chuyen doi tu Lead: " + lead.getLeadCode() + " | Bao gia: " + bestQuotation.getQuotationCode());
+                        } else {
+                            newCustomer.setTotalCourses(0);
+                            newCustomer.setTotalSpent(BigDecimal.ZERO);
+                            newCustomer.setNotes("Tu dong chuyen doi tu Lead: " + lead.getLeadCode());
+                        }
 
                         boolean customerCreated = customerDAO.insertCustomer(newCustomer);
                         if (customerCreated && newCustomer.getCustomerId() > 0) {
@@ -229,13 +259,6 @@ public class SaleOpportunityStageUpdateServlet extends HttpServlet {
                 // Opp must have estimatedValue > 0
                 if (opp.getEstimatedValue() == null || opp.getEstimatedValue().compareTo(BigDecimal.ZERO) <= 0) {
                     return "Opportunity phai co gia tri uoc tinh > 0 de chuyen sang Negotiation.";
-                }
-                break;
-
-            case "PROPOSED":
-                // Upsell: Opp must have estimatedValue > 0
-                if (opp.getEstimatedValue() == null || opp.getEstimatedValue().compareTo(BigDecimal.ZERO) <= 0) {
-                    return "Opportunity phai co gia tri uoc tinh > 0 de chuyen sang Proposed.";
                 }
                 break;
 
@@ -320,6 +343,42 @@ public class SaleOpportunityStageUpdateServlet extends HttpServlet {
             lead.setStatus(newLeadStatus);
             leadDAO.updateLead(lead);
         }
+    }
+
+    /**
+     * Get the best quotation for an opportunity.
+     * Priority: Accepted > Approved > Sent, then newest first.
+     */
+    private Quotation getBestQuotation(int opportunityId) {
+        List<Quotation> quotations = quotationDAO.getQuotationsByOpportunityId(opportunityId);
+        if (quotations == null || quotations.isEmpty()) return null;
+
+        Quotation best = null;
+        int bestPriority = -1;
+
+        for (Quotation q : quotations) {
+            String status = q.getStatus();
+            int priority;
+            if ("Accepted".equals(status)) {
+                priority = 3;
+            } else if (QuotationStatus.Approved.name().equals(status)) {
+                priority = 2;
+            } else if (QuotationStatus.Sent.name().equals(status)) {
+                priority = 1;
+            } else {
+                continue;
+            }
+
+            if (priority > bestPriority) {
+                bestPriority = priority;
+                best = q;
+            } else if (priority == bestPriority && best != null
+                    && q.getCreatedAt() != null && best.getCreatedAt() != null
+                    && q.getCreatedAt().isAfter(best.getCreatedAt())) {
+                best = q;
+            }
+        }
+        return best;
     }
 
     private String escapeJson(String text) {

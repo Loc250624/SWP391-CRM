@@ -20,12 +20,9 @@
     <a href="${pageContext.request.contextPath}/sale/customer/list" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Quay lai</a>
 </div>
 
-<!-- Error Message -->
+<!-- Toast Messages -->
 <c:if test="${not empty error}">
-    <div class="alert alert-danger alert-dismissible fade show d-flex align-items-center" role="alert">
-        <i class="bi bi-exclamation-triangle-fill me-2"></i>${error}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
+    <script>document.addEventListener('DOMContentLoaded', function(){ CRM.showToast('${error}', 'error'); });</script>
 </c:if>
 
 <form method="POST" action="${pageContext.request.contextPath}/sale/customer/form" id="customerForm">

@@ -117,48 +117,6 @@
                                     </div>
                                 </div>
                             </c:forEach>
-
-                            <!-- Won row -->
-                            <div class="d-flex align-items-center gap-3 pt-2 border-top">
-                                <div style="width: 130px;" class="d-flex align-items-center gap-2">
-                                    <span class="rounded-circle flex-shrink-0" style="width: 10px; height: 10px; background: #198754; display: inline-block;"></span>
-                                    <small class="fw-medium text-success">Won</small>
-                                </div>
-                                <div class="flex-grow-1">
-                                    <div class="progress" style="height: 32px; background: #f0f1f3;">
-                                        <c:set var="wonPct" value="${maxStageValue > 0 ? (wonValue * 100 / maxStageValue) : 0}" />
-                                        <div class="progress-bar bg-success d-flex align-items-center justify-content-start ps-2" style="width: ${wonPct < 8 && wonCount > 0 ? 8 : wonPct}%; font-size: 12px;">
-                                            <c:if test="${wonCount > 0}">
-                                                <span class="text-white fw-semibold">${wonCount} deal - <fmt:formatNumber value="${wonValue}" type="number" groupingUsed="true" maxFractionDigits="0"/>d</span>
-                                            </c:if>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div style="width: 50px;" class="text-end">
-                                    <small class="fw-bold text-success">${wonCount}</small>
-                                </div>
-                            </div>
-
-                            <!-- Lost row -->
-                            <div class="d-flex align-items-center gap-3">
-                                <div style="width: 130px;" class="d-flex align-items-center gap-2">
-                                    <span class="rounded-circle flex-shrink-0" style="width: 10px; height: 10px; background: #dc3545; display: inline-block;"></span>
-                                    <small class="fw-medium text-danger">Lost</small>
-                                </div>
-                                <div class="flex-grow-1">
-                                    <div class="progress" style="height: 32px; background: #f0f1f3;">
-                                        <c:set var="lostPct" value="${maxStageValue > 0 ? (lostValue * 100 / maxStageValue) : 0}" />
-                                        <div class="progress-bar bg-danger d-flex align-items-center justify-content-start ps-2" style="width: ${lostPct < 8 && lostCount > 0 ? 8 : lostPct}%; font-size: 12px;">
-                                            <c:if test="${lostCount > 0}">
-                                                <span class="text-white fw-semibold">${lostCount} deal - <fmt:formatNumber value="${lostValue}" type="number" groupingUsed="true" maxFractionDigits="0"/>d</span>
-                                            </c:if>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div style="width: 50px;" class="text-end">
-                                    <small class="fw-bold text-danger">${lostCount}</small>
-                                </div>
-                            </div>
                         </div>
                     </c:when>
                     <c:otherwise>
@@ -257,7 +215,7 @@
                                 <c:set var="sc" value="${countByStage[stage.stageId] != null ? countByStage[stage.stageId] : 0}" />
                                 <c:set var="sv" value="${valueByStage[stage.stageId] != null ? valueByStage[stage.stageId] : 0}" />
                                 <c:set var="avgVal" value="${sc > 0 ? sv / sc : 0}" />
-                                <c:set var="pct" value="${totalPipelineValue > 0 ? (sv * 100 / totalPipelineValue) : 0}" />
+                                <c:set var="pct" value="${totalStageValue > 0 ? (sv * 100 / totalStageValue) : 0}" />
                                 <c:set var="stageColor" value="${not empty stage.colorCode ? stage.colorCode : '#6b778c'}" />
                                 <tr>
                                     <td class="ps-3">
@@ -270,11 +228,21 @@
                                         </div>
                                     </td>
                                     <td class="text-center">
-                                        <span class="badge bg-primary-subtle text-primary">${sc}</span>
+                                        <c:choose>
+                                            <c:when test="${stage.stageType == 'won'}"><span class="badge bg-success">${sc}</span></c:when>
+                                            <c:when test="${stage.stageType == 'lost'}"><span class="badge bg-danger">${sc}</span></c:when>
+                                            <c:otherwise><span class="badge bg-primary-subtle text-primary">${sc}</span></c:otherwise>
+                                        </c:choose>
                                     </td>
                                     <td class="text-end fw-semibold">
                                         <c:choose>
-                                            <c:when test="${sv > 0}"><fmt:formatNumber value="${sv}" type="number" groupingUsed="true" maxFractionDigits="0"/>d</c:when>
+                                            <c:when test="${sv > 0}">
+                                                <c:choose>
+                                                    <c:when test="${stage.stageType == 'won'}"><span class="text-success"><fmt:formatNumber value="${sv}" type="number" groupingUsed="true" maxFractionDigits="0"/>d</span></c:when>
+                                                    <c:when test="${stage.stageType == 'lost'}"><span class="text-danger"><fmt:formatNumber value="${sv}" type="number" groupingUsed="true" maxFractionDigits="0"/>d</span></c:when>
+                                                    <c:otherwise><fmt:formatNumber value="${sv}" type="number" groupingUsed="true" maxFractionDigits="0"/>d</c:otherwise>
+                                                </c:choose>
+                                            </c:when>
                                             <c:otherwise><span class="text-muted">0</span></c:otherwise>
                                         </c:choose>
                                     </td>
@@ -297,43 +265,6 @@
                                     </td>
                                 </tr>
                             </c:forEach>
-                            <!-- Won/Lost summary rows -->
-                            <tr class="table-success">
-                                <td class="ps-3">
-                                    <div class="d-flex align-items-center gap-2">
-                                        <span class="rounded-circle flex-shrink-0" style="width: 10px; height: 10px; background: #198754; display: inline-block;"></span>
-                                        <div class="fw-semibold text-success">Won (Closed)</div>
-                                    </div>
-                                </td>
-                                <td class="text-center"><span class="badge bg-success">${wonCount}</span></td>
-                                <td class="text-end fw-bold text-success"><fmt:formatNumber value="${wonValue}" type="number" groupingUsed="true" maxFractionDigits="0"/>d</td>
-                                <td class="text-end">
-                                    <c:choose>
-                                        <c:when test="${wonCount > 0}"><fmt:formatNumber value="${wonValue / wonCount}" type="number" groupingUsed="true" maxFractionDigits="0"/>d</c:when>
-                                        <c:otherwise>-</c:otherwise>
-                                    </c:choose>
-                                </td>
-                                <td class="text-center"><span class="fw-semibold text-success">100%</span></td>
-                                <td></td>
-                            </tr>
-                            <tr class="table-danger">
-                                <td class="ps-3">
-                                    <div class="d-flex align-items-center gap-2">
-                                        <span class="rounded-circle flex-shrink-0" style="width: 10px; height: 10px; background: #dc3545; display: inline-block;"></span>
-                                        <div class="fw-semibold text-danger">Lost (Closed)</div>
-                                    </div>
-                                </td>
-                                <td class="text-center"><span class="badge bg-danger">${lostCount}</span></td>
-                                <td class="text-end fw-bold text-danger"><fmt:formatNumber value="${lostValue}" type="number" groupingUsed="true" maxFractionDigits="0"/>d</td>
-                                <td class="text-end">
-                                    <c:choose>
-                                        <c:when test="${lostCount > 0}"><fmt:formatNumber value="${lostValue / lostCount}" type="number" groupingUsed="true" maxFractionDigits="0"/>d</c:when>
-                                        <c:otherwise>-</c:otherwise>
-                                    </c:choose>
-                                </td>
-                                <td class="text-center"><span class="fw-semibold text-danger">0%</span></td>
-                                <td></td>
-                            </tr>
                         </tbody>
                     </table>
                 </div>
@@ -348,47 +279,41 @@
 <!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        var ctx = document.getElementById('pipelineDonut');
-        if (ctx) {
-            var labels = [];
-            var data = [];
-            var colors = [];
-            <c:forEach var="stage" items="${stages}">
-                labels.push('${stage.stageName}');
-                data.push(${countByStage[stage.stageId] != null ? countByStage[stage.stageId] : 0});
-                colors.push('${not empty stage.colorCode ? stage.colorCode : "#6b778c"}');
-            </c:forEach>
-            labels.push('Won');
-            data.push(${wonCount});
-            colors.push('#198754');
-            labels.push('Lost');
-            data.push(${lostCount});
-            colors.push('#dc3545');
+                document.addEventListener('DOMContentLoaded', function () {
+                    var ctx = document.getElementById('pipelineDonut');
+                    if (ctx) {
+                        var labels = [];
+                        var data = [];
+                        var colors = [];
+    <c:forEach var="stage" items="${stages}">
+                        labels.push('${stage.stageName}');
+                        data.push(${countByStage[stage.stageId] != null ? countByStage[stage.stageId] : 0});
+                        colors.push('${not empty stage.colorCode ? stage.colorCode : "#6b778c"}');
+    </c:forEach>
 
-            new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        data: data,
-                        backgroundColor: colors,
-                        borderWidth: 1,
-                        hoverOffset: 8
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    cutout: '60%',
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: { font: { size: 11 }, padding: 12 }
-                        }
+                        new Chart(ctx, {
+                            type: 'doughnut',
+                            data: {
+                                labels: labels,
+                                datasets: [{
+                                        data: data,
+                                        backgroundColor: colors,
+                                        borderWidth: 1,
+                                        hoverOffset: 8
+                                    }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: true,
+                                cutout: '60%',
+                                plugins: {
+                                    legend: {
+                                        position: 'bottom',
+                                        labels: {font: {size: 11}, padding: 12}
+                                    }
+                                }
+                            }
+                        });
                     }
-                }
-            });
-        }
-    });
+                });
 </script>

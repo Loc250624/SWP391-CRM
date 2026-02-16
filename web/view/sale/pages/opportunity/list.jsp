@@ -14,18 +14,12 @@
     </div>
 </div>
 
-<!-- Messages -->
+<!-- Toast Messages -->
 <c:if test="${not empty successMessage}">
-    <div class="alert alert-success alert-dismissible fade show d-flex align-items-center" role="alert">
-        <i class="bi bi-check-circle-fill me-2"></i>${successMessage}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
+    <script>document.addEventListener('DOMContentLoaded', function(){ CRM.showToast('${successMessage}', 'success'); });</script>
 </c:if>
 <c:if test="${param.error == 'no_permission'}">
-    <div class="alert alert-danger alert-dismissible fade show d-flex align-items-center" role="alert">
-        <i class="bi bi-exclamation-triangle-fill me-2"></i>Ban khong co quyen truy cap opportunity nay!
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
+    <script>document.addEventListener('DOMContentLoaded', function(){ CRM.showToast('Ban khong co quyen truy cap opportunity nay!', 'error'); });</script>
 </c:if>
 
 <!-- KPI Cards -->
@@ -195,8 +189,10 @@
                                     <td class="text-center">
                                         <div class="btn-group btn-group-sm">
                                             <a href="${pageContext.request.contextPath}/sale/opportunity/detail?id=${opp.opportunityId}" class="btn btn-outline-primary btn-sm" title="Xem"><i class="bi bi-eye"></i></a>
-                                            <a href="${pageContext.request.contextPath}/sale/opportunity/form?id=${opp.opportunityId}" class="btn btn-outline-secondary btn-sm" title="Sua"><i class="bi bi-pencil"></i></a>
-                                            <button onclick="deleteOpp(${opp.opportunityId}, '${opp.opportunityName}')" class="btn btn-outline-danger btn-sm" title="Xoa"><i class="bi bi-trash"></i></button>
+                                            <c:if test="${opp.status != 'Cancelled' && opp.status != 'Won' && opp.status != 'Lost'}">
+                                                <a href="${pageContext.request.contextPath}/sale/opportunity/form?id=${opp.opportunityId}" class="btn btn-outline-secondary btn-sm" title="Sua"><i class="bi bi-pencil"></i></a>
+                                                <button onclick="cancelOpp(${opp.opportunityId}, '${opp.opportunityName}')" class="btn btn-outline-danger btn-sm" title="Huy"><i class="bi bi-trash"></i></button>
+                                            </c:if>
                                         </div>
                                     </td>
                                 </tr>
@@ -243,8 +239,8 @@
 </div>
 
 <script>
-    function deleteOpp(oppId, oppName) {
-        if (confirm('Ban co chac muon xoa opportunity "' + oppName + '"?\nHanh dong nay khong the hoan tac.')) {
+    function cancelOpp(oppId, oppName) {
+        if (confirm('Ban co chac muon huy opportunity "' + oppName + '"?\nOpportunity se chuyen sang trang thai Cancelled.')) {
             const form = document.createElement('form');
             form.method = 'POST';
             form.action = '${pageContext.request.contextPath}/sale/opportunity/list';

@@ -147,8 +147,8 @@ public class SaleOpportunityListServlet extends HttpServlet {
             request.setAttribute("successMessage", "Tao opportunity thanh cong!");
         } else if ("updated".equals(success)) {
             request.setAttribute("successMessage", "Cap nhat opportunity thanh cong!");
-        } else if ("deleted".equals(success)) {
-            request.setAttribute("successMessage", "Xoa opportunity thanh cong!");
+        } else if ("cancelled".equals(success)) {
+            request.setAttribute("successMessage", "Huy opportunity thanh cong!");
         }
 
         request.setAttribute("ACTIVE_MENU", "OPP_LIST");
@@ -188,11 +188,13 @@ public class SaleOpportunityListServlet extends HttpServlet {
                     return;
                 }
 
-                boolean success = opportunityDAO.deleteOpportunity(oppId);
+                // Soft delete: update status to Cancelled instead of deleting
+                opp.setStatus("Cancelled");
+                boolean success = opportunityDAO.updateOpportunity(opp);
                 if (success) {
-                    response.sendRedirect(request.getContextPath() + "/sale/opportunity/list?success=deleted");
+                    response.sendRedirect(request.getContextPath() + "/sale/opportunity/list?success=cancelled");
                 } else {
-                    response.sendRedirect(request.getContextPath() + "/sale/opportunity/list?error=delete_failed");
+                    response.sendRedirect(request.getContextPath() + "/sale/opportunity/list?error=cancel_failed");
                 }
             } catch (NumberFormatException e) {
                 response.sendRedirect(request.getContextPath() + "/sale/opportunity/list?error=invalid_id");

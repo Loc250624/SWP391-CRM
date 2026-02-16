@@ -21,12 +21,9 @@
     <a href="${pageContext.request.contextPath}/sale/lead/list" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Quay lai</a>
 </div>
 
-<!-- Error Message -->
+<!-- Toast Messages -->
 <c:if test="${not empty error}">
-    <div class="alert alert-danger alert-dismissible fade show d-flex align-items-center" role="alert">
-        <i class="bi bi-exclamation-triangle-fill me-2"></i><span>${error}</span>
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
+    <script>document.addEventListener('DOMContentLoaded', function(){ CRM.showToast('${error}', 'error'); });</script>
 </c:if>
 
 <form method="POST" action="${pageContext.request.contextPath}/sale/lead/form" id="leadForm" novalidate>
@@ -337,7 +334,7 @@
 
         if (errors.length > 0) {
             e.preventDefault();
-            alert(errors.join('\n'));
+            errors.forEach(function(err){ CRM.showToast(err, 'error'); });
             return;
         }
 
