@@ -16,7 +16,6 @@ import model.Pipeline;
 import model.PipelineStage;
 import dao.OpportunityHistoryDAO;
 import enums.OpportunityStatus;
-import util.EnumHelper;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -199,11 +198,9 @@ public class SaleOpportunityFormServlet extends HttpServlet {
         String leadIdParam = request.getParameter("leadId");
         String customerIdParam = request.getParameter("customerId");
         String pipelineIdParam = request.getParameter("pipelineId");
-        String stageIdParam = request.getParameter("stageId");
         String estimatedValueParam = request.getParameter("estimatedValue");
         String probabilityParam = request.getParameter("probability");
         String expectedCloseDateParam = request.getParameter("expectedCloseDate");
-        String status = request.getParameter("status");
         String sourceIdParam = request.getParameter("sourceId");
         String campaignIdParam = request.getParameter("campaignId");
         String notes = request.getParameter("notes");
@@ -251,14 +248,6 @@ public class SaleOpportunityFormServlet extends HttpServlet {
                 }
             } catch (Exception e) {
                 request.setAttribute("error", "Ngay dong du kien khong hop le!");
-                doGet(request, response);
-                return;
-            }
-        }
-
-        if (status != null && !status.isEmpty()) {
-            if (!EnumHelper.isValidIgnoreCase(OpportunityStatus.class, status)) {
-                request.setAttribute("error", "Trang thai khong hop le!");
                 doGet(request, response);
                 return;
             }
@@ -330,11 +319,11 @@ public class SaleOpportunityFormServlet extends HttpServlet {
             int pipelineId = Integer.parseInt(pipelineIdParam);
             opportunity.setPipelineId(pipelineId);
 
-            // Stage ID - if not provided, use first stage of pipeline
-            if (stageIdParam != null && !stageIdParam.isEmpty()) {
-                opportunity.setStageId(Integer.parseInt(stageIdParam));
+            if (isEdit && oldOpp != null) {
+                // Edit mode: keep original stage (stage is managed via SaleOpportunityStageUpdateServlet)
+                opportunity.setStageId(oldOpp.getStageId());
             } else {
-                // Get first stage of pipeline
+                // Create mode: always use first stage of pipeline
                 PipelineStage firstStage = stageDAO.getFirstStageByPipelineId(pipelineId);
                 if (firstStage != null) {
                     opportunity.setStageId(firstStage.getStageId());
@@ -385,14 +374,12 @@ public class SaleOpportunityFormServlet extends HttpServlet {
         }
 
         // Status
-        opportunity.setStatus(status != null && !status.isEmpty() ? status : OpportunityStatus.Open.name());
-
-        // Auto-transition Open → InProgress when stage is beyond first stage
-        if (OpportunityStatus.Open.name().equals(opportunity.getStatus())) {
-            PipelineStage selectedStage = stageDAO.getStageById(opportunity.getStageId());
-            if (selectedStage != null && selectedStage.getStageOrder() > 1) {
-                opportunity.setStatus(OpportunityStatus.InProgress.name());
-            }
+        if (isEdit && oldOpp != null) {
+            // Edit mode: keep original status (status is managed via SaleOpportunityStageUpdateServlet)
+            opportunity.setStatus(oldOpp.getStatus());
+        } else {
+            // Create mode: always Open
+            opportunity.setStatus(OpportunityStatus.Open.name());
         }
 
         // Source and Campaign

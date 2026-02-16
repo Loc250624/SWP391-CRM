@@ -26,10 +26,7 @@
 </div>
 
 <c:if test="${not empty error}">
-    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-        <i class="bi bi-exclamation-triangle me-1"></i>${error}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
+    <script>document.addEventListener('DOMContentLoaded', function(){ CRM.showToast('${error}', 'error'); });</script>
 </c:if>
 
 <form method="POST" action="${pageContext.request.contextPath}/sale/quotation/form" id="quotationForm">

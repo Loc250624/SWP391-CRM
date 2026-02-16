@@ -13,16 +13,10 @@
 </div>
 
 <c:if test="${param.success == '1'}">
-    <div class="alert alert-success alert-dismissible fade show" role="alert">
-        <i class="bi bi-check-circle me-1"></i>Luu de xuat thanh cong!
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
+    <script>document.addEventListener('DOMContentLoaded', function(){ CRM.showToast('Luu de xuat thanh cong!', 'success'); });</script>
 </c:if>
 <c:if test="${param.error == 'readonly'}">
-    <div class="alert alert-warning alert-dismissible fade show" role="alert">
-        <i class="bi bi-exclamation-triangle me-1"></i>Khong the chinh sua de xuat nay (chi cho phep sua khi o trang thai Draft).
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
+    <script>document.addEventListener('DOMContentLoaded', function(){ CRM.showToast('Khong the chinh sua de xuat nay (chi cho phep sua khi o trang thai Draft).', 'warning'); });</script>
 </c:if>
 
 <!-- Stats -->

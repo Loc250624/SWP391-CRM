@@ -390,6 +390,7 @@
                         <c:choose>
                             <c:when test="${not empty stageOpps}">
                                 <c:forEach var="opp" items="${stageOpps}">
+                                    <c:if test="${opp.status != 'Cancelled'}">
                                     <div class="kb-card${opp.status == 'Won' || opp.status == 'Lost' ? ' kb-locked' : ''}" data-opp-id="${opp.opportunityId}"
                                          data-name="${opp.opportunityName}"
                                          data-code="${opp.opportunityCode}"
@@ -433,6 +434,7 @@
                                             <div class="kb-card-avatar" title="Owner">${opp.opportunityName.substring(0,1)}</div>
                                         </div>
                                     </div>
+                                    </c:if>
                                 </c:forEach>
                             </c:when>
                             <c:otherwise>
@@ -661,18 +663,18 @@
                 .then(function (r) { return r.json(); })
                 .then(function (data) {
                     if (!data.success) {
-                        alert('Loi: ' + data.message);
-                        location.reload();
+                        CRM.showToast('Loi: ' + data.message, 'error');
+                        setTimeout(function(){ location.reload(); }, 2000);
                     } else if (data.newStatus === 'Won' || data.newStatus === 'Lost') {
                         if (data.leadConverted) {
-                            alert('Lead da duoc tu dong chuyen doi thanh Customer!');
+                            CRM.showToast('Lead da duoc tu dong chuyen doi thanh Customer!', 'success');
                         }
-                        location.reload();
+                        setTimeout(function(){ location.reload(); }, 2000);
                     }
                 })
                 .catch(function () {
-                    alert('Loi ket noi');
-                    location.reload();
+                    CRM.showToast('Loi ket noi', 'error');
+                    setTimeout(function(){ location.reload(); }, 2000);
                 });
     }
 

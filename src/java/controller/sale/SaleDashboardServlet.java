@@ -166,7 +166,7 @@ public class SaleDashboardServlet extends HttpServlet {
 
             for (Opportunity opp : allOpps) {
                 if (opp.getPipelineId() == defaultPipeline.getPipelineId()
-                        && !"Won".equals(opp.getStatus()) && !"Lost".equals(opp.getStatus()) && !"Cancelled".equals(opp.getStatus())) {
+                        && !"Cancelled".equals(opp.getStatus())) {
                     int sid = opp.getStageId();
                     countByStage.merge(sid, 1, Integer::sum);
                     BigDecimal val = opp.getEstimatedValue() != null ? opp.getEstimatedValue() : BigDecimal.ZERO;
@@ -221,11 +221,18 @@ public class SaleDashboardServlet extends HttpServlet {
         request.setAttribute("weightedForecast", weightedForecast);
         request.setAttribute("winRate", winRate);
 
+        // Total value across all stages (for bar percentage)
+        BigDecimal totalStageValue = BigDecimal.ZERO;
+        for (BigDecimal v : valueByStage.values()) {
+            totalStageValue = totalStageValue.add(v);
+        }
+
         // Pipeline stages
         request.setAttribute("defaultPipeline", defaultPipeline);
         request.setAttribute("stages", stages);
         request.setAttribute("countByStage", countByStage);
         request.setAttribute("valueByStage", valueByStage);
+        request.setAttribute("totalStageValue", totalStageValue);
 
         // Recent opps
         request.setAttribute("recentOpps", recentOpps);

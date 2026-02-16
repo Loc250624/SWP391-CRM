@@ -79,20 +79,12 @@
     <a href="${pageContext.request.contextPath}/sale/opportunity/list" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Quay lai</a>
 </div>
 
-<!-- Error -->
+<!-- Toast Messages -->
 <c:if test="${not empty error}">
-    <div class="alert alert-danger alert-dismissible fade show d-flex align-items-center" role="alert">
-        <i class="bi bi-exclamation-triangle-fill me-2"></i>${error}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
+    <script>document.addEventListener('DOMContentLoaded', function(){ CRM.showToast('${error}', 'error'); });</script>
 </c:if>
-
-<!-- Convert from Lead info -->
 <c:if test="${convertFromLead}">
-    <div class="alert alert-info d-flex align-items-center mb-4">
-        <i class="bi bi-info-circle-fill me-2"></i>
-        Dang tao opportunity tu Lead <strong class="ms-1">${lead.leadCode} - ${lead.fullName}</strong>
-    </div>
+    <script>document.addEventListener('DOMContentLoaded', function(){ CRM.showToast('Dang tao opportunity tu Lead ${lead.leadCode} - ${lead.fullName}', 'info'); });</script>
 </c:if>
 
 <form method="POST" action="${pageContext.request.contextPath}/sale/opportunity/form" id="oppForm">
@@ -321,27 +313,50 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label small">Pipeline <span class="text-danger">*</span></label>
-                            <select name="pipelineId" class="form-select form-select-sm" id="pipelineSelect" required onchange="loadStages(this.value)">
-                                <option value="">-- Chon pipeline --</option>
-                                <c:forEach var="p" items="${pipelines}">
-                                    <c:set var="pSel" value=""/>
-                                    <c:if test="${(not empty opportunity && opportunity.pipelineId == p.pipelineId) || preSelectedPipelineId == p.pipelineId}"><c:set var="pSel" value="selected"/></c:if>
-                                    <option value="${p.pipelineId}" ${pSel}>${p.pipelineName}</option>
-                                </c:forEach>
-                            </select>
+                            <c:choose>
+                                <c:when test="${mode == 'edit'}">
+                                    <input type="hidden" name="pipelineId" value="${opportunity.pipelineId}">
+                                    <select class="form-select form-select-sm" disabled>
+                                        <c:forEach var="p" items="${pipelines}">
+                                            <c:if test="${opportunity.pipelineId == p.pipelineId}">
+                                                <option selected>${p.pipelineName}</option>
+                                            </c:if>
+                                        </c:forEach>
+                                    </select>
+                                    <small class="text-muted"><i class="bi bi-info-circle me-1"></i>Khong the thay doi Pipeline sau khi tao.</small>
+                                </c:when>
+                                <c:otherwise>
+                                    <select name="pipelineId" class="form-select form-select-sm" id="pipelineSelect" required onchange="loadStages(this.value)">
+                                        <option value="">-- Chon pipeline --</option>
+                                        <c:forEach var="p" items="${pipelines}">
+                                            <c:set var="pSel" value=""/>
+                                            <c:if test="${preSelectedPipelineId == p.pipelineId}"><c:set var="pSel" value="selected"/></c:if>
+                                            <option value="${p.pipelineId}" ${pSel}>${p.pipelineName}</option>
+                                        </c:forEach>
+                                    </select>
+                                </c:otherwise>
+                            </c:choose>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label small">Stage</label>
-                            <select name="stageId" class="form-select form-select-sm" id="stageSelect">
-                                <option value="">-- Tu dong chon stage dau --</option>
-                                <c:if test="${not empty stages}">
-                                    <c:forEach var="s" items="${stages}">
-                                        <c:set var="sSel" value=""/>
-                                        <c:if test="${(not empty opportunity && opportunity.stageId == s.stageId) || preSelectedStageId == s.stageId}"><c:set var="sSel" value="selected"/></c:if>
-                                        <option value="${s.stageId}" ${sSel}>${s.stageName} (${s.probability}%)</option>
-                                    </c:forEach>
-                                </c:if>
-                            </select>
+                            <c:choose>
+                                <c:when test="${mode == 'edit'}">
+                                    <select class="form-select form-select-sm" disabled>
+                                        <c:forEach var="s" items="${stages}">
+                                            <c:if test="${opportunity.stageId == s.stageId}">
+                                                <option selected>${s.stageName} (${s.probability}%)</option>
+                                            </c:if>
+                                        </c:forEach>
+                                    </select>
+                                    <small class="text-muted"><i class="bi bi-info-circle me-1"></i>Stage chi thay doi qua Kanban board.</small>
+                                </c:when>
+                                <c:otherwise>
+                                    <select class="form-select form-select-sm" id="stageSelect" disabled>
+                                        <option value="">-- Tu dong chon stage dau --</option>
+                                    </select>
+                                    <small class="text-muted"><i class="bi bi-info-circle me-1"></i>Stage mac dinh la stage dau tien cua pipeline.</small>
+                                </c:otherwise>
+                            </c:choose>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label small">Gia tri uoc tinh (VND)</label>
@@ -363,15 +378,16 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label small">Trang thai</label>
-                            <select name="status" class="form-select form-select-sm">
-                                <c:set var="oppStatus" value="${empty opportunity ? 'Open' : opportunity.status}"/>
-                                <option value="Open" ${oppStatus == 'Open' || empty oppStatus ? 'selected' : ''}>Open</option>
-                                <option value="InProgress" ${oppStatus == 'InProgress' ? 'selected' : ''}>In Progress</option>
-                                <option value="Won" ${oppStatus == 'Won' ? 'selected' : ''}>Won</option>
-                                <option value="Lost" ${oppStatus == 'Lost' ? 'selected' : ''}>Lost</option>
-                                <option value="OnHold" ${oppStatus == 'OnHold' ? 'selected' : ''}>On Hold</option>
-                                <option value="Cancelled" ${oppStatus == 'Cancelled' ? 'selected' : ''}>Cancelled</option>
-                            </select>
+                            <c:choose>
+                                <c:when test="${mode == 'edit'}">
+                                    <input type="text" class="form-control form-control-sm bg-light" value="${opportunity.status}" disabled>
+                                    <small class="text-muted"><i class="bi bi-info-circle me-1"></i>Trang thai tu dong thay doi theo Stage.</small>
+                                </c:when>
+                                <c:otherwise>
+                                    <input type="text" class="form-control form-control-sm bg-light" value="Open" disabled>
+                                    <small class="text-muted"><i class="bi bi-info-circle me-1"></i>Trang thai mac dinh la Open.</small>
+                                </c:otherwise>
+                            </c:choose>
                         </div>
                     </div>
                 </div>
@@ -644,7 +660,7 @@
             var custId = hiddenCustomerId ? hiddenCustomerId.value : '';
             if (!leadId && !custId) {
                 e.preventDefault();
-                alert('Vui long chon mot Lead hoac Customer!');
+                CRM.showToast('Vui long chon mot Lead hoac Customer!', 'warning');
                 return;
             }
         }

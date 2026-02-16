@@ -29,7 +29,7 @@ import util.SessionHelper;
 @WebServlet(name = "SaleQuotationFormServlet", urlPatterns = {"/sale/quotation/form"})
 public class SaleQuotationFormServlet extends HttpServlet {
 
-    private static final Set<String> ALLOWED_STAGE_CODES = new HashSet<>(Arrays.asList("DEMO", "NEGOTIATION", "PROPOSED"));
+    private static final Set<String> ALLOWED_STAGE_CODES = new HashSet<>(Arrays.asList("DEMO", "NEGOTIATION"));
 
     private Integer getCurrentUserId(HttpServletRequest request) {
         return SessionHelper.getLoggedInUserId(request);
