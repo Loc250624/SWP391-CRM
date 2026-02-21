@@ -65,35 +65,35 @@
                 contextPath: '${pageContext.request.contextPath}',
 
                 // Show Toast Notification
-                showToast: function (message, type = 'success') {
-                    const toastContainer = document.getElementById('toastContainer');
-                    const toastId = 'toast-' + Date.now();
+                showToast: function (message, type) {
+                    type = type || 'success';
+                    var toastContainer = document.getElementById('toastContainer');
+                    var toastId = 'toast-' + Date.now();
 
-                    const iconMap = {
+                    var iconMap = {
                         success: 'bi-check-circle-fill text-success',
                         error: 'bi-x-circle-fill text-danger',
                         warning: 'bi-exclamation-triangle-fill text-warning',
                         info: 'bi-info-circle-fill text-info'
                     };
 
-                    const toastHTML = `
-                        <div id="${toastId}" class="toast align-items-center border-0" role="alert">
-                            <div class="d-flex">
-                                <div class="toast-body d-flex align-items-center gap-2">
-                                    <i class="bi ${iconMap[type] || iconMap.info}"></i>
-                                    <span>${message}</span>
-                                </div>
-                                <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast"></button>
-                            </div>
-                        </div>
-                    `;
+                    var icon = iconMap[type] || iconMap.info;
+                    var toastHTML = '<div id="' + toastId + '" class="toast align-items-center border-0" role="alert">'
+                        + '<div class="d-flex">'
+                        + '<div class="toast-body d-flex align-items-center gap-2">'
+                        + '<i class="bi ' + icon + '"></i>'
+                        + '<span>' + message + '</span>'
+                        + '</div>'
+                        + '<button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast"></button>'
+                        + '</div>'
+                        + '</div>';
 
                     toastContainer.insertAdjacentHTML('beforeend', toastHTML);
-                    const toastElement = document.getElementById(toastId);
-                    const toast = new bootstrap.Toast(toastElement, {delay: 4000});
+                    var toastElement = document.getElementById(toastId);
+                    var toast = new bootstrap.Toast(toastElement, {delay: 2000});
                     toast.show();
 
-                    toastElement.addEventListener('hidden.bs.toast', () => toastElement.remove());
+                    toastElement.addEventListener('hidden.bs.toast', function() { toastElement.remove(); });
                 },
 
                 // Confirm Dialog

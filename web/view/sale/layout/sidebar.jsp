@@ -18,7 +18,7 @@
     </div>
 
     <!-- Menu -->
-    <nav class="flex-grow-1 overflow-auto py-2">
+    <nav class="flex-grow-1 overflow-auto py-2" id="sidebarNav">
 
         <!-- Dashboard -->
         <div class="mb-1">
@@ -162,30 +162,6 @@
                 </li>
             </ul>
         </div>
-
-        <!-- Proposal -->
-        <div class="mb-1">
-            <div class="px-3 py-2">
-                <small class="text-uppercase text-muted fw-semibold" style="font-size: 10px; letter-spacing: 0.5px;">Proposal</small>
-            </div>
-            <ul class="nav flex-column px-2">
-                <li class="nav-item mb-1">
-                    <a href="${pageContext.request.contextPath}/sale/proposal/list" 
-                       class="nav-link rounded-2 d-flex align-items-center gap-2 py-2 px-3 ${ACTIVE_MENU == 'PROP_LIST' ? 'active bg-primary text-white' : 'text-body-secondary'}">
-                        <i class="bi bi-file-earmark-richtext"></i>
-                        <span>Danh sách</span>
-                    </a>
-                </li>
-                <li class="nav-item mb-1">
-                    <a href="${pageContext.request.contextPath}/sale/proposal/form" 
-                       class="nav-link rounded-2 d-flex align-items-center gap-2 py-2 px-3 ${ACTIVE_MENU == 'PROP_FORM' ? 'active bg-primary text-white' : 'text-body-secondary'}">
-                        <i class="bi bi-plus-circle"></i>
-                        <span>Tạo mới</span>
-                    </a>
-                </li>
-            </ul>
-        </div>
-
         <!-- Activity -->
         <div class="mb-1">
             <div class="px-3 py-2">
@@ -294,3 +270,20 @@
         color: #0d6efd !important;
     }
 </style>
+
+<!-- Sidebar scroll persistence -->
+<script>
+    (function() {
+        var nav = document.getElementById('sidebarNav');
+        if (!nav) return;
+
+        // Restore scroll position
+        var saved = sessionStorage.getItem('sidebarScroll');
+        if (saved) nav.scrollTop = parseInt(saved, 10);
+
+        // Save scroll position on scroll
+        nav.addEventListener('scroll', function() {
+            sessionStorage.setItem('sidebarScroll', nav.scrollTop);
+        });
+    })();
+</script>

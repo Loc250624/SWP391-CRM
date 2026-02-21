@@ -13,24 +13,15 @@
     </div>
 </div>
 
-<!-- Messages -->
+<!-- Toast Messages -->
 <c:if test="${not empty successMessage}">
-    <div class="alert alert-success alert-dismissible fade show d-flex align-items-center" role="alert">
-        <i class="bi bi-check-circle-fill me-2"></i>${successMessage}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
+    <script>document.addEventListener('DOMContentLoaded', function(){ CRM.showToast('${successMessage}', 'success'); });</script>
 </c:if>
 <c:if test="${param.error == 'no_permission'}">
-    <div class="alert alert-danger alert-dismissible fade show d-flex align-items-center" role="alert">
-        <i class="bi bi-exclamation-triangle-fill me-2"></i>Ban khong co quyen truy cap customer nay!
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
+    <script>document.addEventListener('DOMContentLoaded', function(){ CRM.showToast('Ban khong co quyen truy cap customer nay!', 'error'); });</script>
 </c:if>
 <c:if test="${param.error == 'delete_failed'}">
-    <div class="alert alert-danger alert-dismissible fade show d-flex align-items-center" role="alert">
-        <i class="bi bi-exclamation-triangle-fill me-2"></i>Xoa customer that bai. Vui long thu lai.
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
+    <script>document.addEventListener('DOMContentLoaded', function(){ CRM.showToast('Xoa customer that bai. Vui long thu lai.', 'error'); });</script>
 </c:if>
 
 <!-- KPI Cards -->

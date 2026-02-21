@@ -17,7 +17,7 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
+import util.SessionHelper;
 
 @WebServlet(name = "SaleOpportunityListServlet", urlPatterns = {"/sale/opportunity/list"})
 public class SaleOpportunityListServlet extends HttpServlet {
@@ -30,13 +30,10 @@ public class SaleOpportunityListServlet extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        Integer currentUserId = 1;
-        HttpSession session = request.getSession(false);
-        if (session != null && session.getAttribute("userId") != null) {
-            try {
-                currentUserId = (Integer) session.getAttribute("userId");
-            } catch (Exception e) {
-            }
+        Integer currentUserId = SessionHelper.getLoggedInUserId(request);
+        if (currentUserId == null) {
+            response.sendRedirect(request.getContextPath() + "/login");
+            return;
         }
 
         // Get filter parameters
@@ -150,8 +147,8 @@ public class SaleOpportunityListServlet extends HttpServlet {
             request.setAttribute("successMessage", "Tao opportunity thanh cong!");
         } else if ("updated".equals(success)) {
             request.setAttribute("successMessage", "Cap nhat opportunity thanh cong!");
-        } else if ("deleted".equals(success)) {
-            request.setAttribute("successMessage", "Xoa opportunity thanh cong!");
+        } else if ("cancelled".equals(success)) {
+            request.setAttribute("successMessage", "Huy opportunity thanh cong!");
         }
 
         request.setAttribute("ACTIVE_MENU", "OPP_LIST");
@@ -164,13 +161,10 @@ public class SaleOpportunityListServlet extends HttpServlet {
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        Integer currentUserId = 1;
-        HttpSession session = request.getSession(false);
-        if (session != null && session.getAttribute("userId") != null) {
-            try {
-                currentUserId = (Integer) session.getAttribute("userId");
-            } catch (Exception e) {
-            }
+        Integer currentUserId = SessionHelper.getLoggedInUserId(request);
+        if (currentUserId == null) {
+            response.sendRedirect(request.getContextPath() + "/login");
+            return;
         }
 
         String action = request.getParameter("action");
@@ -194,11 +188,13 @@ public class SaleOpportunityListServlet extends HttpServlet {
                     return;
                 }
 
-                boolean success = opportunityDAO.deleteOpportunity(oppId);
+                // Soft delete: update status to Cancelled instead of deleting
+                opp.setStatus("Cancelled");
+                boolean success = opportunityDAO.updateOpportunity(opp);
                 if (success) {
-                    response.sendRedirect(request.getContextPath() + "/sale/opportunity/list?success=deleted");
+                    response.sendRedirect(request.getContextPath() + "/sale/opportunity/list?success=cancelled");
                 } else {
-                    response.sendRedirect(request.getContextPath() + "/sale/opportunity/list?error=delete_failed");
+                    response.sendRedirect(request.getContextPath() + "/sale/opportunity/list?error=cancel_failed");
                 }
             } catch (NumberFormatException e) {
                 response.sendRedirect(request.getContextPath() + "/sale/opportunity/list?error=invalid_id");

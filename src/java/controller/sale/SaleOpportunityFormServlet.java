@@ -15,6 +15,7 @@ import model.Opportunity;
 import model.Pipeline;
 import model.PipelineStage;
 import dao.OpportunityHistoryDAO;
+import enums.OpportunityStatus;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -24,7 +25,7 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
+import util.SessionHelper;
 
 @WebServlet(name = "SaleOpportunityFormServlet", urlPatterns = {"/sale/opportunity/form"})
 public class SaleOpportunityFormServlet extends HttpServlet {
@@ -42,15 +43,10 @@ public class SaleOpportunityFormServlet extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        // Get current user ID
-        Integer currentUserId = 1;
-        HttpSession session = request.getSession(false);
-        if (session != null && session.getAttribute("userId") != null) {
-            try {
-                currentUserId = (Integer) session.getAttribute("userId");
-            } catch (Exception e) {
-                // Use default
-            }
+        Integer currentUserId = SessionHelper.getLoggedInUserId(request);
+        if (currentUserId == null) {
+            response.sendRedirect(request.getContextPath() + "/login");
+            return;
         }
 
         // Get opportunity ID if editing
@@ -75,6 +71,15 @@ public class SaleOpportunityFormServlet extends HttpServlet {
 
                 if (!hasPermission) {
                     response.sendRedirect(request.getContextPath() + "/sale/opportunity/list?error=no_permission");
+                    return;
+                }
+
+                // Block editing Cancelled/Won/Lost opportunities (redirect to detail view)
+                String oppStatus = opportunity.getStatus();
+                if (OpportunityStatus.Cancelled.name().equals(oppStatus)
+                        || OpportunityStatus.Won.name().equals(oppStatus)
+                        || OpportunityStatus.Lost.name().equals(oppStatus)) {
+                    response.sendRedirect(request.getContextPath() + "/sale/opportunity/detail?id=" + opportunity.getOpportunityId() + "&error=closed");
                     return;
                 }
 
@@ -150,7 +155,7 @@ public class SaleOpportunityFormServlet extends HttpServlet {
         List<Campaign> campaigns = campaignDAO.getAllActiveCampaigns();
 
         // Load leads and customers for selection (create mode only)
-        List<Lead> leads = leadDAO.getLeadsBySalesUser(currentUserId);
+        List<Lead> leads = leadDAO.getLeadsForOpportunity(currentUserId);
         List<Customer> customers = customerDAO.getCustomersBySalesUser(currentUserId);
 
         request.setAttribute("pipelines", pipelines);
@@ -181,15 +186,10 @@ public class SaleOpportunityFormServlet extends HttpServlet {
         request.setCharacterEncoding("UTF-8");
         response.setCharacterEncoding("UTF-8");
 
-        // Get current user ID
-        Integer currentUserId = 1;
-        HttpSession session = request.getSession(false);
-        if (session != null && session.getAttribute("userId") != null) {
-            try {
-                currentUserId = (Integer) session.getAttribute("userId");
-            } catch (Exception e) {
-                // Use default
-            }
+        Integer currentUserId = SessionHelper.getLoggedInUserId(request);
+        if (currentUserId == null) {
+            response.sendRedirect(request.getContextPath() + "/login");
+            return;
         }
 
         // Get form parameters
@@ -198,11 +198,9 @@ public class SaleOpportunityFormServlet extends HttpServlet {
         String leadIdParam = request.getParameter("leadId");
         String customerIdParam = request.getParameter("customerId");
         String pipelineIdParam = request.getParameter("pipelineId");
-        String stageIdParam = request.getParameter("stageId");
         String estimatedValueParam = request.getParameter("estimatedValue");
         String probabilityParam = request.getParameter("probability");
         String expectedCloseDateParam = request.getParameter("expectedCloseDate");
-        String status = request.getParameter("status");
         String sourceIdParam = request.getParameter("sourceId");
         String campaignIdParam = request.getParameter("campaignId");
         String notes = request.getParameter("notes");
@@ -213,8 +211,8 @@ public class SaleOpportunityFormServlet extends HttpServlet {
             doGet(request, response);
             return;
         }
-        if (opportunityName.trim().length() > 255) {
-            request.setAttribute("error", "Ten opportunity khong duoc vuot qua 255 ky tu!");
+        if (opportunityName.trim().length() > 200) {
+            request.setAttribute("error", "Ten opportunity khong duoc vuot qua 200 ky tu!");
             doGet(request, response);
             return;
         }
@@ -255,14 +253,6 @@ public class SaleOpportunityFormServlet extends HttpServlet {
             }
         }
 
-        if (status != null && !status.isEmpty()) {
-            if (!"Open".equals(status) && !"InProgress".equals(status) && !"Won".equals(status) && !"Lost".equals(status)) {
-                request.setAttribute("error", "Trang thai khong hop le!");
-                doGet(request, response);
-                return;
-            }
-        }
-
         // Create or update Opportunity object
         Opportunity opportunity = new Opportunity();
         Opportunity oldOpp = null;
@@ -282,8 +272,10 @@ public class SaleOpportunityFormServlet extends HttpServlet {
             }
         }
 
-        // Block editing Won/Lost opportunities
-        if (isEdit && oldOpp != null && ("Won".equals(oldOpp.getStatus()) || "Lost".equals(oldOpp.getStatus()))) {
+        // Block editing Won/Lost/Cancelled opportunities
+        if (isEdit && oldOpp != null && (OpportunityStatus.Won.name().equals(oldOpp.getStatus())
+                || OpportunityStatus.Lost.name().equals(oldOpp.getStatus())
+                || OpportunityStatus.Cancelled.name().equals(oldOpp.getStatus()))) {
             request.setAttribute("error", "Opportunity da dong (" + oldOpp.getStatus() + "), khong the chinh sua!");
             doGet(request, response);
             return;
@@ -327,11 +319,11 @@ public class SaleOpportunityFormServlet extends HttpServlet {
             int pipelineId = Integer.parseInt(pipelineIdParam);
             opportunity.setPipelineId(pipelineId);
 
-            // Stage ID - if not provided, use first stage of pipeline
-            if (stageIdParam != null && !stageIdParam.isEmpty()) {
-                opportunity.setStageId(Integer.parseInt(stageIdParam));
+            if (isEdit && oldOpp != null) {
+                // Edit mode: keep original stage (stage is managed via SaleOpportunityStageUpdateServlet)
+                opportunity.setStageId(oldOpp.getStageId());
             } else {
-                // Get first stage of pipeline
+                // Create mode: always use first stage of pipeline
                 PipelineStage firstStage = stageDAO.getFirstStageByPipelineId(pipelineId);
                 if (firstStage != null) {
                     opportunity.setStageId(firstStage.getStageId());
@@ -382,7 +374,13 @@ public class SaleOpportunityFormServlet extends HttpServlet {
         }
 
         // Status
-        opportunity.setStatus(status != null && !status.isEmpty() ? status : "Open");
+        if (isEdit && oldOpp != null) {
+            // Edit mode: keep original status (status is managed via SaleOpportunityStageUpdateServlet)
+            opportunity.setStatus(oldOpp.getStatus());
+        } else {
+            // Create mode: always Open
+            opportunity.setStatus(OpportunityStatus.Open.name());
+        }
 
         // Source and Campaign
         if (sourceIdParam != null && !sourceIdParam.isEmpty()) {
@@ -461,6 +459,30 @@ public class SaleOpportunityFormServlet extends HttpServlet {
             } else if (!isEdit) {
                 // Log creation
                 historyDAO.logChange(opportunity.getOpportunityId(), "status", null, "Created", currentUserId);
+            }
+
+            // Lead status transition on create
+            if (!isEdit && opportunity.getLeadId() != null) {
+                Lead lead = leadDAO.getLeadById(opportunity.getLeadId());
+                if (lead != null) {
+                    String leadStatus = lead.getStatus();
+                    List<Opportunity> existingOpps = opportunityDAO.getOpportunitiesByLeadId(lead.getLeadId());
+
+                    // T1: Lead has no other opps → Assigned → Working
+                    if (existingOpps.size() <= 1 && "Assigned".equals(leadStatus)) {
+                        leadDAO.updateLeadStatus(lead.getLeadId(), "Working");
+                    }
+                    // T2: Lead had opps but all Lost → Unqualified/Nurturing → Working
+                    else if ("Unqualified".equals(leadStatus) || "Nurturing".equals(leadStatus)) {
+                        boolean allLost = existingOpps.stream()
+                            .filter(o -> o.getOpportunityId() != opportunity.getOpportunityId())
+                            .allMatch(o -> "Lost".equals(o.getStatus()));
+                        if (allLost) {
+                            leadDAO.updateLeadStatus(lead.getLeadId(), "Working");
+                        }
+                    }
+                    // T3: Lead has active opp → no status change
+                }
             }
 
             // Success - redirect to list with success message

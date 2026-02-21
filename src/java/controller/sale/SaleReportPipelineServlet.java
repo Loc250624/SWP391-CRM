@@ -18,7 +18,7 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
+import util.SessionHelper;
 
 @WebServlet(name = "SaleReportPipelineServlet", urlPatterns = {"/sale/report/pipeline"})
 public class SaleReportPipelineServlet extends HttpServlet {
@@ -31,13 +31,10 @@ public class SaleReportPipelineServlet extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        Integer currentUserId = 1;
-        HttpSession session = request.getSession(false);
-        if (session != null && session.getAttribute("userId") != null) {
-            try {
-                currentUserId = (Integer) session.getAttribute("userId");
-            } catch (Exception e) {
-            }
+        Integer currentUserId = SessionHelper.getLoggedInUserId(request);
+        if (currentUserId == null) {
+            response.sendRedirect(request.getContextPath() + "/login");
+            return;
         }
 
         // Pipeline selection
@@ -114,7 +111,7 @@ public class SaleReportPipelineServlet extends HttpServlet {
         Map<Integer, BigDecimal> valueByStage = new HashMap<>();
 
         for (Opportunity opp : pipelineOpps) {
-            if (!"Won".equals(opp.getStatus()) && !"Lost".equals(opp.getStatus()) && !"Cancelled".equals(opp.getStatus())) {
+            if (!"Cancelled".equals(opp.getStatus())) {
                 int sid = opp.getStageId();
                 countByStage.merge(sid, 1, Integer::sum);
                 BigDecimal val = opp.getEstimatedValue() != null ? opp.getEstimatedValue() : BigDecimal.ZERO;
@@ -147,8 +144,14 @@ public class SaleReportPipelineServlet extends HttpServlet {
         request.setAttribute("avgDealSize", avgDealSize);
         request.setAttribute("totalDeals", pipelineOpps.size());
 
+        BigDecimal totalStageValue = BigDecimal.ZERO;
+        for (BigDecimal v : valueByStage.values()) {
+            totalStageValue = totalStageValue.add(v);
+        }
+
         request.setAttribute("countByStage", countByStage);
         request.setAttribute("valueByStage", valueByStage);
+        request.setAttribute("totalStageValue", totalStageValue);
         request.setAttribute("maxStageValue", maxStageValue.compareTo(BigDecimal.ZERO) > 0 ? maxStageValue : BigDecimal.ONE);
 
         request.setAttribute("ACTIVE_MENU", "RPT_PIPELINE");

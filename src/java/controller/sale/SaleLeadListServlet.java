@@ -2,6 +2,7 @@ package controller.sale;
 
 import dao.LeadDAO;
 import dao.LeadSourceDAO;
+import enums.LeadStatus;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
@@ -12,9 +13,9 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
 import model.Lead;
 import model.LeadSource;
+import util.SessionHelper;
 
 @WebServlet(name = "SaleLeadListServlet", urlPatterns = {"/sale/lead/list"})
 public class SaleLeadListServlet extends HttpServlet {
@@ -26,15 +27,16 @@ public class SaleLeadListServlet extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        // Get current user ID (default = 1 for now)
-        Integer currentUserId = 1;
-        HttpSession session = request.getSession(false);
-        if (session != null && session.getAttribute("userId") != null) {
-            try {
-                currentUserId = (Integer) session.getAttribute("userId");
-            } catch (Exception e) {
-                // Use default userId = 1
-            }
+        Integer currentUserId = SessionHelper.getLoggedInUserId(request);
+        if (currentUserId == null) {
+            response.sendRedirect(request.getContextPath() + "/login");
+            return;
+        }
+
+        // Get tab parameter (default: assigned)
+        String tab = request.getParameter("tab");
+        if (tab == null || (!tab.equals("assigned") && !tab.equals("created"))) {
+            tab = "assigned";
         }
 
         // Get filter parameters
@@ -42,15 +44,20 @@ public class SaleLeadListServlet extends HttpServlet {
         String ratingFilter = request.getParameter("rating");
         String searchQuery = request.getParameter("search");
 
-        // Load leads - only leads created by or assigned to current user
-        List<Lead> leadList = leadDAO.getLeadsBySalesUser(currentUserId);
+        // Load leads based on active tab
+        List<Lead> leadList;
+        if ("created".equals(tab)) {
+            leadList = leadDAO.getCreatedLeads(currentUserId);
+        } else {
+            leadList = leadDAO.getAssignedLeads(currentUserId);
+        }
         if (leadList == null) {
             leadList = new java.util.ArrayList<>();
         }
 
         // Calculate statistics BEFORE filtering (show total counts)
         int totalLeads = leadList.size();
-        long newLeads = leadList.stream().filter(l -> "New".equals(l.getStatus())).count();
+        long assignedLeads = leadList.stream().filter(l -> LeadStatus.Assigned.name().equals(l.getStatus())).count();
         long hotLeads = leadList.stream().filter(l -> "Hot".equals(l.getRating())).count();
         long convertedLeads = leadList.stream().filter(l -> l.isIsConverted()).count();
 
@@ -73,10 +80,10 @@ public class SaleLeadListServlet extends HttpServlet {
             String query = searchQuery.trim().toLowerCase();
             leadList = leadList.stream()
                     .filter(l -> (l.getFullName() != null && l.getFullName().toLowerCase().contains(query))
-                            || (l.getEmail() != null && l.getEmail().toLowerCase().contains(query))
-                            || (l.getPhone() != null && l.getPhone().contains(query))
-                            || (l.getCompanyName() != null && l.getCompanyName().toLowerCase().contains(query))
-                            || (l.getLeadCode() != null && l.getLeadCode().toLowerCase().contains(query)))
+                    || (l.getEmail() != null && l.getEmail().toLowerCase().contains(query))
+                    || (l.getPhone() != null && l.getPhone().contains(query))
+                    || (l.getCompanyName() != null && l.getCompanyName().toLowerCase().contains(query))
+                    || (l.getLeadCode() != null && l.getLeadCode().toLowerCase().contains(query)))
                     .collect(Collectors.toList());
         }
 
@@ -96,9 +103,14 @@ public class SaleLeadListServlet extends HttpServlet {
         int currentPage = 1;
         String pageParam = request.getParameter("page");
         if (pageParam != null) {
-            try { currentPage = Math.max(1, Integer.parseInt(pageParam)); } catch (NumberFormatException e) { }
+            try {
+                currentPage = Math.max(1, Integer.parseInt(pageParam));
+            } catch (NumberFormatException e) {
+            }
         }
-        if (currentPage > totalPages && totalPages > 0) currentPage = totalPages;
+        if (currentPage > totalPages && totalPages > 0) {
+            currentPage = totalPages;
+        }
         int fromIndex = (currentPage - 1) * pageSize;
         int toIndex = Math.min(fromIndex + pageSize, totalItems);
         List<Lead> pagedList = totalItems > 0 ? leadList.subList(fromIndex, toIndex) : leadList;
@@ -110,7 +122,7 @@ public class SaleLeadListServlet extends HttpServlet {
         // Pass data to JSP
         request.setAttribute("leadList", pagedList);
         request.setAttribute("totalLeads", totalLeads);
-        request.setAttribute("newLeads", newLeads);
+        request.setAttribute("assignedLeads", assignedLeads);
         request.setAttribute("hotLeads", hotLeads);
         request.setAttribute("convertedLeads", convertedLeads);
         request.setAttribute("leadSources", sources);
@@ -120,15 +132,16 @@ public class SaleLeadListServlet extends HttpServlet {
         request.setAttribute("filterStatus", statusFilter);
         request.setAttribute("filterRating", ratingFilter);
         request.setAttribute("searchQuery", searchQuery);
+        request.setAttribute("activeTab", tab);
 
         // Success/error messages
         String success = request.getParameter("success");
         if ("created".equals(success)) {
-            request.setAttribute("successMessage", "Tao lead thanh cong!");
+            request.setAttribute("successMessage", "Tạo lead thành công!");
         } else if ("updated".equals(success)) {
             request.setAttribute("successMessage", "Cap nhat lead thanh cong!");
         } else if ("deleted".equals(success)) {
-            request.setAttribute("successMessage", "Xoa lead thanh cong!");
+            request.setAttribute("successMessage", "Vo hieu hoa lead thanh cong! Tat ca Opportunity lien quan da bi dong.");
         }
 
         // Set page metadata
@@ -144,15 +157,10 @@ public class SaleLeadListServlet extends HttpServlet {
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        // Get current user ID
-        Integer currentUserId = 1;
-        HttpSession session = request.getSession(false);
-        if (session != null && session.getAttribute("userId") != null) {
-            try {
-                currentUserId = (Integer) session.getAttribute("userId");
-            } catch (Exception e) {
-                // Use default
-            }
+        Integer currentUserId = SessionHelper.getLoggedInUserId(request);
+        if (currentUserId == null) {
+            response.sendRedirect(request.getContextPath() + "/login");
+            return;
         }
 
         // Handle delete action

@@ -17,7 +17,7 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
+import util.SessionHelper;
 
 @WebServlet(name = "SaleOpportunityKanbanServlet", urlPatterns = {"/sale/opportunity/kanban"})
 public class SaleOpportunityKanbanServlet extends HttpServlet {
@@ -30,13 +30,10 @@ public class SaleOpportunityKanbanServlet extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        Integer currentUserId = 1;
-        HttpSession session = request.getSession(false);
-        if (session != null && session.getAttribute("userId") != null) {
-            try {
-                currentUserId = (Integer) session.getAttribute("userId");
-            } catch (Exception e) {
-            }
+        Integer currentUserId = SessionHelper.getLoggedInUserId(request);
+        if (currentUserId == null) {
+            response.sendRedirect(request.getContextPath() + "/login");
+            return;
         }
 
         // Get pipeline selection
@@ -118,6 +115,13 @@ public class SaleOpportunityKanbanServlet extends HttpServlet {
 
         int winRate = totalClosed > 0 ? (wonCount * 100 / totalClosed) : 0;
 
+        // Build stageCodeMap for JSP (stageId -> stageCode)
+        Map<Integer, String> stageCodeMap = new HashMap<>();
+        for (PipelineStage stage : stages) {
+            stageCodeMap.put(stage.getStageId(), stage.getStageCode());
+        }
+
+        request.setAttribute("stageCodeMap", stageCodeMap);
         request.setAttribute("selectedPipeline", selectedPipeline);
         request.setAttribute("allPipelines", allPipelines);
         request.setAttribute("stages", stages);

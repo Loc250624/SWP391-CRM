@@ -360,6 +360,28 @@ public class OpportunityDAO extends DBContext {
         return BigDecimal.ZERO;
     }
 
+    /**
+     * Get opportunities by lead ID
+     */
+    public List<Opportunity> getOpportunitiesByLeadId(int leadId) {
+        List<Opportunity> opportunities = new ArrayList<>();
+        String sql = "SELECT * FROM opportunities WHERE lead_id = ? ORDER BY created_at DESC";
+
+        try {
+            PreparedStatement stmt = connection.prepareStatement(sql);
+            stmt.setInt(1, leadId);
+
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                opportunities.add(extractOpportunityFromResultSet(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return opportunities;
+    }
+
     // ===== HELPER METHODS =====
     /**
      * Extract Opportunity object from ResultSet

@@ -2,7 +2,6 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/JSP_Servlet/Servlet.java to edit this template
  */
-
 package controller.sale;
 
 import com.google.gson.Gson;
@@ -18,7 +17,7 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
+import util.SessionHelper;
 import model.Campaign;
 import model.Lead;
 import model.LeadSource;
@@ -45,15 +44,10 @@ public class SaleLeadDetailServlet extends HttpServlet {
         try {
             int leadId = Integer.parseInt(leadIdParam);
 
-            // Get current user for permission check
-            Integer currentUserId = 1;
-            HttpSession session = request.getSession(false);
-            if (session != null && session.getAttribute("userId") != null) {
-                try {
-                    currentUserId = (Integer) session.getAttribute("userId");
-                } catch (Exception e) {
-                    // Use default
-                }
+            Integer currentUserId = SessionHelper.getLoggedInUserId(request);
+            if (currentUserId == null) {
+                response.sendRedirect(request.getContextPath() + "/login");
+                return;
             }
 
             // Get lead
@@ -137,6 +131,7 @@ public class SaleLeadDetailServlet extends HttpServlet {
 
     // Inner class for JSON response
     private static class LeadDetailResponse {
+
         public Lead lead;
         public String sourceName;
         public String campaignName;
@@ -144,6 +139,7 @@ public class SaleLeadDetailServlet extends HttpServlet {
 
     // Custom adapter for LocalDateTime
     private static class LocalDateTimeAdapter extends com.google.gson.TypeAdapter<LocalDateTime> {
+
         @Override
         public void write(com.google.gson.stream.JsonWriter out, LocalDateTime value) throws IOException {
             if (value == null) {

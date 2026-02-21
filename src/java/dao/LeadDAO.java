@@ -252,17 +252,22 @@ public class LeadDAO extends DBContext {
         }
     }
 
-    // Delete lead (soft delete recommended - update status instead)
+    // Soft delete lead: set status = 'Delete' and cancel related opportunities
     public boolean deleteLead(int leadId) {
-        String sql = "DELETE FROM leads WHERE lead_id = ?";
+        String sqlLead = "UPDATE leads SET status = 'Inactive', updated_at = GETDATE() WHERE lead_id = ?";
+        String sqlOpp = "UPDATE opportunities SET status = 'Cancelled', updated_at = GETDATE() WHERE lead_id = ?";
 
         try {
-            PreparedStatement st = connection.prepareStatement(sql);
+            PreparedStatement st = connection.prepareStatement(sqlLead);
             st.setInt(1, leadId);
+            int rows = st.executeUpdate();
 
-            int rowsAffected = st.executeUpdate();
-            return rowsAffected > 0;
+            // Cancel all opportunities linked to this lead
+            PreparedStatement st2 = connection.prepareStatement(sqlOpp);
+            st2.setInt(1, leadId);
+            st2.executeUpdate();
 
+            return rows > 0;
         } catch (SQLException e) {
             e.printStackTrace();
             return false;
@@ -307,6 +312,83 @@ public class LeadDAO extends DBContext {
         }
 
         return leadList;
+    }
+
+    // Get leads assigned to user (excluding New, Delete, and converted leads)
+    public List<Lead> getAssignedLeads(int userId) {
+        List<Lead> leadList = new ArrayList<>();
+        String sql = "SELECT * FROM leads WHERE assigned_to = ? AND status != 'New' AND converted_customer_id IS NULL ORDER BY created_at DESC";
+
+        try {
+            PreparedStatement st = connection.prepareStatement(sql);
+            st.setInt(1, userId);
+            ResultSet rs = st.executeQuery();
+
+            while (rs.next()) {
+                leadList.add(mapResultSetToLead(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return leadList;
+    }
+
+    // Get leads created by user (excluding New, Delete, and converted leads)
+    public List<Lead> getCreatedLeads(int userId) {
+        List<Lead> leadList = new ArrayList<>();
+        String sql = "SELECT * FROM leads WHERE created_by = ? AND status != 'New' AND converted_customer_id IS NULL ORDER BY created_at DESC";
+
+        try {
+            PreparedStatement st = connection.prepareStatement(sql);
+            st.setInt(1, userId);
+            ResultSet rs = st.executeQuery();
+
+            while (rs.next()) {
+                leadList.add(mapResultSetToLead(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return leadList;
+    }
+
+    // Get leads eligible for opportunity creation (filtered by status, not converted)
+    public List<Lead> getLeadsForOpportunity(int userId) {
+        List<Lead> leadList = new ArrayList<>();
+        String sql = "SELECT * FROM leads WHERE (created_by = ? OR assigned_to = ?) "
+                   + "AND status IN ('Assigned', 'Working', 'Unqualified', 'Nurturing') "
+                   + "AND is_converted = 0 ORDER BY created_at DESC";
+
+        try {
+            PreparedStatement st = connection.prepareStatement(sql);
+            st.setInt(1, userId);
+            st.setInt(2, userId);
+            ResultSet rs = st.executeQuery();
+
+            while (rs.next()) {
+                leadList.add(mapResultSetToLead(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return leadList;
+    }
+
+    // Update lead status
+    public boolean updateLeadStatus(int leadId, String status) {
+        String sql = "UPDATE leads SET status = ?, updated_at = GETDATE() WHERE lead_id = ?";
+        try {
+            PreparedStatement st = connection.prepareStatement(sql);
+            st.setString(1, status);
+            st.setInt(2, leadId);
+            return st.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 
     // Get leads that a sales user can see (created by them OR assigned to them)

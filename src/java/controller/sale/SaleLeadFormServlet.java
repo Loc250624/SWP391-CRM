@@ -3,19 +3,23 @@ package controller.sale;
 import dao.CampaignDAO;
 import dao.LeadDAO;
 import dao.LeadSourceDAO;
+import dao.OpportunityDAO;
 import enums.LeadRating;
 import enums.LeadStatus;
+import util.EnumHelper;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
+import util.SessionHelper;
 import model.Campaign;
 import model.Lead;
 import model.LeadSource;
+import model.Opportunity;
 
 @WebServlet(name = "SaleLeadFormServlet", urlPatterns = {"/sale/lead/form"})
 public class SaleLeadFormServlet extends HttpServlet {
@@ -23,20 +27,15 @@ public class SaleLeadFormServlet extends HttpServlet {
     private LeadDAO leadDAO = new LeadDAO();
     private LeadSourceDAO leadSourceDAO = new LeadSourceDAO();
     private CampaignDAO campaignDAO = new CampaignDAO();
+    private OpportunityDAO opportunityDAO = new OpportunityDAO();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-
-        // Get current user ID
-        Integer currentUserId = 1;
-        HttpSession session = request.getSession(false);
-        if (session != null && session.getAttribute("userId") != null) {
-            try {
-                currentUserId = (Integer) session.getAttribute("userId");
-            } catch (Exception e) {
-                // Use default
-            }
+        Integer currentUserId = SessionHelper.getLoggedInUserId(request);
+        if (currentUserId == null) {
+            response.sendRedirect(request.getContextPath() + "/login");
+            return;
         }
 
         // Get lead ID if editing
@@ -50,12 +49,11 @@ public class SaleLeadFormServlet extends HttpServlet {
                 lead = leadDAO.getLeadById(leadId);
 
                 if (lead == null) {
-                    request.setAttribute("error", "Lead not found!");
                     response.sendRedirect(request.getContextPath() + "/sale/lead/list");
                     return;
                 }
 
-                // Check permission: user can only edit leads they created or are assigned to
+                // Check permission
                 boolean hasPermission = (lead.getCreatedBy() != null && lead.getCreatedBy().equals(currentUserId))
                         || (lead.getAssignedTo() != null && lead.getAssignedTo().equals(currentUserId));
 
@@ -65,9 +63,15 @@ public class SaleLeadFormServlet extends HttpServlet {
                 }
 
                 request.setAttribute("mode", "edit");
-                request.setAttribute("lead", lead);
+                // Only set lead if not already set (preserve form data on validation error)
+                if (request.getAttribute("lead") == null) {
+                    request.setAttribute("lead", lead);
+                }
+
+                // Load opportunities for this lead (for Inactive confirmation modal)
+                List<Opportunity> leadOpps = opportunityDAO.getOpportunitiesByLeadId(leadId);
+                request.setAttribute("leadOpportunities", leadOpps);
             } catch (NumberFormatException e) {
-                request.setAttribute("error", "Invalid lead ID!");
                 response.sendRedirect(request.getContextPath() + "/sale/lead/list");
                 return;
             }
@@ -103,6 +107,19 @@ public class SaleLeadFormServlet extends HttpServlet {
         request.setCharacterEncoding("UTF-8");
         response.setCharacterEncoding("UTF-8");
 
+        Integer currentUserId = SessionHelper.getLoggedInUserId(request);
+        if (currentUserId == null) {
+            response.sendRedirect(request.getContextPath() + "/login");
+            return;
+        }
+
+        // Check if this is an Inactive action
+        String action = request.getParameter("action");
+        if ("inactive".equals(action)) {
+            handleInactive(request, response, currentUserId);
+            return;
+        }
+
         // Get form parameters
         String leadIdParam = request.getParameter("leadId");
         String fullName = request.getParameter("fullName");
@@ -111,124 +128,135 @@ public class SaleLeadFormServlet extends HttpServlet {
         String companyName = request.getParameter("companyName");
         String jobTitle = request.getParameter("jobTitle");
         String interests = request.getParameter("interests");
-        String status = request.getParameter("status");
         String rating = request.getParameter("rating");
         String notes = request.getParameter("notes");
         String sourceIdParam = request.getParameter("sourceId");
         String campaignIdParam = request.getParameter("campaignId");
 
-        // Validation
+        boolean isEdit = (leadIdParam != null && !leadIdParam.isEmpty());
+
+        // Build a Lead object to preserve form data on validation error
+        Lead formLead = new Lead();
+        formLead.setFullName(fullName != null ? fullName.trim() : null);
+        formLead.setEmail(email != null ? email.trim() : null);
+        formLead.setPhone(phone != null ? phone.trim() : null);
+        formLead.setCompanyName(companyName != null ? companyName.trim() : null);
+        formLead.setJobTitle(jobTitle != null ? jobTitle.trim() : null);
+        formLead.setInterests(interests != null ? interests.trim() : null);
+        formLead.setRating(rating != null && !rating.isEmpty() ? rating : null);
+        formLead.setNotes(notes != null ? notes.trim() : null);
+        if (sourceIdParam != null && !sourceIdParam.isEmpty()) {
+            try { formLead.setSourceId(Integer.parseInt(sourceIdParam)); } catch (NumberFormatException ignored) {}
+        }
+        if (campaignIdParam != null && !campaignIdParam.isEmpty()) {
+            try { formLead.setCampaignId(Integer.parseInt(campaignIdParam)); } catch (NumberFormatException ignored) {}
+        }
+        if (isEdit) {
+            try { formLead.setLeadId(Integer.parseInt(leadIdParam)); } catch (NumberFormatException ignored) {}
+        }
+
+        // Collect validation errors
+        List<String> errors = new ArrayList<>();
+
+        // --- Full Name: required, max 150 ---
         if (fullName == null || fullName.trim().isEmpty()) {
-            request.setAttribute("error", "Ho ten la bat buoc!");
-            doGet(request, response);
-            return;
+            errors.add("Ho ten la bat buoc!");
+        } else if (fullName.trim().length() > 150) {
+            errors.add("Ho ten khong duoc vuot qua 150 ky tu!");
+        } else if (!fullName.trim().matches("^[\\p{L}\\s.'\\-]+$")) {
+            errors.add("Ho ten chi duoc chua chu cai, khoang trang, dau cham, dau gach ngang!");
         }
-        if (fullName.trim().length() > 150) {
-            request.setAttribute("error", "Ho ten khong duoc vuot qua 150 ky tu!");
-            doGet(request, response);
-            return;
-        }
+
+        // --- Email: optional but must be valid format, max 255 ---
         if (email != null && !email.trim().isEmpty()) {
             if (!email.trim().matches("^[\\w.%+-]+@[\\w.-]+\\.[a-zA-Z]{2,}$")) {
-                request.setAttribute("error", "Email khong hop le!");
-                doGet(request, response);
-                return;
-            }
-            if (email.trim().length() > 255) {
-                request.setAttribute("error", "Email khong duoc vuot qua 255 ky tu!");
-                doGet(request, response);
-                return;
+                errors.add("Email khong hop le!");
+            } else if (email.trim().length() > 255) {
+                errors.add("Email khong duoc vuot qua 255 ky tu!");
             }
         }
+
+        // --- Phone: optional but must be valid format, 7-20 chars ---
         if (phone != null && !phone.trim().isEmpty()) {
             if (!phone.trim().matches("^[0-9+\\-()\\s]{7,20}$")) {
-                request.setAttribute("error", "So dien thoai khong hop le!");
-                doGet(request, response);
-                return;
+                errors.add("So dien thoai khong hop le (7-20 ky tu, chi gom so va ky tu +, -, (, ), khoang trang)!");
             }
         }
-        if (status != null && !status.isEmpty()) {
-            try {
-                LeadStatus.valueOf(status);
-            } catch (IllegalArgumentException e) {
-                request.setAttribute("error", "Trang thai khong hop le!");
-                doGet(request, response);
-                return;
-            }
+
+        // --- Company Name: optional, max 255 ---
+        if (companyName != null && !companyName.trim().isEmpty() && companyName.trim().length() > 255) {
+            errors.add("Ten cong ty khong duoc vuot qua 255 ky tu!");
         }
+
+        // --- Job Title: optional, max 150 ---
+        if (jobTitle != null && !jobTitle.trim().isEmpty() && jobTitle.trim().length() > 150) {
+            errors.add("Chuc danh khong duoc vuot qua 150 ky tu!");
+        }
+
+        // --- Interests: optional, max 500 ---
+        if (interests != null && !interests.trim().isEmpty() && interests.trim().length() > 500) {
+            errors.add("So thich / Quan tam khong duoc vuot qua 500 ky tu!");
+        }
+
+        // --- Notes: optional, max 2000 ---
+        if (notes != null && !notes.trim().isEmpty() && notes.trim().length() > 2000) {
+            errors.add("Ghi chu khong duoc vuot qua 2000 ky tu!");
+        }
+
+        // --- Rating: optional, must be valid enum ---
         if (rating != null && !rating.isEmpty()) {
             try {
                 LeadRating.valueOf(rating);
             } catch (IllegalArgumentException e) {
-                request.setAttribute("error", "Rating khong hop le!");
-                doGet(request, response);
-                return;
+                errors.add("Rating khong hop le!");
             }
         }
 
-        // Create or update Lead object
+        // Return errors if any
+        if (!errors.isEmpty()) {
+            request.setAttribute("error", String.join("<br>", errors));
+            request.setAttribute("lead", formLead);
+            doGet(request, response);
+            return;
+        }
+
+        // Build final Lead object
         Lead lead = new Lead();
-        boolean isEdit = false;
-
-        if (leadIdParam != null && !leadIdParam.isEmpty()) {
-            // Edit mode
-            isEdit = true;
-            try {
-                lead.setLeadId(Integer.parseInt(leadIdParam));
-            } catch (NumberFormatException e) {
-                request.setAttribute("error", "Invalid lead ID!");
-                doGet(request, response);
-                return;
-            }
-        }
-
-        // Set lead properties
-        lead.setFullName(fullName != null ? fullName.trim() : null);
+        lead.setFullName(fullName.trim());
         lead.setEmail(email != null && !email.trim().isEmpty() ? email.trim() : null);
         lead.setPhone(phone != null && !phone.trim().isEmpty() ? phone.trim() : null);
         lead.setCompanyName(companyName != null && !companyName.trim().isEmpty() ? companyName.trim() : null);
         lead.setJobTitle(jobTitle != null && !jobTitle.trim().isEmpty() ? jobTitle.trim() : null);
         lead.setInterests(interests != null && !interests.trim().isEmpty() ? interests.trim() : null);
-        lead.setStatus(status != null && !status.isEmpty() ? status : "New");
         lead.setRating(rating != null && !rating.isEmpty() ? rating : null);
         lead.setNotes(notes != null && !notes.trim().isEmpty() ? notes.trim() : null);
         lead.setLeadScore(0);
         lead.setIsConverted(false);
+        lead.setSourceId(formLead.getSourceId());
+        lead.setCampaignId(formLead.getCampaignId());
 
-        // Set source and campaign
-        if (sourceIdParam != null && !sourceIdParam.isEmpty()) {
-            try {
-                lead.setSourceId(Integer.parseInt(sourceIdParam));
-            } catch (NumberFormatException e) {
-                lead.setSourceId(null);
+        if (isEdit) {
+            lead.setLeadId(formLead.getLeadId());
+
+            Lead existing = leadDAO.getLeadById(lead.getLeadId());
+            if (existing == null) {
+                request.setAttribute("error", "Lead khong ton tai!");
+                request.setAttribute("lead", formLead);
+                doGet(request, response);
+                return;
             }
+
+            // Edit mode: keep existing status (user cannot change status via edit form)
+            lead.setStatus(existing.getStatus());
+
+            // Preserve assignedTo from existing lead
+            lead.setAssignedTo(existing.getAssignedTo());
+            lead.setAssignedAt(existing.getAssignedAt());
         } else {
-            lead.setSourceId(null);
-        }
-
-        if (campaignIdParam != null && !campaignIdParam.isEmpty()) {
-            try {
-                lead.setCampaignId(Integer.parseInt(campaignIdParam));
-            } catch (NumberFormatException e) {
-                lead.setCampaignId(null);
-            }
-        } else {
-            lead.setCampaignId(null);
-        }
-
-        // Get current user ID from session (or use default userId = 1 for now)
-        Integer currentUserId = 1; // TODO: Get from session after implementing authentication
-
-        HttpSession session = request.getSession(false);
-        if (session != null && session.getAttribute("userId") != null) {
-            try {
-                currentUserId = (Integer) session.getAttribute("userId");
-            } catch (Exception e) {
-                // Use default userId = 1
-            }
-        }
-
-        if (!isEdit) {
+            // Create mode: default status = Assigned, NO assignedTo (self-created), createdBy = current user
+            lead.setStatus(LeadStatus.Assigned.name());
+            lead.setAssignedTo(null);
+            lead.setAssignedAt(null);
             lead.setCreatedBy(currentUserId);
         }
 
@@ -241,14 +269,51 @@ public class SaleLeadFormServlet extends HttpServlet {
         }
 
         if (success) {
-            // Success - redirect to list with success message
-            response.sendRedirect(request.getContextPath() + "/sale/lead/list?success=" +
-                                (isEdit ? "updated" : "created"));
+            response.sendRedirect(request.getContextPath() + "/sale/lead/list?success="
+                    + (isEdit ? "updated" : "created"));
         } else {
-            // Error - show form again with error message
-            request.setAttribute("error", "Failed to save lead. Please try again.");
-            request.setAttribute("lead", lead);
+            request.setAttribute("error", "Luu lead that bai. Vui long thu lai.");
+            request.setAttribute("lead", formLead);
             doGet(request, response);
+        }
+    }
+
+    /**
+     * Handle setting a lead to Inactive status and cancelling all related opportunities.
+     */
+    private void handleInactive(HttpServletRequest request, HttpServletResponse response, int currentUserId)
+            throws IOException, ServletException {
+        String leadIdParam = request.getParameter("leadId");
+        if (leadIdParam == null || leadIdParam.isEmpty()) {
+            response.sendRedirect(request.getContextPath() + "/sale/lead/list?error=invalid_id");
+            return;
+        }
+
+        try {
+            int leadId = Integer.parseInt(leadIdParam);
+            Lead lead = leadDAO.getLeadById(leadId);
+            if (lead == null) {
+                response.sendRedirect(request.getContextPath() + "/sale/lead/list?error=not_found");
+                return;
+            }
+
+            // Check permission
+            boolean hasPermission = (lead.getCreatedBy() != null && lead.getCreatedBy().equals(currentUserId))
+                    || (lead.getAssignedTo() != null && lead.getAssignedTo().equals(currentUserId));
+            if (!hasPermission) {
+                response.sendRedirect(request.getContextPath() + "/sale/lead/list?error=no_permission");
+                return;
+            }
+
+            // Set lead Inactive and cancel all related opportunities
+            boolean success = leadDAO.deleteLead(leadId);
+            if (success) {
+                response.sendRedirect(request.getContextPath() + "/sale/lead/list?success=deleted");
+            } else {
+                response.sendRedirect(request.getContextPath() + "/sale/lead/list?error=delete_failed");
+            }
+        } catch (NumberFormatException e) {
+            response.sendRedirect(request.getContextPath() + "/sale/lead/list?error=invalid_id");
         }
     }
 
