@@ -36,7 +36,7 @@ public class ManagerTaskFormServlet extends HttpServlet {
 
         // Role checking
         if (currentUser == null) {
-            response.sendRedirect(request.getContextPath() + "/auth/login");
+            response.sendRedirect(request.getContextPath() + "/login");
             return;
         }
 

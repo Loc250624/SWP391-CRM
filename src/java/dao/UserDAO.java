@@ -49,7 +49,7 @@ public class UserDAO extends DBContext {
     public List<Users> getAllUsers() {
         List<Users> danhSach = new ArrayList<>();
         String sql = "SELECT * FROM users";
-        try (Connection conn = connection; PreparedStatement st = conn.prepareStatement(sql); ResultSet rs = st.executeQuery()) {
+        try (PreparedStatement st = connection.prepareStatement(sql); ResultSet rs = st.executeQuery()) {
             while (rs.next()) {
                 danhSach.add(mapResultSetToUser(rs));
             }
@@ -61,7 +61,7 @@ public class UserDAO extends DBContext {
 
     public Users getUserById(int userId) {
         String sql = "SELECT * FROM users WHERE user_id = ?";
-        try (Connection conn = connection; PreparedStatement st = conn.prepareStatement(sql)) {
+        try (PreparedStatement st = connection.prepareStatement(sql)) {
             st.setInt(1, userId);
             try (ResultSet rs = st.executeQuery()) {
                 if (rs.next()) {
