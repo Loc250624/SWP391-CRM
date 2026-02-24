@@ -35,7 +35,7 @@
         <li class="nav-item">
             <a class="nav-link ${viewType == 'personal' ? 'active' : ''}"
                href="${pageContext.request.contextPath}/manager/task/list?view=personal">
-                <i class="bi bi-person me-2"></i>Công việc của tôi
+                <i class="bi bi-person me-2"></i>Danh sách công việc
             </a>
         </li>
         <li class="nav-item">
