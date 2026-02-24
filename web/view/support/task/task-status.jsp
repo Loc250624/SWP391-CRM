@@ -72,9 +72,12 @@
                         </label>
                         <select class="form-select" id="status" name="status" required>
                             <c:forEach var="s" items="${taskStatusValues}">
-                                <option value="${s.name()}" ${task.status == s.name() ? 'selected' : ''}>
-                                    ${s.vietnamese}
-                                </option>
+                                <%-- FIX: SUPPORT cannot cancel tasks; hide CANCELLED option --%>
+                                <c:if test="${s.name() != 'CANCELLED'}">
+                                    <option value="${s.name()}" ${task.status == s.name() ? 'selected' : ''}>
+                                        ${s.vietnamese}
+                                    </option>
+                                </c:if>
                             </c:forEach>
                         </select>
                         <small class="text-muted d-block mt-1">

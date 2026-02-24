@@ -619,6 +619,479 @@ public class TaskDAO extends DBContext {
         return tasks;
     }
 
+    // ── NEW: Get tasks created by a specific manager (for personal "My Tasks" view) ──
+    public List<Task> getTasksByManager(int managerId, String status, String priority,
+                                        String keyword, String sortBy, String sortOrder,
+                                        int offset, int limit) {
+        List<Task> tasks = new ArrayList<>();
+        StringBuilder sql = new StringBuilder("SELECT * FROM tasks WHERE created_by = ?");
+
+        if (status != null && !status.isEmpty()) {
+            sql.append(" AND status = ?");
+        }
+        if (priority != null && !priority.isEmpty()) {
+            sql.append(" AND priority = ?");
+        }
+        if (keyword != null && !keyword.isEmpty()) {
+            sql.append(" AND (title LIKE ? OR description LIKE ?)");
+        }
+
+        if (sortBy != null && !sortBy.isEmpty()) {
+            sql.append(" ORDER BY ").append(sortBy);
+            if ("DESC".equalsIgnoreCase(sortOrder)) sql.append(" DESC");
+            else sql.append(" ASC");
+        } else {
+            sql.append(" ORDER BY due_date ASC");
+        }
+
+        sql.append(" OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
+
+        try (PreparedStatement st = connection.prepareStatement(sql.toString())) {
+            int idx = 1;
+            st.setInt(idx++, managerId);
+            if (status != null && !status.isEmpty())   st.setString(idx++, status);
+            if (priority != null && !priority.isEmpty()) st.setString(idx++, priority);
+            if (keyword != null && !keyword.isEmpty()) {
+                String pat = "%" + keyword + "%";
+                st.setString(idx++, pat);
+                st.setString(idx++, pat);
+            }
+            st.setInt(idx++, offset);
+            st.setInt(idx, limit);
+
+            try (ResultSet rs = st.executeQuery()) {
+                while (rs.next()) tasks.add(mapResultSetToTask(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return tasks;
+    }
+
+    // ── NEW: Count tasks created by manager (pagination) ──
+    public int countTasksByManager(int managerId, String status, String priority, String keyword) {
+        StringBuilder sql = new StringBuilder("SELECT COUNT(*) AS total FROM tasks WHERE created_by = ?");
+
+        if (status != null && !status.isEmpty())    sql.append(" AND status = ?");
+        if (priority != null && !priority.isEmpty()) sql.append(" AND priority = ?");
+        if (keyword != null && !keyword.isEmpty())   sql.append(" AND (title LIKE ? OR description LIKE ?)");
+
+        try (PreparedStatement st = connection.prepareStatement(sql.toString())) {
+            int idx = 1;
+            st.setInt(idx++, managerId);
+            if (status != null && !status.isEmpty())   st.setString(idx++, status);
+            if (priority != null && !priority.isEmpty()) st.setString(idx++, priority);
+            if (keyword != null && !keyword.isEmpty()) {
+                String pat = "%" + keyword + "%";
+                st.setString(idx++, pat);
+                st.setString(idx++, pat);
+            }
+            try (ResultSet rs = st.executeQuery()) {
+                if (rs.next()) return rs.getInt("total");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    // ── NEW: Get team tasks with SQL-level filtering and pagination ──
+    public List<Task> getTasksWithFilterForTeam(List<Integer> memberIds, Integer selectedEmployee,
+                                                 String status, String priority, String keyword,
+                                                 boolean overdueOnly, String sortBy, String sortOrder,
+                                                 int offset, int limit) {
+        if (memberIds == null || memberIds.isEmpty()) return new ArrayList<>();
+
+        List<Task> tasks = new ArrayList<>();
+        StringBuilder sql = new StringBuilder("SELECT * FROM tasks WHERE assigned_to IN (");
+        for (int i = 0; i < memberIds.size(); i++) {
+            sql.append(i > 0 ? ",?" : "?");
+        }
+        sql.append(")");
+
+        if (selectedEmployee != null) sql.append(" AND assigned_to = ?");
+        if (status != null && !status.isEmpty())    sql.append(" AND status = ?");
+        if (priority != null && !priority.isEmpty()) sql.append(" AND priority = ?");
+        if (keyword != null && !keyword.isEmpty())   sql.append(" AND (title LIKE ? OR description LIKE ?)");
+        if (overdueOnly) sql.append(" AND due_date < GETDATE() AND status NOT IN ('COMPLETED','CANCELLED')");
+
+        if (sortBy != null && !sortBy.isEmpty()) {
+            sql.append(" ORDER BY ").append(sortBy);
+            if ("DESC".equalsIgnoreCase(sortOrder)) sql.append(" DESC");
+            else sql.append(" ASC");
+        } else {
+            sql.append(" ORDER BY due_date ASC");
+        }
+        sql.append(" OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
+
+        try (PreparedStatement st = connection.prepareStatement(sql.toString())) {
+            int idx = 1;
+            for (Integer id : memberIds) st.setInt(idx++, id);
+            if (selectedEmployee != null)              st.setInt(idx++, selectedEmployee);
+            if (status != null && !status.isEmpty())   st.setString(idx++, status);
+            if (priority != null && !priority.isEmpty()) st.setString(idx++, priority);
+            if (keyword != null && !keyword.isEmpty()) {
+                String pat = "%" + keyword + "%";
+                st.setString(idx++, pat);
+                st.setString(idx++, pat);
+            }
+            st.setInt(idx++, offset);
+            st.setInt(idx, limit);
+
+            try (ResultSet rs = st.executeQuery()) {
+                while (rs.next()) tasks.add(mapResultSetToTask(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return tasks;
+    }
+
+    // ── NEW: Count team tasks with SQL-level filtering ──
+    public int countTasksWithFilterForTeam(List<Integer> memberIds, Integer selectedEmployee,
+                                            String status, String priority, String keyword,
+                                            boolean overdueOnly) {
+        if (memberIds == null || memberIds.isEmpty()) return 0;
+
+        StringBuilder sql = new StringBuilder("SELECT COUNT(*) AS total FROM tasks WHERE assigned_to IN (");
+        for (int i = 0; i < memberIds.size(); i++) {
+            sql.append(i > 0 ? ",?" : "?");
+        }
+        sql.append(")");
+
+        if (selectedEmployee != null) sql.append(" AND assigned_to = ?");
+        if (status != null && !status.isEmpty())    sql.append(" AND status = ?");
+        if (priority != null && !priority.isEmpty()) sql.append(" AND priority = ?");
+        if (keyword != null && !keyword.isEmpty())   sql.append(" AND (title LIKE ? OR description LIKE ?)");
+        if (overdueOnly) sql.append(" AND due_date < GETDATE() AND status NOT IN ('COMPLETED','CANCELLED')");
+
+        try (PreparedStatement st = connection.prepareStatement(sql.toString())) {
+            int idx = 1;
+            for (Integer id : memberIds) st.setInt(idx++, id);
+            if (selectedEmployee != null)              st.setInt(idx++, selectedEmployee);
+            if (status != null && !status.isEmpty())   st.setString(idx++, status);
+            if (priority != null && !priority.isEmpty()) st.setString(idx++, priority);
+            if (keyword != null && !keyword.isEmpty()) {
+                String pat = "%" + keyword + "%";
+                st.setString(idx++, pat);
+                st.setString(idx++, pat);
+            }
+            try (ResultSet rs = st.executeQuery()) {
+                if (rs.next()) return rs.getInt("total");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    // ── NEW: Insert next recurring task instance when a recurring task is completed ──
+    public boolean insertNextRecurringInstance(Task completedTask) {
+        if (completedTask == null || completedTask.getTitle() == null) return false;
+
+        String title = completedTask.getTitle();
+        String pattern = null;
+        if (title.startsWith("[R-DAILY]"))   pattern = "DAILY";
+        else if (title.startsWith("[R-WEEKLY]"))  pattern = "WEEKLY";
+        else if (title.startsWith("[R-MONTHLY]")) pattern = "MONTHLY";
+
+        if (pattern == null || completedTask.getDueDate() == null) return false;
+
+        LocalDateTime nextDue;
+        switch (pattern) {
+            case "DAILY":   nextDue = completedTask.getDueDate().plusDays(1);  break;
+            case "WEEKLY":  nextDue = completedTask.getDueDate().plusWeeks(1); break;
+            case "MONTHLY": nextDue = completedTask.getDueDate().plusMonths(1); break;
+            default: return false;
+        }
+
+        Task next = new Task();
+        next.setTitle(title);
+        next.setDescription(completedTask.getDescription());
+        next.setAssignedTo(completedTask.getAssignedTo());
+        next.setPriority(completedTask.getPriority());
+        next.setStatus(TaskStatus.PENDING.name());
+        next.setDueDate(nextDue);
+        next.setReminderAt(nextDue.minusHours(24));
+        next.setRelatedType(completedTask.getRelatedType());
+        next.setRelatedId(completedTask.getRelatedId());
+        next.setCreatedBy(completedTask.getCreatedBy());
+
+        return insertTask(next);
+    }
+
+    // ── NEW: Get all dept tasks with SLA filter (for Manager "All Tasks" view) ──
+    public List<Task> getAllDeptTasks(List<Integer> allMemberIds, Integer selectedEmployee,
+                                      String status, String priority, String keyword,
+                                      boolean overdueOnly, String slaFilter,
+                                      String sortBy, String sortOrder, int offset, int limit) {
+        if (allMemberIds == null || allMemberIds.isEmpty()) return new ArrayList<>();
+
+        List<Task> tasks = new ArrayList<>();
+        StringBuilder sql = new StringBuilder("SELECT * FROM tasks WHERE assigned_to IN (");
+        for (int i = 0; i < allMemberIds.size(); i++) sql.append(i > 0 ? ",?" : "?");
+        sql.append(")");
+
+        if (selectedEmployee != null)                sql.append(" AND assigned_to = ?");
+        if (status != null && !status.isEmpty())     sql.append(" AND status = ?");
+        if (priority != null && !priority.isEmpty()) sql.append(" AND priority = ?");
+        if (keyword != null && !keyword.isEmpty())   sql.append(" AND (title LIKE ? OR description LIKE ?)");
+        if (overdueOnly) sql.append(" AND due_date < GETDATE() AND status NOT IN ('COMPLETED','CANCELLED')");
+        if ("BREACHED".equals(slaFilter)) {
+            sql.append(" AND DATEDIFF(HOUR, created_at, ISNULL(completed_at, GETDATE())) >" +
+                       " (CASE priority WHEN 'HIGH' THEN 24 WHEN 'MEDIUM' THEN 72 ELSE 120 END)");
+        } else if ("OK".equals(slaFilter)) {
+            sql.append(" AND DATEDIFF(HOUR, created_at, ISNULL(completed_at, GETDATE())) <=" +
+                       " (CASE priority WHEN 'HIGH' THEN 24 WHEN 'MEDIUM' THEN 72 ELSE 120 END)");
+        }
+
+        if (sortBy != null && !sortBy.isEmpty()) {
+            sql.append(" ORDER BY ").append(sortBy);
+            sql.append("DESC".equalsIgnoreCase(sortOrder) ? " DESC" : " ASC");
+        } else {
+            sql.append(" ORDER BY due_date ASC");
+        }
+        sql.append(" OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
+
+        try (PreparedStatement st = connection.prepareStatement(sql.toString())) {
+            int idx = 1;
+            for (Integer id : allMemberIds)            st.setInt(idx++, id);
+            if (selectedEmployee != null)              st.setInt(idx++, selectedEmployee);
+            if (status != null && !status.isEmpty())   st.setString(idx++, status);
+            if (priority != null && !priority.isEmpty()) st.setString(idx++, priority);
+            if (keyword != null && !keyword.isEmpty()) {
+                String pat = "%" + keyword + "%";
+                st.setString(idx++, pat); st.setString(idx++, pat);
+            }
+            st.setInt(idx++, offset);
+            st.setInt(idx, limit);
+            try (ResultSet rs = st.executeQuery()) {
+                while (rs.next()) tasks.add(mapResultSetToTask(rs));
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return tasks;
+    }
+
+    // ── NEW: Count all dept tasks ──
+    public int countAllDeptTasks(List<Integer> allMemberIds, Integer selectedEmployee,
+                                  String status, String priority, String keyword,
+                                  boolean overdueOnly, String slaFilter) {
+        if (allMemberIds == null || allMemberIds.isEmpty()) return 0;
+
+        StringBuilder sql = new StringBuilder("SELECT COUNT(*) AS total FROM tasks WHERE assigned_to IN (");
+        for (int i = 0; i < allMemberIds.size(); i++) sql.append(i > 0 ? ",?" : "?");
+        sql.append(")");
+
+        if (selectedEmployee != null)                sql.append(" AND assigned_to = ?");
+        if (status != null && !status.isEmpty())     sql.append(" AND status = ?");
+        if (priority != null && !priority.isEmpty()) sql.append(" AND priority = ?");
+        if (keyword != null && !keyword.isEmpty())   sql.append(" AND (title LIKE ? OR description LIKE ?)");
+        if (overdueOnly) sql.append(" AND due_date < GETDATE() AND status NOT IN ('COMPLETED','CANCELLED')");
+        if ("BREACHED".equals(slaFilter)) {
+            sql.append(" AND DATEDIFF(HOUR, created_at, ISNULL(completed_at, GETDATE())) >" +
+                       " (CASE priority WHEN 'HIGH' THEN 24 WHEN 'MEDIUM' THEN 72 ELSE 120 END)");
+        } else if ("OK".equals(slaFilter)) {
+            sql.append(" AND DATEDIFF(HOUR, created_at, ISNULL(completed_at, GETDATE())) <=" +
+                       " (CASE priority WHEN 'HIGH' THEN 24 WHEN 'MEDIUM' THEN 72 ELSE 120 END)");
+        }
+
+        try (PreparedStatement st = connection.prepareStatement(sql.toString())) {
+            int idx = 1;
+            for (Integer id : allMemberIds)            st.setInt(idx++, id);
+            if (selectedEmployee != null)              st.setInt(idx++, selectedEmployee);
+            if (status != null && !status.isEmpty())   st.setString(idx++, status);
+            if (priority != null && !priority.isEmpty()) st.setString(idx++, priority);
+            if (keyword != null && !keyword.isEmpty()) {
+                String pat = "%" + keyword + "%";
+                st.setString(idx++, pat); st.setString(idx++, pat);
+            }
+            try (ResultSet rs = st.executeQuery()) {
+                if (rs.next()) return rs.getInt("total");
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return 0;
+    }
+
+    // ── NEW: Get subtasks by parent task ID (relatedType='SUBTASK', relatedId=parentId) ──
+    public List<Task> getSubtasksByParentId(int parentTaskId) {
+        List<Task> tasks = new ArrayList<>();
+        String sql = "SELECT * FROM tasks WHERE related_type = 'SUBTASK' AND related_id = ? ORDER BY created_at ASC";
+        try (PreparedStatement st = connection.prepareStatement(sql)) {
+            st.setInt(1, parentTaskId);
+            try (ResultSet rs = st.executeQuery()) {
+                while (rs.next()) tasks.add(mapResultSetToTask(rs));
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return tasks;
+    }
+
+    // ── NEW: Count subtasks for a parent task ──
+    public int countSubtasksByParentId(int parentTaskId) {
+        String sql = "SELECT COUNT(*) AS total FROM tasks WHERE related_type = 'SUBTASK' AND related_id = ?";
+        try (PreparedStatement st = connection.prepareStatement(sql)) {
+            st.setInt(1, parentTaskId);
+            try (ResultSet rs = st.executeQuery()) {
+                if (rs.next()) return rs.getInt("total");
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return 0;
+    }
+
+    // ── NEW: Count completed subtasks ──
+    public int countCompletedSubtasks(int parentTaskId) {
+        String sql = "SELECT COUNT(*) AS total FROM tasks WHERE related_type = 'SUBTASK' AND related_id = ? AND status = 'COMPLETED'";
+        try (PreparedStatement st = connection.prepareStatement(sql)) {
+            st.setInt(1, parentTaskId);
+            try (ResultSet rs = st.executeQuery()) {
+                if (rs.next()) return rs.getInt("total");
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return 0;
+    }
+
+    // ── NEW: Get tasks by a list of IDs (for resolving dependency task objects) ──
+    public List<Task> getTasksByIds(List<Integer> taskIds) {
+        if (taskIds == null || taskIds.isEmpty()) return new ArrayList<>();
+
+        List<Task> tasks = new ArrayList<>();
+        StringBuilder sql = new StringBuilder("SELECT * FROM tasks WHERE task_id IN (");
+        for (int i = 0; i < taskIds.size(); i++) sql.append(i > 0 ? ",?" : "?");
+        sql.append(")");
+
+        try (PreparedStatement st = connection.prepareStatement(sql.toString())) {
+            for (int i = 0; i < taskIds.size(); i++) st.setInt(i + 1, taskIds.get(i));
+            try (ResultSet rs = st.executeQuery()) {
+                while (rs.next()) tasks.add(mapResultSetToTask(rs));
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return tasks;
+    }
+
+    // ── NEW: Get SLA statistics for a list of member IDs ──
+    public Map<String, Integer> getSLAStatsByMemberIds(List<Integer> memberIds) {
+        Map<String, Integer> stats = new HashMap<>();
+        stats.put("total", 0); stats.put("ok", 0); stats.put("warning", 0); stats.put("breached", 0);
+
+        if (memberIds == null || memberIds.isEmpty()) return stats;
+
+        StringBuilder sql = new StringBuilder(
+            "SELECT COUNT(*) AS total," +
+            " SUM(CASE WHEN elapsed <= sla_hours THEN 1 ELSE 0 END) AS ok_count," +
+            " SUM(CASE WHEN elapsed > sla_hours * 0.8 AND elapsed <= sla_hours THEN 1 ELSE 0 END) AS warning_count," +
+            " SUM(CASE WHEN elapsed > sla_hours THEN 1 ELSE 0 END) AS breached_count" +
+            " FROM (SELECT DATEDIFF(HOUR, created_at, ISNULL(completed_at, GETDATE())) AS elapsed," +
+            " CASE priority WHEN 'HIGH' THEN 24 WHEN 'MEDIUM' THEN 72 ELSE 120 END AS sla_hours" +
+            " FROM tasks WHERE assigned_to IN ("
+        );
+        for (int i = 0; i < memberIds.size(); i++) sql.append(i > 0 ? ",?" : "?");
+        sql.append(") AND status != 'CANCELLED') t");
+
+        try (PreparedStatement st = connection.prepareStatement(sql.toString())) {
+            for (int i = 0; i < memberIds.size(); i++) st.setInt(i + 1, memberIds.get(i));
+            try (ResultSet rs = st.executeQuery()) {
+                if (rs.next()) {
+                    stats.put("total",   rs.getInt("total"));
+                    stats.put("ok",      rs.getInt("ok_count"));
+                    stats.put("warning", rs.getInt("warning_count"));
+                    stats.put("breached",rs.getInt("breached_count"));
+                }
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return stats;
+    }
+
+    // ── NEW: Get per-employee performance KPI statistics ──
+    public Map<String, Object> getEmployeePerformanceStats(int userId) {
+        Map<String, Object> stats = new HashMap<>();
+        String sql =
+            "SELECT COUNT(*) AS total_tasks," +
+            " SUM(CASE WHEN status = 'COMPLETED' THEN 1 ELSE 0 END) AS completed_tasks," +
+            " SUM(CASE WHEN status = 'IN_PROGRESS' THEN 1 ELSE 0 END) AS in_progress_tasks," +
+            " SUM(CASE WHEN status = 'PENDING' THEN 1 ELSE 0 END) AS pending_tasks," +
+            " SUM(CASE WHEN status = 'CANCELLED' THEN 1 ELSE 0 END) AS cancelled_tasks," +
+            " SUM(CASE WHEN due_date < GETDATE() AND status NOT IN ('COMPLETED','CANCELLED') THEN 1 ELSE 0 END) AS overdue_tasks," +
+            " AVG(CASE WHEN status='COMPLETED' AND completed_at IS NOT NULL" +
+            "     THEN CAST(DATEDIFF(HOUR, created_at, completed_at) AS FLOAT) ELSE NULL END) AS avg_completion_hours," +
+            " SUM(CASE WHEN status='COMPLETED' AND completed_at IS NOT NULL AND" +
+            "     DATEDIFF(HOUR, created_at, completed_at) <=" +
+            "     (CASE priority WHEN 'HIGH' THEN 24 WHEN 'MEDIUM' THEN 72 ELSE 120 END) THEN 1 ELSE 0 END) AS on_time_count," +
+            " SUM(CASE WHEN status NOT IN ('CANCELLED') AND" +
+            "     DATEDIFF(HOUR, created_at, ISNULL(completed_at, GETDATE())) >" +
+            "     (CASE priority WHEN 'HIGH' THEN 24 WHEN 'MEDIUM' THEN 72 ELSE 120 END) THEN 1 ELSE 0 END) AS sla_breach_count" +
+            " FROM tasks WHERE assigned_to = ?";
+
+        try (PreparedStatement st = connection.prepareStatement(sql)) {
+            st.setInt(1, userId);
+            try (ResultSet rs = st.executeQuery()) {
+                if (rs.next()) {
+                    int total     = rs.getInt("total_tasks");
+                    int completed = rs.getInt("completed_tasks");
+                    int cancelled = rs.getInt("cancelled_tasks");
+                    int onTime    = rs.getInt("on_time_count");
+                    int breached  = rs.getInt("sla_breach_count");
+                    double avgHours = rs.getDouble("avg_completion_hours");
+
+                    int active = total - cancelled;
+                    double completionRate = active > 0 ? (completed * 100.0 / active)  : 0;
+                    double onTimeRate     = completed > 0 ? (onTime * 100.0 / completed) : 0;
+                    double slaBreachRate  = active > 0 ? (breached * 100.0 / active)   : 0;
+                    double productivityScore = (completionRate / 100.0 * 0.4
+                                             + onTimeRate / 100.0 * 0.4
+                                             + (1.0 - slaBreachRate / 100.0) * 0.2) * 100.0;
+
+                    stats.put("totalTasks",        total);
+                    stats.put("completedTasks",    completed);
+                    stats.put("inProgressTasks",   rs.getInt("in_progress_tasks"));
+                    stats.put("pendingTasks",      rs.getInt("pending_tasks"));
+                    stats.put("cancelledTasks",    cancelled);
+                    stats.put("overdueTasks",      rs.getInt("overdue_tasks"));
+                    stats.put("onTimeCount",       onTime);
+                    stats.put("slaBreachCount",    breached);
+                    stats.put("avgCompletionHours", avgHours);
+                    stats.put("completionRate",    completionRate);
+                    stats.put("onTimeRate",        onTimeRate);
+                    stats.put("slaBreachRate",     slaBreachRate);
+                    stats.put("productivityScore", productivityScore);
+                }
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return stats;
+    }
+
+    // ── NEW: Static helpers for dependency IDs stored in description as "[DEPS:1,2,3]" prefix ──
+
+    public static List<Integer> parseDependencyIds(String description) {
+        List<Integer> ids = new ArrayList<>();
+        if (description == null || !description.startsWith("[DEPS:")) return ids;
+        int end = description.indexOf(']');
+        if (end < 0) return ids;
+        String idsStr = description.substring(6, end); // extract "1,2,3"
+        for (String s : idsStr.split(",")) {
+            try { ids.add(Integer.parseInt(s.trim())); } catch (NumberFormatException ignored) {}
+        }
+        return ids;
+    }
+
+    public static String setDependencyIds(String description, List<Integer> depIds) {
+        // Remove existing [DEPS:...] prefix (first line if present)
+        String cleaned = getCleanDescription(description);
+        if (depIds == null || depIds.isEmpty()) return cleaned;
+        StringBuilder sb = new StringBuilder("[DEPS:");
+        for (int i = 0; i < depIds.size(); i++) {
+            if (i > 0) sb.append(",");
+            sb.append(depIds.get(i));
+        }
+        sb.append("]\n");
+        return sb.toString() + (cleaned != null ? cleaned : "");
+    }
+
+    public static String getCleanDescription(String description) {
+        if (description == null) return "";
+        if (!description.startsWith("[DEPS:")) return description;
+        int newline = description.indexOf('\n');
+        return newline >= 0 ? description.substring(newline + 1) : "";
+    }
+
     // Get overdue tasks
     public List<Task> getOverdueTasks(Integer userId, List<Integer> teamMemberIds) {
         List<Task> tasks = new ArrayList<>();

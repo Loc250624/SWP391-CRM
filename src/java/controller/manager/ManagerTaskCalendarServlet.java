@@ -25,15 +25,14 @@ public class ManagerTaskCalendarServlet extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        HttpSession session = request.getSession();
-        Users currentUser = (Users) session.getAttribute("user");
-
-        // Role checking
-        if (currentUser == null) {
-            response.sendRedirect(request.getContextPath() + "/auth/login");
+        // FIX: Use getSession(false) — do not create a new session
+        HttpSession session = request.getSession(false);
+        if (session == null || session.getAttribute("user") == null) {
+            response.sendRedirect(request.getContextPath() + "/login");
             return;
         }
 
+        Users currentUser = (Users) session.getAttribute("user");
         UserDAO userDAO = new UserDAO();
         String roleCode = userDAO.getRoleCodeByUserId(currentUser.getUserId());
 
@@ -42,23 +41,29 @@ public class ManagerTaskCalendarServlet extends HttpServlet {
             return;
         }
 
-        // Get year and month parameters
+        // FIX: Validate year/month range to prevent bad values being used in SQL
         LocalDate today = LocalDate.now();
-        int year = today.getYear();
+        int year  = today.getYear();
         int month = today.getMonthValue();
 
         try {
-            String yearParam = request.getParameter("year");
+            String yearParam  = request.getParameter("year");
             String monthParam = request.getParameter("month");
 
-            if (yearParam != null && !yearParam.isEmpty()) {
-                year = Integer.parseInt(yearParam);
+            if (yearParam != null && !yearParam.trim().isEmpty()) {
+                int parsedYear = Integer.parseInt(yearParam.trim());
+                if (parsedYear >= 2000 && parsedYear <= 2100) {
+                    year = parsedYear;
+                }
             }
-            if (monthParam != null && !monthParam.isEmpty()) {
-                month = Integer.parseInt(monthParam);
+            if (monthParam != null && !monthParam.trim().isEmpty()) {
+                int parsedMonth = Integer.parseInt(monthParam.trim());
+                if (parsedMonth >= 1 && parsedMonth <= 12) {
+                    month = parsedMonth;
+                }
             }
         } catch (NumberFormatException e) {
-            // Use default values
+            // Keep defaults
         }
 
         // Get view type
@@ -71,15 +76,13 @@ public class ManagerTaskCalendarServlet extends HttpServlet {
         List<Task> tasks = new ArrayList<>();
 
         if ("personal".equals(viewType)) {
-            // Personal calendar - tasks assigned to current manager
             tasks = taskDAO.getTasksForCalendar(year, month, currentUser.getUserId(), null);
 
         } else if ("team".equals(viewType)) {
-            // Team calendar - tasks of all team members
-            List<Users> teamMembers = userDAO.getAllUsers();
+            List<Users> allUsers = userDAO.getAllUsers();
             List<Integer> teamMemberIds = new ArrayList<>();
 
-            for (Users user : teamMembers) {
+            for (Users user : allUsers) {
                 if (user.getDepartmentId() == currentUser.getDepartmentId()
                         && user.getUserId() != currentUser.getUserId()) {
                     teamMemberIds.add(user.getUserId());
@@ -91,7 +94,7 @@ public class ManagerTaskCalendarServlet extends HttpServlet {
             }
         }
 
-        // Group tasks by date
+        // Group tasks by day of month
         Map<Integer, List<Task>> tasksByDate = new HashMap<>();
         for (Task task : tasks) {
             if (task.getDueDate() != null) {
@@ -100,35 +103,31 @@ public class ManagerTaskCalendarServlet extends HttpServlet {
             }
         }
 
-        // Get all users for displaying names
         List<Users> allUsers = userDAO.getAllUsers();
 
-        // Calendar info
-        YearMonth yearMonth = YearMonth.of(year, month);
-        int daysInMonth = yearMonth.lengthOfMonth();
-        LocalDate firstDay = yearMonth.atDay(1);
-        int firstDayOfWeek = firstDay.getDayOfWeek().getValue(); // 1 = Monday, 7 = Sunday
-
-        // Previous and next month
+        YearMonth yearMonth    = YearMonth.of(year, month);
+        int daysInMonth        = yearMonth.lengthOfMonth();
+        LocalDate firstDay     = yearMonth.atDay(1);
+        int firstDayOfWeek     = firstDay.getDayOfWeek().getValue(); // 1=Mon, 7=Sun
         YearMonth previousMonth = yearMonth.minusMonths(1);
-        YearMonth nextMonth = yearMonth.plusMonths(1);
+        YearMonth nextMonth     = yearMonth.plusMonths(1);
 
-        request.setAttribute("tasksByDate", tasksByDate);
-        request.setAttribute("allUsers", allUsers);
-        request.setAttribute("viewType", viewType);
-        request.setAttribute("year", year);
-        request.setAttribute("month", month);
-        request.setAttribute("daysInMonth", daysInMonth);
+        request.setAttribute("tasksByDate",    tasksByDate);
+        request.setAttribute("allUsers",       allUsers);
+        request.setAttribute("viewType",       viewType);
+        request.setAttribute("year",           year);
+        request.setAttribute("month",          month);
+        request.setAttribute("daysInMonth",    daysInMonth);
         request.setAttribute("firstDayOfWeek", firstDayOfWeek);
-        request.setAttribute("previousYear", previousMonth.getYear());
-        request.setAttribute("previousMonth", previousMonth.getMonthValue());
-        request.setAttribute("nextYear", nextMonth.getYear());
-        request.setAttribute("nextMonth", nextMonth.getMonthValue());
-        request.setAttribute("monthName", yearMonth.getMonth().toString());
+        request.setAttribute("previousYear",   previousMonth.getYear());
+        request.setAttribute("previousMonth",  previousMonth.getMonthValue());
+        request.setAttribute("nextYear",       nextMonth.getYear());
+        request.setAttribute("nextMonth",      nextMonth.getMonthValue());
+        request.setAttribute("monthName",      yearMonth.getMonth().toString());
 
-        request.setAttribute("ACTIVE_MENU", "TASK_CALENDAR");
-        request.setAttribute("pageTitle", "Lịch Công việc");
+        request.setAttribute("ACTIVE_MENU",  "TASK_CALENDAR");
+        request.setAttribute("pageTitle",    "Lịch Công việc");
         request.setAttribute("CONTENT_PAGE", "/view/manager/task/task-calendar.jsp");
-        request.getRequestDispatcher("/view/sale/layout/layout.jsp").forward(request, response);
+        request.getRequestDispatcher("/view/manager/layout/layout-manager.jsp").forward(request, response);
     }
 }

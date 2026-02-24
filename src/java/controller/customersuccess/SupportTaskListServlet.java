@@ -67,7 +67,7 @@ public class SupportTaskListServlet extends HttpServlet {
         int totalTasks = taskDAO.countTasksWithFilter(
                 currentUser.getUserId(), statusFilter, priorityFilter, keyword);
 
-        int totalPages = (int) Math.ceil((double) totalTasks / pageSize);
+        int totalPages = (totalTasks == 0) ? 1 : (int) Math.ceil((double) totalTasks / pageSize);
 
         request.setAttribute("taskList", taskList);
         request.setAttribute("totalTasks", totalTasks);

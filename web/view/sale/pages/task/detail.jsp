@@ -175,7 +175,8 @@
                             <div class="d-flex align-items-center">
                                 <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center text-white me-3"
                                      style="width:40px;height:40px;font-size:0.875rem;font-weight:600;">
-                                    ${creator.firstName.substring(0,1)}${creator.lastName.substring(0,1)}
+                                    <%-- FIX: fn:substring is null-safe; avoids StringIndexOutOfBoundsException --%>
+                                    ${fn:substring(creator.firstName, 0, 1)}${fn:substring(creator.lastName, 0, 1)}
                                 </div>
                                 <div>
                                     <h6 class="mb-0">${creator.firstName} ${creator.lastName}</h6>

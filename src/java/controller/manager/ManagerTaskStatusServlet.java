@@ -1,9 +1,10 @@
-package controller.sale;
+package controller.manager;
 
 import dao.TaskDAO;
 import dao.UserDAO;
 import enums.TaskStatus;
 import java.io.IOException;
+import java.util.List;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -13,8 +14,8 @@ import jakarta.servlet.http.HttpSession;
 import model.Task;
 import model.Users;
 
-@WebServlet(name = "SaleTaskStatusServlet", urlPatterns = {"/sale/task/status"})
-public class SaleTaskStatusServlet extends HttpServlet {
+@WebServlet(name = "ManagerTaskStatusServlet", urlPatterns = {"/manager/task/status"})
+public class ManagerTaskStatusServlet extends HttpServlet {
 
     // ------------------------------------------------------------------ GET --
     @Override
@@ -31,14 +32,14 @@ public class SaleTaskStatusServlet extends HttpServlet {
         UserDAO userDAO = new UserDAO();
         String roleCode = userDAO.getRoleCodeByUserId(currentUser.getUserId());
 
-        if (!"SALES".equals(roleCode)) {
+        if (!"MANAGER".equals(roleCode)) {
             response.sendRedirect(request.getContextPath() + "/error/403.jsp");
             return;
         }
 
         String taskIdStr = request.getParameter("id");
         if (taskIdStr == null || taskIdStr.trim().isEmpty()) {
-            response.sendRedirect(request.getContextPath() + "/sale/task/list");
+            response.sendRedirect(request.getContextPath() + "/manager/task/list");
             return;
         }
 
@@ -47,30 +48,30 @@ public class SaleTaskStatusServlet extends HttpServlet {
             TaskDAO taskDAO = new TaskDAO();
             Task task = taskDAO.getTaskById(taskId);
 
-            if (task == null || task.getAssignedTo() == null
-                    || task.getAssignedTo() != currentUser.getUserId()) {
-                session.setAttribute("errorMessage", "Không thể cập nhật công việc này");
-                response.sendRedirect(request.getContextPath() + "/sale/task/list");
+            if (task == null) {
+                session.setAttribute("errorMessage", "Không tìm thấy công việc");
+                response.sendRedirect(request.getContextPath() + "/manager/task/list");
                 return;
             }
 
-            // Cannot update a terminal-state task
+            // Terminal state — cannot update
             if ("COMPLETED".equals(task.getStatus()) || "CANCELLED".equals(task.getStatus())) {
                 session.setAttribute("errorMessage",
                         "Công việc đã hoàn thành hoặc đã hủy, không thể cập nhật trạng thái");
-                response.sendRedirect(request.getContextPath() + "/sale/task/detail?id=" + taskId);
+                response.sendRedirect(request.getContextPath() + "/manager/task/detail?id=" + taskId);
                 return;
             }
 
             request.setAttribute("task",             task);
+            request.setAttribute("allUsers",         userDAO.getAllUsers());
             request.setAttribute("taskStatusValues", TaskStatus.values());
-            request.setAttribute("ACTIVE_MENU",  "TASK_LIST");
-            request.setAttribute("pageTitle",    "Cập nhật Trạng thái");
-            request.setAttribute("CONTENT_PAGE", "/view/sale/pages/task/status.jsp");
-            request.getRequestDispatcher("/view/sale/layout/layout.jsp").forward(request, response);
+            request.setAttribute("pageTitle",        "Cập nhật Trạng thái");
+            request.setAttribute("ACTIVE_MENU",      "TASK_MY_LIST");
+            request.setAttribute("CONTENT_PAGE",     "/view/manager/task/task-status.jsp");
+            request.getRequestDispatcher("/view/manager/layout/layout-manager.jsp").forward(request, response);
 
         } catch (NumberFormatException e) {
-            response.sendRedirect(request.getContextPath() + "/sale/task/list");
+            response.sendRedirect(request.getContextPath() + "/manager/task/list");
         }
     }
 
@@ -89,7 +90,7 @@ public class SaleTaskStatusServlet extends HttpServlet {
         UserDAO userDAO = new UserDAO();
         String roleCode = userDAO.getRoleCodeByUserId(currentUser.getUserId());
 
-        if (!"SALES".equals(roleCode)) {
+        if (!"MANAGER".equals(roleCode)) {
             response.sendRedirect(request.getContextPath() + "/error/403.jsp");
             return;
         }
@@ -98,24 +99,17 @@ public class SaleTaskStatusServlet extends HttpServlet {
         String newStatus = request.getParameter("status");
 
         if (taskIdStr == null || taskIdStr.trim().isEmpty()) {
-            response.sendRedirect(request.getContextPath() + "/sale/task/list");
+            response.sendRedirect(request.getContextPath() + "/manager/task/list");
             return;
         }
 
-        String redirectBack = request.getContextPath() + "/sale/task/status?id=" + taskIdStr.trim();
+        String redirectBack = request.getContextPath() + "/manager/task/status?id=" + taskIdStr.trim();
 
-        // Validate enum value
+        // Validate enum first (separate try-catch to avoid swallowing NumberFormatException)
         try {
             TaskStatus.valueOf(newStatus);
         } catch (IllegalArgumentException | NullPointerException e) {
             session.setAttribute("errorMessage", "Trạng thái không hợp lệ");
-            response.sendRedirect(redirectBack);
-            return;
-        }
-
-        // SALE users cannot set CANCELLED status
-        if ("CANCELLED".equals(newStatus)) {
-            session.setAttribute("errorMessage", "Bạn không có quyền hủy công việc");
             response.sendRedirect(redirectBack);
             return;
         }
@@ -125,10 +119,9 @@ public class SaleTaskStatusServlet extends HttpServlet {
             TaskDAO taskDAO = new TaskDAO();
             Task task = taskDAO.getTaskById(taskId);
 
-            if (task == null || task.getAssignedTo() == null
-                    || task.getAssignedTo() != currentUser.getUserId()) {
-                session.setAttribute("errorMessage", "Không thể cập nhật công việc này");
-                response.sendRedirect(request.getContextPath() + "/sale/task/list");
+            if (task == null) {
+                session.setAttribute("errorMessage", "Không tìm thấy công việc");
+                response.sendRedirect(request.getContextPath() + "/manager/task/list");
                 return;
             }
 
@@ -136,31 +129,39 @@ public class SaleTaskStatusServlet extends HttpServlet {
             if ("COMPLETED".equals(task.getStatus()) || "CANCELLED".equals(task.getStatus())) {
                 session.setAttribute("errorMessage",
                         "Công việc đã hoàn thành hoặc đã hủy, không thể cập nhật");
-                response.sendRedirect(request.getContextPath() + "/sale/task/detail?id=" + taskId);
+                response.sendRedirect(request.getContextPath() + "/manager/task/detail?id=" + taskId);
                 return;
             }
 
-            // FIX: Enforce valid status transitions for SALE users:
-            //   PENDING    → IN_PROGRESS ✓
-            //   PENDING    → COMPLETED   ✓  (allowed shortcut)
-            //   IN_PROGRESS → COMPLETED  ✓
-            //   IN_PROGRESS → PENDING    ✗  (no going backward)
-            String currentStatus = task.getStatus();
-            if (!isValidTransition(currentStatus, newStatus)) {
-                session.setAttribute("errorMessage",
-                        "Chuyển trạng thái không hợp lệ: "
-                        + getVietnameseStatus(currentStatus)
-                        + " → " + getVietnameseStatus(newStatus));
-                response.sendRedirect(redirectBack);
-                return;
+            // Dependency check: block IN_PROGRESS / COMPLETED if unmet dependencies exist
+            if ("IN_PROGRESS".equals(newStatus) || "COMPLETED".equals(newStatus)) {
+                List<Integer> depIds = TaskDAO.parseDependencyIds(task.getDescription());
+                if (!depIds.isEmpty()) {
+                    List<Task> deps = taskDAO.getTasksByIds(depIds);
+                    boolean blocked = deps.stream().anyMatch(d -> !"COMPLETED".equals(d.getStatus()));
+                    if (blocked) {
+                        session.setAttribute("errorMessage",
+                                "Công việc này đang bị chặn bởi các công việc phụ thuộc chưa hoàn thành");
+                        response.sendRedirect(redirectBack);
+                        return;
+                    }
+                }
             }
 
             task.setStatus(newStatus);
             boolean success = taskDAO.updateTask(task);
 
             if (success) {
+                // If just completed and task is recurring, auto-spawn next instance
+                if ("COMPLETED".equals(newStatus)) {
+                    String title = task.getTitle() != null ? task.getTitle() : "";
+                    if (title.startsWith("[R-DAILY]") || title.startsWith("[R-WEEKLY]")
+                            || title.startsWith("[R-MONTHLY]")) {
+                        taskDAO.insertNextRecurringInstance(task);
+                    }
+                }
                 session.setAttribute("successMessage", "Cập nhật trạng thái thành công");
-                response.sendRedirect(request.getContextPath() + "/sale/task/detail?id=" + taskId);
+                response.sendRedirect(request.getContextPath() + "/manager/task/detail?id=" + taskId);
             } else {
                 session.setAttribute("errorMessage", "Cập nhật trạng thái thất bại");
                 response.sendRedirect(redirectBack);
@@ -168,36 +169,7 @@ public class SaleTaskStatusServlet extends HttpServlet {
 
         } catch (NumberFormatException e) {
             session.setAttribute("errorMessage", "ID công việc không hợp lệ");
-            response.sendRedirect(request.getContextPath() + "/sale/task/list");
-        }
-    }
-
-    /**
-     * Returns true if transitioning from {@code current} to {@code next} is allowed for SALE users.
-     * Allowed transitions:
-     *   PENDING    → IN_PROGRESS
-     *   PENDING    → COMPLETED   (shortcut)
-     *   IN_PROGRESS → COMPLETED
-     */
-    private boolean isValidTransition(String current, String next) {
-        if ("PENDING".equals(current)) {
-            return "IN_PROGRESS".equals(next) || "COMPLETED".equals(next);
-        }
-        if ("IN_PROGRESS".equals(current)) {
-            return "COMPLETED".equals(next);
-        }
-        // COMPLETED and CANCELLED are terminal; transitions are blocked earlier
-        return false;
-    }
-
-    private String getVietnameseStatus(String status) {
-        if (status == null) return "";
-        switch (status) {
-            case "PENDING":     return "Chờ xử lý";
-            case "IN_PROGRESS": return "Đang thực hiện";
-            case "COMPLETED":   return "Hoàn thành";
-            case "CANCELLED":   return "Đã hủy";
-            default:            return status;
+            response.sendRedirect(request.getContextPath() + "/manager/task/list");
         }
     }
 }

@@ -1,6 +1,6 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
 
 <div class="container-fluid">
     <!-- Header -->
@@ -42,7 +42,12 @@
                         <div class="col-md-4">
                             <small class="text-muted d-block">Hạn chót</small>
                             <p class="fw-bold">
-                                <fmt:formatDate value="${task.dueDate}" pattern="dd/MM/yyyy" />
+                                <c:choose>
+                                    <c:when test="${task.dueDate != null}">
+                                        ${fn:substring(task.dueDate, 8, 10)}/${fn:substring(task.dueDate, 5, 7)}/${fn:substring(task.dueDate, 0, 4)}
+                                    </c:when>
+                                    <c:otherwise><span class="text-muted">—</span></c:otherwise>
+                                </c:choose>
                             </p>
                         </div>
                         <div class="col-md-4">

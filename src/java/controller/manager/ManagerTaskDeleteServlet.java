@@ -12,22 +12,44 @@ import jakarta.servlet.http.HttpSession;
 import model.Task;
 import model.Users;
 
+/**
+ * FIX: Delete must only be triggered via POST to prevent CSRF / accidental GET-based deletion.
+ * The JSP delete buttons have been changed to POST forms (with JS confirmation).
+ */
 @WebServlet(name = "ManagerTaskDeleteServlet", urlPatterns = {"/manager/task/delete"})
 public class ManagerTaskDeleteServlet extends HttpServlet {
 
+    /**
+     * GET requests are rejected — deletion must go through POST.
+     */
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
+        HttpSession session = request.getSession(false);
+        if (session == null || session.getAttribute("user") == null) {
+            response.sendRedirect(request.getContextPath() + "/login");
+            return;
+        }
+        // Refuse GET-based deletion — redirect back to list
+        session.setAttribute("errorMessage", "Thao tác xóa không hợp lệ. Vui lòng sử dụng form xóa.");
+        response.sendRedirect(request.getContextPath() + "/manager/task/list");
+    }
 
-        HttpSession session = request.getSession();
-        Users currentUser = (Users) session.getAttribute("user");
+    /**
+     * POST: perform the actual task deletion after authentication and role check.
+     */
+    @Override
+    protected void doPost(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
 
-        // Role checking
-        if (currentUser == null) {
-            response.sendRedirect(request.getContextPath() + "/auth/login");
+        // FIX: Use getSession(false) — do not create a new session
+        HttpSession session = request.getSession(false);
+        if (session == null || session.getAttribute("user") == null) {
+            response.sendRedirect(request.getContextPath() + "/login");
             return;
         }
 
+        Users currentUser = (Users) session.getAttribute("user");
         UserDAO userDAO = new UserDAO();
         String roleCode = userDAO.getRoleCodeByUserId(currentUser.getUserId());
 
@@ -37,17 +59,16 @@ public class ManagerTaskDeleteServlet extends HttpServlet {
         }
 
         String taskIdStr = request.getParameter("id");
-        if (taskIdStr == null || taskIdStr.isEmpty()) {
+        if (taskIdStr == null || taskIdStr.trim().isEmpty()) {
             session.setAttribute("errorMessage", "ID công việc không hợp lệ");
             response.sendRedirect(request.getContextPath() + "/manager/task/list");
             return;
         }
 
         try {
-            int taskId = Integer.parseInt(taskIdStr);
+            int taskId = Integer.parseInt(taskIdStr.trim());
             TaskDAO taskDAO = new TaskDAO();
 
-            // Verify task exists
             Task task = taskDAO.getTaskById(taskId);
             if (task == null) {
                 session.setAttribute("errorMessage", "Không tìm thấy công việc");
@@ -55,9 +76,7 @@ public class ManagerTaskDeleteServlet extends HttpServlet {
                 return;
             }
 
-            // Delete task
             boolean success = taskDAO.deleteTask(taskId);
-
             if (success) {
                 session.setAttribute("successMessage", "Xóa công việc thành công");
             } else {
@@ -70,11 +89,5 @@ public class ManagerTaskDeleteServlet extends HttpServlet {
             session.setAttribute("errorMessage", "ID công việc không hợp lệ");
             response.sendRedirect(request.getContextPath() + "/manager/task/list");
         }
-    }
-
-    @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-        doGet(request, response);
     }
 }
