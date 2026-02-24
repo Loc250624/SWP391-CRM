@@ -23,15 +23,14 @@ public class ManagerTaskListServlet extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        HttpSession session = request.getSession();
-        Users currentUser = (Users) session.getAttribute("user");
-
-        // Role checking
-        if (currentUser == null) {
-            response.sendRedirect(request.getContextPath() + "/auth/login");
+        // FIX: Use getSession(false) — do not create a new session
+        HttpSession session = request.getSession(false);
+        if (session == null || session.getAttribute("user") == null) {
+            response.sendRedirect(request.getContextPath() + "/login");
             return;
         }
 
+        Users currentUser = (Users) session.getAttribute("user");
         UserDAO userDAO = new UserDAO();
         String roleCode = userDAO.getRoleCodeByUserId(currentUser.getUserId());
 
@@ -49,12 +48,12 @@ public class ManagerTaskListServlet extends HttpServlet {
         }
 
         // Get filter parameters
-        String statusFilter = request.getParameter("status");
+        String statusFilter   = request.getParameter("status");
         String priorityFilter = request.getParameter("priority");
         String employeeFilter = request.getParameter("employee");
-        String keyword = request.getParameter("keyword");
-        String sortBy = request.getParameter("sortBy");
-        String sortOrder = request.getParameter("sortOrder");
+        String keyword        = request.getParameter("keyword");
+        String sortBy         = request.getParameter("sortBy");
+        String sortOrder      = request.getParameter("sortOrder");
 
         // Pagination
         int page = 1;
@@ -63,6 +62,7 @@ public class ManagerTaskListServlet extends HttpServlet {
             String pageParam = request.getParameter("page");
             if (pageParam != null && !pageParam.isEmpty()) {
                 page = Integer.parseInt(pageParam);
+                if (page < 1) page = 1;
             }
         } catch (NumberFormatException e) {
             page = 1;
@@ -73,125 +73,80 @@ public class ManagerTaskListServlet extends HttpServlet {
         List<Task> taskList = new ArrayList<>();
         int totalTasks = 0;
 
+        // Build team member list (always needed for both views)
+        List<Users> allUsers = userDAO.getAllUsers();
+        List<Users> teamMembersList = new ArrayList<>();
+        List<Integer> teamMemberIds = new ArrayList<>();
+
+        for (Users user : allUsers) {
+            if (user.getDepartmentId() == currentUser.getDepartmentId()
+                    && user.getUserId() != currentUser.getUserId()) {
+                teamMembersList.add(user);
+                teamMemberIds.add(user.getUserId());
+            }
+        }
+
         if ("personal".equals(viewType)) {
-            // Personal tasks - assigned to current manager
-            Integer assignedTo = currentUser.getUserId();
-            taskList = taskDAO.getTasksWithFilter(assignedTo, statusFilter, priorityFilter,
+            // Show tasks CREATED BY the manager (personal task list)
+            taskList = taskDAO.getTasksByManager(
+                    currentUser.getUserId(), statusFilter, priorityFilter,
                     keyword, sortBy, sortOrder, offset, pageSize);
-            totalTasks = taskDAO.countTasksWithFilter(assignedTo, statusFilter, priorityFilter, keyword);
+            totalTasks = taskDAO.countTasksByManager(
+                    currentUser.getUserId(), statusFilter, priorityFilter, keyword);
 
         } else if ("team".equals(viewType)) {
-            // Team tasks - get all users in manager's department
-            List<Users> teamMembers = userDAO.getAllUsers();
-            List<Integer> teamMemberIds = new ArrayList<>();
 
-            for (Users user : teamMembers) {
-                if (user.getDepartmentId() == currentUser.getDepartmentId()
-                        && user.getUserId() != currentUser.getUserId()) {
-                    teamMemberIds.add(user.getUserId());
-                }
-            }
-
-            // Filter by specific employee if selected
+            // Parse and VALIDATE selected employee
             Integer selectedEmployee = null;
             if (employeeFilter != null && !employeeFilter.isEmpty()) {
                 try {
-                    selectedEmployee = Integer.parseInt(employeeFilter);
+                    int parsed = Integer.parseInt(employeeFilter);
+                    if (teamMemberIds.contains(parsed)) {
+                        selectedEmployee = parsed;
+                    } else {
+                        session.setAttribute("errorMessage", "Nhân viên không thuộc nhóm của bạn");
+                        employeeFilter = null;
+                    }
                 } catch (NumberFormatException e) {
-                    // Ignore
+                    employeeFilter = null;
                 }
             }
 
-            if (selectedEmployee != null) {
-                taskList = taskDAO.getTasksWithFilter(selectedEmployee, statusFilter, priorityFilter,
-                        keyword, sortBy, sortOrder, offset, pageSize);
-                totalTasks = taskDAO.countTasksWithFilter(selectedEmployee, statusFilter, priorityFilter, keyword);
-            } else {
-                // Get all team tasks
-                if (!teamMemberIds.isEmpty()) {
-                    taskList = taskDAO.getTasksByTeam(teamMemberIds);
-
-                    // Apply filters manually for team view
-                    taskList = applyFilters(taskList, statusFilter, priorityFilter, keyword);
-                    totalTasks = taskList.size();
-
-                    // Apply pagination
-                    int fromIndex = Math.min(offset, taskList.size());
-                    int toIndex = Math.min(offset + pageSize, taskList.size());
-                    taskList = taskList.subList(fromIndex, toIndex);
-                }
+            if (!teamMemberIds.isEmpty()) {
+                taskList = taskDAO.getTasksWithFilterForTeam(
+                        teamMemberIds, selectedEmployee,
+                        statusFilter, priorityFilter, keyword,
+                        false, sortBy, sortOrder, offset, pageSize);
+                totalTasks = taskDAO.countTasksWithFilterForTeam(
+                        teamMemberIds, selectedEmployee,
+                        statusFilter, priorityFilter, keyword, false);
             }
 
-            // Get team members for dropdown
-            List<Users> teamMembersList = new ArrayList<>();
-            for (Users user : teamMembers) {
-                if (user.getDepartmentId() == currentUser.getDepartmentId()
-                        && user.getUserId() != currentUser.getUserId()) {
-                    teamMembersList.add(user);
-                }
-            }
             request.setAttribute("teamMembers", teamMembersList);
         }
 
-        // Get all users for assignee names
-        List<Users> allUsers = userDAO.getAllUsers();
+        int totalPages = (totalTasks == 0) ? 1 : (int) Math.ceil((double) totalTasks / pageSize);
 
-        // Calculate pagination info
-        int totalPages = (int) Math.ceil((double) totalTasks / pageSize);
-
-        // Set attributes
-        request.setAttribute("taskList", taskList);
-        request.setAttribute("allUsers", allUsers);
-        request.setAttribute("viewType", viewType);
-        request.setAttribute("statusFilter", statusFilter);
-        request.setAttribute("priorityFilter", priorityFilter);
-        request.setAttribute("employeeFilter", employeeFilter);
-        request.setAttribute("keyword", keyword);
-        request.setAttribute("sortBy", sortBy);
-        request.setAttribute("sortOrder", sortOrder);
-        request.setAttribute("currentPage", page);
-        request.setAttribute("totalPages", totalPages);
-        request.setAttribute("totalTasks", totalTasks);
-        request.setAttribute("pageSize", pageSize);
-
-        // Enum values for filters
+        request.setAttribute("taskList",        taskList);
+        request.setAttribute("allUsers",        allUsers);
+        request.setAttribute("viewType",        viewType);
+        request.setAttribute("statusFilter",    statusFilter);
+        request.setAttribute("priorityFilter",  priorityFilter);
+        request.setAttribute("employeeFilter",  employeeFilter);
+        request.setAttribute("keyword",         keyword);
+        request.setAttribute("sortBy",          sortBy);
+        request.setAttribute("sortOrder",       sortOrder);
+        request.setAttribute("currentPage",     page);
+        request.setAttribute("totalPages",      totalPages);
+        request.setAttribute("totalTasks",      totalTasks);
+        request.setAttribute("pageSize",        pageSize);
         request.setAttribute("taskStatusValues", TaskStatus.values());
-        request.setAttribute("priorityValues", Priority.values());
+        request.setAttribute("priorityValues",   Priority.values());
 
-        request.setAttribute("ACTIVE_MENU", "TASK_LIST");
-        request.setAttribute("pageTitle", "Quản lý Công việc");
+        request.setAttribute("ACTIVE_MENU",  "TASK_MY_LIST");
+        request.setAttribute("pageTitle",    "Quản lý Công việc");
         request.setAttribute("CONTENT_PAGE", "/view/manager/task/task-list.jsp");
-        request.getRequestDispatcher("/view/sale/layout/layout.jsp").forward(request, response);
+        request.getRequestDispatcher("/view/manager/layout/layout-manager.jsp").forward(request, response);
     }
 
-    private List<Task> applyFilters(List<Task> tasks, String status, String priority, String keyword) {
-        List<Task> filtered = new ArrayList<>();
-
-        for (Task task : tasks) {
-            boolean matches = true;
-
-            if (status != null && !status.isEmpty() && !status.equals(task.getStatus())) {
-                matches = false;
-            }
-
-            if (priority != null && !priority.isEmpty() && !priority.equals(task.getPriority())) {
-                matches = false;
-            }
-
-            if (keyword != null && !keyword.isEmpty()) {
-                String lowerKeyword = keyword.toLowerCase();
-                boolean keywordMatch = (task.getTitle() != null && task.getTitle().toLowerCase().contains(lowerKeyword))
-                        || (task.getDescription() != null && task.getDescription().toLowerCase().contains(lowerKeyword));
-                if (!keywordMatch) {
-                    matches = false;
-                }
-            }
-
-            if (matches) {
-                filtered.add(task);
-            }
-        }
-
-        return filtered;
-    }
 }

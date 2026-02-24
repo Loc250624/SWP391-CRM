@@ -23,15 +23,14 @@ public class ManagerTaskReportServlet extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        HttpSession session = request.getSession();
-        Users currentUser = (Users) session.getAttribute("user");
-
-        // Role checking
-        if (currentUser == null) {
+        // FIX: Use getSession(false) — do not create a new session
+        HttpSession session = request.getSession(false);
+        if (session == null || session.getAttribute("user") == null) {
             response.sendRedirect(request.getContextPath() + "/login");
             return;
         }
 
+        Users currentUser = (Users) session.getAttribute("user");
         UserDAO userDAO = new UserDAO();
         String roleCode = userDAO.getRoleCodeByUserId(currentUser.getUserId());
 
@@ -42,12 +41,12 @@ public class ManagerTaskReportServlet extends HttpServlet {
 
         TaskDAO taskDAO = new TaskDAO();
 
-        // Get team members
-        List<Users> teamMembers = userDAO.getAllUsers();
-        List<Integer> teamMemberIds = new ArrayList<>();
-        List<Users> teamMembersList = new ArrayList<>();
+        // Build team member list
+        List<Users> allUsers = userDAO.getAllUsers();
+        List<Integer> teamMemberIds   = new ArrayList<>();
+        List<Users> teamMembersList   = new ArrayList<>();
 
-        for (Users user : teamMembers) {
+        for (Users user : allUsers) {
             if (user.getDepartmentId() == currentUser.getDepartmentId()
                     && user.getUserId() != currentUser.getUserId()) {
                 teamMemberIds.add(user.getUserId());
@@ -55,33 +54,33 @@ public class ManagerTaskReportServlet extends HttpServlet {
             }
         }
 
-        // Get overall statistics
+        // Overall statistics for the whole team
         Map<String, Object> overallStats = taskDAO.getTaskStatistics(null, teamMemberIds);
 
-        // Get statistics per employee
+        // Per-employee statistics
         Map<Integer, Map<String, Object>> employeeStats = new HashMap<>();
         for (Users member : teamMembersList) {
             List<Integer> singleMember = new ArrayList<>();
             singleMember.add(member.getUserId());
-            Map<String, Object> stats = taskDAO.getTaskStatistics(null, singleMember);
-            employeeStats.put(member.getUserId(), stats);
+            employeeStats.put(member.getUserId(), taskDAO.getTaskStatistics(null, singleMember));
         }
 
-        // Get tasks grouped by employee
-        Map<Integer, List<Task>> tasksGroupedByEmployee = taskDAO.getTasksGroupedByEmployee(teamMemberIds);
+        // Tasks grouped by employee (for detail table)
+        Map<Integer, List<Task>> tasksGroupedByEmployee =
+                taskDAO.getTasksGroupedByEmployee(teamMemberIds);
 
-        // Get overdue tasks
+        // Overdue tasks
         List<Task> overdueTasks = taskDAO.getOverdueTasks(null, teamMemberIds);
 
-        request.setAttribute("overallStats", overallStats);
-        request.setAttribute("employeeStats", employeeStats);
-        request.setAttribute("teamMembers", teamMembersList);
-        request.setAttribute("tasksGroupedByEmployee", tasksGroupedByEmployee);
-        request.setAttribute("overdueTasks", overdueTasks);
+        request.setAttribute("overallStats",             overallStats);
+        request.setAttribute("employeeStats",            employeeStats);
+        request.setAttribute("teamMembers",              teamMembersList);
+        request.setAttribute("tasksGroupedByEmployee",   tasksGroupedByEmployee);
+        request.setAttribute("overdueTasks",             overdueTasks);
 
-        request.setAttribute("ACTIVE_MENU", "TASK_REPORT");
-        request.setAttribute("pageTitle", "Báo cáo Công việc");
+        request.setAttribute("ACTIVE_MENU",  "TASK_REPORT");
+        request.setAttribute("pageTitle",    "Báo cáo Công việc");
         request.setAttribute("CONTENT_PAGE", "/view/manager/task/task-report.jsp");
-        request.getRequestDispatcher("/view/sale/layout/layout.jsp").forward(request, response);
+        request.getRequestDispatcher("/view/manager/layout/layout-manager.jsp").forward(request, response);
     }
 }
