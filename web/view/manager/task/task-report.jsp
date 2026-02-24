@@ -1,6 +1,7 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
 
 <div class="container-fluid">
     <!-- Header -->
@@ -162,7 +163,8 @@
                                         <div class="d-flex w-100 justify-content-between">
                                             <h6 class="mb-1">${task.title}</h6>
                                             <small class="text-danger">
-                                                <fmt:formatDate value="${task.dueDate}" pattern="dd/MM/yyyy" />
+                                                <%-- FIX: fn:substring replaces fmt:formatDate (incompatible with LocalDateTime) --%>
+                                                ${fn:substring(task.dueDate, 8, 10)}/${fn:substring(task.dueDate, 5, 7)}/${fn:substring(task.dueDate, 0, 4)}
                                             </small>
                                         </div>
                                         <c:forEach var="user" items="${teamMembers}">
@@ -206,7 +208,8 @@
                                 <td>
                                     <div class="d-flex align-items-center">
                                         <div class="avatar-sm bg-primary rounded-circle d-flex align-items-center justify-content-center text-white me-2">
-                                            ${member.firstName.substring(0, 1)}${member.lastName.substring(0, 1)}
+                                            <%-- FIX: fn:substring is null-safe; .substring(0,1) throws NPE on empty string --%>
+                                            ${fn:substring(member.firstName, 0, 1)}${fn:substring(member.lastName, 0, 1)}
                                         </div>
                                         <div>
                                             <div class="fw-medium">${member.firstName} ${member.lastName}</div>

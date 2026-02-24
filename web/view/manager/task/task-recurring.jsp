@@ -1,6 +1,6 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
 
 <div class="container-fluid">
     <!-- Header -->
@@ -40,7 +40,12 @@
                         <div class="col-md-4">
                             <small class="text-muted d-block">Hạn chót</small>
                             <p class="fw-bold">
-                                <fmt:formatDate value="${task.dueDate}" pattern="dd/MM/yyyy" />
+                                <c:choose>
+                                    <c:when test="${task.dueDate != null}">
+                                        ${fn:substring(task.dueDate, 8, 10)}/${fn:substring(task.dueDate, 5, 7)}/${fn:substring(task.dueDate, 0, 4)}
+                                    </c:when>
+                                    <c:otherwise><span class="text-muted">—</span></c:otherwise>
+                                </c:choose>
                             </p>
                         </div>
                         <div class="col-md-4">
@@ -82,14 +87,14 @@
                         <div class="mb-4">
                             <div class="form-check form-switch">
                                 <input class="form-check-input" type="checkbox" id="enableRecurring"
-                                       name="enableRecurring" ${task.title.startsWith('[R]') ? 'checked' : ''}>
+                                       name="enableRecurring" ${fn:contains(task.title, '[R-') ? 'checked' : ''}>
                                 <label class="form-check-label fw-bold" for="enableRecurring">
                                     Bật chế độ lặp lại
                                 </label>
                             </div>
                         </div>
 
-                        <div id="recurringOptions" style="display: ${task.title.startsWith('[R]') ? 'block' : 'none'};">
+                        <div id="recurringOptions" style="display: ${fn:contains(task.title, '[R-') ? 'block' : 'none'};">
                             <!-- Recurrence Pattern -->
                             <div class="mb-4">
                                 <label class="form-label fw-bold">Chu kỳ lặp lại</label>
@@ -97,7 +102,8 @@
                                     <div class="col-md-4">
                                         <div class="form-check card-check">
                                             <input class="form-check-input" type="radio" name="recurrencePattern"
-                                                   id="pattern_daily" value="DAILY">
+                                                   id="pattern_daily" value="DAILY"
+                                                   ${fn:contains(task.title, '[R-DAILY]') ? 'checked' : ''}>
                                             <label class="form-check-label card p-3 w-100 cursor-pointer" for="pattern_daily">
                                                 <div class="text-center">
                                                     <i class="bi bi-calendar-day text-primary fs-1"></i>
@@ -110,7 +116,8 @@
                                     <div class="col-md-4">
                                         <div class="form-check card-check">
                                             <input class="form-check-input" type="radio" name="recurrencePattern"
-                                                   id="pattern_weekly" value="WEEKLY" checked>
+                                                   id="pattern_weekly" value="WEEKLY"
+                                                   ${fn:contains(task.title, '[R-WEEKLY]') || (!fn:contains(task.title, '[R-DAILY]') && !fn:contains(task.title, '[R-MONTHLY]')) ? 'checked' : ''}>
                                             <label class="form-check-label card p-3 w-100 cursor-pointer" for="pattern_weekly">
                                                 <div class="text-center">
                                                     <i class="bi bi-calendar-week text-primary fs-1"></i>
@@ -123,7 +130,8 @@
                                     <div class="col-md-4">
                                         <div class="form-check card-check">
                                             <input class="form-check-input" type="radio" name="recurrencePattern"
-                                                   id="pattern_monthly" value="MONTHLY">
+                                                   id="pattern_monthly" value="MONTHLY"
+                                                   ${fn:contains(task.title, '[R-MONTHLY]') ? 'checked' : ''}>
                                             <label class="form-check-label card p-3 w-100 cursor-pointer" for="pattern_monthly">
                                                 <div class="text-center">
                                                     <i class="bi bi-calendar-month text-primary fs-1"></i>
@@ -262,7 +270,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const enableRecurring = document.getElementById('enableRecurring');
     const recurringOptions = document.getElementById('recurringOptions');
     const patternRadios = document.querySelectorAll('input[name="recurrencePattern"]');
-    const dueDateStr = '<fmt:formatDate value="${task.dueDate}" pattern="yyyy-MM-dd" />';
+    const dueDateStr = '${fn:substring(task.dueDate, 0, 10)}';
 
     enableRecurring.addEventListener('change', function() {
         recurringOptions.style.display = this.checked ? 'block' : 'none';

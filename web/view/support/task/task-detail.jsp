@@ -154,7 +154,7 @@
                         <div class="d-flex align-items-center">
                             <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center text-white me-3"
                                  style="width:40px;height:40px;font-size:0.875rem;">
-                                ${creator.firstName.substring(0,1)}${creator.lastName.substring(0,1)}
+                                ${fn:substring(creator.firstName, 0, 1)}${fn:substring(creator.lastName, 0, 1)}
                             </div>
                             <div>
                                 <div class="fw-medium">${creator.firstName} ${creator.lastName}</div>

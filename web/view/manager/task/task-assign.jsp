@@ -1,6 +1,6 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
 
 <div class="container-fluid">
     <!-- Header -->
@@ -77,7 +77,12 @@
                         <div class="col-md-6">
                             <small class="text-muted d-block">Hạn chót</small>
                             <p class="fw-bold">
-                                <fmt:formatDate value="${task.dueDate}" pattern="dd/MM/yyyy" />
+                                <c:choose>
+                                    <c:when test="${task.dueDate != null}">
+                                        ${fn:substring(task.dueDate, 8, 10)}/${fn:substring(task.dueDate, 5, 7)}/${fn:substring(task.dueDate, 0, 4)}
+                                    </c:when>
+                                    <c:otherwise><span class="text-muted">—</span></c:otherwise>
+                                </c:choose>
                             </p>
                         </div>
                     </div>
@@ -104,7 +109,7 @@
                                 <strong>Người thực hiện hiện tại:</strong><br>
                                 <div class="d-flex align-items-center mt-2">
                                     <div class="avatar-md bg-primary rounded-circle d-flex align-items-center justify-content-center text-white me-3">
-                                        ${currentAssignee.firstName.substring(0, 1)}${currentAssignee.lastName.substring(0, 1)}
+                                        ${fn:substring(currentAssignee.firstName, 0, 1)}${fn:substring(currentAssignee.lastName, 0, 1)}
                                     </div>
                                     <div>
                                         <strong>${currentAssignee.firstName} ${currentAssignee.lastName}</strong><br>
@@ -219,7 +224,7 @@
                             <div class="list-group-item px-0">
                                 <div class="d-flex align-items-center">
                                     <div class="avatar-sm bg-secondary rounded-circle d-flex align-items-center justify-content-center text-white me-2">
-                                        ${user.firstName.substring(0, 1)}${user.lastName.substring(0, 1)}
+                                        ${fn:substring(user.firstName, 0, 1)}${fn:substring(user.lastName, 0, 1)}
                                     </div>
                                     <div class="flex-grow-1">
                                         <div class="fw-medium small">${user.firstName} ${user.lastName}</div>
