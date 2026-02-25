@@ -32,9 +32,9 @@ public class CustomerListServlet extends HttpServlet {
         
 
         request.setAttribute("pageTitle", "Quản lý Customer");
-        request.setAttribute("contentPage", "/view/customersuccess/customer_list.jsp");
+        request.setAttribute("contentPage", "/view/customersuccess/pages/customer_list.jsp");
 
       
-        request.getRequestDispatcher("/view/customersuccess/main_layout.jsp").forward(request, response);
+        request.getRequestDispatcher("/view/customersuccess/pages/main_layout.jsp").forward(request, response);
     }
 }

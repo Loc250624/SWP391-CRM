@@ -14,9 +14,9 @@
     </style>
 </head>
 <body>
-    <jsp:include page="layout/sidebar.jsp" />
+    <jsp:include page="../layout/sidebar.jsp" />
 
-    <jsp:include page="layout/header.jsp" />
+    <jsp:include page="../layout/header.jsp" />
 
     <main class="main-wrapper">
         <div class="content-body">
