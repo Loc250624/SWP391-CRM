@@ -71,10 +71,15 @@ public class AdminCategoryFormServlet extends HttpServlet {
             catch (NumberFormatException ignored) {}
         }
 
-        if (!errors.isEmpty() || (name != null && !name.trim().isEmpty()
-                && dao.isNameDuplicate(name.trim(), editId))) {
+        if (!errors.isEmpty() 
+            || (name != null && !name.trim().isEmpty() && dao.isNameDuplicate(name.trim(), editId))
+            || (code != null && !code.trim().isEmpty() && dao.isCodeDuplicate(code.trim(), editId))) {
+            
             if (name != null && !name.trim().isEmpty() && dao.isNameDuplicate(name.trim(), editId)) {
-                errors.add("Category name \"" + name.trim() + "\" already exists.");
+                errors.add("Tên danh mục \"" + name.trim() + "\" đã tồn tại.");
+            }
+            if (code != null && !code.trim().isEmpty() && dao.isCodeDuplicate(code.trim(), editId)) {
+                errors.add("Mã danh mục \"" + code.trim() + "\" đã tồn tại.");
             }
             Category c = new Category();
             c.setCategoryId(editId);

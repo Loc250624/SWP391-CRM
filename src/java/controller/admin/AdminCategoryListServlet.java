@@ -15,7 +15,7 @@ import model.Category;
  * GET  /admin/category/list          → danh sách, tìm kiếm, lọc
  * POST /admin/category/list          → xóa hoặc toggle active
  */
-@WebServlet(name = "AdminCategoryListServlet", urlPatterns = {"/admin/category/list"})
+@WebServlet(name = "AdminCategoryListServlet", urlPatterns = {"/admin/category/list", "/admin/category/export"})
 public class AdminCategoryListServlet extends HttpServlet {
 
     private CategoryDAO dao = new CategoryDAO();
@@ -24,22 +24,38 @@ public class AdminCategoryListServlet extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
+        String path = request.getServletPath();
+        if ("/admin/category/export".equals(path)) {
+            handleExport(request, response);
+            return;
+        }
+
         String q            = request.getParameter("q");
-        String activeFilter = request.getParameter("active"); // "active" | "inactive" | ""
+        String activeFilter = request.getParameter("active");
+        String pageStr      = request.getParameter("page");
+        String pageSizeStr  = request.getParameter("pageSize");
         String msg          = request.getParameter("msg");
 
-        List<Category> list = dao.search(q, activeFilter);
+        int page = 1;
+        int pageSize = 10;
+        try {
+            if (pageStr != null) page = Integer.parseInt(pageStr);
+            if (pageSizeStr != null) pageSize = Integer.parseInt(pageSizeStr);
+        } catch (NumberFormatException ignored) {}
+
+        util.PagedResult<model.Category> paged = dao.search(q, activeFilter, page, pageSize);
 
         // đếm số courses cho mỗi category
         java.util.Map<Integer, Integer> courseCount = new java.util.HashMap<>();
-        for (Category c : list) {
+        for (model.Category c : paged.getItems()) {
             courseCount.put(c.getCategoryId(), dao.countCourses(c.getCategoryId()));
         }
 
-        request.setAttribute("categories",  list);
+        request.setAttribute("paged",       paged);
         request.setAttribute("courseCount", courseCount);
         request.setAttribute("q",           q);
         request.setAttribute("active",      activeFilter);
+        request.setAttribute("pageSize",    pageSize);
         request.setAttribute("msg",         msg);
 
         request.setAttribute("CONTENT_PAGE", "/view/admin/category/list.jsp");
@@ -82,5 +98,33 @@ public class AdminCategoryListServlet extends HttpServlet {
         } catch (NumberFormatException e) {
             response.sendRedirect(request.getContextPath() + "/admin/category/list");
         }
+    }
+
+    private void handleExport(HttpServletRequest request, HttpServletResponse response)
+            throws IOException {
+        String q = request.getParameter("q");
+        String activeFilter = request.getParameter("active");
+
+        util.PagedResult<model.Category> all = dao.search(q, activeFilter, 1, Integer.MAX_VALUE);
+
+        response.setContentType("text/csv; charset=UTF-8");
+        response.setHeader("Content-Disposition", "attachment; filename=\"categories-admin.csv\"");
+
+        java.io.PrintWriter pw = response.getWriter();
+        pw.println("ID,Mã Danh mục,Tên Danh mục,Mô tả,Trạng thái");
+        for (model.Category c : all.getItems()) {
+            pw.printf("%d,\"%s\",\"%s\",\"%s\",\"%s\"%n",
+                    c.getCategoryId(),
+                    safe(c.getCategoryCode()),
+                    safe(c.getCategoryName()),
+                    safe(c.getDescription()),
+                    c.getIsActive() ? "Active" : "Inactive"
+            );
+        }
+        pw.flush();
+    }
+
+    private String safe(String s) {
+        return s == null ? "" : s.replace("\"", "\"\"");
     }
 }
