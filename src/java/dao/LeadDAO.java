@@ -107,10 +107,10 @@ public class LeadDAO extends DBContext {
 
     // Insert new lead
     public boolean insertLead(Lead lead) {
-        String sql = "INSERT INTO leads (lead_code, full_name, email, phone, source_id, campaign_id, " +
-                     "job_title, company_name, interests, status, rating, lead_score, assigned_to, " +
-                     "assigned_at, is_converted, notes, created_at, updated_at, created_by) " +
-                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO leads (lead_code, full_name, email, phone, source_id, campaign_id, "
+                + "job_title, company_name, interests, status, rating, lead_score, assigned_to, "
+                + "assigned_at, is_converted, notes, created_at, updated_at, created_by) "
+                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         try {
             // Generate lead code if not set
@@ -181,10 +181,10 @@ public class LeadDAO extends DBContext {
 
     // Update existing lead
     public boolean updateLead(Lead lead) {
-        String sql = "UPDATE leads SET full_name = ?, email = ?, phone = ?, source_id = ?, " +
-                     "campaign_id = ?, job_title = ?, company_name = ?, interests = ?, " +
-                     "status = ?, rating = ?, lead_score = ?, assigned_to = ?, assigned_at = ?, " +
-                     "notes = ?, updated_at = ? WHERE lead_id = ?";
+        String sql = "UPDATE leads SET full_name = ?, email = ?, phone = ?, source_id = ?, "
+                + "campaign_id = ?, job_title = ?, company_name = ?, interests = ?, "
+                + "status = ?, rating = ?, lead_score = ?, assigned_to = ?, assigned_at = ?, "
+                + "notes = ?, updated_at = ? WHERE lead_id = ?";
 
         try {
             PreparedStatement st = connection.prepareStatement(sql);
@@ -239,8 +239,8 @@ public class LeadDAO extends DBContext {
 
     // Mark lead as converted to customer
     public boolean markLeadConverted(int leadId, int customerId) {
-        String sql = "UPDATE leads SET is_converted = 1, converted_at = GETDATE(), " +
-                     "converted_customer_id = ?, status = 'Converted', updated_at = GETDATE() WHERE lead_id = ?";
+        String sql = "UPDATE leads SET is_converted = 1, converted_at = GETDATE(), "
+                + "converted_customer_id = ?, status = 'Converted', updated_at = GETDATE() WHERE lead_id = ?";
         try {
             PreparedStatement st = connection.prepareStatement(sql);
             st.setInt(1, customerId);
@@ -358,8 +358,8 @@ public class LeadDAO extends DBContext {
     public List<Lead> getLeadsForOpportunity(int userId) {
         List<Lead> leadList = new ArrayList<>();
         String sql = "SELECT * FROM leads WHERE (created_by = ? OR assigned_to = ?) "
-                   + "AND status IN ('Assigned', 'Working', 'Unqualified', 'Nurturing') "
-                   + "AND is_converted = 0 ORDER BY created_at DESC";
+                + "AND status IN ('Assigned', 'Working', 'Unqualified', 'Nurturing') "
+                + "AND is_converted = 0 ORDER BY created_at DESC";
 
         try {
             PreparedStatement st = connection.prepareStatement(sql);
@@ -410,6 +410,22 @@ public class LeadDAO extends DBContext {
         }
 
         return leadList;
+    }
+
+    public List<Lead> searchLeadsByPhone(String phoneQuery) {
+        List<Lead> list = new ArrayList<>();
+        // Chỉ lọc theo cột phone
+        String sql = "SELECT * FROM leads WHERE phone LIKE ? AND is_converted = 0 ORDER BY created_at DESC";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, "%" + phoneQuery + "%");
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                list.add(mapResultSetToLead(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
     }
 
 }
