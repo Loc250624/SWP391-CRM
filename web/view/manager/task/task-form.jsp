@@ -1,6 +1,9 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
+<!-- Select2 CSS -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet"/>
+<link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet"/>
 
 <div class="container-fluid">
 
@@ -132,37 +135,78 @@
                             </div>
                         </div>
 
-                        <!-- Related Object -->
+                        <!-- Related Object (combined single dropdown) -->
                         <div class="card bg-light border-0 mb-4">
                             <div class="card-body">
                                 <h6 class="mb-3"><i class="bi bi-link-45deg me-1"></i>Liên kết đối tượng (tùy chọn)</h6>
+
+                                <%-- Hidden field — JS keeps it in sync; servlet derives type from relatedId value --%>
+                                <input type="hidden" name="relatedType" id="relatedType">
+
+                                <%-- Build the initial composite value for pre-selection in edit mode --%>
+                                <c:set var="initRelatedValue" value=""/>
+                                <c:if test="${task.relatedType == 'Lead'        && task.relatedId != null}"><c:set var="initRelatedValue" value="LEAD_${task.relatedId}"/></c:if>
+                                <c:if test="${task.relatedType == 'Customer'    && task.relatedId != null}"><c:set var="initRelatedValue" value="CUSTOMER_${task.relatedId}"/></c:if>
+                                <c:if test="${task.relatedType == 'Opportunity' && task.relatedId != null}"><c:set var="initRelatedValue" value="OPPORTUNITY_${task.relatedId}"/></c:if>
+
                                 <div class="row g-3">
-                                    <div class="col-md-4">
-                                        <label for="relatedType" class="form-label">Loại</label>
-                                        <select class="form-select" id="relatedType" name="relatedType">
+                                    <div class="col-12">
+                                        <label for="relatedObject" class="form-label">Đối tượng liên kết</label>
+                                        <%-- Value format: LEAD_123 | CUSTOMER_45 | OPPORTUNITY_67 | "" --%>
+                                        <select class="form-select" id="relatedObject" name="relatedId">
                                             <option value="">-- Không liên kết --</option>
-                                            <option value="Lead"        ${task.relatedType == 'Lead'        ? 'selected' : ''}>Lead</option>
-                                            <option value="Customer"    ${task.relatedType == 'Customer'    ? 'selected' : ''}>Khách hàng</option>
-                                            <option value="Opportunity" ${task.relatedType == 'Opportunity' ? 'selected' : ''}>Cơ hội</option>
-                                        </select>
-                                    </div>
-                                    <div class="col-md-8">
-                                        <label for="relatedId" class="form-label">Đối tượng</label>
-                                        <select class="form-select" id="relatedId" name="relatedId">
-                                            <option value="">-- Chọn đối tượng --</option>
+                                            <optgroup label="Lead">
+                                                <c:forEach var="l" items="${leads}">
+                                                    <option value="LEAD_${l.leadId}"
+                                                            ${initRelatedValue == 'LEAD_'.concat(l.leadId) ? 'selected' : ''}>
+                                                        ${fn:escapeXml(l.fullName)} (${l.leadCode})
+                                                    </option>
+                                                </c:forEach>
+                                            </optgroup>
+                                            <optgroup label="Khách hàng">
+                                                <c:forEach var="c" items="${customers}">
+                                                    <option value="CUSTOMER_${c.customerId}"
+                                                            ${initRelatedValue == 'CUSTOMER_'.concat(c.customerId) ? 'selected' : ''}>
+                                                        ${fn:escapeXml(c.fullName)} (${c.customerCode})
+                                                    </option>
+                                                </c:forEach>
+                                            </optgroup>
+                                            <optgroup label="Cơ hội">
+                                                <c:forEach var="o" items="${opportunities}">
+                                                    <option value="OPPORTUNITY_${o.opportunityId}"
+                                                            ${initRelatedValue == 'OPPORTUNITY_'.concat(o.opportunityId) ? 'selected' : ''}>
+                                                        ${fn:escapeXml(o.opportunityName)} (${o.opportunityCode})
+                                                    </option>
+                                                </c:forEach>
+                                            </optgroup>
                                         </select>
                                     </div>
                                 </div>
-                                <!-- Hidden data for JS -->
-                                <script id="relatedData" type="application/json">
-                                {
-                                  "currentType": "${fn:escapeXml(task.relatedType)}",
-                                  "currentId": "${task.relatedId}",
-                                  "leads": [<c:forEach var="l" items="${leads}" varStatus="st">{"id":${l.leadId},"name":"${fn:replace(fn:replace(l.fullName,'\"','\\\"'),'\\','\\\\')} (${l.leadCode})"}${!st.last ? ',' : ''}</c:forEach>],
-                                  "customers": [<c:forEach var="c" items="${customers}" varStatus="st">{"id":${c.customerId},"name":"${fn:replace(fn:replace(c.fullName,'\"','\\\"'),'\\','\\\\')} (${c.customerCode})"}${!st.last ? ',' : ''}</c:forEach>],
-                                  "opportunities": [<c:forEach var="o" items="${opportunities}" varStatus="st">{"id":${o.opportunityId},"name":"${fn:replace(fn:replace(o.opportunityName,'\"','\\\"'),'\\','\\\\')} (${o.opportunityCode})"}${!st.last ? ',' : ''}</c:forEach>]
-                                }
-                                </script>
+
+                                <%-- Customer Category auto-fill row (visible only when a Customer is selected) --%>
+                                <div class="row g-3 mt-1" id="customerCategoryRow" style="display:none !important;">
+                                    <div class="col-md-6">
+                                        <label for="customerCategory" class="form-label">
+                                            <i class="bi bi-tag me-1 text-primary"></i>Phân loại khách hàng
+                                        </label>
+                                        <div class="input-group">
+                                            <input type="text" class="form-control" id="customerCategory"
+                                                   readonly placeholder="Tự động điền khi chọn khách hàng"
+                                                   style="background-color:#f8f9fa;">
+                                            <span class="input-group-text" title="Giá trị được lấy tự động từ hệ thống">
+                                                <i class="bi bi-lock-fill text-secondary"></i>
+                                            </span>
+                                        </div>
+                                        <small class="text-muted">Phân loại được tự động lấy từ hồ sơ khách hàng.</small>
+                                    </div>
+                                    <div class="col-md-6" id="customerExtraInfo" style="display:none;">
+                                        <label class="form-label text-muted small">Thông tin liên hệ</label>
+                                        <div class="d-flex flex-column gap-1 small text-muted">
+                                            <span id="customerPhone"><i class="bi bi-telephone me-1"></i><span class="val">—</span></span>
+                                            <span id="customerEmail"><i class="bi bi-envelope me-1"></i><span class="val">—</span></span>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -322,50 +366,110 @@
     </div>
 </div>
 
+<!-- Select2 JS -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
 <script>
-document.addEventListener('DOMContentLoaded', function () {
+$(document).ready(function () {
 
-    // ── Due-date minimum (create mode only) ──
+    // ── Due-date minimum (create mode only) ──────────────────────────────
     var dueDateInput = document.getElementById('dueDate');
-    var formAction   = '${formAction}';
-    if (dueDateInput && formAction !== 'edit') {
+    if (dueDateInput && '${formAction}' !== 'edit') {
         var today = new Date();
-        var yyyy  = today.getFullYear();
-        var mm    = String(today.getMonth() + 1).padStart(2, '0');
-        var dd    = String(today.getDate()).padStart(2, '0');
-        dueDateInput.min = yyyy + '-' + mm + '-' + dd;
+        dueDateInput.min = today.getFullYear() + '-'
+            + String(today.getMonth() + 1).padStart(2, '0') + '-'
+            + String(today.getDate()).padStart(2, '0');
     }
 
-    // ── Related-object dynamic dropdown ──
-    var relTypeEl = document.getElementById('relatedType');
-    var relIdEl   = document.getElementById('relatedId');
-    var dataEl    = document.getElementById('relatedData');
-    var relData   = {};
-    try { relData = JSON.parse(dataEl ? dataEl.textContent : '{}'); } catch(e) {}
+    // ── Related-object elements ───────────────────────────────────────────
+    var relTypeHidden = document.getElementById('relatedType');   // hidden input
+    var categoryRow   = document.getElementById('customerCategoryRow');
+    var categoryInput = document.getElementById('customerCategory');
+    var extraInfoEl   = document.getElementById('customerExtraInfo');
 
-    function populateRelId(type, selectedId) {
-        relIdEl.innerHTML = '<option value="">-- Chọn đối tượng --</option>';
-        var items = [];
-        if (type === 'Lead')        items = relData.leads        || [];
-        if (type === 'Customer')    items = relData.customers    || [];
-        if (type === 'Opportunity') items = relData.opportunities || [];
-        items.forEach(function(item) {
-            var opt = document.createElement('option');
-            opt.value = item.id;
-            opt.textContent = item.name;
-            if (String(item.id) === String(selectedId)) opt.selected = true;
-            relIdEl.appendChild(opt);
-        });
-        relIdEl.disabled = items.length === 0;
+    // Maps the value prefix to the Task relatedType string expected by the backend
+    var TYPE_MAP = { 'LEAD': 'Lead', 'CUSTOMER': 'Customer', 'OPPORTUNITY': 'Opportunity' };
+
+    // ── Select2: init on the combined dropdown ────────────────────────────
+    $('#relatedObject').select2({
+        theme: 'bootstrap-5',
+        placeholder: '-- Không liên kết --',
+        allowClear: true,
+        width: '100%'
+    });
+
+    // ── Parse composite value (e.g. "CUSTOMER_45") → { type, id } ─────────
+    function parseRelatedValue(val) {
+        if (!val) return { type: '', id: '' };
+        var idx = val.indexOf('_');
+        if (idx <= 0 || idx === val.length - 1) return { type: '', id: '' };
+        var prefix = val.substring(0, idx);
+        var id     = val.substring(idx + 1);
+        return { type: TYPE_MAP[prefix] || '', id: id };
     }
 
-    if (relTypeEl) {
-        relTypeEl.addEventListener('change', function() { populateRelId(this.value, ''); });
-        // Pre-populate on load
-        populateRelId(relData.currentType || '', relData.currentId || '');
+    // ── Show / hide customer category row ────────────────────────────────
+    function toggleCategoryRow(type) {
+        if (type === 'Customer') {
+            categoryRow.style.removeProperty('display');
+            categoryRow.style.display = 'flex';
+        } else {
+            categoryRow.style.setProperty('display', 'none', 'important');
+            clearCategoryField();
+        }
     }
 
-    // ── Recurring toggle ──
+    function clearCategoryField() {
+        if (categoryInput) categoryInput.value = '';
+        if (extraInfoEl)   extraInfoEl.style.display = 'none';
+        document.querySelector('#customerPhone .val').textContent = '—';
+        document.querySelector('#customerEmail .val').textContent = '—';
+    }
+
+    // ── AJAX: fetch customer info and auto-fill category ──────────────────
+    function fetchCustomerCategory(customerId) {
+        if (!customerId) { clearCategoryField(); return; }
+
+        fetch('${pageContext.request.contextPath}/manager/task/customer-info?id=' + encodeURIComponent(customerId),
+              { credentials: 'same-origin' })
+            .then(function(resp) {
+                if (!resp.ok) throw new Error('HTTP ' + resp.status);
+                return resp.json();
+            })
+            .then(function(data) {
+                if (data.error) { clearCategoryField(); return; }
+                categoryInput.value = data.category || '(Chưa phân loại)';
+                document.querySelector('#customerPhone .val').textContent = data.phone || '—';
+                document.querySelector('#customerEmail .val').textContent = data.email || '—';
+                extraInfoEl.style.display = 'block';
+            })
+            .catch(function() {
+                clearCategoryField();
+                categoryInput.placeholder = 'Không thể tải phân loại';
+            });
+    }
+
+    // ── Central handler for combined dropdown change ──────────────────────
+    function onRelatedChange(val) {
+        var parsed = parseRelatedValue(val);
+        // Keep the hidden relatedType in sync (servlet derives it from relatedId anyway)
+        relTypeHidden.value = parsed.type;
+        toggleCategoryRow(parsed.type);
+        if (parsed.type === 'Customer' && parsed.id) {
+            fetchCustomerCategory(parsed.id);
+        }
+    }
+
+    // Wire up Select2 change event
+    $('#relatedObject').on('change', function() {
+        onRelatedChange(this.value);
+    });
+
+    // On page load: restore hidden field + category for edit mode
+    onRelatedChange($('#relatedObject').val() || '');
+
+    // ── Recurring toggle ──────────────────────────────────────────────────
     var enableCheck = document.getElementById('enableRecurring');
     var recurPanel  = document.getElementById('recurringPanel');
     if (enableCheck && recurPanel) {
