@@ -40,7 +40,7 @@ public class LoginServlet extends HttpServlet {
             // 2. Lưu thông tin vào Session để quản lý đăng nhập
             HttpSession session = request.getSession();
             session.setAttribute("user", user);
-            session.setAttribute("role", roleCode);
+            session.setAttribute("role", roleCode != null ? roleCode.toUpperCase() : null);
 
             // 3. Điều hướng dựa trên danh sách Role
             if (roleCode == null) {
