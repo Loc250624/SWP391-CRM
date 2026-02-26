@@ -141,14 +141,14 @@ public class ManagerTaskFormServlet extends HttpServlet {
         }
 
         try {
-            String title        = request.getParameter("title");
-            String description  = request.getParameter("description");
+            String title         = request.getParameter("title");
+            String description   = request.getParameter("description");
             String assignedToStr = request.getParameter("assignedTo");
-            String dueDateStr   = request.getParameter("dueDate");
-            String priority     = request.getParameter("priority");
-            String status       = request.getParameter("status");
-            String relatedType  = request.getParameter("relatedType");
-            String relatedIdStr = request.getParameter("relatedId");
+            String dueDateStr    = request.getParameter("dueDate");
+            String priority      = request.getParameter("priority");
+            String status        = request.getParameter("status");
+            // relatedType from the hidden input is NOT trusted — derived from relatedId value below
+            String rawRelated    = request.getParameter("relatedId"); // e.g. "CUSTOMER_45"
 
             // --- Required field validation ---
             if (title == null || title.trim().isEmpty()) {
@@ -222,18 +222,67 @@ public class ManagerTaskFormServlet extends HttpServlet {
                 return;
             }
 
-            // Parse optional related object
-            Integer relatedId = null;
-            if (relatedIdStr != null && !relatedIdStr.trim().isEmpty()) {
-                try {
-                    relatedId = Integer.parseInt(relatedIdStr.trim());
-                } catch (NumberFormatException e) {
-                    relatedId = null;
+            // ── Parse combined related-object value ──────────────────────────────
+            // The value submitted is a composite string: "LEAD_123", "CUSTOMER_45",
+            // "OPPORTUNITY_67", or "" (no link).  relatedType from the hidden field
+            // is intentionally ignored — the type is derived here from the prefix.
+            String  relatedType = null;
+            Integer relatedId   = null;
+
+            if (rawRelated != null && !rawRelated.trim().isEmpty()) {
+                String raw = rawRelated.trim();
+                int underscore = raw.indexOf('_');
+                if (underscore <= 0 || underscore >= raw.length() - 1) {
+                    session.setAttribute("errorMessage", "Đối tượng liên kết không hợp lệ");
+                    response.sendRedirect(errorRedirectBase);
+                    return;
                 }
-            }
-            // Normalize empty relatedType to null
-            if (relatedType != null && relatedType.trim().isEmpty()) {
-                relatedType = null;
+                String typeToken = raw.substring(0, underscore);
+                String idPart    = raw.substring(underscore + 1);
+
+                switch (typeToken) {
+                    case "LEAD":        relatedType = "Lead";        break;
+                    case "CUSTOMER":    relatedType = "Customer";    break;
+                    case "OPPORTUNITY": relatedType = "Opportunity"; break;
+                    default:
+                        session.setAttribute("errorMessage", "Loại đối tượng liên kết không hợp lệ");
+                        response.sendRedirect(errorRedirectBase);
+                        return;
+                }
+
+                try {
+                    relatedId = Integer.parseInt(idPart);
+                    if (relatedId <= 0) throw new NumberFormatException("non-positive");
+                } catch (NumberFormatException e) {
+                    session.setAttribute("errorMessage", "ID đối tượng liên kết không hợp lệ");
+                    response.sendRedirect(errorRedirectBase);
+                    return;
+                }
+
+                // Validate the referenced object actually exists in the DB
+                switch (typeToken) {
+                    case "LEAD":
+                        if (new LeadDAO().getLeadById(relatedId) == null) {
+                            session.setAttribute("errorMessage", "Lead được chọn không tồn tại trong hệ thống");
+                            response.sendRedirect(errorRedirectBase);
+                            return;
+                        }
+                        break;
+                    case "CUSTOMER":
+                        if (new CustomerDAO().getCustomerById(relatedId) == null) {
+                            session.setAttribute("errorMessage", "Khách hàng được chọn không tồn tại trong hệ thống");
+                            response.sendRedirect(errorRedirectBase);
+                            return;
+                        }
+                        break;
+                    case "OPPORTUNITY":
+                        if (new OpportunityDAO().getOpportunityById(relatedId) == null) {
+                            session.setAttribute("errorMessage", "Cơ hội được chọn không tồn tại trong hệ thống");
+                            response.sendRedirect(errorRedirectBase);
+                            return;
+                        }
+                        break;
+                }
             }
 
             TaskDAO taskDAO = new TaskDAO();
