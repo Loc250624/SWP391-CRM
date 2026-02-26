@@ -230,7 +230,7 @@
                     </li>
                     <li><hr class="dropdown-divider"></li>
                     <li>
-                        <a class="dropdown-item text-danger" href="${pageContext.request.contextPath}/auth/logout">
+                        <a class="dropdown-item text-danger" href="${pageContext.request.contextPath}/logout">
                             <i class="bi bi-box-arrow-right me-2"></i>Đăng xuất
                         </a>
                     </li>

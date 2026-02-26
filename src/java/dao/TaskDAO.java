@@ -595,6 +595,32 @@ public class TaskDAO extends DBContext {
         return tasks;
     }
 
+    // Get tasks within a date range for a set of member IDs (used by calendar AJAX endpoint)
+    public List<Task> getTasksByDateRange(List<Integer> memberIds,
+            LocalDateTime startDate, LocalDateTime endDate,
+            String statusFilter, String priorityFilter) {
+        if (memberIds == null || memberIds.isEmpty()) return new ArrayList<>();
+        List<Task> tasks = new ArrayList<>();
+        StringBuilder sql = new StringBuilder("SELECT * FROM tasks WHERE assigned_to IN (");
+        for (int i = 0; i < memberIds.size(); i++) sql.append(i > 0 ? ",?" : "?");
+        sql.append(") AND due_date >= ? AND due_date < ?");
+        if (statusFilter   != null && !statusFilter.isEmpty())   sql.append(" AND status = ?");
+        if (priorityFilter != null && !priorityFilter.isEmpty()) sql.append(" AND priority = ?");
+        sql.append(" ORDER BY due_date ASC");
+        try (PreparedStatement st = connection.prepareStatement(sql.toString())) {
+            int idx = 1;
+            for (Integer id : memberIds) st.setInt(idx++, id);
+            st.setTimestamp(idx++, Timestamp.valueOf(startDate));
+            st.setTimestamp(idx++, Timestamp.valueOf(endDate));
+            if (statusFilter   != null && !statusFilter.isEmpty())   st.setString(idx++, statusFilter);
+            if (priorityFilter != null && !priorityFilter.isEmpty()) st.setString(idx++, priorityFilter);
+            try (ResultSet rs = st.executeQuery()) {
+                while (rs.next()) tasks.add(mapResultSetToTask(rs));
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return tasks;
+    }
+
     // Get upcoming tasks with reminders (for reminder feature)
     public List<Task> getUpcomingTasksWithReminders(int userId, int hoursAhead) {
         List<Task> tasks = new ArrayList<>();
