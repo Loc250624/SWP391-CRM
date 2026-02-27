@@ -58,6 +58,7 @@ public class TaskDAO extends DBContext {
         }
 
         task.setCreatedBy(rs.getObject("created_by", Integer.class));
+        task.setGroupTaskId(rs.getObject("group_task_id", Integer.class));
 
         return task;
     }
@@ -86,8 +87,8 @@ public class TaskDAO extends DBContext {
     // Insert new task
     public boolean insertTask(Task task) {
         String sql = "INSERT INTO tasks (task_code, title, description, related_type, related_id, " +
-                     "assigned_to, due_date, reminder_at, priority, status, created_at, updated_at, created_by) " +
-                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                     "assigned_to, due_date, reminder_at, priority, status, created_at, updated_at, created_by, group_task_id) " +
+                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (PreparedStatement st = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
@@ -135,6 +136,12 @@ public class TaskDAO extends DBContext {
                 st.setInt(13, task.getCreatedBy());
             } else {
                 st.setNull(13, java.sql.Types.INTEGER);
+            }
+
+            if (task.getGroupTaskId() != null) {
+                st.setInt(14, task.getGroupTaskId());
+            } else {
+                st.setNull(14, java.sql.Types.INTEGER);
             }
 
             int rowsAffected = st.executeUpdate();
@@ -223,6 +230,19 @@ public class TaskDAO extends DBContext {
 
         try (PreparedStatement st = connection.prepareStatement(sql)) {
             st.setInt(1, taskId);
+            return st.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    // Set group_task_id for a task (called after group task insertion to link rows together)
+    public boolean updateGroupTaskId(int taskId, int groupTaskId) {
+        String sql = "UPDATE tasks SET group_task_id = ? WHERE task_id = ?";
+        try (PreparedStatement st = connection.prepareStatement(sql)) {
+            st.setInt(1, groupTaskId);
+            st.setInt(2, taskId);
             return st.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
@@ -646,11 +666,12 @@ public class TaskDAO extends DBContext {
     }
 
     // ── NEW: Get tasks created by a specific manager (for personal "My Tasks" view) ──
+    // Only shows individual (non-group) tasks: group_task_id IS NULL
     public List<Task> getTasksByManager(int managerId, String status, String priority,
                                         String keyword, String sortBy, String sortOrder,
                                         int offset, int limit) {
         List<Task> tasks = new ArrayList<>();
-        StringBuilder sql = new StringBuilder("SELECT * FROM tasks WHERE created_by = ?");
+        StringBuilder sql = new StringBuilder("SELECT * FROM tasks WHERE created_by = ? AND group_task_id IS NULL");
 
         if (status != null && !status.isEmpty()) {
             sql.append(" AND status = ?");
@@ -695,8 +716,9 @@ public class TaskDAO extends DBContext {
     }
 
     // ── NEW: Count tasks created by manager (pagination) ──
+    // Only counts individual (non-group) tasks: group_task_id IS NULL
     public int countTasksByManager(int managerId, String status, String priority, String keyword) {
-        StringBuilder sql = new StringBuilder("SELECT COUNT(*) AS total FROM tasks WHERE created_by = ?");
+        StringBuilder sql = new StringBuilder("SELECT COUNT(*) AS total FROM tasks WHERE created_by = ? AND group_task_id IS NULL");
 
         if (status != null && !status.isEmpty())    sql.append(" AND status = ?");
         if (priority != null && !priority.isEmpty()) sql.append(" AND priority = ?");
@@ -722,6 +744,7 @@ public class TaskDAO extends DBContext {
     }
 
     // ── NEW: Get team tasks with SQL-level filtering and pagination ──
+    // Only returns individual tasks (group_task_id IS NULL); group summaries are fetched separately.
     public List<Task> getTasksWithFilterForTeam(List<Integer> memberIds, Integer selectedEmployee,
                                                  String status, String priority, String keyword,
                                                  boolean overdueOnly, String sortBy, String sortOrder,
@@ -733,7 +756,7 @@ public class TaskDAO extends DBContext {
         for (int i = 0; i < memberIds.size(); i++) {
             sql.append(i > 0 ? ",?" : "?");
         }
-        sql.append(")");
+        sql.append(") AND group_task_id IS NULL");
 
         if (selectedEmployee != null) sql.append(" AND assigned_to = ?");
         if (status != null && !status.isEmpty())    sql.append(" AND status = ?");
@@ -774,6 +797,7 @@ public class TaskDAO extends DBContext {
     }
 
     // ── NEW: Count team tasks with SQL-level filtering ──
+    // Only counts individual tasks (group_task_id IS NULL).
     public int countTasksWithFilterForTeam(List<Integer> memberIds, Integer selectedEmployee,
                                             String status, String priority, String keyword,
                                             boolean overdueOnly) {
@@ -783,7 +807,7 @@ public class TaskDAO extends DBContext {
         for (int i = 0; i < memberIds.size(); i++) {
             sql.append(i > 0 ? ",?" : "?");
         }
-        sql.append(")");
+        sql.append(") AND group_task_id IS NULL");
 
         if (selectedEmployee != null) sql.append(" AND assigned_to = ?");
         if (status != null && !status.isEmpty())    sql.append(" AND status = ?");
@@ -1177,6 +1201,104 @@ public class TaskDAO extends DBContext {
         if (!description.startsWith("[DEPS:")) return description;
         int newline = description.indexOf('\n');
         return newline >= 0 ? description.substring(newline + 1) : "";
+    }
+
+    // ── Group task methods ────────────────────────────────────────────────────
+
+    /**
+     * Returns one representative row per group task (WHERE task_id = group_task_id).
+     * The representative is the first task inserted (whose own ID equals the group_task_id).
+     */
+    public List<Task> getGroupTaskSummaries(List<Integer> memberIds, Integer selectedEmployee,
+                                             String status, String priority, String keyword,
+                                             String sortBy, String sortOrder,
+                                             int offset, int limit) {
+        if (memberIds == null || memberIds.isEmpty()) return new ArrayList<>();
+
+        List<Task> tasks = new ArrayList<>();
+        StringBuilder sql = new StringBuilder(
+            "SELECT * FROM tasks WHERE group_task_id IS NOT NULL AND task_id = group_task_id" +
+            " AND assigned_to IN (");
+        for (int i = 0; i < memberIds.size(); i++) sql.append(i > 0 ? ",?" : "?");
+        sql.append(")");
+
+        if (selectedEmployee != null) sql.append(" AND assigned_to = ?");
+        if (status   != null && !status.isEmpty())   sql.append(" AND status = ?");
+        if (priority != null && !priority.isEmpty()) sql.append(" AND priority = ?");
+        if (keyword  != null && !keyword.isEmpty())  sql.append(" AND (title LIKE ? OR description LIKE ?)");
+
+        if (sortBy != null && !sortBy.isEmpty()) {
+            sql.append(" ORDER BY ").append(sortBy);
+            if ("DESC".equalsIgnoreCase(sortOrder)) sql.append(" DESC"); else sql.append(" ASC");
+        } else {
+            sql.append(" ORDER BY due_date ASC");
+        }
+        sql.append(" OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
+
+        try (PreparedStatement st = connection.prepareStatement(sql.toString())) {
+            int idx = 1;
+            for (Integer id : memberIds) st.setInt(idx++, id);
+            if (selectedEmployee != null)             st.setInt(idx++, selectedEmployee);
+            if (status   != null && !status.isEmpty())   st.setString(idx++, status);
+            if (priority != null && !priority.isEmpty()) st.setString(idx++, priority);
+            if (keyword  != null && !keyword.isEmpty()) {
+                String pat = "%" + keyword + "%";
+                st.setString(idx++, pat); st.setString(idx++, pat);
+            }
+            st.setInt(idx++, offset);
+            st.setInt(idx, limit);
+            try (ResultSet rs = st.executeQuery()) {
+                while (rs.next()) tasks.add(mapResultSetToTask(rs));
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return tasks;
+    }
+
+    /** Count of representative group task rows for pagination. */
+    public int countGroupTaskSummaries(List<Integer> memberIds, Integer selectedEmployee,
+                                        String status, String priority, String keyword) {
+        if (memberIds == null || memberIds.isEmpty()) return 0;
+
+        StringBuilder sql = new StringBuilder(
+            "SELECT COUNT(*) AS total FROM tasks" +
+            " WHERE group_task_id IS NOT NULL AND task_id = group_task_id" +
+            " AND assigned_to IN (");
+        for (int i = 0; i < memberIds.size(); i++) sql.append(i > 0 ? ",?" : "?");
+        sql.append(")");
+
+        if (selectedEmployee != null) sql.append(" AND assigned_to = ?");
+        if (status   != null && !status.isEmpty())   sql.append(" AND status = ?");
+        if (priority != null && !priority.isEmpty()) sql.append(" AND priority = ?");
+        if (keyword  != null && !keyword.isEmpty())  sql.append(" AND (title LIKE ? OR description LIKE ?)");
+
+        try (PreparedStatement st = connection.prepareStatement(sql.toString())) {
+            int idx = 1;
+            for (Integer id : memberIds) st.setInt(idx++, id);
+            if (selectedEmployee != null)             st.setInt(idx++, selectedEmployee);
+            if (status   != null && !status.isEmpty())   st.setString(idx++, status);
+            if (priority != null && !priority.isEmpty()) st.setString(idx++, priority);
+            if (keyword  != null && !keyword.isEmpty()) {
+                String pat = "%" + keyword + "%";
+                st.setString(idx++, pat); st.setString(idx++, pat);
+            }
+            try (ResultSet rs = st.executeQuery()) {
+                if (rs.next()) return rs.getInt("total");
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return 0;
+    }
+
+    /** Returns all member rows for a group task (used for the expand panel in team view). */
+    public List<Task> getGroupTaskMembers(int groupTaskId) {
+        List<Task> tasks = new ArrayList<>();
+        String sql = "SELECT * FROM tasks WHERE group_task_id = ? ORDER BY task_id ASC";
+        try (PreparedStatement st = connection.prepareStatement(sql)) {
+            st.setInt(1, groupTaskId);
+            try (ResultSet rs = st.executeQuery()) {
+                while (rs.next()) tasks.add(mapResultSetToTask(rs));
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return tasks;
     }
 
     // Get overdue tasks

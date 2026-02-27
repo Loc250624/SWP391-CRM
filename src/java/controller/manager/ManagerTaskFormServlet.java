@@ -320,6 +320,7 @@ public class ManagerTaskFormServlet extends HttpServlet {
                 // ── Create one task per main assignee ─────────────────────
                 int successCount = 0;
                 String cleanDesc = description != null ? description.trim() : null;
+                List<Integer> insertedMainIds = new ArrayList<>();
 
                 for (int assigneeId : mainIds) {
                     Task task = new Task();
@@ -333,7 +334,18 @@ public class ManagerTaskFormServlet extends HttpServlet {
                     task.setRelatedId(relatedId);
                     task.setCreatedBy(currentUser.getUserId());
                     task.setReminderAt(dueDate.minusHours(24));
-                    if (taskDAO.insertTask(task)) successCount++;
+                    if (taskDAO.insertTask(task)) {
+                        successCount++;
+                        insertedMainIds.add(task.getTaskId());
+                    }
+                }
+
+                // ── Link group task rows via group_task_id (first task is representative) ──
+                if ("GROUP".equals(assignType) && insertedMainIds.size() >= 2) {
+                    int groupTaskId = insertedMainIds.get(0);
+                    for (int tId : insertedMainIds) {
+                        taskDAO.updateGroupTaskId(tId, groupTaskId);
+                    }
                 }
 
                 // ── Create support-member tasks (cloned with note in desc) ─

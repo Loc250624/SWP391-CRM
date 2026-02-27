@@ -8,6 +8,7 @@ import enums.Priority;
 import enums.TaskStatus;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -94,6 +95,8 @@ public class ManagerTaskListServlet extends HttpServlet {
             }
         }
 
+        Map<Integer, List<Task>> groupMembersMap = new HashMap<>();
+
         if ("personal".equals(viewType)) {
             taskList = taskDAO.getTasksByManager(
                     currentUser.getUserId(),
@@ -121,13 +124,37 @@ public class ManagerTaskListServlet extends HttpServlet {
             }
 
             if (!teamMemberIds.isEmpty()) {
-                taskList = taskDAO.getTasksWithFilterForTeam(
-                        teamMemberIds, selectedEmployee,
-                        statusFilter, priorityFilter, keyword,
-                        false, sortBy, sortOrder, offset, pageSize);
-                totalTasks = taskDAO.countTasksWithFilterForTeam(
-                        teamMemberIds, selectedEmployee,
-                        statusFilter, priorityFilter, keyword, false);
+                // Fetch individual and group tasks separately, merge by due_date, paginate in Java
+                int groupCount = taskDAO.countGroupTaskSummaries(
+                        teamMemberIds, selectedEmployee, statusFilter, priorityFilter, keyword);
+                int indivCount = taskDAO.countTasksWithFilterForTeam(
+                        teamMemberIds, selectedEmployee, statusFilter, priorityFilter, keyword, false);
+
+                List<Task> allGroupSummaries = groupCount > 0
+                        ? taskDAO.getGroupTaskSummaries(teamMemberIds, selectedEmployee,
+                                statusFilter, priorityFilter, keyword, sortBy, sortOrder, 0, groupCount)
+                        : new ArrayList<>();
+                List<Task> allIndividual = indivCount > 0
+                        ? taskDAO.getTasksWithFilterForTeam(teamMemberIds, selectedEmployee,
+                                statusFilter, priorityFilter, keyword, false, sortBy, sortOrder, 0, indivCount)
+                        : new ArrayList<>();
+
+                // Build members map for each group summary
+                for (Task g : allGroupSummaries) {
+                    groupMembersMap.put(g.getTaskId(),
+                            taskDAO.getGroupTaskMembers(g.getTaskId()));
+                }
+
+                // Merge and sort by due_date ASC (nulls last)
+                List<Task> merged = new ArrayList<>(allGroupSummaries);
+                merged.addAll(allIndividual);
+                merged.sort(Comparator.comparing(Task::getDueDate,
+                        Comparator.nullsLast(Comparator.naturalOrder())));
+
+                totalTasks = merged.size();
+                int fromIdx = Math.min(offset, merged.size());
+                int toIdx   = Math.min(fromIdx + pageSize, merged.size());
+                taskList = new ArrayList<>(merged.subList(fromIdx, toIdx));
             }
 
             request.setAttribute("teamMembers", teamMembersList);
@@ -151,6 +178,7 @@ public class ManagerTaskListServlet extends HttpServlet {
         for (Map.Entry<Integer, String> e : customerNameMap.entrySet())
             relatedObjectMap.put("CUSTOMER:" + e.getKey(), e.getValue());
         request.setAttribute("relatedObjectMap", relatedObjectMap);
+        request.setAttribute("groupMembersMap", groupMembersMap);
 
         int totalPages = (totalTasks == 0) ? 1 : (int) Math.ceil((double) totalTasks / pageSize);
 
@@ -170,7 +198,7 @@ public class ManagerTaskListServlet extends HttpServlet {
         request.setAttribute("taskStatusValues", TaskStatus.values());
         request.setAttribute("priorityValues", Priority.values());
 
-        request.setAttribute("ACTIVE_MENU", "TASK_MY_LIST");
+        request.setAttribute("ACTIVE_MENU", "team".equals(viewType) ? "TASK_TEAM_LIST" : "TASK_MY_LIST");
         request.setAttribute("pageTitle", "Quản lý Công việc");
         request.setAttribute("CONTENT_PAGE", "/view/manager/task/task-list.jsp");
         request.getRequestDispatcher("/view/manager/layout/layout-manager.jsp").forward(request, response);

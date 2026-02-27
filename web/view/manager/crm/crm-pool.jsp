@@ -367,21 +367,19 @@ function toggleAssignType(type) {
 document.getElementById('assignTaskForm').addEventListener('submit', function(e) {
     var assignType = this.querySelector('[name="assignType"]:checked').value;
 
-   if (assignType === 'GROUP') {
-    var checked = this.querySelectorAll('.group-checkbox:checked');
-    if (checked.length < 2) {  // ĐỔI từ === 0 thành < 2
-        e.preventDefault();
-        e.stopPropagation();
-        document.getElementById('groupError').textContent = 
-            checked.length === 0 
-                ? 'Vui lòng chọn ít nhất 2 nhân viên' 
-                : 'Giao việc nhóm cần ít nhất 2 người';
-        document.getElementById('groupError').classList.remove('d-none');
-        return;
-    }
-}
+    if (assignType === 'GROUP') {
+        var checked = this.querySelectorAll('.group-checkbox:checked');
+        if (checked.length < 2) {
+            e.preventDefault();
+            e.stopPropagation();
+            document.getElementById('groupError').textContent =
+                checked.length === 0
+                    ? 'Vui lòng chọn ít nhất 2 nhân viên'
+                    : 'Giao việc nhóm cần ít nhất 2 người';
+            document.getElementById('groupError').classList.remove('d-none');
+            return;
+        }
         document.getElementById('groupError').classList.add('d-none');
-        // No HTML5 required on individual select when group mode
         document.getElementById('modalAssignedTo').removeAttribute('required');
     } else {
         document.getElementById('modalAssignedTo').setAttribute('required', '');

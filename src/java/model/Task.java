@@ -18,6 +18,8 @@ public class Task {
     public LocalDateTime createdAt;
     public LocalDateTime updatedAt;
     public Integer createdBy;
+    // Rows sharing the same group_task_id belong to one group task. NULL = individual task.
+    public Integer groupTaskId;
 
     public Task() {
     }
@@ -159,8 +161,12 @@ public class Task {
     public void setCreatedBy(Integer createdBy) {
         this.createdBy = createdBy;
     }
-    
-    
 
-   
+    public Integer getGroupTaskId() {
+        return groupTaskId;
+    }
+
+    public void setGroupTaskId(Integer groupTaskId) {
+        this.groupTaskId = groupTaskId;
+    }
 }
