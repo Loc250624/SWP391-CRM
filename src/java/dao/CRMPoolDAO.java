@@ -9,15 +9,7 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * DAO for the CRM Pool page — a UNION of unassigned Leads and Customers.
- *
- * An item is in the pool when ALL of:
- *   1. Lead:     assigned_to IS NULL
- *      Customer: owner_id   IS NULL
- *   2. No Task exists yet for this item (NOT EXISTS in tasks table)
- *   3. Created by someone in the manager's department
- */
+
 public class CRMPoolDAO extends DBContext {
 
     private static final String DEPT_SUBQ =
