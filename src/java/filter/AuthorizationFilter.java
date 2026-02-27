@@ -51,15 +51,15 @@ public class AuthorizationFilter implements Filter {
         String role = (String) session.getAttribute("role");
         String path = httpRequest.getServletPath();
 
-        // ADMIN can access everything
-        if ("ADMIN".equals(role)) {
+        // ADMIN can access everything (Case-insensitive check)
+        if (role != null && "ADMIN".equalsIgnoreCase(role)) {
             chain.doFilter(request, response);
             return;
         }
 
         // Check if user's role matches the URL path
         String requiredRole = getRequiredRole(path);
-        if (requiredRole != null && !requiredRole.equals(role)) {
+        if (requiredRole != null && (role == null || !requiredRole.equalsIgnoreCase(role))) {
             httpResponse.sendRedirect(httpRequest.getContextPath() + "/error/403.jsp");
             return;
         }

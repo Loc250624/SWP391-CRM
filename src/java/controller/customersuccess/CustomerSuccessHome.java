@@ -18,9 +18,9 @@ public class CustomerSuccessHome extends HttpServlet {
         HttpSession session = request.getSession(false);
         if (session != null && session.getAttribute("user") != null) {
 
-            request.setAttribute("contentPage", "/view/customersuccess/dashboard.jsp");
+            request.setAttribute("contentPage", "/view/customersuccess/pages/dashboard.jsp");
 
-            request.getRequestDispatcher("/view/customersuccess/main_layout.jsp").forward(request, response);
+            request.getRequestDispatcher("/view/customersuccess/pages/main_layout.jsp").forward(request, response);
 
         } else {
             response.sendRedirect(request.getContextPath() + "/login");

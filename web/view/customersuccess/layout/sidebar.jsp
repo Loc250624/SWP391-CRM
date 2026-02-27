@@ -3,7 +3,7 @@
 
 <aside class="sidebar position-fixed top-0 start-0 bottom-0 bg-dark text-white shadow-lg" 
        style="width: 250px; z-index: 1030; background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);">
-    
+
     <div class="sidebar-brand px-4 py-4 d-flex align-items-center border-bottom border-secondary border-opacity-25" style="height: 64px;">
         <i class="bi bi-cloud-check-fill text-info fs-3 me-2"></i>
         <span class="fs-5 fw-bold tracking-tight text-uppercase">CRM Support</span>
@@ -13,7 +13,7 @@
         <div class="px-4 mb-2 small text-uppercase text-muted fw-bold" style="font-size: 11px; letter-spacing: 1px;">
             Main Menu
         </div>
-        
+
         <nav class="nav flex-column gap-1 px-2">
             <a href="${pageContext.request.contextPath}/support/dashboard" 
                class="nav-link text-white d-flex align-items-center py-2 px-3 rounded ${pageTitle == 'Tổng quan' ? 'bg-primary bg-opacity-25 border-start border-4 border-primary' : 'opacity-75'}">
@@ -21,19 +21,28 @@
                 <span>Tổng quan</span>
             </a>
 
-            <a href="${pageContext.request.contextPath}/support/tickets" 
-               class="nav-link text-white d-flex align-items-center py-2 px-3 rounded opacity-75">
-                <i class="bi bi-ticket-perforated me-3 fs-5"></i>
-                <span>Quản lý Ticket</span>
+            <a href="${pageContext.request.contextPath}/support/activities" 
+               class="nav-link text-white d-flex align-items-center py-2 px-3 rounded ${pageTitle == 'Lịch sử hoạt động' ? 'bg-primary bg-opacity-25 border-start border-4 border-primary' : 'opacity-75'}">
+                <i class="bi bi-clock-history me-3 fs-5"></i> <span>Lịch sử hoạt động</span>
                 <span class="badge bg-danger ms-auto rounded-pill" style="font-size: 10px;">New</span>
             </a>
 
             <a href="${pageContext.request.contextPath}/support/customers" 
-               class="nav-link text-white d-flex align-items-center py-2 px-3 rounded ${pageTitle == 'Quản lý Customer' ? 'bg-primary bg-opacity-25 border-start border-4 border-primary' : 'opacity-75'}">
+               class="nav-link text-white d-flex align-items-center py-2 px-3 rounded ${pageTitle == 'Quản lý Customer' || pageTitle == 'Danh sách khách hàng' ? 'bg-primary bg-opacity-25 border-start border-4 border-primary' : 'opacity-75'}">
                 <i class="bi bi-people me-3 fs-5"></i>
                 <span>Khách hàng</span>
             </a>
-            
+            <a href="${pageContext.request.contextPath}/support/leads" 
+               class="nav-link text-white d-flex align-items-center py-2 px-3 rounded ${pageTitle == 'Quản lý Leads' ? 'bg-primary bg-opacity-25 border-start border-4 border-primary' : 'opacity-75'}">
+                <i class="bi bi-person-plus me-3 fs-5"></i>
+                <span>Quản lý Leads</span>
+            </a>
+            <a href="${pageContext.request.contextPath}/support/queue" 
+               class="nav-link text-white d-flex align-items-center py-2 px-3 rounded ${pageTitle == 'Hàng chờ' ? 'bg-primary bg-opacity-25 border-start border-4 border-primary' : 'opacity-75'}">
+                <i class="bi bi-hourglass-split me-3 fs-5"></i>
+                <span>Hàng chờ</span>
+            </a>
+
             <div class="px-4 mt-4 mb-2 small text-uppercase text-muted fw-bold" style="font-size: 11px; letter-spacing: 1px;">
                 Báo cáo & Phản hồi
             </div>
