@@ -3,50 +3,53 @@ package model;
 import java.time.LocalDateTime;
 
 public class Task {
-    private int taskId;
+
+    private Integer taskId;
     public String taskCode;
     public String title;
     public String description;
-    public String relatedType;
-    public Integer relatedId;
-    public Integer assignedTo;
+
+    public Integer priority;        
+    public Integer status;         
+
     public LocalDateTime dueDate;
     public LocalDateTime reminderAt;
-    public String priority;
-    public String status;
     public LocalDateTime completedAt;
+
+    public Boolean isDeleted;
+    public LocalDateTime deletedAt;
+    public Integer deletedBy;
+
     public LocalDateTime createdAt;
     public LocalDateTime updatedAt;
     public Integer createdBy;
-    // Rows sharing the same group_task_id belong to one group task. NULL = individual task.
-    public Integer groupTaskId;
 
     public Task() {
     }
 
-    public Task(int taskId, String taskCode, String title, String description, String relatedType, Integer relatedId, Integer assignedTo, LocalDateTime dueDate, LocalDateTime reminderAt, String priority, String status, LocalDateTime completedAt, LocalDateTime createdAt, LocalDateTime updatedAt, Integer createdBy) {
+    public Task(Integer taskId, String taskCode, String title, String description, Integer priority, Integer status, LocalDateTime dueDate, LocalDateTime reminderAt, LocalDateTime completedAt, Boolean isDeleted, LocalDateTime deletedAt, Integer deletedBy, LocalDateTime createdAt, LocalDateTime updatedAt, Integer createdBy) {
         this.taskId = taskId;
         this.taskCode = taskCode;
         this.title = title;
         this.description = description;
-        this.relatedType = relatedType;
-        this.relatedId = relatedId;
-        this.assignedTo = assignedTo;
-        this.dueDate = dueDate;
-        this.reminderAt = reminderAt;
         this.priority = priority;
         this.status = status;
+        this.dueDate = dueDate;
+        this.reminderAt = reminderAt;
         this.completedAt = completedAt;
+        this.isDeleted = isDeleted;
+        this.deletedAt = deletedAt;
+        this.deletedBy = deletedBy;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
         this.createdBy = createdBy;
     }
 
-    public int getTaskId() {
+    public Integer getTaskId() {
         return taskId;
     }
 
-    public void setTaskId(int taskId) {
+    public void setTaskId(Integer taskId) {
         this.taskId = taskId;
     }
 
@@ -74,28 +77,20 @@ public class Task {
         this.description = description;
     }
 
-    public String getRelatedType() {
-        return relatedType;
+    public Integer getPriority() {
+        return priority;
     }
 
-    public void setRelatedType(String relatedType) {
-        this.relatedType = relatedType;
+    public void setPriority(Integer priority) {
+        this.priority = priority;
     }
 
-    public Integer getRelatedId() {
-        return relatedId;
+    public Integer getStatus() {
+        return status;
     }
 
-    public void setRelatedId(Integer relatedId) {
-        this.relatedId = relatedId;
-    }
-
-    public Integer getAssignedTo() {
-        return assignedTo;
-    }
-
-    public void setAssignedTo(Integer assignedTo) {
-        this.assignedTo = assignedTo;
+    public void setStatus(Integer status) {
+        this.status = status;
     }
 
     public LocalDateTime getDueDate() {
@@ -114,28 +109,36 @@ public class Task {
         this.reminderAt = reminderAt;
     }
 
-    public String getPriority() {
-        return priority;
-    }
-
-    public void setPriority(String priority) {
-        this.priority = priority;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
-
     public LocalDateTime getCompletedAt() {
         return completedAt;
     }
 
     public void setCompletedAt(LocalDateTime completedAt) {
         this.completedAt = completedAt;
+    }
+
+    public Boolean getIsDeleted() {
+        return isDeleted;
+    }
+
+    public void setIsDeleted(Boolean isDeleted) {
+        this.isDeleted = isDeleted;
+    }
+
+    public LocalDateTime getDeletedAt() {
+        return deletedAt;
+    }
+
+    public void setDeletedAt(LocalDateTime deletedAt) {
+        this.deletedAt = deletedAt;
+    }
+
+    public Integer getDeletedBy() {
+        return deletedBy;
+    }
+
+    public void setDeletedBy(Integer deletedBy) {
+        this.deletedBy = deletedBy;
     }
 
     public LocalDateTime getCreatedAt() {
@@ -161,12 +164,6 @@ public class Task {
     public void setCreatedBy(Integer createdBy) {
         this.createdBy = createdBy;
     }
-
-    public Integer getGroupTaskId() {
-        return groupTaskId;
-    }
-
-    public void setGroupTaskId(Integer groupTaskId) {
-        this.groupTaskId = groupTaskId;
-    }
+    
+    
 }
