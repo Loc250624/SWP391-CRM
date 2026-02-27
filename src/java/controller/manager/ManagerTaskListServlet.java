@@ -1,12 +1,16 @@
 package controller.manager;
 
+import dao.CustomerDAO;
+import dao.LeadDAO;
 import dao.TaskDAO;
 import dao.UserDAO;
 import enums.Priority;
 import enums.TaskStatus;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -76,23 +80,30 @@ public class ManagerTaskListServlet extends HttpServlet {
         // Build team member list (always needed for both views)
         List<Users> allUsers = userDAO.getAllUsers();
         List<Users> teamMembersList = new ArrayList<>();
-        List<Integer> teamMemberIds = new ArrayList<>();
+        List<Integer> teamMemberIds = new ArrayList<>();      // excludes manager (for team view filter)
+        List<Integer> allDeptMemberIds = new ArrayList<>();   // includes manager (for personal view)
 
         for (Users user : allUsers) {
-            if (user.getDepartmentId() == currentUser.getDepartmentId()
-                    && user.getUserId() != currentUser.getUserId()) {
-                teamMembersList.add(user);
-                teamMemberIds.add(user.getUserId());
+            if (user.getDepartmentId() == currentUser.getDepartmentId()) {
+                allDeptMemberIds.add(user.getUserId());
+                if (user.getUserId() != currentUser.getUserId()) {
+                    teamMembersList.add(user);
+                    teamMemberIds.add(user.getUserId());
+                }
             }
         }
 
         if ("personal".equals(viewType)) {
-            // Show tasks CREATED BY the manager (personal task list)
-            taskList = taskDAO.getTasksByManager(
-                    currentUser.getUserId(), statusFilter, priorityFilter,
-                    keyword, sortBy, sortOrder, offset, pageSize);
-            totalTasks = taskDAO.countTasksByManager(
-                    currentUser.getUserId(), statusFilter, priorityFilter, keyword);
+            // Show ALL dept tasks (assigned_to OR created_by any dept member)
+            taskList = taskDAO.getAllDeptTasks(
+                    allDeptMemberIds, null,
+                    statusFilter, priorityFilter, keyword,
+                    false, null, sortBy, sortOrder, offset, pageSize,
+                    true);  // assignedOnly=true: show only tasks with assigned_to IS NOT NULL
+            totalTasks = taskDAO.countAllDeptTasks(
+                    allDeptMemberIds, null,
+                    statusFilter, priorityFilter, keyword, false, null,
+                    true);
 
         } else if ("team".equals(viewType)) {
 
@@ -124,6 +135,23 @@ public class ManagerTaskListServlet extends HttpServlet {
 
             request.setAttribute("teamMembers", teamMembersList);
         }
+
+        // Build related-object name map for the task list (batch queries — no N+1)
+        List<Integer> leadRelatedIds    = new ArrayList<>();
+        List<Integer> customerRelatedIds = new ArrayList<>();
+        for (Task t : taskList) {
+            if ("LEAD".equals(t.getRelatedType())     && t.getRelatedId() != null) leadRelatedIds.add(t.getRelatedId());
+            if ("CUSTOMER".equals(t.getRelatedType()) && t.getRelatedId() != null) customerRelatedIds.add(t.getRelatedId());
+        }
+        Map<Integer, String> leadNameMap     = new LeadDAO().getLeadNameMap(leadRelatedIds);
+        Map<Integer, String> customerNameMap = new CustomerDAO().getCustomerNameMap(customerRelatedIds);
+        // Merge into a single map keyed by "TYPE:id" for easy JSP access
+        Map<String, String> relatedObjectMap = new HashMap<>();
+        for (Map.Entry<Integer, String> e : leadNameMap.entrySet())
+            relatedObjectMap.put("LEAD:" + e.getKey(), e.getValue());
+        for (Map.Entry<Integer, String> e : customerNameMap.entrySet())
+            relatedObjectMap.put("CUSTOMER:" + e.getKey(), e.getValue());
+        request.setAttribute("relatedObjectMap", relatedObjectMap);
 
         int totalPages = (totalTasks == 0) ? 1 : (int) Math.ceil((double) totalTasks / pageSize);
 

@@ -2,7 +2,9 @@ package dao;
 
 import dbConnection.DBContext;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -391,6 +393,94 @@ public class LeadDAO extends DBContext {
         }
     }
 
+    // Get unassigned leads in manager's department (assigned_to IS NULL).
+    // Scope: lead was created by someone in the manager's department.
+    public List<Lead> getLeadsByManagerScope(int departmentId,
+            String keyword, String status, Integer sourceId, int offset, int pageSize) {
+        List<Lead> list = new ArrayList<>();
+        StringBuilder sql = new StringBuilder(
+            "SELECT * FROM leads l WHERE l.assigned_to IS NULL" +
+            " AND l.created_by IN (SELECT user_id FROM users WHERE department_id = ?)");
+        List<Object> params = new ArrayList<>();
+        params.add(departmentId);
+
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            String kw = "%" + keyword.trim() + "%";
+            sql.append(" AND (l.full_name LIKE ? OR l.lead_code LIKE ? OR l.phone LIKE ? OR l.email LIKE ?)");
+            params.add(kw); params.add(kw); params.add(kw); params.add(kw);
+        }
+        if (status != null && !status.trim().isEmpty()) {
+            sql.append(" AND l.status = ?");
+            params.add(status);
+        }
+        if (sourceId != null) {
+            sql.append(" AND l.source_id = ?");
+            params.add(sourceId);
+        }
+        sql.append(" ORDER BY l.created_at DESC OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
+        params.add(offset);
+        params.add(pageSize);
+
+        try (PreparedStatement st = connection.prepareStatement(sql.toString())) {
+            for (int i = 0; i < params.size(); i++) st.setObject(i + 1, params.get(i));
+            try (ResultSet rs = st.executeQuery()) {
+                while (rs.next()) list.add(mapResultSetToLead(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    // Count unassigned leads in manager's department scope for pagination
+    public int countLeadsByManagerScope(int departmentId,
+            String keyword, String status, Integer sourceId) {
+        StringBuilder sql = new StringBuilder(
+            "SELECT COUNT(*) FROM leads l WHERE l.assigned_to IS NULL" +
+            " AND l.created_by IN (SELECT user_id FROM users WHERE department_id = ?)");
+        List<Object> params = new ArrayList<>();
+        params.add(departmentId);
+
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            String kw = "%" + keyword.trim() + "%";
+            sql.append(" AND (l.full_name LIKE ? OR l.lead_code LIKE ? OR l.phone LIKE ? OR l.email LIKE ?)");
+            params.add(kw); params.add(kw); params.add(kw); params.add(kw);
+        }
+        if (status != null && !status.trim().isEmpty()) {
+            sql.append(" AND l.status = ?");
+            params.add(status);
+        }
+        if (sourceId != null) {
+            sql.append(" AND l.source_id = ?");
+            params.add(sourceId);
+        }
+        try (PreparedStatement st = connection.prepareStatement(sql.toString())) {
+            for (int i = 0; i < params.size(); i++) st.setObject(i + 1, params.get(i));
+            try (ResultSet rs = st.executeQuery()) {
+                if (rs.next()) return rs.getInt(1);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    // Assign a Lead to a Sales user (set assigned_to and assigned_at)
+    public boolean updateLeadAssignedTo(int leadId, int salesId) {
+        String sql = "UPDATE leads SET assigned_to = ?, assigned_at = ?, updated_at = ? WHERE lead_id = ?";
+        try (PreparedStatement st = connection.prepareStatement(sql)) {
+            LocalDateTime now = LocalDateTime.now();
+            st.setInt(1, salesId);
+            st.setObject(2, now);
+            st.setObject(3, now);
+            st.setInt(4, leadId);
+            return st.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
     // Get leads that a sales user can see (created by them OR assigned to them)
     public List<Lead> getLeadsBySalesUser(int userId) {
         List<Lead> leadList = new ArrayList<>();
@@ -410,6 +500,22 @@ public class LeadDAO extends DBContext {
         }
 
         return leadList;
+    }
+
+    // Batch fetch lead full_name by IDs — used for "related object" column in task list
+    public Map<Integer, String> getLeadNameMap(List<Integer> leadIds) {
+        Map<Integer, String> map = new HashMap<>();
+        if (leadIds == null || leadIds.isEmpty()) return map;
+        StringBuilder sql = new StringBuilder("SELECT lead_id, full_name FROM leads WHERE lead_id IN (");
+        for (int i = 0; i < leadIds.size(); i++) sql.append(i > 0 ? ",?" : "?");
+        sql.append(")");
+        try (PreparedStatement st = connection.prepareStatement(sql.toString())) {
+            for (int i = 0; i < leadIds.size(); i++) st.setInt(i + 1, leadIds.get(i));
+            try (ResultSet rs = st.executeQuery()) {
+                while (rs.next()) map.put(rs.getInt("lead_id"), rs.getString("full_name"));
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return map;
     }
 
 }

@@ -100,11 +100,13 @@ public class ManagerAllTaskServlet extends HttpServlet {
                     allMemberIds, selectedEmployee,
                     statusFilter, priorityFilter, keyword,
                     overdueOnly, slaFilter,
-                    sortBy, sortOrder, offset, pageSize);
+                    sortBy, sortOrder, offset, pageSize,
+                    false);  // assignedOnly=false: show all dept tasks
             totalTasks = taskDAO.countAllDeptTasks(
                     allMemberIds, selectedEmployee,
                     statusFilter, priorityFilter, keyword,
-                    overdueOnly, slaFilter);
+                    overdueOnly, slaFilter,
+                    false);
         }
 
         // SLA summary cards

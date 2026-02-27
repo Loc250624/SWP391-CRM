@@ -846,19 +846,27 @@ public class TaskDAO extends DBContext {
         return insertTask(next);
     }
 
-    // ── NEW: Get all dept tasks with SLA filter (for Manager "All Tasks" view) ──
+    // ── Get all dept tasks with SLA filter (for Manager "All Tasks" view) ──
+    // FIX: Uses (assigned_to IN dept OR created_by IN dept) to capture ALL dept tasks
+    // including CRM-assigned tasks where manager is creator and sales is assignee.
     public List<Task> getAllDeptTasks(List<Integer> allMemberIds, Integer selectedEmployee,
                                       String status, String priority, String keyword,
                                       boolean overdueOnly, String slaFilter,
-                                      String sortBy, String sortOrder, int offset, int limit) {
+                                      String sortBy, String sortOrder, int offset, int limit,
+                                      boolean assignedOnly) {
         if (allMemberIds == null || allMemberIds.isEmpty()) return new ArrayList<>();
 
         List<Task> tasks = new ArrayList<>();
-        StringBuilder sql = new StringBuilder("SELECT * FROM tasks WHERE assigned_to IN (");
-        for (int i = 0; i < allMemberIds.size(); i++) sql.append(i > 0 ? ",?" : "?");
-        sql.append(")");
+        // Build IN clause placeholders once, reused for both assigned_to and created_by
+        StringBuilder inClause = new StringBuilder();
+        for (int i = 0; i < allMemberIds.size(); i++) inClause.append(i > 0 ? ",?" : "?");
 
-        if (selectedEmployee != null)                sql.append(" AND assigned_to = ?");
+        StringBuilder sql = new StringBuilder(
+            "SELECT * FROM tasks WHERE (assigned_to IN (" + inClause + ")" +
+            " OR created_by IN (" + inClause + "))");
+
+        if (assignedOnly) sql.append(" AND assigned_to IS NOT NULL");
+        if (selectedEmployee != null)                sql.append(" AND (assigned_to = ? OR created_by = ?)");
         if (status != null && !status.isEmpty())     sql.append(" AND status = ?");
         if (priority != null && !priority.isEmpty()) sql.append(" AND priority = ?");
         if (keyword != null && !keyword.isEmpty())   sql.append(" AND (title LIKE ? OR description LIKE ?)");
@@ -881,8 +889,12 @@ public class TaskDAO extends DBContext {
 
         try (PreparedStatement st = connection.prepareStatement(sql.toString())) {
             int idx = 1;
-            for (Integer id : allMemberIds)            st.setInt(idx++, id);
-            if (selectedEmployee != null)              st.setInt(idx++, selectedEmployee);
+            for (Integer id : allMemberIds) st.setInt(idx++, id); // assigned_to IN
+            for (Integer id : allMemberIds) st.setInt(idx++, id); // created_by IN
+            if (selectedEmployee != null) {
+                st.setInt(idx++, selectedEmployee); // assigned_to = ?
+                st.setInt(idx++, selectedEmployee); // created_by = ?
+            }
             if (status != null && !status.isEmpty())   st.setString(idx++, status);
             if (priority != null && !priority.isEmpty()) st.setString(idx++, priority);
             if (keyword != null && !keyword.isEmpty()) {
@@ -898,17 +910,23 @@ public class TaskDAO extends DBContext {
         return tasks;
     }
 
-    // ── NEW: Count all dept tasks ──
+    // ── Count all dept tasks ──
+    // FIX: matches the same (assigned_to OR created_by) logic as getAllDeptTasks
     public int countAllDeptTasks(List<Integer> allMemberIds, Integer selectedEmployee,
                                   String status, String priority, String keyword,
-                                  boolean overdueOnly, String slaFilter) {
+                                  boolean overdueOnly, String slaFilter,
+                                  boolean assignedOnly) {
         if (allMemberIds == null || allMemberIds.isEmpty()) return 0;
 
-        StringBuilder sql = new StringBuilder("SELECT COUNT(*) AS total FROM tasks WHERE assigned_to IN (");
-        for (int i = 0; i < allMemberIds.size(); i++) sql.append(i > 0 ? ",?" : "?");
-        sql.append(")");
+        StringBuilder inClause = new StringBuilder();
+        for (int i = 0; i < allMemberIds.size(); i++) inClause.append(i > 0 ? ",?" : "?");
 
-        if (selectedEmployee != null)                sql.append(" AND assigned_to = ?");
+        StringBuilder sql = new StringBuilder(
+            "SELECT COUNT(*) AS total FROM tasks WHERE (assigned_to IN (" + inClause + ")" +
+            " OR created_by IN (" + inClause + "))");
+
+        if (assignedOnly) sql.append(" AND assigned_to IS NOT NULL");
+        if (selectedEmployee != null)                sql.append(" AND (assigned_to = ? OR created_by = ?)");
         if (status != null && !status.isEmpty())     sql.append(" AND status = ?");
         if (priority != null && !priority.isEmpty()) sql.append(" AND priority = ?");
         if (keyword != null && !keyword.isEmpty())   sql.append(" AND (title LIKE ? OR description LIKE ?)");
@@ -923,8 +941,12 @@ public class TaskDAO extends DBContext {
 
         try (PreparedStatement st = connection.prepareStatement(sql.toString())) {
             int idx = 1;
-            for (Integer id : allMemberIds)            st.setInt(idx++, id);
-            if (selectedEmployee != null)              st.setInt(idx++, selectedEmployee);
+            for (Integer id : allMemberIds) st.setInt(idx++, id);
+            for (Integer id : allMemberIds) st.setInt(idx++, id);
+            if (selectedEmployee != null) {
+                st.setInt(idx++, selectedEmployee);
+                st.setInt(idx++, selectedEmployee);
+            }
             if (status != null && !status.isEmpty())   st.setString(idx++, status);
             if (priority != null && !priority.isEmpty()) st.setString(idx++, priority);
             if (keyword != null && !keyword.isEmpty()) {
@@ -936,6 +958,45 @@ public class TaskDAO extends DBContext {
             }
         } catch (SQLException e) { e.printStackTrace(); }
         return 0;
+    }
+
+    // ── Get task assignment status summary for a batch of related objects (no N+1) ──
+    // Returns Map<relatedId, statusCode> where statusCode is:
+    //   "IN_PROGRESS" | "PENDING" | "COMPLETED" | "NONE" (no tasks at all)
+    public Map<Integer, String> getTaskSummaryMapByRelatedType(String relatedType, List<Integer> ids) {
+        Map<Integer, String> result = new HashMap<>();
+        if (ids == null || ids.isEmpty()) return result;
+
+        StringBuilder sql = new StringBuilder(
+            "SELECT related_id," +
+            " MAX(CASE WHEN status = 'IN_PROGRESS' THEN 1 ELSE 0 END) AS has_in_progress," +
+            " MAX(CASE WHEN status = 'PENDING'     THEN 1 ELSE 0 END) AS has_pending," +
+            " MAX(CASE WHEN status = 'COMPLETED'   THEN 1 ELSE 0 END) AS has_completed" +
+            " FROM tasks WHERE related_type = ? AND related_id IN (");
+        for (int i = 0; i < ids.size(); i++) sql.append(i > 0 ? ",?" : "?");
+        sql.append(") AND status != 'CANCELLED' GROUP BY related_id");
+
+        try (PreparedStatement st = connection.prepareStatement(sql.toString())) {
+            int idx = 1;
+            st.setString(idx++, relatedType);
+            for (Integer id : ids) st.setInt(idx++, id);
+            try (ResultSet rs = st.executeQuery()) {
+                while (rs.next()) {
+                    int relatedId = rs.getInt("related_id");
+                    boolean hasInProgress = rs.getInt("has_in_progress") > 0;
+                    boolean hasPending    = rs.getInt("has_pending")     > 0;
+                    boolean hasCompleted  = rs.getInt("has_completed")   > 0;
+                    String taskStatus;
+                    if      (hasInProgress) taskStatus = "IN_PROGRESS";
+                    else if (hasPending)    taskStatus = "PENDING";
+                    else if (hasCompleted)  taskStatus = "COMPLETED";
+                    else                    taskStatus = "NONE";
+                    result.put(relatedId, taskStatus);
+                }
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        // IDs absent from result have no tasks → caller treats as "NONE"
+        return result;
     }
 
     // ── NEW: Get subtasks by parent task ID (relatedType='SUBTASK', relatedId=parentId) ──
