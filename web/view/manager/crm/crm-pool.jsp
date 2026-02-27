@@ -91,6 +91,14 @@
                         </c:when>
                         <c:otherwise>
                             <c:forEach var="item" items="${poolItems}">
+                                <%-- Build helper variables for the onclick --%>
+                                <c:set var="itemPhone"  value="${not empty item.phone ? item.phone : ''}"/>
+                                <c:set var="itemSource" value="${item.sourceId != null && not empty sourceMap[item.sourceId] ? sourceMap[item.sourceId] : ''}"/>
+                                <c:set var="itemDate"   value=""/>
+                                <c:if test="${item.createdAt != null}">
+                                    <c:set var="itemDate"
+                                           value="${fn:substring(item.createdAt.toString(),8,10)}/${fn:substring(item.createdAt.toString(),5,7)}/${fn:substring(item.createdAt.toString(),0,4)}"/>
+                                </c:if>
                                 <tr>
                                     <td>
                                         <c:choose>
@@ -119,14 +127,21 @@
                                     </td>
                                     <td>
                                         <c:if test="${item.createdAt != null}">
-                                            <small>${fn:substring(item.createdAt.toString(), 8, 10)}/${fn:substring(item.createdAt.toString(), 5, 7)}/${fn:substring(item.createdAt.toString(), 0, 4)}</small>
+                                            <small>${itemDate}</small>
                                         </c:if>
                                     </td>
                                     <td class="text-center">
                                         <button type="button"
                                                 class="btn btn-sm btn-success"
                                                 title="Giao việc"
-                                                onclick="openAssignModal('${item.itemType}', ${item.itemId}, '${fn:escapeXml(item.fullName)}')">
+                                                onclick="openAssignModal(
+                                                    '${item.itemType}',
+                                                    ${item.itemId},
+                                                    '${fn:escapeXml(item.fullName)}',
+                                                    '${fn:escapeXml(itemPhone)}',
+                                                    '${fn:escapeXml(itemSource)}',
+                                                    '${itemDate}'
+                                                )">
                                             <i class="bi bi-plus-circle me-1"></i>Giao việc
                                         </button>
                                     </td>
@@ -198,11 +213,53 @@
                         </div>
                     </c:if>
 
-                    <%-- Object info banner --%>
-                    <div class="alert alert-success d-flex align-items-center gap-2 py-2 mb-3">
-                        <i class="bi bi-person-check-fill"></i>
-                        <span id="modalObjectBadge"></span>
-                        <strong id="modalObjectName"></strong>
+                    <%-- Object info card --%>
+                    <div class="card border-success mb-3">
+                        <div class="card-header bg-success bg-opacity-10 py-2 d-flex align-items-center gap-2">
+                            <i class="bi bi-person-vcard-fill text-success"></i>
+                            <span class="fw-semibold text-success">Thông tin đối tượng</span>
+                            <span id="modalObjectBadge" class="ms-1"></span>
+                        </div>
+                        <div class="card-body py-2 px-3">
+                            <div class="row g-2">
+                                <div class="col-sm-6">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <i class="bi bi-person text-muted" style="width:16px"></i>
+                                        <div>
+                                            <div class="text-muted" style="font-size:0.72rem">Họ tên</div>
+                                            <div class="fw-semibold" id="modalObjectName"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-sm-6">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <i class="bi bi-telephone text-muted" style="width:16px"></i>
+                                        <div>
+                                            <div class="text-muted" style="font-size:0.72rem">Số điện thoại</div>
+                                            <div id="modalObjectPhone"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-sm-6">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <i class="bi bi-funnel text-muted" style="width:16px"></i>
+                                        <div>
+                                            <div class="text-muted" style="font-size:0.72rem">Nguồn</div>
+                                            <div id="modalObjectSource"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-sm-6">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <i class="bi bi-calendar3 text-muted" style="width:16px"></i>
+                                        <div>
+                                            <div class="text-muted" style="font-size:0.72rem">Ngày tạo</div>
+                                            <div id="modalObjectDate"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="row g-3">
@@ -323,21 +380,40 @@
 </div>
 
 <script>
-function openAssignModal(relatedType, relatedId, objectName) {
+function openAssignModal(relatedType, relatedId, objectName, phone, source, createdAt) {
     var form = document.getElementById('assignTaskForm');
 
     // Set hidden fields
     document.getElementById('modalRelatedType').value = relatedType;
     document.getElementById('modalRelatedId').value   = relatedId;
-    document.getElementById('modalObjectName').textContent = objectName;
 
     // Type badge
     var badge = document.getElementById('modalObjectBadge');
     if (relatedType === 'LEAD') {
-        badge.innerHTML = '<span class="badge bg-info text-dark me-1">Lead</span>';
+        badge.innerHTML = '<span class="badge bg-info text-dark">Lead</span>';
     } else {
-        badge.innerHTML = '<span class="badge bg-success me-1">Khách hàng</span>';
+        badge.innerHTML = '<span class="badge bg-success">Khách hàng</span>';
     }
+
+    // Info card fields
+    document.getElementById('modalObjectName').textContent = objectName || '—';
+
+    var phoneEl = document.getElementById('modalObjectPhone');
+    if (phone) {
+        phoneEl.innerHTML = '<a href="tel:' + phone + '" class="text-decoration-none">' + phone + '</a>';
+    } else {
+        phoneEl.innerHTML = '<span class="text-muted">—</span>';
+    }
+
+    var sourceEl = document.getElementById('modalObjectSource');
+    sourceEl.textContent = source || '—';
+    if (!source) sourceEl.classList.add('text-muted');
+    else sourceEl.classList.remove('text-muted');
+
+    var dateEl = document.getElementById('modalObjectDate');
+    dateEl.textContent = createdAt || '—';
+    if (!createdAt) dateEl.classList.add('text-muted');
+    else dateEl.classList.remove('text-muted');
 
     // Reset form fields
     document.getElementById('modalTitle').value = '';
