@@ -190,6 +190,14 @@
                 </div>
 
                 <div class="modal-body">
+                    <%-- Guard: warn if no sales staff available --%>
+                    <c:if test="${empty salesForAssign}">
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            Không có nhân viên sales trong phòng ban để giao việc.
+                        </div>
+                    </c:if>
+
                     <%-- Object info banner --%>
                     <div class="alert alert-success d-flex align-items-center gap-2 py-2 mb-3">
                         <i class="bi bi-person-check-fill"></i>
