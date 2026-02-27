@@ -167,6 +167,165 @@
                             </c:when>
                             <c:otherwise>
                                 <c:forEach var="task" items="${taskList}">
+                                    <%-- Determine if this row is a group summary task --%>
+                                    <c:set var="isGroupSummary" value="${task.groupTaskId != null && task.groupTaskId == task.taskId}" />
+                                    <c:set var="groupMembers"   value="${groupMembersMap[task.taskId]}" />
+
+                                    <c:choose>
+                                    <%-- ════ GROUP SUMMARY ROW ════ --%>
+                                    <c:when test="${isGroupSummary}">
+                                        <c:set var="memberCount" value="${groupMembers != null ? fn:length(groupMembers) : 0}" />
+                                        <tr class="table-group-row">
+                                            <td>
+                                                <span class="badge bg-secondary">${task.taskCode}</span>
+                                            </td>
+                                            <td>
+                                                <div class="d-flex align-items-center gap-2">
+                                                    <a href="${pageContext.request.contextPath}/manager/task/detail?id=${task.taskId}"
+                                                       class="text-decoration-none fw-medium">${task.title}</a>
+                                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle">
+                                                        <i class="bi bi-people-fill me-1"></i>Nhóm · ${memberCount} người
+                                                    </span>
+                                                </div>
+                                                <%-- Avatar stack (first 3 members) --%>
+                                                <div class="avatar-stack mt-1">
+                                                    <c:forEach var="m" items="${groupMembers}" varStatus="ms">
+                                                        <c:if test="${ms.index < 3}">
+                                                            <c:forEach var="u" items="${allUsers}">
+                                                                <c:if test="${u.userId == m.assignedTo}">
+                                                                    <span class="avatar-xs bg-secondary rounded-circle d-inline-flex align-items-center justify-content-center text-white"
+                                                                          title="${u.firstName} ${u.lastName}">
+                                                                        ${fn:substring(u.firstName,0,1)}${fn:substring(u.lastName,0,1)}
+                                                                    </span>
+                                                                </c:if>
+                                                            </c:forEach>
+                                                        </c:if>
+                                                    </c:forEach>
+                                                    <c:if test="${memberCount > 3}">
+                                                        <span class="avatar-xs bg-light text-muted rounded-circle d-inline-flex align-items-center justify-content-center border">
+                                                            +${memberCount - 3}
+                                                        </span>
+                                                    </c:if>
+                                                </div>
+                                            </td>
+                                            <%-- Related object --%>
+                                            <td>
+                                                <c:choose>
+                                                    <c:when test="${not empty task.relatedType && task.relatedId != null}">
+                                                        <c:set var="rKey">${task.relatedType}:${task.relatedId}</c:set>
+                                                        <c:set var="rName" value="${relatedObjectMap[rKey]}"/>
+                                                        <c:choose>
+                                                            <c:when test="${task.relatedType == 'LEAD'}">
+                                                                <span class="badge bg-info text-dark me-1">Lead</span>
+                                                                <c:if test="${not empty rName}"><small>${rName}</small></c:if>
+                                                            </c:when>
+                                                            <c:when test="${task.relatedType == 'CUSTOMER'}">
+                                                                <span class="badge bg-success me-1">KH</span>
+                                                                <c:if test="${not empty rName}"><small>${rName}</small></c:if>
+                                                            </c:when>
+                                                            <c:otherwise><small class="text-muted">${task.relatedType}</small></c:otherwise>
+                                                        </c:choose>
+                                                    </c:when>
+                                                    <c:otherwise><span class="text-muted small">—</span></c:otherwise>
+                                                </c:choose>
+                                            </td>
+                                            <%-- Assignee: show member count for group --%>
+                                            <td><span class="text-muted small">${memberCount} thành viên</span></td>
+                                            <%-- Due date --%>
+                                            <td>
+                                                <c:choose>
+                                                    <c:when test="${task.dueDate != null}">
+                                                        <span data-due="${task.dueDate}" data-status="${task.status}">
+                                                            ${fn:substring(task.dueDate,8,10)}/${fn:substring(task.dueDate,5,7)}/${fn:substring(task.dueDate,0,4)}
+                                                        </span>
+                                                    </c:when>
+                                                    <c:otherwise><span class="text-muted">—</span></c:otherwise>
+                                                </c:choose>
+                                            </td>
+                                            <%-- Priority --%>
+                                            <td>
+                                                <c:choose>
+                                                    <c:when test="${task.priority == 'HIGH'}"><span class="badge bg-danger">Cao</span></c:when>
+                                                    <c:when test="${task.priority == 'MEDIUM'}"><span class="badge bg-warning text-dark">Trung bình</span></c:when>
+                                                    <c:otherwise><span class="badge bg-secondary">Thấp</span></c:otherwise>
+                                                </c:choose>
+                                            </td>
+                                            <%-- Status --%>
+                                            <td>
+                                                <c:choose>
+                                                    <c:when test="${task.status == 'COMPLETED'}"><span class="badge bg-success">Hoàn thành</span></c:when>
+                                                    <c:when test="${task.status == 'IN_PROGRESS'}"><span class="badge bg-info">Đang thực hiện</span></c:when>
+                                                    <c:when test="${task.status == 'CANCELLED'}"><span class="badge bg-dark">Đã hủy</span></c:when>
+                                                    <c:otherwise><span class="badge bg-secondary">Chờ xử lý</span></c:otherwise>
+                                                </c:choose>
+                                            </td>
+                                            <%-- Actions --%>
+                                            <td class="text-end">
+                                                <button type="button" class="btn btn-sm btn-outline-secondary"
+                                                        onclick="toggleGroupMembers(${task.taskId})"
+                                                        title="Xem thành viên">
+                                                    <i class="bi bi-chevron-down" id="icon-${task.taskId}"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        <%-- Expanded member sub-table (hidden by default) --%>
+                                        <tr id="group-members-${task.taskId}" class="d-none">
+                                            <td colspan="8" class="p-0 bg-light">
+                                                <table class="table table-sm mb-0 ms-4">
+                                                    <thead class="table-secondary">
+                                                        <tr>
+                                                            <th>Thành viên</th>
+                                                            <th>Email</th>
+                                                            <th>Trạng thái</th>
+                                                            <th></th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <c:forEach var="m" items="${groupMembers}">
+                                                            <tr>
+                                                                <td>
+                                                                    <c:forEach var="u" items="${allUsers}">
+                                                                        <c:if test="${u.userId == m.assignedTo}">
+                                                                            <div class="d-flex align-items-center gap-2">
+                                                                                <div class="avatar-xs bg-primary rounded-circle d-flex align-items-center justify-content-center text-white">
+                                                                                    ${fn:substring(u.firstName,0,1)}${fn:substring(u.lastName,0,1)}
+                                                                                </div>
+                                                                                ${u.firstName} ${u.lastName}
+                                                                            </div>
+                                                                        </c:if>
+                                                                    </c:forEach>
+                                                                </td>
+                                                                <td>
+                                                                    <c:forEach var="u" items="${allUsers}">
+                                                                        <c:if test="${u.userId == m.assignedTo}">
+                                                                            <small class="text-muted">${u.email}</small>
+                                                                        </c:if>
+                                                                    </c:forEach>
+                                                                </td>
+                                                                <td>
+                                                                    <c:choose>
+                                                                        <c:when test="${m.status == 'COMPLETED'}"><span class="badge bg-success">Hoàn thành</span></c:when>
+                                                                        <c:when test="${m.status == 'IN_PROGRESS'}"><span class="badge bg-info">Đang thực hiện</span></c:when>
+                                                                        <c:when test="${m.status == 'CANCELLED'}"><span class="badge bg-dark">Đã hủy</span></c:when>
+                                                                        <c:otherwise><span class="badge bg-secondary">Chờ xử lý</span></c:otherwise>
+                                                                    </c:choose>
+                                                                </td>
+                                                                <td>
+                                                                    <a href="${pageContext.request.contextPath}/manager/task/detail?id=${m.taskId}"
+                                                                       class="btn btn-xs btn-outline-primary btn-sm" title="Chi tiết">
+                                                                        <i class="bi bi-eye"></i>
+                                                                    </a>
+                                                                </td>
+                                                            </tr>
+                                                        </c:forEach>
+                                                    </tbody>
+                                                </table>
+                                            </td>
+                                        </tr>
+                                    </c:when>
+
+                                    <%-- ════ INDIVIDUAL TASK ROW (unchanged) ════ --%>
+                                    <c:otherwise>
                                     <tr>
                                         <td>
                                             <span class="badge bg-secondary">${task.taskCode}</span>
@@ -299,6 +458,8 @@
                                             </div>
                                         </td>
                                     </tr>
+                                    </c:otherwise>
+                                    </c:choose>
                                 </c:forEach>
                             </c:otherwise>
                         </c:choose>
@@ -352,9 +513,35 @@
         font-weight: 600;
         flex-shrink: 0;
     }
+    .avatar-xs {
+        width: 24px;
+        height: 24px;
+        font-size: 0.65rem;
+        font-weight: 600;
+        flex-shrink: 0;
+    }
+    .avatar-stack .avatar-xs + .avatar-xs {
+        margin-left: -6px;
+    }
+    .avatar-stack {
+        display: flex;
+        align-items: center;
+    }
+    .table-group-row {
+        background-color: #f8f9ff;
+    }
 </style>
 
 <script>
+/* Toggle expand/collapse for group task member sub-table */
+function toggleGroupMembers(id) {
+    var row  = document.getElementById('group-members-' + id);
+    var icon = document.getElementById('icon-' + id);
+    row.classList.toggle('d-none');
+    icon.classList.toggle('bi-chevron-down');
+    icon.classList.toggle('bi-chevron-up');
+}
+
 <%-- FIX: Overdue detection via JavaScript (EL cannot call LocalDateTime.isBefore(now())) --%>
 document.addEventListener('DOMContentLoaded', function () {
     var today = new Date();

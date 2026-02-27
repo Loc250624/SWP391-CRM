@@ -145,6 +145,10 @@ public class ManagerCRMTaskCreateServlet extends HttpServlet {
                 session.setAttribute("errorMessage", "Không có nhân viên hợp lệ trong danh sách nhóm");
                 response.sendRedirect(redirectTo); return;
             }
+            if (assigneeIds.size() < 2) {
+                session.setAttribute("errorMessage", "Giao việc nhóm cần ít nhất 2 người");
+                response.sendRedirect(redirectTo); return;
+            }
         } else {
             // INDIVIDUAL (default)
             String assignedToStr = request.getParameter("assignedTo");
@@ -168,6 +172,7 @@ public class ManagerCRMTaskCreateServlet extends HttpServlet {
         // ── Create one Task per assignee (cloning for group) ──────────────
         TaskDAO taskDAO = new TaskDAO();
         int successCount = 0;
+        List<Integer> insertedTaskIds = new ArrayList<>();
 
         for (int assigneeId : assigneeIds) {
             Task task = new Task();
@@ -181,7 +186,18 @@ public class ManagerCRMTaskCreateServlet extends HttpServlet {
             task.setDueDate(dueDate);
             task.setCreatedBy(currentUser.getUserId());
 
-            if (taskDAO.insertTask(task)) successCount++;
+            if (taskDAO.insertTask(task)) {
+                successCount++;
+                insertedTaskIds.add(task.getTaskId());
+            }
+        }
+
+        // ── Link group task rows via group_task_id (first task is representative) ──
+        if ("GROUP".equals(assignType) && insertedTaskIds.size() >= 2) {
+            int groupTaskId = insertedTaskIds.get(0);
+            for (int tId : insertedTaskIds) {
+                taskDAO.updateGroupTaskId(tId, groupTaskId);
+            }
         }
 
         if (successCount == 0) {
