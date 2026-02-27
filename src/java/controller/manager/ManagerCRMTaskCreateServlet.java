@@ -236,9 +236,10 @@ public class ManagerCRMTaskCreateServlet extends HttpServlet {
         return false;
     }
 
-    /** True if createdBy belongs to the manager's department (scope check for unassigned items). */
+    /** True if createdBy belongs to the manager's department (scope check for unassigned items).
+     *  NULL createdBy means the record is unowned/seeded data — treat as always in scope. */
     private boolean isInDeptScope(Integer createdBy, int managerId, List<Users> teamMembers) {
-        if (createdBy == null) return false;
+        if (createdBy == null) return true;  // NULL = unowned, always in scope
         if (createdBy == managerId) return true;
         for (Users u : teamMembers) {
             if (createdBy.equals(u.getUserId())) return true;
