@@ -20,7 +20,7 @@ import jakarta.servlet.http.HttpSession;
 import model.Task;
 import model.Users;
 
-@WebServlet(name = "ManagerTaskListServlet", urlPatterns = {"/manager/task/list"})
+@WebServlet(name = "ManagerTaskListServlet", urlPatterns = { "/manager/task/list" })
 public class ManagerTaskListServlet extends HttpServlet {
 
     @Override
@@ -52,12 +52,12 @@ public class ManagerTaskListServlet extends HttpServlet {
         }
 
         // Get filter parameters
-        String statusFilter   = request.getParameter("status");
+        String statusFilter = request.getParameter("status");
         String priorityFilter = request.getParameter("priority");
         String employeeFilter = request.getParameter("employee");
-        String keyword        = request.getParameter("keyword");
-        String sortBy         = request.getParameter("sortBy");
-        String sortOrder      = request.getParameter("sortOrder");
+        String keyword = request.getParameter("keyword");
+        String sortBy = request.getParameter("sortBy");
+        String sortOrder = request.getParameter("sortOrder");
 
         // Pagination
         int page = 1;
@@ -66,7 +66,8 @@ public class ManagerTaskListServlet extends HttpServlet {
             String pageParam = request.getParameter("page");
             if (pageParam != null && !pageParam.isEmpty()) {
                 page = Integer.parseInt(pageParam);
-                if (page < 1) page = 1;
+                if (page < 1)
+                    page = 1;
             }
         } catch (NumberFormatException e) {
             page = 1;
@@ -80,8 +81,8 @@ public class ManagerTaskListServlet extends HttpServlet {
         // Build team member list (always needed for both views)
         List<Users> allUsers = userDAO.getAllUsers();
         List<Users> teamMembersList = new ArrayList<>();
-        List<Integer> teamMemberIds = new ArrayList<>();      // excludes manager (for team view filter)
-        List<Integer> allDeptMemberIds = new ArrayList<>();   // includes manager (for personal view)
+        List<Integer> teamMemberIds = new ArrayList<>(); // excludes manager (for team view filter)
+        List<Integer> allDeptMemberIds = new ArrayList<>(); // includes manager (for personal view)
 
         for (Users user : allUsers) {
             if (user.getDepartmentId() == currentUser.getDepartmentId()) {
@@ -94,17 +95,13 @@ public class ManagerTaskListServlet extends HttpServlet {
         }
 
         if ("personal".equals(viewType)) {
-            // Show ALL dept tasks (assigned_to OR created_by any dept member)
-            taskList = taskDAO.getAllDeptTasks(
-                    allDeptMemberIds, null,
+            taskList = taskDAO.getTasksByManager(
+                    currentUser.getUserId(),
                     statusFilter, priorityFilter, keyword,
-                    false, null, sortBy, sortOrder, offset, pageSize,
-                    true);  // assignedOnly=true: show only tasks with assigned_to IS NOT NULL
-            totalTasks = taskDAO.countAllDeptTasks(
-                    allDeptMemberIds, null,
-                    statusFilter, priorityFilter, keyword, false, null,
-                    true);
-
+                    sortBy, sortOrder, offset, pageSize);
+            totalTasks = taskDAO.countTasksByManager(
+                    currentUser.getUserId(),
+                    statusFilter, priorityFilter, keyword);
         } else if ("team".equals(viewType)) {
 
             // Parse and VALIDATE selected employee
@@ -137,13 +134,15 @@ public class ManagerTaskListServlet extends HttpServlet {
         }
 
         // Build related-object name map for the task list (batch queries — no N+1)
-        List<Integer> leadRelatedIds    = new ArrayList<>();
+        List<Integer> leadRelatedIds = new ArrayList<>();
         List<Integer> customerRelatedIds = new ArrayList<>();
         for (Task t : taskList) {
-            if ("LEAD".equals(t.getRelatedType())     && t.getRelatedId() != null) leadRelatedIds.add(t.getRelatedId());
-            if ("CUSTOMER".equals(t.getRelatedType()) && t.getRelatedId() != null) customerRelatedIds.add(t.getRelatedId());
+            if ("LEAD".equals(t.getRelatedType()) && t.getRelatedId() != null)
+                leadRelatedIds.add(t.getRelatedId());
+            if ("CUSTOMER".equals(t.getRelatedType()) && t.getRelatedId() != null)
+                customerRelatedIds.add(t.getRelatedId());
         }
-        Map<Integer, String> leadNameMap     = new LeadDAO().getLeadNameMap(leadRelatedIds);
+        Map<Integer, String> leadNameMap = new LeadDAO().getLeadNameMap(leadRelatedIds);
         Map<Integer, String> customerNameMap = new CustomerDAO().getCustomerNameMap(customerRelatedIds);
         // Merge into a single map keyed by "TYPE:id" for easy JSP access
         Map<String, String> relatedObjectMap = new HashMap<>();
@@ -155,24 +154,24 @@ public class ManagerTaskListServlet extends HttpServlet {
 
         int totalPages = (totalTasks == 0) ? 1 : (int) Math.ceil((double) totalTasks / pageSize);
 
-        request.setAttribute("taskList",        taskList);
-        request.setAttribute("allUsers",        allUsers);
-        request.setAttribute("viewType",        viewType);
-        request.setAttribute("statusFilter",    statusFilter);
-        request.setAttribute("priorityFilter",  priorityFilter);
-        request.setAttribute("employeeFilter",  employeeFilter);
-        request.setAttribute("keyword",         keyword);
-        request.setAttribute("sortBy",          sortBy);
-        request.setAttribute("sortOrder",       sortOrder);
-        request.setAttribute("currentPage",     page);
-        request.setAttribute("totalPages",      totalPages);
-        request.setAttribute("totalTasks",      totalTasks);
-        request.setAttribute("pageSize",        pageSize);
+        request.setAttribute("taskList", taskList);
+        request.setAttribute("allUsers", allUsers);
+        request.setAttribute("viewType", viewType);
+        request.setAttribute("statusFilter", statusFilter);
+        request.setAttribute("priorityFilter", priorityFilter);
+        request.setAttribute("employeeFilter", employeeFilter);
+        request.setAttribute("keyword", keyword);
+        request.setAttribute("sortBy", sortBy);
+        request.setAttribute("sortOrder", sortOrder);
+        request.setAttribute("currentPage", page);
+        request.setAttribute("totalPages", totalPages);
+        request.setAttribute("totalTasks", totalTasks);
+        request.setAttribute("pageSize", pageSize);
         request.setAttribute("taskStatusValues", TaskStatus.values());
-        request.setAttribute("priorityValues",   Priority.values());
+        request.setAttribute("priorityValues", Priority.values());
 
-        request.setAttribute("ACTIVE_MENU",  "TASK_MY_LIST");
-        request.setAttribute("pageTitle",    "Quản lý Công việc");
+        request.setAttribute("ACTIVE_MENU", "TASK_MY_LIST");
+        request.setAttribute("pageTitle", "Quản lý Công việc");
         request.setAttribute("CONTENT_PAGE", "/view/manager/task/task-list.jsp");
         request.getRequestDispatcher("/view/manager/layout/layout-manager.jsp").forward(request, response);
     }

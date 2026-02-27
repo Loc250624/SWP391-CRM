@@ -280,6 +280,10 @@ public class ManagerTaskFormServlet extends HttpServlet {
                         session.setAttribute("errorMessage", "Không có nhân viên hợp lệ trong danh sách nhóm");
                         response.sendRedirect(errorRedirectBase); return;
                     }
+                    if (mainIds.size() < 2) {
+        session.setAttribute("errorMessage", "Giao việc nhóm cần ít nhất 2 người");
+        response.sendRedirect(errorRedirectBase); return;
+    }
 
                     // Optional support members (must be in team, not already in mainIds)
                     String[] supportArr = request.getParameterValues("supportMembers");
