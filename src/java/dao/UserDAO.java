@@ -74,6 +74,22 @@ public class UserDAO extends DBContext {
         return null;
     }
 
+    public List<Users> getUsersByDepartment(int departmentId) {
+        List<Users> list = new ArrayList<>();
+        String sql = "SELECT * FROM users WHERE department_id = ? AND status = 'Active' ORDER BY first_name, last_name";
+        try (PreparedStatement st = connection.prepareStatement(sql)) {
+            st.setInt(1, departmentId);
+            try (ResultSet rs = st.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapResultSetToUser(rs));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
     private Users mapResultSetToUser(ResultSet rs) throws SQLException {
         Users u = new Users();
         u.setUserId(rs.getInt("user_id"));

@@ -23,7 +23,7 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h3 class="mb-1"><i class="bi bi-list-task me-2"></i>Quản lý Công việc</h3>
-            <p class="text-muted mb-0">Quản lý công việc cá nhân và nhóm</p>
+            <p class="text-muted mb-0">Tất cả công việc đã giao trong phòng ban (Lead & Khách hàng)</p>
         </div>
         <a href="${pageContext.request.contextPath}/manager/task/form?action=create" class="btn btn-primary">
             <i class="bi bi-plus-circle me-2"></i>Tạo Công việc
@@ -147,6 +147,7 @@
                         <tr>
                             <th>Mã</th>
                             <th>Tiêu đề</th>
+                            <th>Đối tượng</th>
                             <th>Người thực hiện</th>
                             <th>Hạn chót</th>
                             <th>Ưu tiên</th>
@@ -158,7 +159,7 @@
                         <c:choose>
                             <c:when test="${empty taskList}">
                                 <tr>
-                                    <td colspan="7" class="text-center py-5">
+                                    <td colspan="8" class="text-center py-5">
                                         <i class="bi bi-inbox text-muted" style="font-size: 3rem;"></i>
                                         <p class="text-muted mt-3">Không có công việc nào</p>
                                     </td>
@@ -175,11 +176,43 @@
                                                class="text-decoration-none fw-medium">
                                                 ${task.title}
                                             </a>
-                                            <c:if test="${not empty task.relatedType}">
-                                                <br><small class="text-muted">
-                                                    <i class="bi bi-link-45deg"></i>${task.relatedType}
-                                                </small>
-                                            </c:if>
+                                        </td>
+                                        <%-- Đối tượng liên quan (Lead / Customer) --%>
+                                        <td>
+                                            <c:choose>
+                                                <c:when test="${not empty task.relatedType && task.relatedId != null}">
+                                                    <c:set var="rKey">${task.relatedType}:${task.relatedId}</c:set>
+                                                    <c:set var="rName" value="${relatedObjectMap[rKey]}"/>
+                                                    <c:choose>
+                                                        <c:when test="${task.relatedType == 'LEAD'}">
+                                                            <span class="badge bg-info text-dark me-1">Lead</span>
+                                                            <c:choose>
+                                                                <c:when test="${not empty rName}">
+                                                                    <a href="${pageContext.request.contextPath}/sale/lead/detail?id=${task.relatedId}"
+                                                                       class="text-decoration-none small" target="_blank">${rName}</a>
+                                                                </c:when>
+                                                                <c:otherwise><small class="text-muted">#${task.relatedId}</small></c:otherwise>
+                                                            </c:choose>
+                                                        </c:when>
+                                                        <c:when test="${task.relatedType == 'CUSTOMER'}">
+                                                            <span class="badge bg-success me-1">KH</span>
+                                                            <c:choose>
+                                                                <c:when test="${not empty rName}">
+                                                                    <a href="${pageContext.request.contextPath}/sale/customer/detail?id=${task.relatedId}"
+                                                                       class="text-decoration-none small" target="_blank">${rName}</a>
+                                                                </c:when>
+                                                                <c:otherwise><small class="text-muted">#${task.relatedId}</small></c:otherwise>
+                                                            </c:choose>
+                                                        </c:when>
+                                                        <c:otherwise>
+                                                            <small class="text-muted">${task.relatedType}</small>
+                                                        </c:otherwise>
+                                                    </c:choose>
+                                                </c:when>
+                                                <c:otherwise>
+                                                    <span class="text-muted small">—</span>
+                                                </c:otherwise>
+                                            </c:choose>
                                         </td>
                                         <td>
                                             <%-- Find the assigned user from allUsers list --%>

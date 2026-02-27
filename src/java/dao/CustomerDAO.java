@@ -11,7 +11,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import model.Customer;
 
 public class CustomerDAO extends DBContext{
@@ -212,6 +214,114 @@ public class CustomerDAO extends DBContext{
         }
     }
 
+    // Get unassigned customers in manager's department (owner_id IS NULL).
+    // Scope: customer was created by someone in the manager's department.
+    public List<Customer> getCustomersByManagerScope(int departmentId,
+            String keyword, String status, int offset, int pageSize) {
+        List<Customer> list = new ArrayList<>();
+        StringBuilder sql = new StringBuilder(
+            "SELECT * FROM customers c WHERE c.owner_id IS NULL" +
+            " AND c.created_by IN (SELECT user_id FROM users WHERE department_id = ?)");
+        List<Object> params = new ArrayList<>();
+        params.add(departmentId);
+
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            String kw = "%" + keyword.trim() + "%";
+            sql.append(" AND (c.full_name LIKE ? OR c.customer_code LIKE ? OR c.phone LIKE ? OR c.email LIKE ?)");
+            params.add(kw); params.add(kw); params.add(kw); params.add(kw);
+        }
+        if (status != null && !status.trim().isEmpty()) {
+            sql.append(" AND c.status = ?");
+            params.add(status);
+        }
+        sql.append(" ORDER BY c.created_at DESC OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
+        params.add(offset);
+        params.add(pageSize);
+
+        try (PreparedStatement st = connection.prepareStatement(sql.toString())) {
+            for (int i = 0; i < params.size(); i++) st.setObject(i + 1, params.get(i));
+            try (ResultSet rs = st.executeQuery()) {
+                while (rs.next()) list.add(mapResultSetToCustomer(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    // Count unassigned customers in manager's department scope for pagination
+    public int countCustomersByManagerScope(int departmentId,
+            String keyword, String status) {
+        StringBuilder sql = new StringBuilder(
+            "SELECT COUNT(*) FROM customers c WHERE c.owner_id IS NULL" +
+            " AND c.created_by IN (SELECT user_id FROM users WHERE department_id = ?)");
+        List<Object> params = new ArrayList<>();
+        params.add(departmentId);
+
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            String kw = "%" + keyword.trim() + "%";
+            sql.append(" AND (c.full_name LIKE ? OR c.customer_code LIKE ? OR c.phone LIKE ? OR c.email LIKE ?)");
+            params.add(kw); params.add(kw); params.add(kw); params.add(kw);
+        }
+        if (status != null && !status.trim().isEmpty()) {
+            sql.append(" AND c.status = ?");
+            params.add(status);
+        }
+        try (PreparedStatement st = connection.prepareStatement(sql.toString())) {
+            for (int i = 0; i < params.size(); i++) st.setObject(i + 1, params.get(i));
+            try (ResultSet rs = st.executeQuery()) {
+                if (rs.next()) return rs.getInt(1);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    // Assign a Customer to a Sales user (set owner_id)
+    public boolean updateCustomerOwnerId(int customerId, int salesId) {
+        String sql = "UPDATE customers SET owner_id = ?, updated_at = ? WHERE customer_id = ?";
+        try (PreparedStatement st = connection.prepareStatement(sql)) {
+            st.setInt(1, salesId);
+            st.setObject(2, java.time.LocalDateTime.now());
+            st.setInt(3, customerId);
+            return st.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    // Count tasks linked to a customer
+    public int countTasksByCustomerId(int customerId) {
+        String sql = "SELECT COUNT(*) FROM tasks WHERE related_type = 'CUSTOMER' AND related_id = ?";
+        try (PreparedStatement st = connection.prepareStatement(sql)) {
+            st.setInt(1, customerId);
+            try (ResultSet rs = st.executeQuery()) {
+                if (rs.next()) return rs.getInt(1);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    // Get most recent task date for a customer (last interaction)
+    public java.time.LocalDateTime getLastActivityDateByCustomerId(int customerId) {
+        String sql = "SELECT TOP 1 created_at FROM tasks WHERE related_type = 'CUSTOMER' AND related_id = ? ORDER BY created_at DESC";
+        try (PreparedStatement st = connection.prepareStatement(sql)) {
+            st.setInt(1, customerId);
+            try (ResultSet rs = st.executeQuery()) {
+                if (rs.next() && rs.getTimestamp("created_at") != null) {
+                    return rs.getTimestamp("created_at").toLocalDateTime();
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
     // Delete customer
     public boolean deleteCustomer(int customerId) {
         String sql = "DELETE FROM customers WHERE customer_id = ?";
@@ -264,5 +374,21 @@ public class CustomerDAO extends DBContext{
         }
         c.setCreatedBy(rs.getObject("created_by", Integer.class));
         return c;
+    }
+
+    // Batch fetch customer full_name by IDs — used for "related object" column in task list
+    public Map<Integer, String> getCustomerNameMap(List<Integer> customerIds) {
+        Map<Integer, String> map = new HashMap<>();
+        if (customerIds == null || customerIds.isEmpty()) return map;
+        StringBuilder sql = new StringBuilder("SELECT customer_id, full_name FROM customers WHERE customer_id IN (");
+        for (int i = 0; i < customerIds.size(); i++) sql.append(i > 0 ? ",?" : "?");
+        sql.append(")");
+        try (PreparedStatement st = connection.prepareStatement(sql.toString())) {
+            for (int i = 0; i < customerIds.size(); i++) st.setInt(i + 1, customerIds.get(i));
+            try (ResultSet rs = st.executeQuery()) {
+                while (rs.next()) map.put(rs.getInt("customer_id"), rs.getString("full_name"));
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return map;
     }
 }

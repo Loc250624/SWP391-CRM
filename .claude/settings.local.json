@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find D:\\\\File\\\\SWP391-CRM\\\\src\\\\java\\\\controller:*)",
+      "Bash(ls:*)"
+    ]
+  }
+}
