@@ -67,47 +67,97 @@ public class CategoryDAO extends DBContext {
 
     // ─── SEARCH ─────────────────────────────────────────────────
     public List<Category> search(String q, String activeFilter) {
+        return search(q, activeFilter, 1, Integer.MAX_VALUE).getItems();
+    }
+
+    public util.PagedResult<Category> search(String q, String activeFilter, int page, int pageSize) {
         List<Category> list = new ArrayList<>();
+        int totalItems = 0;
+        
+        if (connection == null) {
+            System.err.println("CategoryDAO.search: Connection is null!");
+            return new util.PagedResult<>(list, 0, page, pageSize);
+        }
+
         StringBuilder sql = new StringBuilder("SELECT * FROM course_categories WHERE 1=1 ");
+        StringBuilder countSql = new StringBuilder("SELECT COUNT(*) FROM course_categories WHERE 1=1 ");
         List<Object> params = new ArrayList<>();
 
         if (q != null && !q.trim().isEmpty()) {
-            sql.append("AND (category_name LIKE ? OR category_code LIKE ? OR description LIKE ?) ");
+            String cond = "AND (category_name LIKE ? OR category_code LIKE ? OR description LIKE ?) ";
+            sql.append(cond);
+            countSql.append(cond);
             String like = "%" + q.trim() + "%";
             params.add(like); params.add(like); params.add(like);
         }
-        if ("active".equals(activeFilter)) {
-            sql.append("AND is_active = 1 ");
-        } else if ("inactive".equals(activeFilter)) {
-            sql.append("AND is_active = 0 ");
+        
+        if (activeFilter != null && !activeFilter.trim().isEmpty()) {
+            if ("active".equals(activeFilter)) {
+                sql.append("AND is_active = 1 ");
+                countSql.append("AND is_active = 1 ");
+            } else if ("inactive".equals(activeFilter)) {
+                sql.append("AND is_active = 0 ");
+                countSql.append("AND is_active = 0 ");
+            }
         }
-        sql.append("ORDER BY category_id DESC");
+        
+        // Count Query
+        try (PreparedStatement st = connection.prepareStatement(countSql.toString())) {
+            for (int i = 0; i < params.size(); i++) st.setObject(i + 1, params.get(i));
+            try (ResultSet rs = st.executeQuery()) {
+                if (rs.next()) totalItems = rs.getInt(1);
+            }
+        } catch (SQLException e) {
+            System.err.println("CategoryDAO.search (count) Error: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        // Items Query
+        sql.append("ORDER BY category_id DESC ");
+        if (pageSize != Integer.MAX_VALUE) {
+            sql.append("OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
+        }
 
         try (PreparedStatement st = connection.prepareStatement(sql.toString())) {
-            for (int i = 0; i < params.size(); i++) st.setObject(i + 1, params.get(i));
+            int pIdx = 1;
+            for (Object p : params) st.setObject(pIdx++, p);
+            if (pageSize != Integer.MAX_VALUE) {
+                st.setInt(pIdx++, (page - 1) * pageSize);
+                st.setInt(pIdx++, pageSize);
+            }
             try (ResultSet rs = st.executeQuery()) {
                 while (rs.next()) list.add(map(rs));
             }
         } catch (SQLException e) {
+            System.err.println("CategoryDAO.search (items) Error: " + e.getMessage());
             e.printStackTrace();
         }
-        return list;
+        
+        return new util.PagedResult<>(list, totalItems, page, pageSize);
     }
 
     // ─── CREATE ──────────────────────────────────────────────────
     public int insert(Category c) {
+        if (connection == null) {
+            System.err.println("CategoryDAO.insert: Connection is null!");
+            return -1;
+        }
         String sql = "INSERT INTO course_categories (category_code, category_name, description, is_active, created_at) "
                    + "VALUES (?, ?, ?, ?, GETDATE())";
         try (PreparedStatement st = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-            st.setString(1, c.getCategoryCode());
-            st.setString(2, c.getCategoryName());
-            st.setString(3, c.getDescription());
+            st.setString(1, c.getCategoryCode() != null ? c.getCategoryCode().trim() : "");
+            st.setString(2, c.getCategoryName() != null ? c.getCategoryName().trim() : "");
+            st.setString(3, c.getDescription() != null ? c.getDescription().trim() : null);
             st.setBoolean(4, c.getIsActive() != null ? c.getIsActive() : true);
-            st.executeUpdate();
+            
+            int affectedRows = st.executeUpdate();
+            if (affectedRows == 0) return -1;
+
             try (ResultSet gen = st.getGeneratedKeys()) {
                 if (gen.next()) return gen.getInt(1);
             }
         } catch (SQLException e) {
+            System.err.println("CategoryDAO.insert Error: " + e.getMessage());
             e.printStackTrace();
         }
         return -1;
@@ -159,7 +209,22 @@ public class CategoryDAO extends DBContext {
         String sql = "SELECT COUNT(*) FROM course_categories WHERE category_name = ? "
                    + (excludeId != null ? "AND category_id <> ?" : "");
         try (PreparedStatement st = connection.prepareStatement(sql)) {
-            st.setString(1, name);
+            st.setString(1, name.trim());
+            if (excludeId != null) st.setInt(2, excludeId);
+            try (ResultSet rs = st.executeQuery()) {
+                if (rs.next()) return rs.getInt(1) > 0;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public boolean isCodeDuplicate(String code, Integer excludeId) {
+        String sql = "SELECT COUNT(*) FROM course_categories WHERE category_code = ? "
+                   + (excludeId != null ? "AND category_id <> ?" : "");
+        try (PreparedStatement st = connection.prepareStatement(sql)) {
+            st.setString(1, code.trim());
             if (excludeId != null) st.setInt(2, excludeId);
             try (ResultSet rs = st.executeQuery()) {
                 if (rs.next()) return rs.getInt(1) > 0;
