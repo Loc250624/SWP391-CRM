@@ -688,15 +688,19 @@ $(document).ready(function () {
                          ? document.querySelector('[name="assignType"]:checked').value
                          : 'INDIVIDUAL';
 
-        if (assignType === 'GROUP') {
-            var checked = document.querySelectorAll('.group-main-cb:checked');
-            var mainErr = document.getElementById('groupMainError');
-            if (checked.length === 0) {
-                e.preventDefault();
-                e.stopPropagation();
-                if (mainErr) mainErr.classList.remove('d-none');
-                return;
-            }
+       if (assignType === 'GROUP') {
+    var checked = this.querySelectorAll('.group-checkbox:checked');
+    if (checked.length < 2) {  // ĐỔI từ === 0 thành < 2
+        e.preventDefault();
+        e.stopPropagation();
+        document.getElementById('groupError').textContent = 
+            checked.length === 0 
+                ? 'Vui lòng chọn ít nhất 2 nhân viên' 
+                : 'Giao việc nhóm cần ít nhất 2 người';
+        document.getElementById('groupError').classList.remove('d-none');
+        return;
+    }
+}
             if (mainErr) mainErr.classList.add('d-none');
             // Remove required from individual select to avoid false HTML5 validation
             var assignedTo = document.getElementById('assignedTo');

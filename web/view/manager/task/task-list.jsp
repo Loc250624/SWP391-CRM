@@ -30,31 +30,31 @@
         </a>
     </div>
 
-    <!-- Navigation Tabs -->
-    <ul class="nav nav-tabs mb-4">
-        <li class="nav-item">
-            <a class="nav-link ${viewType == 'personal' ? 'active' : ''}"
-               href="${pageContext.request.contextPath}/manager/task/list?view=personal">
-                <i class="bi bi-person me-2"></i>Danh sách công việc
-            </a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link"
-               href="${pageContext.request.contextPath}/manager/task/team">
-                <i class="bi bi-people me-2"></i>Công việc nhóm
-            </a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" href="${pageContext.request.contextPath}/manager/task/calendar">
-                <i class="bi bi-calendar me-2"></i>Lịch
-            </a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" href="${pageContext.request.contextPath}/manager/task/report">
-                <i class="bi bi-graph-up me-2"></i>Báo cáo
-            </a>
-        </li>
-    </ul>
+  <ul class="nav nav-tabs mb-4">
+    <li class="nav-item">
+        <a class="nav-link ${viewType == 'personal' || empty viewType ? 'active' : ''}"
+           href="${pageContext.request.contextPath}/manager/task/list?view=personal">
+            <i class="bi bi-person me-2"></i>Danh sách công việc cá nhân
+        </a>
+    </li>
+    <li class="nav-item">
+        <%-- ĐỔI: dùng cùng URL /manager/task/list?view=team thay vì /manager/task/team --%>
+        <a class="nav-link ${viewType == 'team' ? 'active' : ''}"
+           href="${pageContext.request.contextPath}/manager/task/list?view=team">
+            <i class="bi bi-people me-2"></i>Công việc nhóm
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" href="${pageContext.request.contextPath}/manager/task/calendar">
+            <i class="bi bi-calendar me-2"></i>Lịch
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" href="${pageContext.request.contextPath}/manager/task/report">
+            <i class="bi bi-graph-up me-2"></i>Báo cáo
+        </a>
+    </li>
+</ul>
 
     <!-- Filters -->
     <div class="card mb-4">
