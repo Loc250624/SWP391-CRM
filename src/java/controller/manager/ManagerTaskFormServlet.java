@@ -242,7 +242,6 @@ public class ManagerTaskFormServlet extends HttpServlet {
                     }
                 }
 
-                // ── Insert task rows ─────────────────────────────────────
                 int success = 0;
                 String cleanDesc = description != null ? description.trim() : null;
                 List<Integer> insertedIds = new ArrayList<>();
@@ -274,7 +273,7 @@ public class ManagerTaskFormServlet extends HttpServlet {
                     t.setAssignedTo(sId);
                     t.setDueDate(dueDate);
                     t.setPriority(priority);
-                    t.setStatus(TaskStatus.PENDING.ordinal()); // ★ cũng là TODO
+                    t.setStatus(TaskStatus.PENDING.ordinal());
                     t.setRelatedType(relatedType);
                     t.setRelatedId(relatedId);
                     t.setCreatedBy(currentUser.getUserId());
@@ -308,9 +307,7 @@ public class ManagerTaskFormServlet extends HttpServlet {
                     "Đã tạo công việc cho " + who + ". Trạng thái: Chờ xử lý — Sale xác nhận nhận việc sẽ chuyển sang Đang thực hiện.");
                 response.sendRedirect(request.getContextPath() + "/manager/task/list?view=team");
 
-            // ════════════════════════════════════════════════════════════════
-            //  EDIT — status có thể chỉnh sửa thủ công bởi manager
-            // ════════════════════════════════════════════════════════════════
+
             } else if ("edit".equals(formAction)) {
 
                 if (taskIdStr == null || taskIdStr.trim().isEmpty()) {
