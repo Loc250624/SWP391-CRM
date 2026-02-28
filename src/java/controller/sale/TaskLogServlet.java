@@ -79,7 +79,7 @@ public class TaskLogServlet extends HttpServlet {
             }
 
             // Cannot log a completed or cancelled task
-            if ("COMPLETED".equals(task.getStatus()) || "CANCELLED".equals(task.getStatus())) {
+            if ("COMPLETED".equals(task.getStatusName()) || "CANCELLED".equals(task.getStatusName())) {
                 session.setAttribute("errorMessage", "Không thể ghi nhật ký cho công việc đã hoàn thành hoặc đã hủy");
                 response.sendRedirect(request.getContextPath() + "/sale/task/detail?id=" + taskId);
                 return;
@@ -184,7 +184,7 @@ public class TaskLogServlet extends HttpServlet {
             }
 
             // Cannot log a completed or cancelled task
-            if ("COMPLETED".equals(task.getStatus()) || "CANCELLED".equals(task.getStatus())) {
+            if ("COMPLETED".equals(task.getStatusName()) || "CANCELLED".equals(task.getStatusName())) {
                 session.setAttribute("errorMessage", "Không thể ghi nhật ký cho công việc đã hoàn thành hoặc đã hủy");
                 response.sendRedirect(request.getContextPath() + "/sale/task/detail?id=" + taskId);
                 return;
@@ -212,8 +212,8 @@ public class TaskLogServlet extends HttpServlet {
             }
 
             // --- Update task status if it changed ---
-            if (!newStatus.equals(task.getStatus())) {
-                task.setStatus(newStatus);
+            if (!newStatus.equals(task.getStatusName())) {
+                task.setStatus(TaskStatus.valueOf(newStatus).ordinal());
                 if ("COMPLETED".equals(newStatus)) {
                     task.setCompletedAt(LocalDateTime.now());
                 }

@@ -128,8 +128,8 @@ public class ManagerTaskCalendarDataServlet extends HttpServlet {
 
             String slaState    = computeSlaState(task);
             boolean isOverdue  = task.getDueDate().isBefore(now)
-                               && !"COMPLETED".equals(task.getStatus())
-                               && !"CANCELLED".equals(task.getStatus());
+                               && !"COMPLETED".equals(task.getStatusName())
+                               && !"CANCELLED".equals(task.getStatusName());
 
             // SLA icon suffix appended to title
             String slaIcon = "BREACHED".equals(slaState) ? " \uD83D\uDD34"
@@ -138,10 +138,10 @@ public class ManagerTaskCalendarDataServlet extends HttpServlet {
 
             // Color rules
             String bgColor;
-            if ("COMPLETED".equals(task.getStatus())) {
+            if ("COMPLETED".equals(task.getStatusName())) {
                 bgColor = "#198754";
             } else {
-                switch (task.getPriority() != null ? task.getPriority() : "LOW") {
+                switch (task.getPriorityName() != null ? task.getPriorityName() : "LOW") {
                     case "HIGH":   bgColor = "#dc3545"; break;
                     case "MEDIUM": bgColor = "#fd7e14"; break;
                     default:       bgColor = "#0d6efd"; break;
@@ -155,8 +155,8 @@ public class ManagerTaskCalendarDataServlet extends HttpServlet {
             String safeTitle    = jsonEscape(task.getTitle() != null ? task.getTitle() + slaIcon : slaIcon);
             String safeAssignee = jsonEscape(assigneeName);
             String safeCode     = jsonEscape(task.getTaskCode() != null ? task.getTaskCode() : "");
-            String safePriority = jsonEscape(task.getPriority() != null ? task.getPriority() : "");
-            String safeStatus   = jsonEscape(task.getStatus()   != null ? task.getStatus()   : "");
+            String safePriority = jsonEscape(task.getPriorityName() != null ? task.getPriorityName() : "");
+            String safeStatus   = jsonEscape(task.getStatusName()  != null ? task.getStatusName()   : "");
             String safeDue      = jsonEscape(dueStr);
 
             json.append("{")
@@ -188,11 +188,11 @@ public class ManagerTaskCalendarDataServlet extends HttpServlet {
      * HIGH = 24h, MEDIUM = 72h, LOW = 120h
      */
     private String computeSlaState(Task task) {
-        if ("COMPLETED".equals(task.getStatus()) || "CANCELLED".equals(task.getStatus())) return "OK";
+        if ("COMPLETED".equals(task.getStatusName()) || "CANCELLED".equals(task.getStatusName())) return "OK";
         if (task.getCreatedAt() == null) return "OK";
 
         int slaHours;
-        switch (task.getPriority() != null ? task.getPriority() : "LOW") {
+        switch (task.getPriorityName() != null ? task.getPriorityName() : "LOW") {
             case "HIGH":   slaHours = 24;  break;
             case "MEDIUM": slaHours = 72;  break;
             default:       slaHours = 120; break;

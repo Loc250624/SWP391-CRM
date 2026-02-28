@@ -1,5 +1,7 @@
 package model;
 
+import enums.Priority;
+import enums.TaskStatus;
 import java.time.LocalDateTime;
 
 public class Task {
@@ -9,8 +11,13 @@ public class Task {
     public String title;
     public String description;
 
-    public Integer priority;        
-    public Integer status;         
+    public Integer priority; 
+    public Integer status;  
+
+    public String relatedType;
+    public Integer relatedId;
+    public Integer assignedTo;
+    public Integer groupTaskId;
 
     public LocalDateTime dueDate;
     public LocalDateTime reminderAt;
@@ -27,143 +34,100 @@ public class Task {
     public Task() {
     }
 
-    public Task(Integer taskId, String taskCode, String title, String description, Integer priority, Integer status, LocalDateTime dueDate, LocalDateTime reminderAt, LocalDateTime completedAt, Boolean isDeleted, LocalDateTime deletedAt, Integer deletedBy, LocalDateTime createdAt, LocalDateTime updatedAt, Integer createdBy) {
-        this.taskId = taskId;
-        this.taskCode = taskCode;
-        this.title = title;
-        this.description = description;
-        this.priority = priority;
-        this.status = status;
-        this.dueDate = dueDate;
-        this.reminderAt = reminderAt;
-        this.completedAt = completedAt;
-        this.isDeleted = isDeleted;
-        this.deletedAt = deletedAt;
-        this.deletedBy = deletedBy;
-        this.createdAt = createdAt;
-        this.updatedAt = updatedAt;
-        this.createdBy = createdBy;
+
+    public String getPriorityName() {
+        if (priority == null) return null;
+        Priority[] values = Priority.values();
+        if (priority < 0 || priority >= values.length) return null;
+        return values[priority].name();
     }
 
-    public Integer getTaskId() {
-        return taskId;
+    public String getPriorityVietnamese() {
+        String name = getPriorityName();
+        if (name == null) return "";
+        switch (name) {
+            case "HIGH":   return "Cao";
+            case "MEDIUM": return "Trung bình";
+            case "LOW":    return "Thấp";
+            default:       return name;
+        }
     }
 
-    public void setTaskId(Integer taskId) {
-        this.taskId = taskId;
+    public String getStatusName() {
+        if (status == null) return null;
+        TaskStatus[] values = TaskStatus.values();
+        if (status < 0 || status >= values.length) return null;
+        return values[status].name();
     }
 
-    public String getTaskCode() {
-        return taskCode;
+    public String getStatusVietnamese() {
+        String name = getStatusName();
+        if (name == null) return "";
+        switch (name) {
+            case "PENDING":     return "Chờ xử lý";
+            case "IN_PROGRESS": return "Đang thực hiện";
+            case "COMPLETED":   return "Hoàn thành";
+            case "CANCELLED":   return "Đã hủy";
+            default:            return name;
+        }
     }
 
-    public void setTaskCode(String taskCode) {
-        this.taskCode = taskCode;
-    }
 
-    public String getTitle() {
-        return title;
-    }
 
-    public void setTitle(String title) {
-        this.title = title;
-    }
+    public Integer getTaskId() { return taskId; }
+    public void setTaskId(Integer taskId) { this.taskId = taskId; }
 
-    public String getDescription() {
-        return description;
-    }
+    public String getTaskCode() { return taskCode; }
+    public void setTaskCode(String taskCode) { this.taskCode = taskCode; }
 
-    public void setDescription(String description) {
-        this.description = description;
-    }
+    public String getTitle() { return title; }
+    public void setTitle(String title) { this.title = title; }
 
-    public Integer getPriority() {
-        return priority;
-    }
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
 
-    public void setPriority(Integer priority) {
-        this.priority = priority;
-    }
+    public Integer getPriority() { return priority; }
+    public void setPriority(Integer priority) { this.priority = priority; }
 
-    public Integer getStatus() {
-        return status;
-    }
+    public Integer getStatus() { return status; }
+    public void setStatus(Integer status) { this.status = status; }
 
-    public void setStatus(Integer status) {
-        this.status = status;
-    }
+    public String getRelatedType() { return relatedType; }
+    public void setRelatedType(String relatedType) { this.relatedType = relatedType; }
 
-    public LocalDateTime getDueDate() {
-        return dueDate;
-    }
+    public Integer getRelatedId() { return relatedId; }
+    public void setRelatedId(Integer relatedId) { this.relatedId = relatedId; }
 
-    public void setDueDate(LocalDateTime dueDate) {
-        this.dueDate = dueDate;
-    }
+    public Integer getAssignedTo() { return assignedTo; }
+    public void setAssignedTo(Integer assignedTo) { this.assignedTo = assignedTo; }
 
-    public LocalDateTime getReminderAt() {
-        return reminderAt;
-    }
+    public Integer getGroupTaskId() { return groupTaskId; }
+    public void setGroupTaskId(Integer groupTaskId) { this.groupTaskId = groupTaskId; }
 
-    public void setReminderAt(LocalDateTime reminderAt) {
-        this.reminderAt = reminderAt;
-    }
+    public LocalDateTime getDueDate() { return dueDate; }
+    public void setDueDate(LocalDateTime dueDate) { this.dueDate = dueDate; }
 
-    public LocalDateTime getCompletedAt() {
-        return completedAt;
-    }
+    public LocalDateTime getReminderAt() { return reminderAt; }
+    public void setReminderAt(LocalDateTime reminderAt) { this.reminderAt = reminderAt; }
 
-    public void setCompletedAt(LocalDateTime completedAt) {
-        this.completedAt = completedAt;
-    }
+    public LocalDateTime getCompletedAt() { return completedAt; }
+    public void setCompletedAt(LocalDateTime completedAt) { this.completedAt = completedAt; }
 
-    public Boolean getIsDeleted() {
-        return isDeleted;
-    }
+    public Boolean getIsDeleted() { return isDeleted; }
+    public void setIsDeleted(Boolean isDeleted) { this.isDeleted = isDeleted; }
 
-    public void setIsDeleted(Boolean isDeleted) {
-        this.isDeleted = isDeleted;
-    }
+    public LocalDateTime getDeletedAt() { return deletedAt; }
+    public void setDeletedAt(LocalDateTime deletedAt) { this.deletedAt = deletedAt; }
 
-    public LocalDateTime getDeletedAt() {
-        return deletedAt;
-    }
+    public Integer getDeletedBy() { return deletedBy; }
+    public void setDeletedBy(Integer deletedBy) { this.deletedBy = deletedBy; }
 
-    public void setDeletedAt(LocalDateTime deletedAt) {
-        this.deletedAt = deletedAt;
-    }
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 
-    public Integer getDeletedBy() {
-        return deletedBy;
-    }
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
 
-    public void setDeletedBy(Integer deletedBy) {
-        this.deletedBy = deletedBy;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
-    }
-
-    public Integer getCreatedBy() {
-        return createdBy;
-    }
-
-    public void setCreatedBy(Integer createdBy) {
-        this.createdBy = createdBy;
-    }
-    
-    
+    public Integer getCreatedBy() { return createdBy; }
+    public void setCreatedBy(Integer createdBy) { this.createdBy = createdBy; }
 }

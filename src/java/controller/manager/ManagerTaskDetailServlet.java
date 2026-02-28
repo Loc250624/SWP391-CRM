@@ -3,6 +3,7 @@ package controller.manager;
 import dao.CustomerDAO;
 import dao.LeadDAO;
 import dao.OpportunityDAO;
+import dao.TaskCommentDAO;
 import dao.TaskDAO;
 import dao.UserDAO;
 import java.io.IOException;
@@ -19,6 +20,7 @@ import model.Customer;
 import model.Lead;
 import model.Opportunity;
 import model.Task;
+import model.TaskComment;
 import model.Users;
 
 @WebServlet(name = "ManagerTaskDetailServlet", urlPatterns = {"/manager/task/detail"})
@@ -79,8 +81,8 @@ public class ManagerTaskDetailServlet extends HttpServlet {
             String relatedObjectName = null;
 
             if (task.getRelatedType() != null && task.getRelatedId() != null) {
-                switch (task.getRelatedType()) {
-                    case "Lead": {
+                switch (task.getRelatedType().toUpperCase()) {
+                    case "LEAD": {
                         Lead lead = new LeadDAO().getLeadById(task.getRelatedId());
                         if (lead != null) {
                             relatedObject     = lead;
@@ -88,7 +90,7 @@ public class ManagerTaskDetailServlet extends HttpServlet {
                         }
                         break;
                     }
-                    case "Customer": {
+                    case "CUSTOMER": {
                         Customer customer = new CustomerDAO().getCustomerById(task.getRelatedId());
                         if (customer != null) {
                             relatedObject     = customer;
@@ -96,7 +98,7 @@ public class ManagerTaskDetailServlet extends HttpServlet {
                         }
                         break;
                     }
-                    case "Opportunity": {
+                    case "OPPORTUNITY": {
                         Opportunity opp = new OpportunityDAO().getOpportunityById(task.getRelatedId());
                         if (opp != null) {
                             relatedObject     = opp;
@@ -113,7 +115,7 @@ public class ManagerTaskDetailServlet extends HttpServlet {
             List<Task> subtasks = taskDAO.getSubtasksByParentId(taskId);
             int subtaskCount = subtasks.size();
             long completedSubtaskCount = subtasks.stream()
-                    .filter(t -> "COMPLETED".equals(t.getStatus())).count();
+                    .filter(t -> "COMPLETED".equals(t.getStatusName())).count();
 
             // ── Dependency loading ──
             List<Integer> depIds = TaskDAO.parseDependencyIds(task.getDescription());
@@ -121,11 +123,14 @@ public class ManagerTaskDetailServlet extends HttpServlet {
                     ? Collections.emptyList()
                     : taskDAO.getTasksByIds(depIds);
             boolean allDepsCompleted = dependencyTasks.stream()
-                    .allMatch(t -> "COMPLETED".equals(t.getStatus()));
+                    .allMatch(t -> "COMPLETED".equals(t.getStatusName()));
             String cleanDescription = TaskDAO.getCleanDescription(task.getDescription());
 
             // ── All users for subtask assignee dropdown ──
             List<Users> allUsers = userDAO.getAllUsers();
+
+            // ── Comments ──
+            List<TaskComment> comments = new TaskCommentDAO().getCommentsByTaskId(taskId);
 
             request.setAttribute("task",                 task);
             request.setAttribute("assignedUser",         assignedUser);
@@ -139,6 +144,7 @@ public class ManagerTaskDetailServlet extends HttpServlet {
             request.setAttribute("allDepsCompleted",     allDepsCompleted);
             request.setAttribute("cleanDescription",     cleanDescription);
             request.setAttribute("allUsers",             allUsers);
+            request.setAttribute("comments",             comments);
 
             request.setAttribute("ACTIVE_MENU",  "TASK_MY_LIST");
             request.setAttribute("pageTitle",    "Chi tiết Công việc");

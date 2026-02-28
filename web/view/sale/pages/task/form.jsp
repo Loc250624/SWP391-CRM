@@ -57,7 +57,7 @@
                         <label for="priority" class="form-label">Mức độ ưu tiên</label>
                         <select class="form-select" id="priority" name="priority" required>
                             <c:forEach var="p" items="${priorityValues}">
-                                <option value="${p}" ${task.priority == p ? 'selected' : ''}>${p.vietnamese}</option>
+                                <option value="${p.name()}" ${task.priorityName == p.name() ? 'selected' : ''}>${p.vietnamese}</option>
                             </c:forEach>
                         </select>
                     </div>
@@ -65,7 +65,7 @@
                         <label for="status" class="form-label">Trạng thái</label>
                         <select class="form-select" id="status" name="status" required>
                             <c:forEach var="s" items="${taskStatusValues}">
-                                <option value="${s}" ${task.status == s ? 'selected' : ''}>${s.vietnamese}</option>
+                                <option value="${s.name()}" ${task.statusName == s.name() ? 'selected' : ''}>${s.vietnamese}</option>
                             </c:forEach>
                         </select>
                     </div>

@@ -116,9 +116,9 @@ public class ManagerCRMTaskCreateServlet extends HttpServlet {
         }
 
         // ── Parse priority and due date ────────────────────────────────────
-        String priority = Priority.MEDIUM.name();
+        int priority = Priority.MEDIUM.ordinal();
         if (priorityStr != null && !priorityStr.trim().isEmpty()) {
-            try { priority = Priority.valueOf(priorityStr.trim().toUpperCase()).name(); }
+            try { priority = Priority.valueOf(priorityStr.trim().toUpperCase()).ordinal(); }
             catch (IllegalArgumentException ignored) {}
         }
 
@@ -182,7 +182,7 @@ public class ManagerCRMTaskCreateServlet extends HttpServlet {
             task.setRelatedId(relatedId);
             task.setAssignedTo(assigneeId);
             task.setPriority(priority);
-            task.setStatus(TaskStatus.IN_PROGRESS.name());  // always IN_PROGRESS
+            task.setStatus(TaskStatus.IN_PROGRESS.ordinal());  // always IN_PROGRESS
             task.setDueDate(dueDate);
             task.setCreatedBy(currentUser.getUserId());
 

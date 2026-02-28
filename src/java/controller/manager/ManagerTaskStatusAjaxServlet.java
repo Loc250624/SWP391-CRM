@@ -68,7 +68,7 @@ public class ManagerTaskStatusAjaxServlet extends HttpServlet {
             }
 
             // Terminal state check
-            if ("COMPLETED".equals(task.getStatus()) || "CANCELLED".equals(task.getStatus())) {
+            if ("COMPLETED".equals(task.getStatusName()) || "CANCELLED".equals(task.getStatusName())) {
                 out.print("{\"success\":false,\"message\":\"Công việc đã kết thúc, không thể cập nhật\"}");
                 return;
             }
@@ -78,7 +78,7 @@ public class ManagerTaskStatusAjaxServlet extends HttpServlet {
                 List<Integer> depIds = TaskDAO.parseDependencyIds(task.getDescription());
                 if (!depIds.isEmpty()) {
                     List<Task> deps = taskDAO.getTasksByIds(depIds);
-                    boolean blocked = deps.stream().anyMatch(d -> !"COMPLETED".equals(d.getStatus()));
+                    boolean blocked = deps.stream().anyMatch(d -> !"COMPLETED".equals(d.getStatusName()));
                     if (blocked) {
                         out.print("{\"success\":false,\"message\":\"Công việc đang bị chặn bởi các phụ thuộc chưa hoàn thành\"}");
                         return;
@@ -86,7 +86,7 @@ public class ManagerTaskStatusAjaxServlet extends HttpServlet {
                 }
             }
 
-            task.setStatus(newStatus);
+            task.setStatus(TaskStatus.valueOf(newStatus).ordinal());
             boolean ok = taskDAO.updateTask(task);
 
             if (ok) {

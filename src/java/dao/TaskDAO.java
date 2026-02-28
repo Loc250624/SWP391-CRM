@@ -39,8 +39,8 @@ public class TaskDAO extends DBContext {
             task.setReminderAt(reminderAt.toLocalDateTime());
         }
 
-        task.setPriority(rs.getString("priority"));
-        task.setStatus(rs.getString("status"));
+        task.setPriority(rs.getObject("priority", Integer.class));
+        task.setStatus(rs.getObject("status", Integer.class));
 
         Timestamp completedAt = rs.getTimestamp("completed_at");
         if (completedAt != null) {
@@ -125,8 +125,10 @@ public class TaskDAO extends DBContext {
                 st.setNull(8, java.sql.Types.TIMESTAMP);
             }
 
-            st.setString(9, task.getPriority() != null ? task.getPriority() : Priority.MEDIUM.name());
-            st.setString(10, task.getStatus() != null ? task.getStatus() : TaskStatus.PENDING.name());
+            int pri = task.getPriority() != null ? task.getPriority() : Priority.MEDIUM.ordinal();
+            int sta = task.getStatus()   != null ? task.getStatus()   : TaskStatus.PENDING.ordinal();
+            st.setInt(9,  pri);
+            st.setInt(10, sta);
 
             LocalDateTime now = LocalDateTime.now();
             st.setTimestamp(11, Timestamp.valueOf(now));
@@ -199,11 +201,11 @@ public class TaskDAO extends DBContext {
                 st.setNull(7, java.sql.Types.TIMESTAMP);
             }
 
-            st.setString(8, task.getPriority());
-            st.setString(9, task.getStatus());
+            st.setObject(8, task.getPriority(), java.sql.Types.TINYINT);
+            st.setObject(9, task.getStatus(),   java.sql.Types.TINYINT);
 
             // Auto set completed_at when status is COMPLETED
-            if (TaskStatus.COMPLETED.name().equals(task.getStatus())) {
+            if (task.getStatus() != null && task.getStatus() == TaskStatus.COMPLETED.ordinal()) {
                 if (task.getCompletedAt() == null) {
                     st.setTimestamp(10, Timestamp.valueOf(LocalDateTime.now()));
                 } else {
@@ -386,11 +388,11 @@ public class TaskDAO extends DBContext {
             }
 
             if (status != null && !status.isEmpty()) {
-                st.setString(paramIndex++, status);
+                st.setInt(paramIndex++, TaskStatus.valueOf(status).ordinal());
             }
 
             if (priority != null && !priority.isEmpty()) {
-                st.setString(paramIndex++, priority);
+                st.setInt(paramIndex++, Priority.valueOf(priority).ordinal());
             }
 
             if (keyword != null && !keyword.isEmpty()) {
@@ -442,11 +444,11 @@ public class TaskDAO extends DBContext {
             }
 
             if (status != null && !status.isEmpty()) {
-                st.setString(paramIndex++, status);
+                st.setInt(paramIndex++, TaskStatus.valueOf(status).ordinal());
             }
 
             if (priority != null && !priority.isEmpty()) {
-                st.setString(paramIndex++, priority);
+                st.setInt(paramIndex++, Priority.valueOf(priority).ordinal());
             }
 
             if (keyword != null && !keyword.isEmpty()) {
@@ -474,11 +476,11 @@ public class TaskDAO extends DBContext {
         StringBuilder sql = new StringBuilder(
             "SELECT " +
             "COUNT(*) as total_tasks, " +
-            "SUM(CASE WHEN status = 'COMPLETED' THEN 1 ELSE 0 END) as completed_tasks, " +
-            "SUM(CASE WHEN status = 'PENDING' THEN 1 ELSE 0 END) as pending_tasks, " +
-            "SUM(CASE WHEN status = 'IN_PROGRESS' THEN 1 ELSE 0 END) as in_progress_tasks, " +
-            "SUM(CASE WHEN due_date < GETDATE() AND status != 'COMPLETED' THEN 1 ELSE 0 END) as overdue_tasks, " +
-            "SUM(CASE WHEN priority = 'HIGH' AND status != 'COMPLETED' THEN 1 ELSE 0 END) as high_priority_pending " +
+            "SUM(CASE WHEN status = 2 THEN 1 ELSE 0 END) as completed_tasks, " +
+            "SUM(CASE WHEN status = 0 THEN 1 ELSE 0 END) as pending_tasks, " +
+            "SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END) as in_progress_tasks, " +
+            "SUM(CASE WHEN due_date < GETDATE() AND status != 2 THEN 1 ELSE 0 END) as overdue_tasks, " +
+            "SUM(CASE WHEN priority = 2 AND status != 2 THEN 1 ELSE 0 END) as high_priority_pending " +
             "FROM tasks WHERE 1=1"
         );
 
@@ -645,7 +647,7 @@ public class TaskDAO extends DBContext {
     public List<Task> getUpcomingTasksWithReminders(int userId, int hoursAhead) {
         List<Task> tasks = new ArrayList<>();
         String sql = "SELECT * FROM tasks WHERE assigned_to = ? " +
-                     "AND status != 'COMPLETED' AND status != 'CANCELLED' " +
+                     "AND status != 2 AND status != 3 " +
                      "AND due_date BETWEEN GETDATE() AND DATEADD(HOUR, ?, GETDATE()) " +
                      "ORDER BY due_date ASC";
 
@@ -696,8 +698,8 @@ public class TaskDAO extends DBContext {
         try (PreparedStatement st = connection.prepareStatement(sql.toString())) {
             int idx = 1;
             st.setInt(idx++, managerId);
-            if (status != null && !status.isEmpty())   st.setString(idx++, status);
-            if (priority != null && !priority.isEmpty()) st.setString(idx++, priority);
+            if (status != null && !status.isEmpty())   st.setInt(idx++, TaskStatus.valueOf(status).ordinal());
+            if (priority != null && !priority.isEmpty()) st.setInt(idx++, Priority.valueOf(priority).ordinal());
             if (keyword != null && !keyword.isEmpty()) {
                 String pat = "%" + keyword + "%";
                 st.setString(idx++, pat);
@@ -727,8 +729,8 @@ public class TaskDAO extends DBContext {
         try (PreparedStatement st = connection.prepareStatement(sql.toString())) {
             int idx = 1;
             st.setInt(idx++, managerId);
-            if (status != null && !status.isEmpty())   st.setString(idx++, status);
-            if (priority != null && !priority.isEmpty()) st.setString(idx++, priority);
+            if (status != null && !status.isEmpty())   st.setInt(idx++, TaskStatus.valueOf(status).ordinal());
+            if (priority != null && !priority.isEmpty()) st.setInt(idx++, Priority.valueOf(priority).ordinal());
             if (keyword != null && !keyword.isEmpty()) {
                 String pat = "%" + keyword + "%";
                 st.setString(idx++, pat);
@@ -762,7 +764,7 @@ public class TaskDAO extends DBContext {
         if (status != null && !status.isEmpty())    sql.append(" AND status = ?");
         if (priority != null && !priority.isEmpty()) sql.append(" AND priority = ?");
         if (keyword != null && !keyword.isEmpty())   sql.append(" AND (title LIKE ? OR description LIKE ?)");
-        if (overdueOnly) sql.append(" AND due_date < GETDATE() AND status NOT IN ('COMPLETED','CANCELLED')");
+        if (overdueOnly) sql.append(" AND due_date < GETDATE() AND status NOT IN (2,3)");
 
         if (sortBy != null && !sortBy.isEmpty()) {
             sql.append(" ORDER BY ").append(sortBy);
@@ -777,8 +779,8 @@ public class TaskDAO extends DBContext {
             int idx = 1;
             for (Integer id : memberIds) st.setInt(idx++, id);
             if (selectedEmployee != null)              st.setInt(idx++, selectedEmployee);
-            if (status != null && !status.isEmpty())   st.setString(idx++, status);
-            if (priority != null && !priority.isEmpty()) st.setString(idx++, priority);
+            if (status != null && !status.isEmpty())   st.setInt(idx++, TaskStatus.valueOf(status).ordinal());
+            if (priority != null && !priority.isEmpty()) st.setInt(idx++, Priority.valueOf(priority).ordinal());
             if (keyword != null && !keyword.isEmpty()) {
                 String pat = "%" + keyword + "%";
                 st.setString(idx++, pat);
@@ -813,14 +815,14 @@ public class TaskDAO extends DBContext {
         if (status != null && !status.isEmpty())    sql.append(" AND status = ?");
         if (priority != null && !priority.isEmpty()) sql.append(" AND priority = ?");
         if (keyword != null && !keyword.isEmpty())   sql.append(" AND (title LIKE ? OR description LIKE ?)");
-        if (overdueOnly) sql.append(" AND due_date < GETDATE() AND status NOT IN ('COMPLETED','CANCELLED')");
+        if (overdueOnly) sql.append(" AND due_date < GETDATE() AND status NOT IN (2,3)");
 
         try (PreparedStatement st = connection.prepareStatement(sql.toString())) {
             int idx = 1;
             for (Integer id : memberIds) st.setInt(idx++, id);
             if (selectedEmployee != null)              st.setInt(idx++, selectedEmployee);
-            if (status != null && !status.isEmpty())   st.setString(idx++, status);
-            if (priority != null && !priority.isEmpty()) st.setString(idx++, priority);
+            if (status != null && !status.isEmpty())   st.setInt(idx++, TaskStatus.valueOf(status).ordinal());
+            if (priority != null && !priority.isEmpty()) st.setInt(idx++, Priority.valueOf(priority).ordinal());
             if (keyword != null && !keyword.isEmpty()) {
                 String pat = "%" + keyword + "%";
                 st.setString(idx++, pat);
@@ -860,7 +862,7 @@ public class TaskDAO extends DBContext {
         next.setDescription(completedTask.getDescription());
         next.setAssignedTo(completedTask.getAssignedTo());
         next.setPriority(completedTask.getPriority());
-        next.setStatus(TaskStatus.PENDING.name());
+        next.setStatus(TaskStatus.PENDING.ordinal());
         next.setDueDate(nextDue);
         next.setReminderAt(nextDue.minusHours(24));
         next.setRelatedType(completedTask.getRelatedType());
@@ -894,13 +896,13 @@ public class TaskDAO extends DBContext {
         if (status != null && !status.isEmpty())     sql.append(" AND status = ?");
         if (priority != null && !priority.isEmpty()) sql.append(" AND priority = ?");
         if (keyword != null && !keyword.isEmpty())   sql.append(" AND (title LIKE ? OR description LIKE ?)");
-        if (overdueOnly) sql.append(" AND due_date < GETDATE() AND status NOT IN ('COMPLETED','CANCELLED')");
+        if (overdueOnly) sql.append(" AND due_date < GETDATE() AND status NOT IN (2,3)");
         if ("BREACHED".equals(slaFilter)) {
             sql.append(" AND DATEDIFF(HOUR, created_at, ISNULL(completed_at, GETDATE())) >" +
-                       " (CASE priority WHEN 'HIGH' THEN 24 WHEN 'MEDIUM' THEN 72 ELSE 120 END)");
+                       " (CASE priority WHEN 2 THEN 24 WHEN 1 THEN 72 ELSE 120 END)");
         } else if ("OK".equals(slaFilter)) {
             sql.append(" AND DATEDIFF(HOUR, created_at, ISNULL(completed_at, GETDATE())) <=" +
-                       " (CASE priority WHEN 'HIGH' THEN 24 WHEN 'MEDIUM' THEN 72 ELSE 120 END)");
+                       " (CASE priority WHEN 2 THEN 24 WHEN 1 THEN 72 ELSE 120 END)");
         }
 
         if (sortBy != null && !sortBy.isEmpty()) {
@@ -919,8 +921,8 @@ public class TaskDAO extends DBContext {
                 st.setInt(idx++, selectedEmployee); // assigned_to = ?
                 st.setInt(idx++, selectedEmployee); // created_by = ?
             }
-            if (status != null && !status.isEmpty())   st.setString(idx++, status);
-            if (priority != null && !priority.isEmpty()) st.setString(idx++, priority);
+            if (status != null && !status.isEmpty())   st.setInt(idx++, TaskStatus.valueOf(status).ordinal());
+            if (priority != null && !priority.isEmpty()) st.setInt(idx++, Priority.valueOf(priority).ordinal());
             if (keyword != null && !keyword.isEmpty()) {
                 String pat = "%" + keyword + "%";
                 st.setString(idx++, pat); st.setString(idx++, pat);
@@ -954,13 +956,13 @@ public class TaskDAO extends DBContext {
         if (status != null && !status.isEmpty())     sql.append(" AND status = ?");
         if (priority != null && !priority.isEmpty()) sql.append(" AND priority = ?");
         if (keyword != null && !keyword.isEmpty())   sql.append(" AND (title LIKE ? OR description LIKE ?)");
-        if (overdueOnly) sql.append(" AND due_date < GETDATE() AND status NOT IN ('COMPLETED','CANCELLED')");
+        if (overdueOnly) sql.append(" AND due_date < GETDATE() AND status NOT IN (2,3)");
         if ("BREACHED".equals(slaFilter)) {
             sql.append(" AND DATEDIFF(HOUR, created_at, ISNULL(completed_at, GETDATE())) >" +
-                       " (CASE priority WHEN 'HIGH' THEN 24 WHEN 'MEDIUM' THEN 72 ELSE 120 END)");
+                       " (CASE priority WHEN 2 THEN 24 WHEN 1 THEN 72 ELSE 120 END)");
         } else if ("OK".equals(slaFilter)) {
             sql.append(" AND DATEDIFF(HOUR, created_at, ISNULL(completed_at, GETDATE())) <=" +
-                       " (CASE priority WHEN 'HIGH' THEN 24 WHEN 'MEDIUM' THEN 72 ELSE 120 END)");
+                       " (CASE priority WHEN 2 THEN 24 WHEN 1 THEN 72 ELSE 120 END)");
         }
 
         try (PreparedStatement st = connection.prepareStatement(sql.toString())) {
@@ -971,8 +973,8 @@ public class TaskDAO extends DBContext {
                 st.setInt(idx++, selectedEmployee);
                 st.setInt(idx++, selectedEmployee);
             }
-            if (status != null && !status.isEmpty())   st.setString(idx++, status);
-            if (priority != null && !priority.isEmpty()) st.setString(idx++, priority);
+            if (status != null && !status.isEmpty())   st.setInt(idx++, TaskStatus.valueOf(status).ordinal());
+            if (priority != null && !priority.isEmpty()) st.setInt(idx++, Priority.valueOf(priority).ordinal());
             if (keyword != null && !keyword.isEmpty()) {
                 String pat = "%" + keyword + "%";
                 st.setString(idx++, pat); st.setString(idx++, pat);
@@ -993,12 +995,12 @@ public class TaskDAO extends DBContext {
 
         StringBuilder sql = new StringBuilder(
             "SELECT related_id," +
-            " MAX(CASE WHEN status = 'IN_PROGRESS' THEN 1 ELSE 0 END) AS has_in_progress," +
-            " MAX(CASE WHEN status = 'PENDING'     THEN 1 ELSE 0 END) AS has_pending," +
-            " MAX(CASE WHEN status = 'COMPLETED'   THEN 1 ELSE 0 END) AS has_completed" +
+            " MAX(CASE WHEN status = 1 THEN 1 ELSE 0 END) AS has_in_progress," +
+            " MAX(CASE WHEN status = 0 THEN 1 ELSE 0 END) AS has_pending," +
+            " MAX(CASE WHEN status = 2 THEN 1 ELSE 0 END) AS has_completed" +
             " FROM tasks WHERE related_type = ? AND related_id IN (");
         for (int i = 0; i < ids.size(); i++) sql.append(i > 0 ? ",?" : "?");
-        sql.append(") AND status != 'CANCELLED' GROUP BY related_id");
+        sql.append(") AND status != 3 GROUP BY related_id");
 
         try (PreparedStatement st = connection.prepareStatement(sql.toString())) {
             int idx = 1;
@@ -1050,7 +1052,7 @@ public class TaskDAO extends DBContext {
 
     // ── NEW: Count completed subtasks ──
     public int countCompletedSubtasks(int parentTaskId) {
-        String sql = "SELECT COUNT(*) AS total FROM tasks WHERE related_type = 'SUBTASK' AND related_id = ? AND status = 'COMPLETED'";
+        String sql = "SELECT COUNT(*) AS total FROM tasks WHERE related_type = 'SUBTASK' AND related_id = ? AND status = 2";
         try (PreparedStatement st = connection.prepareStatement(sql)) {
             st.setInt(1, parentTaskId);
             try (ResultSet rs = st.executeQuery()) {
@@ -1091,11 +1093,11 @@ public class TaskDAO extends DBContext {
             " SUM(CASE WHEN elapsed > sla_hours * 0.8 AND elapsed <= sla_hours THEN 1 ELSE 0 END) AS warning_count," +
             " SUM(CASE WHEN elapsed > sla_hours THEN 1 ELSE 0 END) AS breached_count" +
             " FROM (SELECT DATEDIFF(HOUR, created_at, ISNULL(completed_at, GETDATE())) AS elapsed," +
-            " CASE priority WHEN 'HIGH' THEN 24 WHEN 'MEDIUM' THEN 72 ELSE 120 END AS sla_hours" +
+            " CASE priority WHEN 2 THEN 24 WHEN 1 THEN 72 ELSE 120 END AS sla_hours" +
             " FROM tasks WHERE assigned_to IN ("
         );
         for (int i = 0; i < memberIds.size(); i++) sql.append(i > 0 ? ",?" : "?");
-        sql.append(") AND status != 'CANCELLED') t");
+        sql.append(") AND status != 3) t");
 
         try (PreparedStatement st = connection.prepareStatement(sql.toString())) {
             for (int i = 0; i < memberIds.size(); i++) st.setInt(i + 1, memberIds.get(i));
@@ -1116,19 +1118,19 @@ public class TaskDAO extends DBContext {
         Map<String, Object> stats = new HashMap<>();
         String sql =
             "SELECT COUNT(*) AS total_tasks," +
-            " SUM(CASE WHEN status = 'COMPLETED' THEN 1 ELSE 0 END) AS completed_tasks," +
-            " SUM(CASE WHEN status = 'IN_PROGRESS' THEN 1 ELSE 0 END) AS in_progress_tasks," +
-            " SUM(CASE WHEN status = 'PENDING' THEN 1 ELSE 0 END) AS pending_tasks," +
-            " SUM(CASE WHEN status = 'CANCELLED' THEN 1 ELSE 0 END) AS cancelled_tasks," +
-            " SUM(CASE WHEN due_date < GETDATE() AND status NOT IN ('COMPLETED','CANCELLED') THEN 1 ELSE 0 END) AS overdue_tasks," +
-            " AVG(CASE WHEN status='COMPLETED' AND completed_at IS NOT NULL" +
+            " SUM(CASE WHEN status = 2 THEN 1 ELSE 0 END) AS completed_tasks," +
+            " SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END) AS in_progress_tasks," +
+            " SUM(CASE WHEN status = 0 THEN 1 ELSE 0 END) AS pending_tasks," +
+            " SUM(CASE WHEN status = 3 THEN 1 ELSE 0 END) AS cancelled_tasks," +
+            " SUM(CASE WHEN due_date < GETDATE() AND status NOT IN (2,3) THEN 1 ELSE 0 END) AS overdue_tasks," +
+            " AVG(CASE WHEN status=2 AND completed_at IS NOT NULL" +
             "     THEN CAST(DATEDIFF(HOUR, created_at, completed_at) AS FLOAT) ELSE NULL END) AS avg_completion_hours," +
-            " SUM(CASE WHEN status='COMPLETED' AND completed_at IS NOT NULL AND" +
+            " SUM(CASE WHEN status=2 AND completed_at IS NOT NULL AND" +
             "     DATEDIFF(HOUR, created_at, completed_at) <=" +
-            "     (CASE priority WHEN 'HIGH' THEN 24 WHEN 'MEDIUM' THEN 72 ELSE 120 END) THEN 1 ELSE 0 END) AS on_time_count," +
-            " SUM(CASE WHEN status NOT IN ('CANCELLED') AND" +
+            "     (CASE priority WHEN 2 THEN 24 WHEN 1 THEN 72 ELSE 120 END) THEN 1 ELSE 0 END) AS on_time_count," +
+            " SUM(CASE WHEN status != 3 AND" +
             "     DATEDIFF(HOUR, created_at, ISNULL(completed_at, GETDATE())) >" +
-            "     (CASE priority WHEN 'HIGH' THEN 24 WHEN 'MEDIUM' THEN 72 ELSE 120 END) THEN 1 ELSE 0 END) AS sla_breach_count" +
+            "     (CASE priority WHEN 2 THEN 24 WHEN 1 THEN 72 ELSE 120 END) THEN 1 ELSE 0 END) AS sla_breach_count" +
             " FROM tasks WHERE assigned_to = ?";
 
         try (PreparedStatement st = connection.prepareStatement(sql)) {
@@ -1239,8 +1241,8 @@ public class TaskDAO extends DBContext {
             int idx = 1;
             for (Integer id : memberIds) st.setInt(idx++, id);
             if (selectedEmployee != null)             st.setInt(idx++, selectedEmployee);
-            if (status   != null && !status.isEmpty())   st.setString(idx++, status);
-            if (priority != null && !priority.isEmpty()) st.setString(idx++, priority);
+            if (status   != null && !status.isEmpty())   st.setInt(idx++, TaskStatus.valueOf(status).ordinal());
+            if (priority != null && !priority.isEmpty()) st.setInt(idx++, Priority.valueOf(priority).ordinal());
             if (keyword  != null && !keyword.isEmpty()) {
                 String pat = "%" + keyword + "%";
                 st.setString(idx++, pat); st.setString(idx++, pat);
@@ -1275,8 +1277,8 @@ public class TaskDAO extends DBContext {
             int idx = 1;
             for (Integer id : memberIds) st.setInt(idx++, id);
             if (selectedEmployee != null)             st.setInt(idx++, selectedEmployee);
-            if (status   != null && !status.isEmpty())   st.setString(idx++, status);
-            if (priority != null && !priority.isEmpty()) st.setString(idx++, priority);
+            if (status   != null && !status.isEmpty())   st.setInt(idx++, TaskStatus.valueOf(status).ordinal());
+            if (priority != null && !priority.isEmpty()) st.setInt(idx++, Priority.valueOf(priority).ordinal());
             if (keyword  != null && !keyword.isEmpty()) {
                 String pat = "%" + keyword + "%";
                 st.setString(idx++, pat); st.setString(idx++, pat);
@@ -1301,12 +1303,52 @@ public class TaskDAO extends DBContext {
         return tasks;
     }
 
+    // ── Update only the assigned_to field of a task (used by bulk reassign) ──
+    public boolean updateTaskAssignedTo(int taskId, int newAssigneeId) {
+        String sql = "UPDATE tasks SET assigned_to = ?, updated_at = ? WHERE task_id = ?";
+        try (PreparedStatement st = connection.prepareStatement(sql)) {
+            st.setInt(1, newAssigneeId);
+            st.setTimestamp(2, Timestamp.valueOf(LocalDateTime.now()));
+            st.setInt(3, taskId);
+            return st.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    // ── Cancel a task (set status = CANCELLED) ──
+    public boolean cancelTask(int taskId) {
+        String sql = "UPDATE tasks SET status = 3, updated_at = ? WHERE task_id = ?";
+        try (PreparedStatement st = connection.prepareStatement(sql)) {
+            st.setTimestamp(1, Timestamp.valueOf(LocalDateTime.now()));
+            st.setInt(2, taskId);
+            return st.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    // ── Dissolve group membership: set group_task_id = NULL for the kept task ──
+    public boolean dissolveGroupMembership(int taskId) {
+        String sql = "UPDATE tasks SET group_task_id = NULL, updated_at = ? WHERE task_id = ?";
+        try (PreparedStatement st = connection.prepareStatement(sql)) {
+            st.setTimestamp(1, Timestamp.valueOf(LocalDateTime.now()));
+            st.setInt(2, taskId);
+            return st.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
     // Get overdue tasks
     public List<Task> getOverdueTasks(Integer userId, List<Integer> teamMemberIds) {
         List<Task> tasks = new ArrayList<>();
         StringBuilder sql = new StringBuilder(
             "SELECT * FROM tasks WHERE due_date < GETDATE() " +
-            "AND status != 'COMPLETED' AND status != 'CANCELLED'"
+            "AND status != 2 AND status != 3"
         );
 
         if (userId != null) {

@@ -55,7 +55,7 @@ public class ManagerTaskStatusServlet extends HttpServlet {
             }
 
             // Terminal state — cannot update
-            if ("COMPLETED".equals(task.getStatus()) || "CANCELLED".equals(task.getStatus())) {
+            if ("COMPLETED".equals(task.getStatusName()) || "CANCELLED".equals(task.getStatusName())) {
                 session.setAttribute("errorMessage",
                         "Công việc đã hoàn thành hoặc đã hủy, không thể cập nhật trạng thái");
                 response.sendRedirect(request.getContextPath() + "/manager/task/detail?id=" + taskId);
@@ -126,7 +126,7 @@ public class ManagerTaskStatusServlet extends HttpServlet {
             }
 
             // Block updating terminal-state tasks
-            if ("COMPLETED".equals(task.getStatus()) || "CANCELLED".equals(task.getStatus())) {
+            if ("COMPLETED".equals(task.getStatusName()) || "CANCELLED".equals(task.getStatusName())) {
                 session.setAttribute("errorMessage",
                         "Công việc đã hoàn thành hoặc đã hủy, không thể cập nhật");
                 response.sendRedirect(request.getContextPath() + "/manager/task/detail?id=" + taskId);
@@ -138,7 +138,7 @@ public class ManagerTaskStatusServlet extends HttpServlet {
                 List<Integer> depIds = TaskDAO.parseDependencyIds(task.getDescription());
                 if (!depIds.isEmpty()) {
                     List<Task> deps = taskDAO.getTasksByIds(depIds);
-                    boolean blocked = deps.stream().anyMatch(d -> !"COMPLETED".equals(d.getStatus()));
+                    boolean blocked = deps.stream().anyMatch(d -> !"COMPLETED".equals(d.getStatusName()));
                     if (blocked) {
                         session.setAttribute("errorMessage",
                                 "Công việc này đang bị chặn bởi các công việc phụ thuộc chưa hoàn thành");
@@ -148,7 +148,7 @@ public class ManagerTaskStatusServlet extends HttpServlet {
                 }
             }
 
-            task.setStatus(newStatus);
+            task.setStatus(TaskStatus.valueOf(newStatus).ordinal());
             boolean success = taskDAO.updateTask(task);
 
             if (success) {

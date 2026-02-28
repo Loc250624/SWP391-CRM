@@ -54,10 +54,10 @@
                             <small class="text-muted d-block">Ưu tiên</small>
                             <p>
                                 <c:choose>
-                                    <c:when test="${task.priority == 'HIGH'}">
+                                    <c:when test="${task.priorityName == 'HIGH'}">
                                         <span class="badge bg-danger">Cao</span>
                                     </c:when>
-                                    <c:when test="${task.priority == 'MEDIUM'}">
+                                    <c:when test="${task.priorityName == 'MEDIUM'}">
                                         <span class="badge bg-warning">Trung bình</span>
                                     </c:when>
                                     <c:otherwise>
@@ -83,13 +83,13 @@
                         <div class="alert alert-info">
                             <strong>Trạng thái hiện tại:</strong>
                             <c:choose>
-                                <c:when test="${task.status == 'COMPLETED'}">
+                                <c:when test="${task.statusName == 'COMPLETED'}">
                                     <span class="badge bg-success ms-2">Hoàn thành</span>
                                 </c:when>
-                                <c:when test="${task.status == 'IN_PROGRESS'}">
+                                <c:when test="${task.statusName == 'IN_PROGRESS'}">
                                     <span class="badge bg-info ms-2">Đang thực hiện</span>
                                 </c:when>
-                                <c:when test="${task.status == 'CANCELLED'}">
+                                <c:when test="${task.statusName == 'CANCELLED'}">
                                     <span class="badge bg-dark ms-2">Đã hủy</span>
                                 </c:when>
                                 <c:otherwise>
@@ -108,7 +108,7 @@
                                             <input class="form-check-input" type="radio"
                                                    name="status" id="status_${s.name()}"
                                                    value="${s.name()}"
-                                                   ${task.status == s.name() ? 'checked' : ''}
+                                                   ${task.statusName == s.name() ? 'checked' : ''}
                                                    required>
                                             <label class="form-check-label card p-3 w-100 cursor-pointer" for="status_${s.name()}">
                                                 <div class="d-flex align-items-center justify-content-between">

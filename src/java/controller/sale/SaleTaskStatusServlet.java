@@ -55,7 +55,7 @@ public class SaleTaskStatusServlet extends HttpServlet {
             }
 
             // Cannot update a terminal-state task
-            if ("COMPLETED".equals(task.getStatus()) || "CANCELLED".equals(task.getStatus())) {
+            if ("COMPLETED".equals(task.getStatusName()) || "CANCELLED".equals(task.getStatusName())) {
                 session.setAttribute("errorMessage",
                         "Công việc đã hoàn thành hoặc đã hủy, không thể cập nhật trạng thái");
                 response.sendRedirect(request.getContextPath() + "/sale/task/detail?id=" + taskId);
@@ -133,7 +133,7 @@ public class SaleTaskStatusServlet extends HttpServlet {
             }
 
             // Block updating terminal-state tasks
-            if ("COMPLETED".equals(task.getStatus()) || "CANCELLED".equals(task.getStatus())) {
+            if ("COMPLETED".equals(task.getStatusName()) || "CANCELLED".equals(task.getStatusName())) {
                 session.setAttribute("errorMessage",
                         "Công việc đã hoàn thành hoặc đã hủy, không thể cập nhật");
                 response.sendRedirect(request.getContextPath() + "/sale/task/detail?id=" + taskId);
@@ -145,7 +145,7 @@ public class SaleTaskStatusServlet extends HttpServlet {
             //   PENDING    → COMPLETED   ✓  (allowed shortcut)
             //   IN_PROGRESS → COMPLETED  ✓
             //   IN_PROGRESS → PENDING    ✗  (no going backward)
-            String currentStatus = task.getStatus();
+            String currentStatus = task.getStatusName();
             if (!isValidTransition(currentStatus, newStatus)) {
                 session.setAttribute("errorMessage",
                         "Chuyển trạng thái không hợp lệ: "
@@ -155,7 +155,7 @@ public class SaleTaskStatusServlet extends HttpServlet {
                 return;
             }
 
-            task.setStatus(newStatus);
+            task.setStatus(TaskStatus.valueOf(newStatus).ordinal());
             boolean success = taskDAO.updateTask(task);
 
             if (success) {

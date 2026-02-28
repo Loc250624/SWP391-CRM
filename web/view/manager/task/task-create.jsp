@@ -96,7 +96,7 @@
                                 <select class="form-select" id="priority" name="priority" required>
                                     <c:forEach var="p" items="${priorityValues}">
                                         <option value="${p.name()}"
-                                            ${task.priority == p.name() ? 'selected' : ''}>
+                                            ${task.priorityName == p.name() ? 'selected' : ''}>
                                             ${p.vietnamese}
                                         </option>
                                     </c:forEach>
@@ -110,7 +110,7 @@
                                 <select class="form-select" id="status" name="status" required>
                                     <c:forEach var="s" items="${taskStatusValues}">
                                         <option value="${s.name()}"
-                                            ${task.status == s.name() ? 'selected' : ''}>
+                                            ${task.statusName == s.name() ? 'selected' : ''}>
                                             ${s.vietnamese}
                                         </option>
                                     </c:forEach>
