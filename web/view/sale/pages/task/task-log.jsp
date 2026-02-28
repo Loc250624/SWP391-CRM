@@ -46,7 +46,7 @@
                         <h5 class="mb-1">${task.title}</h5>
                         <span class="badge bg-secondary me-1">${task.taskCode}</span>
                         <c:choose>
-                            <c:when test="${task.status == 'IN_PROGRESS'}">
+                            <c:when test="${task.statusName == 'IN_PROGRESS'}">
                                 <span class="badge bg-info">Đang thực hiện</span>
                             </c:when>
                             <c:otherwise>
@@ -54,10 +54,10 @@
                             </c:otherwise>
                         </c:choose>
                         <c:choose>
-                            <c:when test="${task.priority == 'HIGH'}">
+                            <c:when test="${task.priorityName == 'HIGH'}">
                                 <span class="badge bg-danger ms-1">Ưu tiên cao</span>
                             </c:when>
-                            <c:when test="${task.priority == 'MEDIUM'}">
+                            <c:when test="${task.priorityName == 'MEDIUM'}">
                                 <span class="badge bg-warning text-dark ms-1">Ưu tiên trung bình</span>
                             </c:when>
                             <c:otherwise>
@@ -133,7 +133,7 @@
                                 <c:forEach var="s" items="${taskStatusValues}">
                                     <c:if test="${s.name() != 'CANCELLED'}">
                                         <option value="${s.name()}"
-                                            ${task.status == s.name() ? 'selected' : ''}>
+                                            ${task.statusName == s.name() ? 'selected' : ''}>
                                             ${s.vietnamese}
                                         </option>
                                     </c:if>

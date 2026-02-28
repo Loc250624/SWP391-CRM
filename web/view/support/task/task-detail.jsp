@@ -32,7 +32,7 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h4 class="mb-0"><i class="bi bi-file-earmark-text me-2"></i>Chi tiết Công việc</h4>
     <div class="d-flex gap-2">
-        <c:if test="${task.status != 'COMPLETED' && task.status != 'CANCELLED'}">
+        <c:if test="${task.statusName != 'COMPLETED' && task.statusName != 'CANCELLED'}">
             <a href="${pageContext.request.contextPath}/support/task/status?id=${task.taskId}"
                class="btn btn-success btn-sm">
                 <i class="bi bi-check2-circle me-1"></i>Cập nhật Trạng thái
@@ -54,13 +54,13 @@
                 <div>
                     <span class="badge bg-secondary me-1">${task.taskCode}</span>
                     <c:choose>
-                        <c:when test="${task.status == 'COMPLETED'}">
+                        <c:when test="${task.statusName == 'COMPLETED'}">
                             <span class="badge bg-success">Hoàn thành</span>
                         </c:when>
-                        <c:when test="${task.status == 'IN_PROGRESS'}">
+                        <c:when test="${task.statusName == 'IN_PROGRESS'}">
                             <span class="badge bg-info">Đang thực hiện</span>
                         </c:when>
-                        <c:when test="${task.status == 'CANCELLED'}">
+                        <c:when test="${task.statusName == 'CANCELLED'}">
                             <span class="badge bg-dark">Đã hủy</span>
                         </c:when>
                         <c:otherwise>
@@ -68,10 +68,10 @@
                         </c:otherwise>
                     </c:choose>
                     <c:choose>
-                        <c:when test="${task.priority == 'HIGH'}">
+                        <c:when test="${task.priorityName == 'HIGH'}">
                             <span class="badge bg-danger ms-1">Cao</span>
                         </c:when>
-                        <c:when test="${task.priority == 'MEDIUM'}">
+                        <c:when test="${task.priorityName == 'MEDIUM'}">
                             <span class="badge bg-warning text-dark ms-1">Trung bình</span>
                         </c:when>
                         <c:otherwise>
@@ -169,7 +169,7 @@
             </div>
         </div>
 
-        <c:if test="${task.status != 'COMPLETED' && task.status != 'CANCELLED'}">
+        <c:if test="${task.statusName != 'COMPLETED' && task.statusName != 'CANCELLED'}">
             <div class="card bg-light border-0">
                 <div class="card-body">
                     <h6 class="mb-2"><i class="bi bi-info-circle me-1"></i>Quyền của bạn</h6>

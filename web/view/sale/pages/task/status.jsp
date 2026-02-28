@@ -50,13 +50,13 @@
                         <label class="form-label text-muted small">Trạng thái hiện tại</label>
                         <div>
                             <c:choose>
-                                <c:when test="${task.status == 'COMPLETED'}">
+                                <c:when test="${task.statusName == 'COMPLETED'}">
                                     <span class="badge bg-success fs-6 px-3 py-2">Hoàn thành</span>
                                 </c:when>
-                                <c:when test="${task.status == 'IN_PROGRESS'}">
+                                <c:when test="${task.statusName == 'IN_PROGRESS'}">
                                     <span class="badge bg-info fs-6 px-3 py-2">Đang thực hiện</span>
                                 </c:when>
-                                <c:when test="${task.status == 'CANCELLED'}">
+                                <c:when test="${task.statusName == 'CANCELLED'}">
                                     <span class="badge bg-dark fs-6 px-3 py-2">Đã hủy</span>
                                 </c:when>
                                 <c:otherwise>
@@ -77,7 +77,7 @@
                             <select class="form-select form-select-lg" id="status" name="status" required>
                                 <c:forEach var="s" items="${taskStatusValues}">
                                     <c:if test="${s.name() != 'CANCELLED'}">
-                                        <option value="${s.name()}" ${task.status == s.name() ? 'selected' : ''}>
+                                        <option value="${s.name()}" ${task.statusName == s.name() ? 'selected' : ''}>
                                             ${s.vietnamese}
                                         </option>
                                     </c:if>

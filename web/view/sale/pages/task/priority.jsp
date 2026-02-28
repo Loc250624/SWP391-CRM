@@ -33,7 +33,7 @@
                     <label for="priority" class="form-label">Mức độ ưu tiên</label>
                     <select class="form-select" id="priority" name="priority" required>
                         <c:forEach var="p" items="${priorityValues}">
-                            <option value="${p}" ${task.priority == p ? 'selected' : ''}>${p.vietnamese}</option>
+                            <option value="${p.name()}" ${task.priorityName == p.name() ? 'selected' : ''}>${p.vietnamese}</option>
                         </c:forEach>
                     </select>
                 </div>

@@ -81,10 +81,10 @@
                                         ${task.title}
                                     </a>
                                     <c:choose>
-                                        <c:when test="${task.priority == 'HIGH'}">
+                                        <c:when test="${task.priorityName == 'HIGH'}">
                                             <span class="badge bg-danger" style="font-size:0.6rem;">CAO</span>
                                         </c:when>
-                                        <c:when test="${task.priority == 'MEDIUM'}">
+                                        <c:when test="${task.priorityName == 'MEDIUM'}">
                                             <span class="badge bg-warning text-dark" style="font-size:0.6rem;">TB</span>
                                         </c:when>
                                         <c:otherwise>
@@ -101,7 +101,7 @@
                                         </c:if>
                                     </c:forEach>
                                     <c:if test="${task.dueDate != null}">
-                                        <small class="text-muted due-label" data-due="${task.dueDate}" data-status="${task.status}">
+                                        <small class="text-muted due-label" data-due="${task.dueDate}" data-status="${task.statusName}">
                                             ${fn:substring(task.dueDate, 8, 10)}/${fn:substring(task.dueDate, 5, 7)}
                                         </small>
                                     </c:if>
@@ -142,10 +142,10 @@
                                         ${task.title}
                                     </a>
                                     <c:choose>
-                                        <c:when test="${task.priority == 'HIGH'}">
+                                        <c:when test="${task.priorityName == 'HIGH'}">
                                             <span class="badge bg-danger" style="font-size:0.6rem;">CAO</span>
                                         </c:when>
-                                        <c:when test="${task.priority == 'MEDIUM'}">
+                                        <c:when test="${task.priorityName == 'MEDIUM'}">
                                             <span class="badge bg-warning text-dark" style="font-size:0.6rem;">TB</span>
                                         </c:when>
                                         <c:otherwise>
@@ -162,7 +162,7 @@
                                         </c:if>
                                     </c:forEach>
                                     <c:if test="${task.dueDate != null}">
-                                        <small class="text-muted due-label" data-due="${task.dueDate}" data-status="${task.status}">
+                                        <small class="text-muted due-label" data-due="${task.dueDate}" data-status="${task.statusName}">
                                             ${fn:substring(task.dueDate, 8, 10)}/${fn:substring(task.dueDate, 5, 7)}
                                         </small>
                                     </c:if>
@@ -198,10 +198,10 @@
                                         <i class="bi bi-check2 text-success me-1"></i>${task.title}
                                     </a>
                                     <c:choose>
-                                        <c:when test="${task.priority == 'HIGH'}">
+                                        <c:when test="${task.priorityName == 'HIGH'}">
                                             <span class="badge bg-danger" style="font-size:0.6rem;">CAO</span>
                                         </c:when>
-                                        <c:when test="${task.priority == 'MEDIUM'}">
+                                        <c:when test="${task.priorityName == 'MEDIUM'}">
                                             <span class="badge bg-warning text-dark" style="font-size:0.6rem;">TB</span>
                                         </c:when>
                                         <c:otherwise>

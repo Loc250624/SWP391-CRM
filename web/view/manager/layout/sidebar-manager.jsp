@@ -91,6 +91,13 @@
                         <span>Kanban Board</span>
                     </a>
                 </li>
+                <li class="nav-item mb-1">
+                    <a href="${pageContext.request.contextPath}/manager/task/workload"
+                       class="nav-link rounded-2 d-flex align-items-center gap-2 py-2 px-3 ${ACTIVE_MENU == 'TASK_WORKLOAD' ? 'active bg-success text-white' : 'text-body-secondary'}">
+                        <i class="bi bi-bar-chart"></i>
+                        <span>Workload</span>
+                    </a>
+                </li>
             </ul>
         </div>
 

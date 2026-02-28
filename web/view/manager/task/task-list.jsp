@@ -235,7 +235,7 @@
                                             <td>
                                                 <c:choose>
                                                     <c:when test="${task.dueDate != null}">
-                                                        <span data-due="${task.dueDate}" data-status="${task.status}">
+                                                        <span data-due="${task.dueDate}" data-status="${task.statusName}">
                                                             ${fn:substring(task.dueDate,8,10)}/${fn:substring(task.dueDate,5,7)}/${fn:substring(task.dueDate,0,4)}
                                                         </span>
                                                     </c:when>
@@ -245,17 +245,17 @@
                                             <%-- Priority --%>
                                             <td>
                                                 <c:choose>
-                                                    <c:when test="${task.priority == 'HIGH'}"><span class="badge bg-danger">Cao</span></c:when>
-                                                    <c:when test="${task.priority == 'MEDIUM'}"><span class="badge bg-warning text-dark">Trung bình</span></c:when>
+                                                    <c:when test="${task.priorityName == 'HIGH'}"><span class="badge bg-danger">Cao</span></c:when>
+                                                    <c:when test="${task.priorityName == 'MEDIUM'}"><span class="badge bg-warning text-dark">Trung bình</span></c:when>
                                                     <c:otherwise><span class="badge bg-secondary">Thấp</span></c:otherwise>
                                                 </c:choose>
                                             </td>
                                             <%-- Status --%>
                                             <td>
                                                 <c:choose>
-                                                    <c:when test="${task.status == 'COMPLETED'}"><span class="badge bg-success">Hoàn thành</span></c:when>
-                                                    <c:when test="${task.status == 'IN_PROGRESS'}"><span class="badge bg-info">Đang thực hiện</span></c:when>
-                                                    <c:when test="${task.status == 'CANCELLED'}"><span class="badge bg-dark">Đã hủy</span></c:when>
+                                                    <c:when test="${task.statusName == 'COMPLETED'}"><span class="badge bg-success">Hoàn thành</span></c:when>
+                                                    <c:when test="${task.statusName == 'IN_PROGRESS'}"><span class="badge bg-info">Đang thực hiện</span></c:when>
+                                                    <c:when test="${task.statusName == 'CANCELLED'}"><span class="badge bg-dark">Đã hủy</span></c:when>
                                                     <c:otherwise><span class="badge bg-secondary">Chờ xử lý</span></c:otherwise>
                                                 </c:choose>
                                             </td>
@@ -304,9 +304,9 @@
                                                                 </td>
                                                                 <td>
                                                                     <c:choose>
-                                                                        <c:when test="${m.status == 'COMPLETED'}"><span class="badge bg-success">Hoàn thành</span></c:when>
-                                                                        <c:when test="${m.status == 'IN_PROGRESS'}"><span class="badge bg-info">Đang thực hiện</span></c:when>
-                                                                        <c:when test="${m.status == 'CANCELLED'}"><span class="badge bg-dark">Đã hủy</span></c:when>
+                                                                        <c:when test="${m.statusName == 'COMPLETED'}"><span class="badge bg-success">Hoàn thành</span></c:when>
+                                                                        <c:when test="${m.statusName == 'IN_PROGRESS'}"><span class="badge bg-info">Đang thực hiện</span></c:when>
+                                                                        <c:when test="${m.statusName == 'CANCELLED'}"><span class="badge bg-dark">Đã hủy</span></c:when>
                                                                         <c:otherwise><span class="badge bg-secondary">Chờ xử lý</span></c:otherwise>
                                                                     </c:choose>
                                                                 </td>
@@ -397,7 +397,7 @@
                                             <c:choose>
                                                 <c:when test="${task.dueDate != null}">
                                                     <span data-due="${task.dueDate}"
-                                                          data-status="${task.status}">
+                                                          data-status="${task.statusName}">
                                                         ${fn:substring(task.dueDate, 8, 10)}/${fn:substring(task.dueDate, 5, 7)}/${fn:substring(task.dueDate, 0, 4)}
                                                     </span>
                                                 </c:when>
@@ -408,10 +408,10 @@
                                         </td>
                                         <td>
                                             <c:choose>
-                                                <c:when test="${task.priority == 'HIGH'}">
+                                                <c:when test="${task.priorityName == 'HIGH'}">
                                                     <span class="badge bg-danger">Cao</span>
                                                 </c:when>
-                                                <c:when test="${task.priority == 'MEDIUM'}">
+                                                <c:when test="${task.priorityName == 'MEDIUM'}">
                                                     <span class="badge bg-warning text-dark">Trung bình</span>
                                                 </c:when>
                                                 <c:otherwise>
@@ -421,13 +421,13 @@
                                         </td>
                                         <td>
                                             <c:choose>
-                                                <c:when test="${task.status == 'COMPLETED'}">
+                                                <c:when test="${task.statusName == 'COMPLETED'}">
                                                     <span class="badge bg-success">Hoàn thành</span>
                                                 </c:when>
-                                                <c:when test="${task.status == 'IN_PROGRESS'}">
+                                                <c:when test="${task.statusName == 'IN_PROGRESS'}">
                                                     <span class="badge bg-info">Đang thực hiện</span>
                                                 </c:when>
-                                                <c:when test="${task.status == 'CANCELLED'}">
+                                                <c:when test="${task.statusName == 'CANCELLED'}">
                                                     <span class="badge bg-dark">Đã hủy</span>
                                                 </c:when>
                                                 <c:otherwise>

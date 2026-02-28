@@ -94,8 +94,8 @@
                                 <select class="form-select" id="priority" name="priority" required>
                                     <c:forEach var="p" items="${priorityValues}">
                                         <option value="${p.name()}"
-                                                ${task.priority == p.name() ? 'selected' : ''}
-                                                ${empty task.priority && p.name() == 'MEDIUM' ? 'selected' : ''}>
+                                                ${task.priorityName == p.name() ? 'selected' : ''}
+                                                ${empty task.priorityName && p.name() == 'MEDIUM' ? 'selected' : ''}>
                                             ${p.vietnamese}
                                         </option>
                                     </c:forEach>
@@ -111,8 +111,8 @@
                                     <select class="form-select" id="status" name="status" required>
                                         <c:forEach var="s" items="${taskStatusValues}">
                                             <option value="${s.name()}"
-                                                    ${task.status == s.name() ? 'selected' : ''}
-                                                    ${empty task.status && s.name() == 'IN_PROGRESS' ? 'selected' : ''}>
+                                                    ${task.statusName == s.name() ? 'selected' : ''}
+                                                    ${empty task.statusName && s.name() == 'IN_PROGRESS' ? 'selected' : ''}>
                                                 ${s.vietnamese}
                                             </option>
                                         </c:forEach>
@@ -450,9 +450,9 @@
                                             <small class="text-muted">Hiện tại phụ thuộc vào:</small>
                                             <div class="d-flex flex-wrap gap-1 mt-1">
                                                 <c:forEach var="dep" items="${existingDepTasks}">
-                                                    <span class="badge ${dep.status == 'COMPLETED' ? 'bg-success' : 'bg-secondary'}">
+                                                    <span class="badge ${dep.statusName == 'COMPLETED' ? 'bg-success' : 'bg-secondary'}">
                                                         #${dep.taskId} ${dep.taskCode}
-                                                        <c:if test="${dep.status != 'COMPLETED'}"> ⚠</c:if>
+                                                        <c:if test="${dep.statusName != 'COMPLETED'}"> ⚠</c:if>
                                                     </span>
                                                 </c:forEach>
                                             </div>

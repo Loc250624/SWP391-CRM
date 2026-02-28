@@ -97,8 +97,8 @@
                                                                     <a href="${pageContext.request.contextPath}/manager/task/detail?id=${task.taskId}"
                                                                        class="d-block text-decoration-none mb-1">
                                                                         <div class="task-item-mini p-1 rounded
-                                                                            ${task.priority == 'HIGH' ? 'bg-danger' : task.priority == 'MEDIUM' ? 'bg-warning' : 'bg-secondary'}
-                                                                            bg-opacity-10 border border-${task.priority == 'HIGH' ? 'danger' : task.priority == 'MEDIUM' ? 'warning' : 'secondary'}">
+                                                                            ${task.priorityName == 'HIGH' ? 'bg-danger' : task.priorityName == 'MEDIUM' ? 'bg-warning' : 'bg-secondary'}
+                                                                            bg-opacity-10 border border-${task.priorityName == 'HIGH' ? 'danger' : task.priorityName == 'MEDIUM' ? 'warning' : 'secondary'}">
                                                                             <small class="text-dark d-block text-truncate" style="max-width: 100%;">
                                                                                 ${task.title}
                                                                             </small>
