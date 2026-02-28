@@ -159,10 +159,14 @@ public class TaskDAO extends DBContext {
 
             return false;
 
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
-        }
+        } catch (SQLException e) {         
+        System.err.println("=== insertTask FAILED ===");
+        System.err.println("Message: "   + e.getMessage());
+        System.err.println("SQLState: "  + e.getSQLState());
+        System.err.println("ErrorCode: " + e.getErrorCode());
+        e.printStackTrace();
+        return false;
+    }
     }
 
     // Update existing task
