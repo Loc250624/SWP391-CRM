@@ -29,7 +29,7 @@ import util.SessionHelper;
 @WebServlet(name = "SaleQuotationFormServlet", urlPatterns = {"/sale/quotation/form"})
 public class SaleQuotationFormServlet extends HttpServlet {
 
-    private static final Set<String> ALLOWED_STAGE_CODES = new HashSet<>(Arrays.asList("DEMO", "NEGOTIATION"));
+    private static final Set<String> ALLOWED_STAGE_CODES = new HashSet<>(Arrays.asList("DEMO", "NEGOTIATION", "PROPOSED"));
 
     private Integer getCurrentUserId(HttpServletRequest request) {
         return SessionHelper.getLoggedInUserId(request);
@@ -46,15 +46,12 @@ public class SaleQuotationFormServlet extends HttpServlet {
         LeadDAO leadDAO = new LeadDAO();
         CustomerDAO customerDAO = new CustomerDAO();
 
-        // Load leads & customers for dropdown (like opp form)
-        List<Lead> leads = leadDAO.getLeadsBySalesUser(currentUserId);
-        List<Customer> customers = customerDAO.getCustomersBySalesUser(currentUserId);
-        request.setAttribute("leads", leads);
-        request.setAttribute("customers", customers);
-
-        // Load courses for items
+        // Load all active courses (for lead-based opps)
         List<Map<String, Object>> courses = quotDAO.getActiveCourses();
         request.setAttribute("courses", courses);
+
+        // Track if we need enrolled courses for customer
+        boolean isCustomerOpp = false;
 
         // Edit mode
         String idParam = request.getParameter("id");
@@ -114,6 +111,33 @@ public class SaleQuotationFormServlet extends HttpServlet {
         }
         request.setAttribute("selectedOpp", selectedOpp);
 
+        // Load lead/customer from selectedOpp for read-only display
+        if (selectedOpp != null) {
+            if (selectedOpp.getLeadId() != null) {
+                Lead oppLead = leadDAO.getLeadById(selectedOpp.getLeadId());
+                if (oppLead != null) request.setAttribute("selectedOppLead", oppLead);
+            }
+            if (selectedOpp.getCustomerId() != null) {
+                isCustomerOpp = true;
+                Customer oppCustomer = customerDAO.getCustomerById(selectedOpp.getCustomerId());
+                if (oppCustomer != null) request.setAttribute("selectedOppCustomer", oppCustomer);
+                // Load enrolled courses for this customer
+                List<Map<String, Object>> enrolledCourses = quotDAO.getEnrolledCoursesByCustomerId(selectedOpp.getCustomerId());
+                request.setAttribute("enrolledCourses", enrolledCourses);
+            }
+        }
+
+        // For edit mode: load enrolled courses if quotation is for a customer
+        if (!isCustomerOpp) {
+            Quotation editQ = (Quotation) request.getAttribute("quotation");
+            if (editQ != null && editQ.getCustomerId() != null) {
+                isCustomerOpp = true;
+                List<Map<String, Object>> enrolledCourses = quotDAO.getEnrolledCoursesByCustomerId(editQ.getCustomerId());
+                request.setAttribute("enrolledCourses", enrolledCourses);
+            }
+        }
+        request.setAttribute("isCustomerOpp", isCustomerOpp);
+
         // Build user's opportunities at allowed stages for dropdown
         List<Opportunity> userOpps = oppDAO.getOpportunitiesBySalesUser(currentUserId);
         List<Opportunity> allowedOpps = new ArrayList<>();
@@ -123,6 +147,21 @@ public class SaleQuotationFormServlet extends HttpServlet {
                 allowedOpps.add(opp);
             }
         }
+        // Build lead/customer name maps for allowed opps (for JSP data attributes)
+        Map<Integer, String> oppLeadNameMap = new java.util.HashMap<>();
+        Map<Integer, String> oppCustomerNameMap = new java.util.HashMap<>();
+        for (Opportunity opp : allowedOpps) {
+            if (opp.getLeadId() != null) {
+                Lead ld = leadDAO.getLeadById(opp.getLeadId());
+                if (ld != null) oppLeadNameMap.put(opp.getOpportunityId(), ld.getFullName());
+            }
+            if (opp.getCustomerId() != null) {
+                Customer ct = customerDAO.getCustomerById(opp.getCustomerId());
+                if (ct != null) oppCustomerNameMap.put(opp.getOpportunityId(), ct.getFullName());
+            }
+        }
+        request.setAttribute("oppLeadNameMap", oppLeadNameMap);
+        request.setAttribute("oppCustomerNameMap", oppCustomerNameMap);
         request.setAttribute("allowedOpps", allowedOpps);
 
         if (request.getAttribute("pageTitle") == null) {
@@ -153,12 +192,7 @@ public class SaleQuotationFormServlet extends HttpServlet {
         String internalNotes = request.getParameter("internalNotes");
         String idParam = request.getParameter("quotationId");
 
-        // Lead/Customer selection
-        String contactType = request.getParameter("contactType");
-        String leadIdParam = request.getParameter("leadId");
-        String customerIdParam = request.getParameter("customerId");
-
-        // Opportunity (optional - can create de xuat without opp)
+        // Opportunity (required - quotation is always for an opp)
         String oppIdStr = request.getParameter("opportunityId");
 
         // Tax/discount
@@ -173,22 +207,7 @@ public class SaleQuotationFormServlet extends HttpServlet {
             return;
         }
 
-        // Parse lead/customer
-        Integer leadId = null;
-        Integer customerId = null;
-        if ("lead".equals(contactType) && leadIdParam != null && !leadIdParam.isEmpty()) {
-            try {
-                leadId = Integer.parseInt(leadIdParam);
-            } catch (NumberFormatException e) {
-            }
-        } else if ("customer".equals(contactType) && customerIdParam != null && !customerIdParam.isEmpty()) {
-            try {
-                customerId = Integer.parseInt(customerIdParam);
-            } catch (NumberFormatException e) {
-            }
-        }
-
-        // Parse opportunity
+        // Parse opportunity (required)
         Integer oppId = null;
         if (oppIdStr != null && !oppIdStr.isEmpty()) {
             try {
@@ -197,22 +216,24 @@ public class SaleQuotationFormServlet extends HttpServlet {
             }
         }
 
-        // If opp selected, auto-fill lead/customer from opp
-        if (oppId != null) {
-            Opportunity opp = oppDAO.getOpportunityById(oppId);
-            if (opp != null) {
-                if (opp.getLeadId() != null) {
-                    leadId = opp.getLeadId();
-                }
-                if (opp.getCustomerId() != null) {
-                    customerId = opp.getCustomerId();
-                }
-            }
+        if (oppId == null) {
+            request.setAttribute("error", "Phai chon Opportunity!");
+            doGet(request, response);
+            return;
         }
 
-        // Must have either lead or customer
+        // Auto-fill lead/customer from opp
+        Integer leadId = null;
+        Integer customerId = null;
+        Opportunity opp = oppDAO.getOpportunityById(oppId);
+        if (opp != null) {
+            leadId = opp.getLeadId();
+            customerId = opp.getCustomerId();
+        }
+
+        // Must have either lead or customer from opp
         if (leadId == null && customerId == null) {
-            request.setAttribute("error", "Phai chon Lead hoac Customer!");
+            request.setAttribute("error", "Opportunity khong co Lead hoac Customer!");
             doGet(request, response);
             return;
         }
@@ -369,6 +390,46 @@ public class SaleQuotationFormServlet extends HttpServlet {
             }
         }
 
+        // Insert tracking log and version
+        if (quotationId > 0) {
+            String ip = request.getRemoteAddr();
+            String ua = request.getHeader("User-Agent");
+            String deviceType = parseDeviceType(ua);
+            String browser = parseBrowser(ua);
+
+            Quotation saved2 = quotDAO.getQuotationById(quotationId);
+            BigDecimal totalAmt = saved2 != null && saved2.getTotalAmount() != null ? saved2.getTotalAmount() : BigDecimal.ZERO;
+
+            if (idParam != null && !idParam.trim().isEmpty()) {
+                // Edit: tracking + new version
+                quotDAO.insertTrackingLog(quotationId, "UPDATED", ip, ua, deviceType, browser);
+                int currentVer = saved2 != null && saved2.getVersion() != null ? saved2.getVersion() : 1;
+                int newVer = currentVer + 1;
+                quotDAO.insertVersion(quotationId, newVer, null, totalAmt, "Cap nhat", "Cap nhat bao gia", currentUserId);
+            } else {
+                // Create: tracking + version 1
+                quotDAO.insertTrackingLog(quotationId, "CREATED", ip, ua, deviceType, browser);
+                quotDAO.insertVersion(quotationId, 1, null, totalAmt, "Tao moi", "Phien ban dau tien", currentUserId);
+            }
+        }
+
         response.sendRedirect(request.getContextPath() + "/sale/quotation/list?success=1");
+    }
+
+    private String parseDeviceType(String ua) {
+        if (ua == null) return "Unknown";
+        String lower = ua.toLowerCase();
+        if (lower.contains("mobile") || lower.contains("android") || lower.contains("iphone")) return "Mobile";
+        if (lower.contains("tablet") || lower.contains("ipad")) return "Tablet";
+        return "Desktop";
+    }
+
+    private String parseBrowser(String ua) {
+        if (ua == null) return "Unknown";
+        if (ua.contains("Edg/")) return "Edge";
+        if (ua.contains("Chrome/")) return "Chrome";
+        if (ua.contains("Firefox/")) return "Firefox";
+        if (ua.contains("Safari/") && !ua.contains("Chrome")) return "Safari";
+        return "Other";
     }
 }

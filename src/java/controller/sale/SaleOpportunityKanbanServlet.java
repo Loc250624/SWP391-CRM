@@ -3,9 +3,11 @@ package controller.sale;
 import dao.OpportunityDAO;
 import dao.PipelineDAO;
 import dao.PipelineStageDAO;
+import dao.QuotationDAO;
 import model.Opportunity;
 import model.Pipeline;
 import model.PipelineStage;
+import model.Quotation;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -25,6 +27,7 @@ public class SaleOpportunityKanbanServlet extends HttpServlet {
     private final OpportunityDAO opportunityDAO = new OpportunityDAO();
     private final PipelineDAO pipelineDAO = new PipelineDAO();
     private final PipelineStageDAO stageDAO = new PipelineStageDAO();
+    private final QuotationDAO quotationDAO = new QuotationDAO();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -115,12 +118,22 @@ public class SaleOpportunityKanbanServlet extends HttpServlet {
 
         int winRate = totalClosed > 0 ? (wonCount * 100 / totalClosed) : 0;
 
+        // Build quotation count map per opportunity
+        Map<Integer, Integer> quotationCountMap = new HashMap<>();
+        for (List<Opportunity> stageOpps : opportunitiesByStage.values()) {
+            for (Opportunity opp : stageOpps) {
+                List<Quotation> oppQuotations = quotationDAO.getQuotationsByOpportunityId(opp.getOpportunityId());
+                quotationCountMap.put(opp.getOpportunityId(), oppQuotations != null ? oppQuotations.size() : 0);
+            }
+        }
+
         // Build stageCodeMap for JSP (stageId -> stageCode)
         Map<Integer, String> stageCodeMap = new HashMap<>();
         for (PipelineStage stage : stages) {
             stageCodeMap.put(stage.getStageId(), stage.getStageCode());
         }
 
+        request.setAttribute("quotationCountMap", quotationCountMap);
         request.setAttribute("stageCodeMap", stageCodeMap);
         request.setAttribute("selectedPipeline", selectedPipeline);
         request.setAttribute("allPipelines", allPipelines);

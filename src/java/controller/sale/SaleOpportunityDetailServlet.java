@@ -7,6 +7,7 @@ import dao.LeadSourceDAO;
 import dao.OpportunityDAO;
 import dao.PipelineDAO;
 import dao.PipelineStageDAO;
+import dao.QuotationDAO;
 import java.io.IOException;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -21,6 +22,7 @@ import model.LeadSource;
 import model.Opportunity;
 import model.Pipeline;
 import model.PipelineStage;
+import model.Quotation;
 import java.util.List;
 
 @WebServlet(name = "SaleOpportunityDetailServlet", urlPatterns = {"/sale/opportunity/detail"})
@@ -33,6 +35,7 @@ public class SaleOpportunityDetailServlet extends HttpServlet {
     private LeadDAO leadDAO = new LeadDAO();
     private LeadSourceDAO leadSourceDAO = new LeadSourceDAO();
     private CampaignDAO campaignDAO = new CampaignDAO();
+    private QuotationDAO quotationDAO = new QuotationDAO();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -95,6 +98,10 @@ public class SaleOpportunityDetailServlet extends HttpServlet {
                 Campaign campaign = campaignDAO.getCampaignById(opp.getCampaignId());
                 if (campaign != null) campaignName = campaign.getCampaignName();
             }
+
+            // Load linked quotations
+            List<Quotation> quotations = quotationDAO.getQuotationsByOpportunityId(oppId);
+            request.setAttribute("quotations", quotations);
 
             request.setAttribute("opportunity", opp);
             request.setAttribute("pipeline", pipeline);

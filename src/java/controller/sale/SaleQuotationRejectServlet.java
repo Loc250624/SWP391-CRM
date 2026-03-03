@@ -10,13 +10,14 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import util.SessionHelper;
 
-@WebServlet(name = "SaleQuotationSendServlet", urlPatterns = {"/sale/quotation/send"})
-public class SaleQuotationSendServlet extends HttpServlet {
+@WebServlet(name = "SaleQuotationRejectServlet", urlPatterns = {"/sale/quotation/reject"})
+public class SaleQuotationRejectServlet extends HttpServlet {
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
+        request.setCharacterEncoding("UTF-8");
         Integer currentUserId = SessionHelper.getLoggedInUserId(request);
         if (currentUserId == null) {
             response.sendRedirect(request.getContextPath() + "/login");
@@ -30,24 +31,26 @@ public class SaleQuotationSendServlet extends HttpServlet {
         }
 
         int quotationId = Integer.parseInt(idParam);
+        String reason = request.getParameter("rejectionReason");
+
         QuotationDAO quotDAO = new QuotationDAO();
         Quotation q = quotDAO.getQuotationById(quotationId);
 
-        if (q == null || !"Approved".equals(q.getStatus())) {
+        if (q == null || !"Draft".equals(q.getStatus())) {
             response.sendRedirect(request.getContextPath() + "/sale/quotation/detail?id=" + quotationId + "&error=invalid_status");
             return;
         }
 
-        boolean success = quotDAO.sendQuotation(quotationId, currentUserId);
+        boolean success = quotDAO.rejectQuotation(quotationId, currentUserId, reason);
         if (success) {
             String ip = request.getRemoteAddr();
             String ua = request.getHeader("User-Agent");
             String deviceType = parseDeviceType(ua);
             String browser = parseBrowser(ua);
-            quotDAO.insertTrackingLog(quotationId, "SENT", ip, ua, deviceType, browser);
+            quotDAO.insertTrackingLog(quotationId, "REJECTED", ip, ua, deviceType, browser);
         }
 
-        response.sendRedirect(request.getContextPath() + "/sale/quotation/detail?id=" + quotationId + "&sent=1");
+        response.sendRedirect(request.getContextPath() + "/sale/quotation/detail?id=" + quotationId + "&rejected=1");
     }
 
     private String parseDeviceType(String ua) {
