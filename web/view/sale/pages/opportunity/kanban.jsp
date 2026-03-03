@@ -409,6 +409,7 @@
                                          data-customer-id="${opp.customerId}"
                                          data-created="${opp.createdAt}"
                                          data-updated="${opp.updatedAt}"
+                                         data-quot-count="${quotationCountMap[opp.opportunityId] != null ? quotationCountMap[opp.opportunityId] : 0}"
                                          onclick="showOppDetail(this)" style="cursor:pointer;">
                                         <div class="kb-card-title">
                                             ${opp.opportunityName}
@@ -531,6 +532,18 @@
                     <div id="mdl-notes-wrap" class="col-12" style="display:none;">
                         <div class="opp-detail-label">Ghi chu</div>
                         <div class="opp-detail-value p-2 bg-light rounded" id="mdl-notes" style="white-space:pre-wrap; font-size:.85rem;"></div>
+                    </div>
+                </div>
+
+                <!-- Quotation count -->
+                <div id="mdl-quot-wrap" class="mt-3" style="display:none;">
+                    <div class="d-flex align-items-center justify-content-between p-2 bg-light rounded">
+                        <div>
+                            <i class="bi bi-file-earmark-text me-1 text-primary"></i>
+                            <span class="fw-medium">Bao gia:</span>
+                            <span class="badge bg-primary-subtle text-primary ms-1" id="mdl-quot-count">0</span>
+                        </div>
+                        <a id="mdl-link-quot-list" href="#" class="btn btn-sm btn-outline-primary py-0 px-2" style="font-size:.75rem;">Xem bao gia</a>
                     </div>
                 </div>
             </div>
@@ -841,6 +854,17 @@
             quotBtn.href = ctx + '/sale/quotation/form?oppId=' + oppId;
         } else {
             quotBtn.style.display = 'none';
+        }
+
+        // Quotation count
+        var quotCount = parseInt(card.getAttribute('data-quot-count')) || 0;
+        var quotWrap = document.getElementById('mdl-quot-wrap');
+        if (quotCount > 0) {
+            quotWrap.style.display = '';
+            document.getElementById('mdl-quot-count').textContent = quotCount;
+            document.getElementById('mdl-link-quot-list').href = ctx + '/sale/quotation/list?oppId=' + oppId;
+        } else {
+            quotWrap.style.display = 'none';
         }
 
         getOppModal().show();

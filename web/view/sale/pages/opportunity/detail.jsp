@@ -191,6 +191,63 @@
             </div>
         </c:if>
 
+        <!-- Bao gia lien quan -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 fw-semibold"><i class="bi bi-file-earmark-text me-2"></i>Bao gia lien quan</h6>
+                <a href="${pageContext.request.contextPath}/sale/quotation/form?oppId=${opportunity.opportunityId}" class="btn btn-sm btn-outline-primary"><i class="bi bi-plus-lg me-1"></i>Tao bao gia</a>
+            </div>
+            <div class="card-body">
+                <c:choose>
+                    <c:when test="${not empty quotations}">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Ma</th>
+                                        <th>Tieu de</th>
+                                        <th>Trang thai</th>
+                                        <th class="text-end">Gia tri</th>
+                                        <th>Ngay tao</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <c:forEach var="q" items="${quotations}">
+                                        <tr>
+                                            <td><a href="${pageContext.request.contextPath}/sale/quotation/detail?id=${q.quotationId}" class="text-decoration-none fw-medium">${q.quotationCode}</a></td>
+                                            <td>${q.title}</td>
+                                            <td>
+                                                <c:choose>
+                                                    <c:when test="${q.status == 'Draft'}"><span class="badge bg-secondary-subtle text-secondary">De xuat</span></c:when>
+                                                    <c:when test="${q.status == 'Approved'}"><span class="badge bg-success-subtle text-success">Da duyet</span></c:when>
+                                                    <c:when test="${q.status == 'Sent'}"><span class="badge bg-warning-subtle text-warning">Bao gia</span></c:when>
+                                                    <c:when test="${q.status == 'Accepted'}"><span class="badge bg-primary-subtle text-primary">Chap nhan</span></c:when>
+                                                    <c:when test="${q.status == 'Rejected'}"><span class="badge bg-danger-subtle text-danger">Tu choi</span></c:when>
+                                                    <c:otherwise><span class="badge bg-secondary">${q.status}</span></c:otherwise>
+                                                </c:choose>
+                                            </td>
+                                            <td class="text-end fw-semibold">
+                                                <c:if test="${not empty q.totalAmount && q.totalAmount > 0}">
+                                                    <fmt:formatNumber value="${q.totalAmount}" type="number" groupingUsed="true" maxFractionDigits="0"/> d
+                                                </c:if>
+                                                <c:if test="${empty q.totalAmount || q.totalAmount == 0}">-</c:if>
+                                            </td>
+                                            <td><small class="text-muted">${q.createdAt != null ? q.createdAt.toLocalDate() : '-'}</small></td>
+                                        </tr>
+                                    </c:forEach>
+                                </tbody>
+                            </table>
+                        </div>
+                    </c:when>
+                    <c:otherwise>
+                        <div class="text-center text-muted py-3">
+                            <i class="bi bi-inbox me-1"></i>Chua co bao gia nao cho opportunity nay
+                        </div>
+                    </c:otherwise>
+                </c:choose>
+            </div>
+        </div>
+
         <!-- Ghi chu -->
         <c:if test="${not empty opportunity.notes}">
             <div class="card border-0 shadow-sm">
