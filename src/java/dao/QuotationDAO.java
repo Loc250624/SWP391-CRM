@@ -41,8 +41,8 @@ public class QuotationDAO extends DBContext {
                 + "tax_percent, tax_amount, total_amount, "
                 + "requires_approval, "
                 + "title, description, terms_conditions, payment_terms, delivery_terms, "
-                + "notes, internal_notes, created_by"
-                + ") VALUES (?,?,?, ?,?,?, ?,?,?,?, ?,?,?,?,?, ?,?,?, ?, ?,?,?,?,?, ?,?,?)";
+                + "notes, internal_notes, created_by, tracking_token"
+                + ") VALUES (?,?,?, ?,?,?, ?,?,?,?, ?,?,?,?,?, ?,?,?, ?, ?,?,?,?,?, ?,?,?,?)";
         try {
             PreparedStatement stmt = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
             String code = q.getQuotationCode();
@@ -78,6 +78,7 @@ public class QuotationDAO extends DBContext {
             stmt.setString(25, q.getNotes());
             stmt.setString(26, q.getInternalNotes());
             setNullableInt(stmt, 27, q.getCreatedBy());
+            stmt.setString(28, java.util.UUID.randomUUID().toString());
 
             int rows = stmt.executeUpdate();
             if (rows > 0) {
@@ -513,11 +514,75 @@ public class QuotationDAO extends DBContext {
         return list;
     }
 
+    // ==================== TRACKING OVERVIEW ====================
+
+    public List<Map<String, Object>> getTrackingOverview(int userId) {
+        List<Map<String, Object>> results = new ArrayList<>();
+        String sql = "SELECT q.quotation_id, q.quotation_code, q.title, q.status, q.total_amount, "
+                + "q.valid_until, q.sent_date, q.view_count, q.last_viewed_date, "
+                + "q.total_view_duration_seconds, q.accepted_date, q.customer_rejected_date, "
+                + "COALESCE(c.full_name, l.full_name) AS contact_name "
+                + "FROM quotations q "
+                + "LEFT JOIN customers c ON q.customer_id = c.customer_id "
+                + "LEFT JOIN leads l ON q.lead_id = l.lead_id "
+                + "WHERE q.created_by = ? AND q.status IN ('Sent','Accepted','Rejected') "
+                + "ORDER BY q.sent_date DESC";
+        try {
+            PreparedStatement stmt = connection.prepareStatement(sql);
+            stmt.setInt(1, userId);
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                Map<String, Object> row = new HashMap<>();
+                row.put("quotationId", rs.getInt("quotation_id"));
+                row.put("quotationCode", rs.getString("quotation_code"));
+                row.put("title", rs.getString("title"));
+                row.put("status", rs.getString("status"));
+                row.put("totalAmount", rs.getBigDecimal("total_amount"));
+                row.put("validUntil", getNullableLocalDate(rs, "valid_until"));
+                row.put("sentDate", getNullableLocalDateTime(rs, "sent_date"));
+                row.put("viewCount", getNullableInt(rs, "view_count"));
+                row.put("lastViewedDate", getNullableLocalDateTime(rs, "last_viewed_date"));
+                row.put("totalViewDurationSeconds", getNullableInt(rs, "total_view_duration_seconds"));
+                row.put("acceptedDate", getNullableLocalDateTime(rs, "accepted_date"));
+                row.put("customerRejectedDate", getNullableLocalDateTime(rs, "customer_rejected_date"));
+                row.put("contactName", rs.getString("contact_name"));
+                results.add(row);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return results;
+    }
+
+    public Map<String, Integer> getTrackingStats(int userId) {
+        Map<String, Integer> stats = new HashMap<>();
+        String sql = "SELECT "
+                + "SUM(CASE WHEN status IN ('Sent','Accepted','Rejected') THEN 1 ELSE 0 END) AS sent, "
+                + "SUM(CASE WHEN view_count > 0 AND status IN ('Sent','Accepted','Rejected') THEN 1 ELSE 0 END) AS viewed, "
+                + "SUM(CASE WHEN status = 'Accepted' THEN 1 ELSE 0 END) AS accepted, "
+                + "SUM(CASE WHEN status IN ('Sent') AND valid_until <= DATEADD(day, 7, GETDATE()) AND valid_until >= GETDATE() THEN 1 ELSE 0 END) AS expiring "
+                + "FROM quotations WHERE created_by = ?";
+        try {
+            PreparedStatement stmt = connection.prepareStatement(sql);
+            stmt.setInt(1, userId);
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                stats.put("sent", rs.getInt("sent"));
+                stats.put("viewed", rs.getInt("viewed"));
+                stats.put("accepted", rs.getInt("accepted"));
+                stats.put("expiring", rs.getInt("expiring"));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return stats;
+    }
+
     // ==================== COURSES (helper) ====================
 
     public List<Map<String, Object>> getActiveCourses() {
         List<Map<String, Object>> courses = new ArrayList<>();
-        String sql = "SELECT course_id, course_code, course_name, price FROM courses WHERE is_active = 1 ORDER BY course_name";
+        String sql = "SELECT course_id, course_code, course_name, price FROM courses WHERE status = 'Active' ORDER BY course_name";
         try {
             PreparedStatement stmt = connection.prepareStatement(sql);
             ResultSet rs = stmt.executeQuery();
@@ -528,6 +593,35 @@ public class QuotationDAO extends DBContext {
                 c.put("courseName", rs.getString("course_name"));
                 c.put("price", rs.getBigDecimal("price"));
                 courses.add(c);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return courses;
+    }
+
+    public List<Map<String, Object>> getEnrolledCoursesByCustomerId(int customerId) {
+        List<Map<String, Object>> courses = new ArrayList<>();
+        String sql = "SELECT c.course_id, c.course_code, c.course_name, c.price, "
+                + "ce.enrolled_date, ce.learning_status, ce.progress_percentage "
+                + "FROM customer_enrollments ce "
+                + "JOIN courses c ON ce.course_id = c.course_id "
+                + "WHERE ce.customer_id = ? "
+                + "ORDER BY ce.enrolled_date DESC";
+        try {
+            PreparedStatement stmt = connection.prepareStatement(sql);
+            stmt.setInt(1, customerId);
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                Map<String, Object> m = new HashMap<>();
+                m.put("courseId", rs.getInt("course_id"));
+                m.put("courseCode", rs.getString("course_code"));
+                m.put("courseName", rs.getString("course_name"));
+                m.put("price", rs.getBigDecimal("price"));
+                m.put("enrolledDate", rs.getTimestamp("enrolled_date"));
+                m.put("learningStatus", rs.getString("learning_status"));
+                m.put("progressPercentage", rs.getInt("progress_percentage"));
+                courses.add(m);
             }
         } catch (SQLException e) {
             e.printStackTrace();
