@@ -18,6 +18,15 @@
 <c:if test="${param.error == 'readonly'}">
     <script>document.addEventListener('DOMContentLoaded', function(){ CRM.showToast('Khong the chinh sua de xuat nay (chi cho phep sua khi o trang thai Draft).', 'warning'); });</script>
 </c:if>
+<c:if test="${param.approved == '1'}">
+    <script>document.addEventListener('DOMContentLoaded', function(){ CRM.showToast('Duyet bao gia thanh cong!', 'success'); });</script>
+</c:if>
+<c:if test="${param.rejected == '1'}">
+    <script>document.addEventListener('DOMContentLoaded', function(){ CRM.showToast('Da tu choi bao gia.', 'info'); });</script>
+</c:if>
+<c:if test="${param.sent == '1'}">
+    <script>document.addEventListener('DOMContentLoaded', function(){ CRM.showToast('Da gui bao gia thanh cong!', 'success'); });</script>
+</c:if>
 
 <!-- Stats -->
 <div class="row g-3 mb-4">
@@ -123,7 +132,18 @@
                                         <div class="dropdown">
                                             <button class="btn btn-sm btn-light" data-bs-toggle="dropdown"><i class="bi bi-three-dots-vertical"></i></button>
                                             <ul class="dropdown-menu dropdown-menu-end">
-                                                <li><a class="dropdown-item" href="${pageContext.request.contextPath}/sale/quotation/form?id=${q.quotationId}"><i class="bi bi-eye me-2"></i>Xem / Sua</a></li>
+                                                <li><a class="dropdown-item" href="${pageContext.request.contextPath}/sale/quotation/detail?id=${q.quotationId}"><i class="bi bi-eye me-2"></i>Xem chi tiet</a></li>
+                                                <c:if test="${q.status == 'Draft'}">
+                                                    <li><a class="dropdown-item" href="${pageContext.request.contextPath}/sale/quotation/form?id=${q.quotationId}"><i class="bi bi-pencil me-2"></i>Sua</a></li>
+                                                </c:if>
+                                                <c:if test="${q.status == 'Approved'}">
+                                                    <li>
+                                                        <form method="POST" action="${pageContext.request.contextPath}/sale/quotation/send" style="display:inline; width:100%;">
+                                                            <input type="hidden" name="quotationId" value="${q.quotationId}">
+                                                            <button type="submit" class="dropdown-item"><i class="bi bi-send me-2"></i>Gui bao gia</button>
+                                                        </form>
+                                                    </li>
+                                                </c:if>
                                             </ul>
                                         </div>
                                     </td>
