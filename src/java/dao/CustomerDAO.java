@@ -2,7 +2,6 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-
 package dao;
 
 import dbConnection.DBContext;
@@ -16,13 +15,12 @@ import java.util.List;
 import java.util.Map;
 import model.Customer;
 
-public class CustomerDAO extends DBContext{
+public class CustomerDAO extends DBContext {
 
     public List<Customer> getAllCustomers() {
         List<Customer> danhSach = new ArrayList<>();
         String sql = "SELECT * FROM customers";
-        try (PreparedStatement st = connection.prepareStatement(sql);
-             ResultSet rs = st.executeQuery()) {
+        try (PreparedStatement st = connection.prepareStatement(sql); ResultSet rs = st.executeQuery()) {
             while (rs.next()) {
                 danhSach.add(mapResultSetToCustomer(rs));
             }
@@ -68,8 +66,7 @@ public class CustomerDAO extends DBContext{
     // Generate unique customer code (CUS-000001, CUS-000002, ...)
     public String generateCustomerCode() {
         String sql = "SELECT TOP 1 customer_code FROM customers ORDER BY customer_id DESC";
-        try (PreparedStatement st = connection.prepareStatement(sql);
-             ResultSet rs = st.executeQuery()) {
+        try (PreparedStatement st = connection.prepareStatement(sql); ResultSet rs = st.executeQuery()) {
             if (rs.next()) {
                 String lastCode = rs.getString("customer_code");
                 int number = Integer.parseInt(lastCode.substring(4));
@@ -85,11 +82,11 @@ public class CustomerDAO extends DBContext{
 
     // Insert new customer
     public boolean insertCustomer(Customer c) {
-        String sql = "INSERT INTO customers (customer_code, full_name, email, phone, date_of_birth, gender, " +
-                     "address, city, source_id, converted_lead_id, customer_segment, status, owner_id, " +
-                     "total_courses, total_spent, health_score, satisfaction_score, " +
-                     "email_opt_out, sms_opt_out, notes, created_at, updated_at, created_by) " +
-                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO customers (customer_code, full_name, email, phone, date_of_birth, gender, "
+                + "address, city, source_id, converted_lead_id, customer_segment, status, owner_id, "
+                + "total_courses, total_spent, health_score, satisfaction_score, "
+                + "email_opt_out, sms_opt_out, notes, created_at, updated_at, created_by) "
+                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (PreparedStatement st = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             if (c.getCustomerCode() == null || c.getCustomerCode().isEmpty()) {
                 c.setCustomerCode(generateCustomerCode());
@@ -164,10 +161,10 @@ public class CustomerDAO extends DBContext{
 
     // Update existing customer
     public boolean updateCustomer(Customer c) {
-        String sql = "UPDATE customers SET full_name = ?, email = ?, phone = ?, date_of_birth = ?, gender = ?, " +
-                     "address = ?, city = ?, source_id = ?, customer_segment = ?, status = ?, owner_id = ?, " +
-                     "health_score = ?, satisfaction_score = ?, email_opt_out = ?, sms_opt_out = ?, " +
-                     "notes = ?, updated_at = ? WHERE customer_id = ?";
+        String sql = "UPDATE customers SET full_name = ?, email = ?, phone = ?, date_of_birth = ?, gender = ?, "
+                + "address = ?, city = ?, source_id = ?, customer_segment = ?, status = ?, owner_id = ?, "
+                + "health_score = ?, satisfaction_score = ?, email_opt_out = ?, sms_opt_out = ?, "
+                + "notes = ?, updated_at = ? WHERE customer_id = ?";
         try (PreparedStatement st = connection.prepareStatement(sql)) {
             st.setString(1, c.getFullName());
             st.setString(2, c.getEmail());
@@ -220,15 +217,18 @@ public class CustomerDAO extends DBContext{
             String keyword, String status, int offset, int pageSize) {
         List<Customer> list = new ArrayList<>();
         StringBuilder sql = new StringBuilder(
-            "SELECT * FROM customers c WHERE c.owner_id IS NULL" +
-            " AND c.created_by IN (SELECT user_id FROM users WHERE department_id = ?)");
+                "SELECT * FROM customers c WHERE c.owner_id IS NULL"
+                + " AND c.created_by IN (SELECT user_id FROM users WHERE department_id = ?)");
         List<Object> params = new ArrayList<>();
         params.add(departmentId);
 
         if (keyword != null && !keyword.trim().isEmpty()) {
             String kw = "%" + keyword.trim() + "%";
             sql.append(" AND (c.full_name LIKE ? OR c.customer_code LIKE ? OR c.phone LIKE ? OR c.email LIKE ?)");
-            params.add(kw); params.add(kw); params.add(kw); params.add(kw);
+            params.add(kw);
+            params.add(kw);
+            params.add(kw);
+            params.add(kw);
         }
         if (status != null && !status.trim().isEmpty()) {
             sql.append(" AND c.status = ?");
@@ -239,9 +239,13 @@ public class CustomerDAO extends DBContext{
         params.add(pageSize);
 
         try (PreparedStatement st = connection.prepareStatement(sql.toString())) {
-            for (int i = 0; i < params.size(); i++) st.setObject(i + 1, params.get(i));
+            for (int i = 0; i < params.size(); i++) {
+                st.setObject(i + 1, params.get(i));
+            }
             try (ResultSet rs = st.executeQuery()) {
-                while (rs.next()) list.add(mapResultSetToCustomer(rs));
+                while (rs.next()) {
+                    list.add(mapResultSetToCustomer(rs));
+                }
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -253,24 +257,31 @@ public class CustomerDAO extends DBContext{
     public int countCustomersByManagerScope(int departmentId,
             String keyword, String status) {
         StringBuilder sql = new StringBuilder(
-            "SELECT COUNT(*) FROM customers c WHERE c.owner_id IS NULL" +
-            " AND c.created_by IN (SELECT user_id FROM users WHERE department_id = ?)");
+                "SELECT COUNT(*) FROM customers c WHERE c.owner_id IS NULL"
+                + " AND c.created_by IN (SELECT user_id FROM users WHERE department_id = ?)");
         List<Object> params = new ArrayList<>();
         params.add(departmentId);
 
         if (keyword != null && !keyword.trim().isEmpty()) {
             String kw = "%" + keyword.trim() + "%";
             sql.append(" AND (c.full_name LIKE ? OR c.customer_code LIKE ? OR c.phone LIKE ? OR c.email LIKE ?)");
-            params.add(kw); params.add(kw); params.add(kw); params.add(kw);
+            params.add(kw);
+            params.add(kw);
+            params.add(kw);
+            params.add(kw);
         }
         if (status != null && !status.trim().isEmpty()) {
             sql.append(" AND c.status = ?");
             params.add(status);
         }
         try (PreparedStatement st = connection.prepareStatement(sql.toString())) {
-            for (int i = 0; i < params.size(); i++) st.setObject(i + 1, params.get(i));
+            for (int i = 0; i < params.size(); i++) {
+                st.setObject(i + 1, params.get(i));
+            }
             try (ResultSet rs = st.executeQuery()) {
-                if (rs.next()) return rs.getInt(1);
+                if (rs.next()) {
+                    return rs.getInt(1);
+                }
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -298,7 +309,9 @@ public class CustomerDAO extends DBContext{
         try (PreparedStatement st = connection.prepareStatement(sql)) {
             st.setInt(1, customerId);
             try (ResultSet rs = st.executeQuery()) {
-                if (rs.next()) return rs.getInt(1);
+                if (rs.next()) {
+                    return rs.getInt(1);
+                }
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -379,16 +392,45 @@ public class CustomerDAO extends DBContext{
     // Batch fetch customer full_name by IDs — used for "related object" column in task list
     public Map<Integer, String> getCustomerNameMap(List<Integer> customerIds) {
         Map<Integer, String> map = new HashMap<>();
-        if (customerIds == null || customerIds.isEmpty()) return map;
+        if (customerIds == null || customerIds.isEmpty()) {
+            return map;
+        }
         StringBuilder sql = new StringBuilder("SELECT customer_id, full_name FROM customers WHERE customer_id IN (");
-        for (int i = 0; i < customerIds.size(); i++) sql.append(i > 0 ? ",?" : "?");
+        for (int i = 0; i < customerIds.size(); i++) {
+            sql.append(i > 0 ? ",?" : "?");
+        }
         sql.append(")");
         try (PreparedStatement st = connection.prepareStatement(sql.toString())) {
-            for (int i = 0; i < customerIds.size(); i++) st.setInt(i + 1, customerIds.get(i));
-            try (ResultSet rs = st.executeQuery()) {
-                while (rs.next()) map.put(rs.getInt("customer_id"), rs.getString("full_name"));
+            for (int i = 0; i < customerIds.size(); i++) {
+                st.setInt(i + 1, customerIds.get(i));
             }
-        } catch (SQLException e) { e.printStackTrace(); }
+            try (ResultSet rs = st.executeQuery()) {
+                while (rs.next()) {
+                    map.put(rs.getInt("customer_id"), rs.getString("full_name"));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
         return map;
+    }
+    // Lấy danh sách khách hàng CHỈ do người dùng này tạo ra
+
+    public List<Customer> getCustomersByCreator(int userId) {
+        List<Customer> list = new ArrayList<>();
+        // SQL: Lọc chính xác cột created_by
+        String sql = "SELECT * FROM customers WHERE created_by = ? ORDER BY created_at DESC";
+
+        try (PreparedStatement st = connection.prepareStatement(sql)) {
+            st.setInt(1, userId);
+            try (ResultSet rs = st.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapResultSetToCustomer(rs));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
     }
 }
