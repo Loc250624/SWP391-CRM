@@ -12,16 +12,20 @@ public class ActivityDAO extends DBContext {
      * CẬP NHẬT: Thêm cột 'status' vào câu lệnh INSERT. status sẽ nhận giá trị
      * 'Pending' (Hàng chờ) hoặc 'Completed' (Hoàn thành).
      */
-    public boolean insertActivity(int customerId, String subject, String description, int performedBy, String status) {
+    public boolean insertActivity(int relatedId, String relatedType, String subject, String description, int performedBy, String status) {
+        // Câu lệnh SQL: Dùng dấu ? cho related_type thay vì fix cứng 'Customer'
         String sql = "INSERT INTO activities (activity_type, related_type, related_id, subject, [description], "
                 + "status, activity_date, performed_by, created_at) "
-                + "VALUES ('REPORT', 'Customer', ?, ?, ?, ?, GETDATE(), ?, GETDATE())";
+                + "VALUES ('REPORT', ?, ?, ?, ?, ?, GETDATE(), ?, GETDATE())";
+
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
-            ps.setInt(1, customerId);
-            ps.setString(2, subject);
-            ps.setString(3, description);
-            ps.setString(4, status); // Lưu trạng thái từ Modal gửi về
-            ps.setInt(5, performedBy);
+            ps.setString(1, relatedType); // Tham số mới thêm vào
+            ps.setInt(2, relatedId);
+            ps.setString(3, subject);
+            ps.setString(4, description);
+            ps.setString(5, status);
+            ps.setInt(6, performedBy);
+
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
@@ -116,7 +120,6 @@ public class ActivityDAO extends DBContext {
     }
 
     // ==================== SALES MODULE METHODS ====================
-
     public Activity getActivityById(int activityId) {
         String sql = "SELECT a.*, "
                 + "(u.last_name + ' ' + u.first_name) AS performer_name, "
@@ -170,8 +173,11 @@ public class ActivityDAO extends DBContext {
         try (PreparedStatement ps = connection.prepareStatement(sql.toString())) {
             for (int i = 0; i < params.size(); i++) {
                 Object p = params.get(i);
-                if (p instanceof Integer) ps.setInt(i + 1, (Integer) p);
-                else ps.setString(i + 1, (String) p);
+                if (p instanceof Integer) {
+                    ps.setInt(i + 1, (Integer) p);
+                } else {
+                    ps.setString(i + 1, (String) p);
+                }
             }
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
@@ -210,23 +216,32 @@ public class ActivityDAO extends DBContext {
     }
 
     public int insertSaleActivity(String activityType, String relatedType, Integer relatedId,
-                                   String subject, String description, Timestamp activityDate,
-                                   Integer durationMinutes, String callDirection, String callResult,
-                                   int performedBy, String status) {
+            String subject, String description, Timestamp activityDate,
+            Integer durationMinutes, String callDirection, String callResult,
+            int performedBy, String status) {
         String sql = "INSERT INTO activities (activity_type, related_type, related_id, subject, [description], "
                 + "activity_date, duration_minutes, call_direction, call_result, performed_by, created_by, "
                 + "status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, GETDATE())";
         try (PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setString(1, activityType);
             ps.setString(2, relatedType);
-            if (relatedId != null) ps.setInt(3, relatedId);
-            else ps.setNull(3, java.sql.Types.INTEGER);
+            if (relatedId != null) {
+                ps.setInt(3, relatedId);
+            } else {
+                ps.setNull(3, java.sql.Types.INTEGER);
+            }
             ps.setString(4, subject);
             ps.setString(5, description);
-            if (activityDate != null) ps.setTimestamp(6, activityDate);
-            else ps.setNull(6, java.sql.Types.TIMESTAMP);
-            if (durationMinutes != null) ps.setInt(7, durationMinutes);
-            else ps.setNull(7, java.sql.Types.INTEGER);
+            if (activityDate != null) {
+                ps.setTimestamp(6, activityDate);
+            } else {
+                ps.setNull(6, java.sql.Types.TIMESTAMP);
+            }
+            if (durationMinutes != null) {
+                ps.setInt(7, durationMinutes);
+            } else {
+                ps.setNull(7, java.sql.Types.INTEGER);
+            }
             ps.setString(8, callDirection);
             ps.setString(9, callResult);
             ps.setInt(10, performedBy);
@@ -235,7 +250,9 @@ public class ActivityDAO extends DBContext {
             int rows = ps.executeUpdate();
             if (rows > 0) {
                 ResultSet keys = ps.getGeneratedKeys();
-                if (keys.next()) return keys.getInt(1);
+                if (keys.next()) {
+                    return keys.getInt(1);
+                }
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -244,22 +261,31 @@ public class ActivityDAO extends DBContext {
     }
 
     public boolean updateActivity(int activityId, String activityType, String relatedType, Integer relatedId,
-                                   String subject, String description, Timestamp activityDate,
-                                   Integer durationMinutes, String callDirection, String callResult, String status) {
+            String subject, String description, Timestamp activityDate,
+            Integer durationMinutes, String callDirection, String callResult, String status) {
         String sql = "UPDATE activities SET activity_type=?, related_type=?, related_id=?, subject=?, "
                 + "[description]=?, activity_date=?, duration_minutes=?, call_direction=?, call_result=?, status=? "
                 + "WHERE activity_id=?";
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setString(1, activityType);
             ps.setString(2, relatedType);
-            if (relatedId != null) ps.setInt(3, relatedId);
-            else ps.setNull(3, java.sql.Types.INTEGER);
+            if (relatedId != null) {
+                ps.setInt(3, relatedId);
+            } else {
+                ps.setNull(3, java.sql.Types.INTEGER);
+            }
             ps.setString(4, subject);
             ps.setString(5, description);
-            if (activityDate != null) ps.setTimestamp(6, activityDate);
-            else ps.setNull(6, java.sql.Types.TIMESTAMP);
-            if (durationMinutes != null) ps.setInt(7, durationMinutes);
-            else ps.setNull(7, java.sql.Types.INTEGER);
+            if (activityDate != null) {
+                ps.setTimestamp(6, activityDate);
+            } else {
+                ps.setNull(6, java.sql.Types.TIMESTAMP);
+            }
+            if (durationMinutes != null) {
+                ps.setInt(7, durationMinutes);
+            } else {
+                ps.setNull(7, java.sql.Types.INTEGER);
+            }
             ps.setString(8, callDirection);
             ps.setString(9, callResult);
             ps.setString(10, status);
@@ -308,13 +334,17 @@ public class ActivityDAO extends DBContext {
         a.setSubject(rs.getString("subject"));
         a.setDescription(rs.getString("description"));
         Timestamp actDate = rs.getTimestamp("activity_date");
-        if (actDate != null) a.setActivityDate(actDate.toLocalDateTime());
+        if (actDate != null) {
+            a.setActivityDate(actDate.toLocalDateTime());
+        }
         a.setDurationMinutes(rs.getObject("duration_minutes") != null ? rs.getInt("duration_minutes") : null);
         a.setCallDirection(rs.getString("call_direction"));
         a.setCallResult(rs.getString("call_result"));
         a.setPerformedBy(rs.getObject("performed_by") != null ? rs.getInt("performed_by") : null);
         Timestamp created = rs.getTimestamp("created_at");
-        if (created != null) a.setCreatedAt(created.toLocalDateTime());
+        if (created != null) {
+            a.setCreatedAt(created.toLocalDateTime());
+        }
         a.setCreatedBy(rs.getObject("created_by") != null ? rs.getInt("created_by") : null);
         a.setStatus(rs.getString("status"));
         return a;
@@ -355,6 +385,57 @@ public class ActivityDAO extends DBContext {
                 Activity a = mapResultSetToActivity(rs);
                 a.setCustomerName(rs.getString("full_name"));
                 a.setCustomerPhone(rs.getString("phone"));
+                list.add(a);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    public List<Activity> searchGlobal(String code, String name, String phone) {
+        List<Activity> list = new ArrayList<>();
+        // SQL: Tìm kiếm tổng hợp từ cả 2 bảng bằng UNION ALL
+        String sql = "SELECT 'Customer' as source, c.customer_id as id, c.customer_code as code, "
+                + "c.full_name, c.phone, c.status, c.created_by, (u.last_name + ' ' + u.first_name) as creator_name "
+                + "FROM customers c LEFT JOIN users u ON c.created_by = u.user_id "
+                + "WHERE (? = '' OR c.customer_code LIKE ?) "
+                + "  AND (? = '' OR c.full_name LIKE ?) "
+                + "  AND (? = '' OR c.phone LIKE ?) "
+                + "UNION ALL "
+                + "SELECT 'Lead' as source, l.lead_id as id, l.lead_code as code, "
+                + "l.full_name, l.phone, l.status, l.created_by, (u.last_name + ' ' + u.first_name) as creator_name "
+                + "FROM leads l LEFT JOIN users u ON l.created_by = u.user_id "
+                + "WHERE (? = '' OR l.lead_code LIKE ?) "
+                + "  AND (? = '' OR l.full_name LIKE ?) "
+                + "  AND (? = '' OR l.phone LIKE ?)";
+
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            String c = (code == null) ? "" : code.trim();
+            String n = (name == null) ? "" : name.trim();
+            String p = (phone == null) ? "" : phone.trim();
+
+            // Gán 12 tham số cho 2 khối UNION
+            for (int i = 0; i <= 6; i += 6) {
+                ps.setString(i + 1, c);
+                ps.setString(i + 2, "%" + c + "%");
+                ps.setString(i + 3, n);
+                ps.setString(i + 4, "%" + n + "%");
+                ps.setString(i + 5, p);
+                ps.setString(i + 6, "%" + p + "%");
+            }
+
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                Activity a = new Activity();
+                a.setRelatedId(rs.getInt("id"));
+                a.setRelatedType(rs.getString("source"));
+                a.setSubject(rs.getString("code"));
+                a.setCustomerName(rs.getString("full_name"));
+                a.setCustomerPhone(rs.getString("phone"));
+                a.setStatus(rs.getString("status"));
+                a.setCreatedBy(rs.getInt("created_by"));
+                a.setPerformerName(rs.getString("creator_name"));
                 list.add(a);
             }
         } catch (SQLException e) {

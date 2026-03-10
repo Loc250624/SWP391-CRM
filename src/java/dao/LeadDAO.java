@@ -399,15 +399,18 @@ public class LeadDAO extends DBContext {
             String keyword, String status, Integer sourceId, int offset, int pageSize) {
         List<Lead> list = new ArrayList<>();
         StringBuilder sql = new StringBuilder(
-            "SELECT * FROM leads l WHERE l.assigned_to IS NULL" +
-            " AND l.created_by IN (SELECT user_id FROM users WHERE department_id = ?)");
+                "SELECT * FROM leads l WHERE l.assigned_to IS NULL"
+                + " AND l.created_by IN (SELECT user_id FROM users WHERE department_id = ?)");
         List<Object> params = new ArrayList<>();
         params.add(departmentId);
 
         if (keyword != null && !keyword.trim().isEmpty()) {
             String kw = "%" + keyword.trim() + "%";
             sql.append(" AND (l.full_name LIKE ? OR l.lead_code LIKE ? OR l.phone LIKE ? OR l.email LIKE ?)");
-            params.add(kw); params.add(kw); params.add(kw); params.add(kw);
+            params.add(kw);
+            params.add(kw);
+            params.add(kw);
+            params.add(kw);
         }
         if (status != null && !status.trim().isEmpty()) {
             sql.append(" AND l.status = ?");
@@ -422,9 +425,13 @@ public class LeadDAO extends DBContext {
         params.add(pageSize);
 
         try (PreparedStatement st = connection.prepareStatement(sql.toString())) {
-            for (int i = 0; i < params.size(); i++) st.setObject(i + 1, params.get(i));
+            for (int i = 0; i < params.size(); i++) {
+                st.setObject(i + 1, params.get(i));
+            }
             try (ResultSet rs = st.executeQuery()) {
-                while (rs.next()) list.add(mapResultSetToLead(rs));
+                while (rs.next()) {
+                    list.add(mapResultSetToLead(rs));
+                }
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -436,15 +443,18 @@ public class LeadDAO extends DBContext {
     public int countLeadsByManagerScope(int departmentId,
             String keyword, String status, Integer sourceId) {
         StringBuilder sql = new StringBuilder(
-            "SELECT COUNT(*) FROM leads l WHERE l.assigned_to IS NULL" +
-            " AND l.created_by IN (SELECT user_id FROM users WHERE department_id = ?)");
+                "SELECT COUNT(*) FROM leads l WHERE l.assigned_to IS NULL"
+                + " AND l.created_by IN (SELECT user_id FROM users WHERE department_id = ?)");
         List<Object> params = new ArrayList<>();
         params.add(departmentId);
 
         if (keyword != null && !keyword.trim().isEmpty()) {
             String kw = "%" + keyword.trim() + "%";
             sql.append(" AND (l.full_name LIKE ? OR l.lead_code LIKE ? OR l.phone LIKE ? OR l.email LIKE ?)");
-            params.add(kw); params.add(kw); params.add(kw); params.add(kw);
+            params.add(kw);
+            params.add(kw);
+            params.add(kw);
+            params.add(kw);
         }
         if (status != null && !status.trim().isEmpty()) {
             sql.append(" AND l.status = ?");
@@ -455,9 +465,13 @@ public class LeadDAO extends DBContext {
             params.add(sourceId);
         }
         try (PreparedStatement st = connection.prepareStatement(sql.toString())) {
-            for (int i = 0; i < params.size(); i++) st.setObject(i + 1, params.get(i));
+            for (int i = 0; i < params.size(); i++) {
+                st.setObject(i + 1, params.get(i));
+            }
             try (ResultSet rs = st.executeQuery()) {
-                if (rs.next()) return rs.getInt(1);
+                if (rs.next()) {
+                    return rs.getInt(1);
+                }
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -517,19 +531,72 @@ public class LeadDAO extends DBContext {
         }
         return list;
     }
+
     // Batch fetch lead full_name by IDs — used for "related object" column in task list
     public Map<Integer, String> getLeadNameMap(List<Integer> leadIds) {
         Map<Integer, String> map = new HashMap<>();
-        if (leadIds == null || leadIds.isEmpty()) return map;
+        if (leadIds == null || leadIds.isEmpty()) {
+            return map;
+        }
         StringBuilder sql = new StringBuilder("SELECT lead_id, full_name FROM leads WHERE lead_id IN (");
-        for (int i = 0; i < leadIds.size(); i++) sql.append(i > 0 ? ",?" : "?");
+        for (int i = 0; i < leadIds.size(); i++) {
+            sql.append(i > 0 ? ",?" : "?");
+        }
         sql.append(")");
         try (PreparedStatement st = connection.prepareStatement(sql.toString())) {
-            for (int i = 0; i < leadIds.size(); i++) st.setInt(i + 1, leadIds.get(i));
-            try (ResultSet rs = st.executeQuery()) {
-                while (rs.next()) map.put(rs.getInt("lead_id"), rs.getString("full_name"));
+            for (int i = 0; i < leadIds.size(); i++) {
+                st.setInt(i + 1, leadIds.get(i));
             }
-        } catch (SQLException e) { e.printStackTrace(); }
+            try (ResultSet rs = st.executeQuery()) {
+                while (rs.next()) {
+                    map.put(rs.getInt("lead_id"), rs.getString("full_name"));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
         return map;
+    }
+    // Lấy danh sách Lead CHỈ do người dùng hiện tại tạo ra
+
+    public List<Lead> getLeadsByCreator(int userId) {
+        List<Lead> list = new ArrayList<>();
+        // SQL: Lọc chính xác theo ID người tạo và sắp xếp mới nhất lên đầu
+        String sql = "SELECT * FROM leads WHERE created_by = ? ORDER BY created_at DESC";
+
+        try (PreparedStatement st = connection.prepareStatement(sql)) {
+            st.setInt(1, userId);
+            try (ResultSet rs = st.executeQuery()) {
+                while (rs.next()) {
+                    // Sử dụng hàm mapResultSetToLead tương tự như bên Customer
+                    list.add(mapResultSetToLead(rs));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    public List<Lead> searchLeadsByPhoneAndCreator(String phone, int userId) {
+        List<Lead> list = new ArrayList<>();
+        // SQL: Tìm kiếm số điện thoại nhưng chỉ giới hạn trong các bản ghi do user này tạo
+        String sql = "SELECT * FROM leads WHERE phone LIKE ? AND created_by = ? ORDER BY created_at DESC";
+
+        try (PreparedStatement st = connection.prepareStatement(sql)) {
+            // Gán tham số tìm kiếm (ví dụ: %090%)
+            st.setString(1, "%" + phone + "%");
+            st.setInt(2, userId);
+
+            try (ResultSet rs = st.executeQuery()) {
+                while (rs.next()) {
+                    // Sử dụng hàm mapResultSetToLead đã có trong DAO của bạn
+                    list.add(mapResultSetToLead(rs));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
     }
 }
