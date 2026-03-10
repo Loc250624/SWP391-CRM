@@ -76,7 +76,7 @@ public class ManagerTaskDeleteServlet extends HttpServlet {
                 return;
             }
 
-            boolean success = taskDAO.deleteTask(taskId);
+            boolean success = taskDAO.deleteTask(taskId, currentUser.getUserId());
             if (success) {
                 session.setAttribute("successMessage", "Xóa công việc thành công");
             } else {

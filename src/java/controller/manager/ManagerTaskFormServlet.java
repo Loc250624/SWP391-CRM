@@ -3,6 +3,7 @@ package controller.manager;
 import dao.CustomerDAO;
 import dao.LeadDAO;
 import dao.OpportunityDAO;
+import dao.TaskAssigneeDAO;
 import dao.TaskDAO;
 import dao.UserDAO;
 import enums.Priority;
@@ -21,6 +22,7 @@ import model.Customer;
 import model.Lead;
 import model.Opportunity;
 import model.Task;
+import model.TaskAssignee;
 import model.Users;
 
 @WebServlet(name = "ManagerTaskFormServlet", urlPatterns = {"/manager/task/form"})
@@ -242,15 +244,15 @@ public class ManagerTaskFormServlet extends HttpServlet {
                     }
                 }
 
-                int success = 0;
                 String cleanDesc = description != null ? description.trim() : null;
-                List<Integer> insertedIds = new ArrayList<>();
+                boolean success;
 
-                for (int assigneeId : mainIds) {
+                if ("GROUP".equals(assignType)) {
+                    // New approach: 1 task + N assignees in task_assignees
                     Task t = new Task();
                     t.setTitle(title.trim());
                     t.setDescription(cleanDesc);
-                    t.setAssignedTo(assigneeId);
+                    t.setAssignedTo(mainIds.get(0)); // primary assignee (auto-inserted by insertTask)
                     t.setDueDate(dueDate);
                     t.setPriority(priority);
                     t.setStatus(TaskStatus.PENDING.ordinal());
@@ -258,19 +260,41 @@ public class ManagerTaskFormServlet extends HttpServlet {
                     t.setRelatedId(relatedId);
                     t.setCreatedBy(currentUser.getUserId());
                     t.setReminderAt(dueDate.minusHours(24));
-                    if (taskDAO.insertTask(t)) { success++; insertedIds.add(t.getTaskId()); }
-                }
+                    success = taskDAO.insertTask(t);
 
-                if ("GROUP".equals(assignType) && insertedIds.size() >= 2) {
-                    int groupId = insertedIds.get(0);
-                    for (int tId : insertedIds) taskDAO.updateGroupTaskId(tId, groupId);
-                }
-
-                for (int sId : supportIds) {
+                    if (success && t.getTaskId() != null) {
+                        TaskAssigneeDAO taDao = new TaskAssigneeDAO();
+                        // Add remaining main assignees (first one already inserted by insertTask)
+                        for (int i = 1; i < mainIds.size(); i++) {
+                            TaskAssignee ta = new TaskAssignee();
+                            ta.setTaskId(t.getTaskId());
+                            ta.setUserId(mainIds.get(i));
+                            ta.setRole("ASSIGNEE");
+                            ta.setTaskStatus(0);
+                            ta.setProgress(0);
+                            ta.setAssignedBy(currentUser.getUserId());
+                            ta.setAssignedAt(LocalDateTime.now());
+                            taDao.insert(ta);
+                        }
+                        // Add support members
+                        for (int sId : supportIds) {
+                            TaskAssignee ta = new TaskAssignee();
+                            ta.setTaskId(t.getTaskId());
+                            ta.setUserId(sId);
+                            ta.setRole("SUPPORT");
+                            ta.setTaskStatus(0);
+                            ta.setProgress(0);
+                            ta.setAssignedBy(currentUser.getUserId());
+                            ta.setAssignedAt(LocalDateTime.now());
+                            taDao.insert(ta);
+                        }
+                    }
+                } else {
+                    // Individual task: 1 task + 1 assignee
                     Task t = new Task();
                     t.setTitle(title.trim());
-                    t.setDescription("[Vai trò: Hỗ trợ]\n" + (cleanDesc != null ? cleanDesc : ""));
-                    t.setAssignedTo(sId);
+                    t.setDescription(cleanDesc);
+                    t.setAssignedTo(mainIds.get(0));
                     t.setDueDate(dueDate);
                     t.setPriority(priority);
                     t.setStatus(TaskStatus.PENDING.ordinal());
@@ -278,10 +302,10 @@ public class ManagerTaskFormServlet extends HttpServlet {
                     t.setRelatedId(relatedId);
                     t.setCreatedBy(currentUser.getUserId());
                     t.setReminderAt(dueDate.minusHours(24));
-                    taskDAO.insertTask(t);
+                    success = taskDAO.insertTask(t);
                 }
 
-                if (success == 0) {
+                if (!success) {
                     session.setAttribute("errorMessage", "Tạo công việc thất bại");
                     response.sendRedirect(errorBase); return;
                 }

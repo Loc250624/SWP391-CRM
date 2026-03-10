@@ -1,6 +1,7 @@
 package controller.manager;
 
-import dao.CRMPoolDAO;
+import dao.CustomerDAO;
+import dao.LeadDAO;
 import dao.LeadSourceDAO;
 import dao.UserDAO;
 import java.io.IOException;
@@ -14,7 +15,8 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
-import model.CRMPoolItem;
+import model.Customer;
+import model.Lead;
 import model.LeadSource;
 import model.Users;
 
@@ -40,14 +42,7 @@ public class ManagerCRMPoolServlet extends HttpServlet {
             return;
         }
 
-        // Filter parameters
-        String keyword    = request.getParameter("keyword");
-        String typeFilter = request.getParameter("type");   // "LEAD" | "CUSTOMER" | null = all
-
-        // Normalize typeFilter
-        if (typeFilter != null && !typeFilter.equals("LEAD") && !typeFilter.equals("CUSTOMER")) {
-            typeFilter = null;
-        }
+        String keyword = request.getParameter("keyword");
 
         // Pagination
         int page = 1, pageSize = 20;
@@ -63,38 +58,44 @@ public class ManagerCRMPoolServlet extends HttpServlet {
         int departmentId = currentUser.getDepartmentId();
         int managerId    = currentUser.getUserId();
 
-        // Fetch pool items (UNION of unassigned Leads + Customers with no tasks)
-        CRMPoolDAO poolDAO = new CRMPoolDAO();
-        List<CRMPoolItem> poolItems = poolDAO.getPoolItems(
-                departmentId, keyword, typeFilter, offset, pageSize);
-        int totalItems = poolDAO.countPoolItems(departmentId, keyword, typeFilter);
+        // Fetch unassigned leads and customers separately
+        LeadDAO leadDAO         = new LeadDAO();
+        CustomerDAO customerDAO = new CustomerDAO();
 
-        int totalPages = (int) Math.ceil((double) totalItems / pageSize);
-        if (totalPages < 1) totalPages = 1;
+        List<Lead> poolLeads         = leadDAO.getPoolLeads(departmentId, keyword, offset, pageSize);
+        int totalLeads               = leadDAO.countPoolLeads(departmentId, keyword);
 
-        // Source name map for display (shared by both leads and customers)
+        List<Customer> poolCustomers = customerDAO.getPoolCustomers(departmentId, keyword, offset, pageSize);
+        int totalCustomers           = customerDAO.countPoolCustomers(departmentId, keyword);
+
+        int totalLeadPages    = Math.max(1, (int) Math.ceil((double) totalLeads / pageSize));
+        int totalCustomerPages = Math.max(1, (int) Math.ceil((double) totalCustomers / pageSize));
+
+        // Source name map for display
         List<LeadSource> sources = new LeadSourceDAO().getAllActiveSources();
         Map<Integer, String> sourceMap = new HashMap<>();
         for (LeadSource s : sources) sourceMap.put(s.getSourceId(), s.getSourceName());
 
-        // Team members for the assign-task modal
+        // Team members for assign-task modal
         List<Users> teamMembers    = userDAO.getUsersByDepartment(departmentId);
         List<Users> salesForAssign = new ArrayList<>();
         for (Users u : teamMembers) {
             if (u.getUserId() != managerId) salesForAssign.add(u);
         }
 
-        request.setAttribute("poolItems",     poolItems);
-        request.setAttribute("totalItems",    totalItems);
-        request.setAttribute("totalPages",    totalPages);
-        request.setAttribute("currentPage",   page);
-        request.setAttribute("sourceMap",     sourceMap);
-        request.setAttribute("salesForAssign", salesForAssign);
-        request.setAttribute("keyword",       keyword != null ? keyword : "");
-        request.setAttribute("typeFilter",    typeFilter != null ? typeFilter : "");
-        request.setAttribute("pageTitle",     "CRM Pool - Chưa được giao");
-        request.setAttribute("ACTIVE_MENU",   "CRM_POOL");
-        request.setAttribute("CONTENT_PAGE",  "/view/manager/crm/crm-pool.jsp");
+        request.setAttribute("poolLeads",          poolLeads);
+        request.setAttribute("totalLeads",         totalLeads);
+        request.setAttribute("totalLeadPages",     totalLeadPages);
+        request.setAttribute("poolCustomers",      poolCustomers);
+        request.setAttribute("totalCustomers",     totalCustomers);
+        request.setAttribute("totalCustomerPages", totalCustomerPages);
+        request.setAttribute("currentPage",        page);
+        request.setAttribute("sourceMap",          sourceMap);
+        request.setAttribute("salesForAssign",     salesForAssign);
+        request.setAttribute("keyword",            keyword != null ? keyword : "");
+        request.setAttribute("pageTitle",          "CRM Pool - Chưa được giao");
+        request.setAttribute("ACTIVE_MENU",        "CRM_POOL");
+        request.setAttribute("CONTENT_PAGE",       "/view/manager/crm/crm-pool.jsp");
 
         request.getRequestDispatcher("/view/manager/layout/layout-manager.jsp")
                .forward(request, response);

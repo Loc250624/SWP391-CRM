@@ -2,6 +2,7 @@ package controller.manager;
 
 import dao.CustomerDAO;
 import dao.LeadDAO;
+import dao.TaskAssigneeDAO;
 import dao.TaskDAO;
 import dao.UserDAO;
 import enums.Priority;
@@ -21,6 +22,7 @@ import jakarta.servlet.http.HttpSession;
 import model.Customer;
 import model.Lead;
 import model.Task;
+import model.TaskAssignee;
 import model.Users;
 
 @WebServlet(name = "ManagerCRMTaskCreateServlet", urlPatterns = {"/manager/crm/assign-task"})
@@ -169,40 +171,41 @@ public class ManagerCRMTaskCreateServlet extends HttpServlet {
             }
         }
 
-        // ── Create one Task per assignee (cloning for group) ──────────────
+        // ── Create 1 Task + N assignees ──────────────────────────────────
         TaskDAO taskDAO = new TaskDAO();
-        int successCount = 0;
-        List<Integer> insertedTaskIds = new ArrayList<>();
 
-        for (int assigneeId : assigneeIds) {
-            Task task = new Task();
-            task.setTitle(title.trim());
-            task.setDescription(description != null ? description.trim() : null);
-            task.setRelatedType(relatedType);
-            task.setRelatedId(relatedId);
-            task.setAssignedTo(assigneeId);
-            task.setPriority(priority);
-            task.setStatus(TaskStatus.IN_PROGRESS.ordinal());  // always IN_PROGRESS
-            task.setDueDate(dueDate);
-            task.setCreatedBy(currentUser.getUserId());
+        Task task = new Task();
+        task.setTitle(title.trim());
+        task.setDescription(description != null ? description.trim() : null);
+        task.setRelatedType(relatedType);
+        task.setRelatedId(relatedId);
+        task.setAssignedTo(assigneeIds.get(0)); // primary assignee (auto-inserted by insertTask)
+        task.setPriority(priority);
+        task.setStatus(TaskStatus.IN_PROGRESS.ordinal());
+        task.setDueDate(dueDate);
+        task.setCreatedBy(currentUser.getUserId());
 
-            if (taskDAO.insertTask(task)) {
-                successCount++;
-                insertedTaskIds.add(task.getTaskId());
-            }
-        }
+        boolean success = taskDAO.insertTask(task);
 
-        // ── Link group task rows via group_task_id (first task is representative) ──
-        if ("GROUP".equals(assignType) && insertedTaskIds.size() >= 2) {
-            int groupTaskId = insertedTaskIds.get(0);
-            for (int tId : insertedTaskIds) {
-                taskDAO.updateGroupTaskId(tId, groupTaskId);
-            }
-        }
-
-        if (successCount == 0) {
+        if (!success || task.getTaskId() == null) {
             session.setAttribute("errorMessage", "Giao việc thất bại, vui lòng thử lại");
             response.sendRedirect(redirectTo); return;
+        }
+
+        // Add remaining assignees for GROUP
+        if ("GROUP".equals(assignType) && assigneeIds.size() >= 2) {
+            TaskAssigneeDAO taDao = new TaskAssigneeDAO();
+            for (int i = 1; i < assigneeIds.size(); i++) {
+                TaskAssignee ta = new TaskAssignee();
+                ta.setTaskId(task.getTaskId());
+                ta.setUserId(assigneeIds.get(i));
+                ta.setRole("ASSIGNEE");
+                ta.setTaskStatus(TaskStatus.IN_PROGRESS.ordinal());
+                ta.setProgress(0);
+                ta.setAssignedBy(currentUser.getUserId());
+                ta.setAssignedAt(LocalDateTime.now());
+                taDao.insert(ta);
+            }
         }
 
         // ── Mark Lead/Customer as assigned (disappears from CRM Pool) ─────
@@ -217,7 +220,7 @@ public class ManagerCRMTaskCreateServlet extends HttpServlet {
 
         // Build success message
         String who = "GROUP".equals(assignType) && assigneeIds.size() > 1
-                ? successCount + " nhân viên (nhóm)"
+                ? assigneeIds.size() + " nhân viên (nhóm)"
                 : "1 nhân viên";
         session.setAttribute("successMessage",
                 "Đã giao việc thành công cho " + who + ". Đối tượng đã chuyển sang quản lý task.");

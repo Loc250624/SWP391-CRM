@@ -1,9 +1,10 @@
 package controller.manager;
 
+import dao.TaskAssigneeDAO;
 import dao.TaskDAO;
 import dao.UserDAO;
-import enums.TaskStatus;
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import jakarta.servlet.ServletException;
@@ -13,6 +14,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import model.Task;
+import model.TaskAssignee;
 import model.Users;
 
 /**
@@ -114,13 +116,9 @@ public class ManagerTaskReassignServlet extends HttpServlet {
             response.sendRedirect(redirectTo);
 
         } else if ("TO_GROUP".equals(mode)) {
-            // ── individual → group ──
-            // Task must currently be individual (groupTaskId == null)
-            if (task.getGroupTaskId() != null) {
-                session.setAttribute("errorMessage", "Công việc này đã là công việc nhóm");
-                response.sendRedirect(redirectTo);
-                return;
-            }
+            // ── individual → group: add new assignees to task_assignees ──
+            TaskAssigneeDAO taDao = new TaskAssigneeDAO();
+            List<TaskAssignee> existingAssignees = taDao.getByTaskId(taskId);
 
             String[] newMemberStrs = request.getParameterValues("newMembers");
             if (newMemberStrs == null || newMemberStrs.length == 0) {
@@ -129,12 +127,16 @@ public class ManagerTaskReassignServlet extends HttpServlet {
                 return;
             }
 
+            // Collect existing assignee user IDs
+            List<Integer> existingUserIds = new ArrayList<>();
+            for (TaskAssignee ea : existingAssignees) existingUserIds.add(ea.getUserId());
+
             List<Integer> newMemberIds = new ArrayList<>();
             for (String s : newMemberStrs) {
                 try {
                     int uid = Integer.parseInt(s.trim());
                     if (isInDept(uid, deptMembers) && !newMemberIds.contains(uid)
-                            && uid != task.getAssignedTo()) {
+                            && !existingUserIds.contains(uid)) {
                         newMemberIds.add(uid);
                     }
                 } catch (NumberFormatException ignored) {}
@@ -146,66 +148,69 @@ public class ManagerTaskReassignServlet extends HttpServlet {
                 return;
             }
 
-            // Make original task the group representative
-            int groupTaskId = task.getTaskId();
-            taskDAO.updateGroupTaskId(groupTaskId, groupTaskId); // rep links to itself
-
-            // Create task row for each new member
+            // Add new assignees to task_assignees table
             for (int memberId : newMemberIds) {
-                Task newTask = new Task();
-                newTask.setTitle(task.getTitle());
-                newTask.setDescription(task.getDescription());
-                newTask.setAssignedTo(memberId);
-                newTask.setDueDate(task.getDueDate());
-                newTask.setPriority(task.getPriority());
-                newTask.setStatus(TaskStatus.IN_PROGRESS.ordinal());
-                newTask.setRelatedType(task.getRelatedType());
-                newTask.setRelatedId(task.getRelatedId());
-                newTask.setCreatedBy(currentUser.getUserId());
-                newTask.setReminderAt(task.getReminderAt());
-                newTask.setGroupTaskId(groupTaskId);
-                taskDAO.insertTask(newTask);
+                TaskAssignee ta = new TaskAssignee();
+                ta.setTaskId(taskId);
+                ta.setUserId(memberId);
+                ta.setRole("ASSIGNEE");
+                ta.setTaskStatus(task.getStatus() != null ? task.getStatus() : 0);
+                ta.setProgress(0);
+                ta.setAssignedBy(currentUser.getUserId());
+                ta.setAssignedAt(LocalDateTime.now());
+                taDao.insert(ta);
             }
 
             session.setAttribute("successMessage", "Đã chuyển thành công việc nhóm với "
-                    + (newMemberIds.size() + 1) + " thành viên");
+                    + (existingUserIds.size() + newMemberIds.size()) + " thành viên");
             response.sendRedirect(redirectTo);
 
         } else if ("FROM_GROUP".equals(mode)) {
-            // ── group → individual (keep one, cancel rest) ──
-            if (task.getGroupTaskId() == null) {
+            // ── group → individual: keep one assignee, remove the rest ──
+            TaskAssigneeDAO taDao = new TaskAssigneeDAO();
+            List<TaskAssignee> assignees = taDao.getByTaskId(taskId);
+
+            if (assignees.size() <= 1) {
                 session.setAttribute("errorMessage", "Công việc này không phải công việc nhóm");
                 response.sendRedirect(redirectTo);
                 return;
             }
 
-            String keepTaskIdStr = request.getParameter("keepTaskId");
-            if (keepTaskIdStr == null || keepTaskIdStr.trim().isEmpty()) {
+            String keepUserIdStr = request.getParameter("keepTaskId"); // reuse param name for userId
+            if (keepUserIdStr == null || keepUserIdStr.trim().isEmpty()) {
                 session.setAttribute("errorMessage", "Vui lòng chọn thành viên cần giữ lại");
                 response.sendRedirect(redirectTo);
                 return;
             }
 
-            int keepTaskId;
-            try { keepTaskId = Integer.parseInt(keepTaskIdStr.trim()); }
+            int keepUserId;
+            try { keepUserId = Integer.parseInt(keepUserIdStr.trim()); }
             catch (NumberFormatException e) {
                 session.setAttribute("errorMessage", "ID không hợp lệ");
                 response.sendRedirect(redirectTo);
                 return;
             }
 
-            // Cancel all other members in the group
-            List<Task> members = taskDAO.getGroupTaskMembers(task.getGroupTaskId());
-            for (Task m : members) {
-                if (m.getTaskId() != keepTaskId) {
-                    taskDAO.cancelTask(m.getTaskId());
-                }
+            // Delete all assignees then re-insert only the kept one
+            TaskAssignee keptAssignee = null;
+            for (TaskAssignee a : assignees) {
+                if (a.getUserId() == keepUserId) { keptAssignee = a; break; }
             }
-            // Dissolve group membership for the kept task
-            taskDAO.dissolveGroupMembership(keepTaskId);
+            if (keptAssignee == null) {
+                session.setAttribute("errorMessage", "Thành viên không tồn tại trong nhóm");
+                response.sendRedirect(redirectTo);
+                return;
+            }
+
+            taDao.deleteByTaskId(taskId);
+            taDao.insert(keptAssignee);
+
+            // Update task's primary assignee
+            task.setAssignedTo(keepUserId);
+            taskDAO.updateTask(task);
 
             session.setAttribute("successMessage", "Đã tách nhóm, giữ lại 1 thành viên");
-            response.sendRedirect(request.getContextPath() + "/manager/task/detail?id=" + keepTaskId);
+            response.sendRedirect(redirectTo);
 
         } else {
             session.setAttribute("errorMessage", "Chế độ giao việc không hợp lệ");
