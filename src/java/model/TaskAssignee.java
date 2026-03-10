@@ -12,7 +12,7 @@ public class TaskAssignee {
     public Integer taskId;
     public Integer userId;
     public String role;
-    public Integer acceptStatus;
+    public Integer taskStatus;
     public LocalDateTime acceptedAt;
     public String declineReason;
     public Integer progress;
@@ -22,12 +22,12 @@ public class TaskAssignee {
     public TaskAssignee() {
     }
 
-    public TaskAssignee(Integer id, Integer taskId, Integer userId, String role, Integer acceptStatus, LocalDateTime acceptedAt, String declineReason, Integer progress, Integer assignedBy, LocalDateTime assignedAt) {
+    public TaskAssignee(Integer id, Integer taskId, Integer userId, String role, Integer taskStatus, LocalDateTime acceptedAt, String declineReason, Integer progress, Integer assignedBy, LocalDateTime assignedAt) {
         this.id = id;
         this.taskId = taskId;
         this.userId = userId;
         this.role = role;
-        this.acceptStatus = acceptStatus;
+        this.taskStatus = taskStatus;
         this.acceptedAt = acceptedAt;
         this.declineReason = declineReason;
         this.progress = progress;
@@ -67,12 +67,12 @@ public class TaskAssignee {
         this.role = role;
     }
 
-    public Integer getAcceptStatus() {
-        return acceptStatus;
+    public Integer getTaskStatus() {
+        return taskStatus;
     }
 
-    public void setAcceptStatus(Integer acceptStatus) {
-        this.acceptStatus = acceptStatus;
+    public void setTaskStatus(Integer taskStatus) {
+        this.taskStatus = taskStatus;
     }
 
     public LocalDateTime getAcceptedAt() {
