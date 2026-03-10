@@ -19,8 +19,8 @@ import jakarta.servlet.http.HttpSession;
 import model.Customer;
 import model.Lead;
 import model.Opportunity;
+import model.Comment;
 import model.Task;
-import model.TaskComment;
 import model.Users;
 
 @WebServlet(name = "ManagerTaskDetailServlet", urlPatterns = {"/manager/task/detail"})
@@ -130,7 +130,7 @@ public class ManagerTaskDetailServlet extends HttpServlet {
             List<Users> allUsers = userDAO.getAllUsers();
 
             // ── Comments ──
-            List<TaskComment> comments = new TaskCommentDAO().getCommentsByTaskId(taskId);
+            List<Comment> comments = new TaskCommentDAO().getCommentsByTaskId(taskId);
 
             request.setAttribute("task",                 task);
             request.setAttribute("assignedUser",         assignedUser);
