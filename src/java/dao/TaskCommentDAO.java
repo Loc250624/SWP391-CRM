@@ -12,8 +12,7 @@ public class TaskCommentDAO extends DBContext {
     private static final String RELATED_TYPE = "TASK";
 
     public boolean insertComment(int taskId, int userId, String content) {
-        String sql = "INSERT INTO comments (related_type, related_id, content, parent_comment_id, created_at, created_by) " +
-                     "VALUES (?, ?, ?, NULL, ?, ?)";
+        String sql = "INSERT INTO comments (related_type, related_id, content, created_at, created_by) VALUES (?, ?, ?, ?, ?)";
         try (PreparedStatement st = connection.prepareStatement(sql)) {
             st.setString(1, RELATED_TYPE);
             st.setInt(2, taskId);

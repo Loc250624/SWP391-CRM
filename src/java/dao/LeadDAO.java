@@ -578,6 +578,65 @@ public class LeadDAO extends DBContext {
         return list;
     }
 
+    // ── CRM Pool: unassigned leads with no active tasks ──
+    public List<Lead> getPoolLeads(int deptId, String keyword, int offset, int pageSize) {
+        List<Lead> list = new ArrayList<>();
+        StringBuilder sql = new StringBuilder(
+            "SELECT * FROM leads l" +
+            " WHERE l.assigned_to IS NULL" +
+            " AND l.created_by IN (SELECT user_id FROM users WHERE department_id = ?)" +
+            " AND NOT EXISTS (" +
+            "   SELECT 1 FROM task_relations tr" +
+            "   INNER JOIN tasks t ON t.task_id = tr.task_id" +
+            "   WHERE tr.related_type = 'LEAD' AND tr.related_id = l.lead_id" +
+            "   AND (t.is_deleted = 0 OR t.is_deleted IS NULL) AND t.status NOT IN (2,3))"
+        );
+        List<Object> params = new ArrayList<>();
+        params.add(deptId);
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            sql.append(" AND (l.full_name LIKE ? OR l.phone LIKE ? OR l.lead_code LIKE ?)");
+            String kw = "%" + keyword.trim() + "%";
+            params.add(kw); params.add(kw); params.add(kw);
+        }
+        sql.append(" ORDER BY l.created_at DESC OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
+        params.add(offset); params.add(pageSize);
+
+        try (PreparedStatement st = connection.prepareStatement(sql.toString())) {
+            for (int i = 0; i < params.size(); i++) st.setObject(i + 1, params.get(i));
+            try (ResultSet rs = st.executeQuery()) {
+                while (rs.next()) list.add(mapResultSetToLead(rs));
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return list;
+    }
+
+    public int countPoolLeads(int deptId, String keyword) {
+        StringBuilder sql = new StringBuilder(
+            "SELECT COUNT(*) FROM leads l" +
+            " WHERE l.assigned_to IS NULL" +
+            " AND l.created_by IN (SELECT user_id FROM users WHERE department_id = ?)" +
+            " AND NOT EXISTS (" +
+            "   SELECT 1 FROM task_relations tr" +
+            "   INNER JOIN tasks t ON t.task_id = tr.task_id" +
+            "   WHERE tr.related_type = 'LEAD' AND tr.related_id = l.lead_id" +
+            "   AND (t.is_deleted = 0 OR t.is_deleted IS NULL) AND t.status NOT IN (2,3))"
+        );
+        List<Object> params = new ArrayList<>();
+        params.add(deptId);
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            sql.append(" AND (l.full_name LIKE ? OR l.phone LIKE ? OR l.lead_code LIKE ?)");
+            String kw = "%" + keyword.trim() + "%";
+            params.add(kw); params.add(kw); params.add(kw);
+        }
+        try (PreparedStatement st = connection.prepareStatement(sql.toString())) {
+            for (int i = 0; i < params.size(); i++) st.setObject(i + 1, params.get(i));
+            try (ResultSet rs = st.executeQuery()) {
+                if (rs.next()) return rs.getInt(1);
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return 0;
+    }
+
     public List<Lead> searchLeadsByPhoneAndCreator(String phone, int userId) {
         List<Lead> list = new ArrayList<>();
         // SQL: Tìm kiếm số điện thoại nhưng chỉ giới hạn trong các bản ghi do user này tạo

@@ -416,6 +416,65 @@ public class CustomerDAO extends DBContext {
     }
     // Lấy danh sách khách hàng CHỈ do người dùng này tạo ra
 
+    // ── CRM Pool: unassigned customers with no active tasks ──
+    public List<Customer> getPoolCustomers(int deptId, String keyword, int offset, int pageSize) {
+        List<Customer> list = new ArrayList<>();
+        StringBuilder sql = new StringBuilder(
+            "SELECT * FROM customers c" +
+            " WHERE c.owner_id IS NULL" +
+            " AND c.created_by IN (SELECT user_id FROM users WHERE department_id = ?)" +
+            " AND NOT EXISTS (" +
+            "   SELECT 1 FROM task_relations tr" +
+            "   INNER JOIN tasks t ON t.task_id = tr.task_id" +
+            "   WHERE tr.related_type = 'CUSTOMER' AND tr.related_id = c.customer_id" +
+            "   AND (t.is_deleted = 0 OR t.is_deleted IS NULL) AND t.status NOT IN (2,3))"
+        );
+        List<Object> params = new ArrayList<>();
+        params.add(deptId);
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            sql.append(" AND (c.full_name LIKE ? OR c.phone LIKE ? OR c.customer_code LIKE ?)");
+            String kw = "%" + keyword.trim() + "%";
+            params.add(kw); params.add(kw); params.add(kw);
+        }
+        sql.append(" ORDER BY c.created_at DESC OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
+        params.add(offset); params.add(pageSize);
+
+        try (PreparedStatement st = connection.prepareStatement(sql.toString())) {
+            for (int i = 0; i < params.size(); i++) st.setObject(i + 1, params.get(i));
+            try (ResultSet rs = st.executeQuery()) {
+                while (rs.next()) list.add(mapResultSetToCustomer(rs));
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return list;
+    }
+
+    public int countPoolCustomers(int deptId, String keyword) {
+        StringBuilder sql = new StringBuilder(
+            "SELECT COUNT(*) FROM customers c" +
+            " WHERE c.owner_id IS NULL" +
+            " AND c.created_by IN (SELECT user_id FROM users WHERE department_id = ?)" +
+            " AND NOT EXISTS (" +
+            "   SELECT 1 FROM task_relations tr" +
+            "   INNER JOIN tasks t ON t.task_id = tr.task_id" +
+            "   WHERE tr.related_type = 'CUSTOMER' AND tr.related_id = c.customer_id" +
+            "   AND (t.is_deleted = 0 OR t.is_deleted IS NULL) AND t.status NOT IN (2,3))"
+        );
+        List<Object> params = new ArrayList<>();
+        params.add(deptId);
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            sql.append(" AND (c.full_name LIKE ? OR c.phone LIKE ? OR c.customer_code LIKE ?)");
+            String kw = "%" + keyword.trim() + "%";
+            params.add(kw); params.add(kw); params.add(kw);
+        }
+        try (PreparedStatement st = connection.prepareStatement(sql.toString())) {
+            for (int i = 0; i < params.size(); i++) st.setObject(i + 1, params.get(i));
+            try (ResultSet rs = st.executeQuery()) {
+                if (rs.next()) return rs.getInt(1);
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return 0;
+    }
+
     public List<Customer> getCustomersByCreator(int userId) {
         List<Customer> list = new ArrayList<>();
         // SQL: Lọc chính xác cột created_by
