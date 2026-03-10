@@ -423,14 +423,14 @@
                                     <li class="mb-3 d-flex gap-2">
                                         <div class="avatar-sm bg-secondary rounded-circle d-flex align-items-center justify-content-center text-white flex-shrink-0" style="width:32px;height:32px;font-size:0.75rem;">
                                             <c:forEach var="u" items="${allUsers}">
-                                                <c:if test="${u.userId == cmt.userId}">${fn:substring(u.firstName,0,1)}</c:if>
+                                                <c:if test="${u.userId == cmt.createdBy}">${fn:substring(u.firstName,0,1)}</c:if>
                                             </c:forEach>
                                         </div>
                                         <div class="bg-light rounded p-2 flex-grow-1">
                                             <div class="d-flex justify-content-between mb-1">
                                                 <strong class="small">
                                                     <c:forEach var="u" items="${allUsers}">
-                                                        <c:if test="${u.userId == cmt.userId}">${u.firstName} ${u.lastName}</c:if>
+                                                        <c:if test="${u.userId == cmt.createdBy}">${u.firstName} ${u.lastName}</c:if>
                                                     </c:forEach>
                                                 </strong>
                                                 <small class="text-muted">

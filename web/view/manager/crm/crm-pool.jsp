@@ -23,28 +23,23 @@
     <%-- Page header --%>
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h3 class="mb-1"><i class="bi bi-inbox-fill me-2 text-success"></i>CRM Pool – Chưa được giao</h3>
+            <h3 class="mb-1"><i class="bi bi-inbox-fill me-2 text-success"></i>CRM Pool - Chưa được giao</h3>
             <p class="text-muted mb-0">Lead và Khách hàng chưa có người phụ trách. Giao việc để chuyển sang quản lý task.</p>
         </div>
-        <span class="badge bg-success fs-6">${totalItems} đối tượng</span>
+        <div>
+            <span class="badge bg-info fs-6 me-1">${totalLeads} Lead</span>
+            <span class="badge bg-success fs-6">${totalCustomers} Khách hàng</span>
+        </div>
     </div>
 
     <%-- Filters --%>
     <div class="card mb-4 shadow-sm">
         <div class="card-body">
             <form method="get" action="${pageContext.request.contextPath}/manager/crm/pool" class="row g-2 align-items-end">
-                <div class="col-md-5">
+                <div class="col-md-8">
                     <label class="form-label fw-semibold small">Tìm kiếm</label>
                     <input type="text" name="keyword" class="form-control"
                            placeholder="Tên, mã, SĐT..." value="${keyword}">
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label fw-semibold small">Loại</label>
-                    <select name="type" class="form-select">
-                        <option value="">-- Tất cả --</option>
-                        <option value="LEAD"     ${typeFilter == 'LEAD'     ? 'selected' : ''}>Lead</option>
-                        <option value="CUSTOMER" ${typeFilter == 'CUSTOMER' ? 'selected' : ''}>Khách hàng</option>
-                    </select>
                 </div>
                 <div class="col-md-4 d-flex gap-2 align-items-end">
                     <button type="submit" class="btn btn-primary flex-fill">
@@ -59,20 +54,19 @@
         </div>
     </div>
 
-    <%-- Summary --%>
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <span class="text-muted small">Tìm thấy <strong>${totalItems}</strong> đối tượng chưa được giao</span>
-        <span class="text-muted small">Trang ${currentPage}/${totalPages}</span>
-    </div>
-
-    <%-- Table --%>
-    <div class="card shadow-sm">
+    <%-- ═══════════════ LEAD TABLE ═══════════════ --%>
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-info bg-opacity-10 d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="bi bi-person-lines-fill me-2 text-info"></i>Lead chưa giao
+                <span class="badge bg-info text-dark ms-1">${totalLeads}</span>
+            </h5>
+        </div>
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
                 <thead class="table-light">
                     <tr>
-                        <th style="width:90px">Loại</th>
                         <th>Họ tên</th>
+                        <th>Mã</th>
                         <th>SĐT</th>
                         <th>Nguồn</th>
                         <th>Ngày tạo</th>
@@ -81,66 +75,50 @@
                 </thead>
                 <tbody>
                     <c:choose>
-                        <c:when test="${empty poolItems}">
+                        <c:when test="${empty poolLeads}">
                             <tr>
-                                <td colspan="6" class="text-center py-5 text-muted">
-                                    <i class="bi bi-inbox fs-3 d-block mb-2"></i>
-                                    Pool trống — không còn đối tượng nào chưa được giao
+                                <td colspan="6" class="text-center py-4 text-muted">
+                                    <i class="bi bi-inbox fs-4 d-block mb-2"></i>
+                                    Không có Lead nào chưa được giao
                                 </td>
                             </tr>
                         </c:when>
                         <c:otherwise>
-                            <c:forEach var="item" items="${poolItems}">
-                                <%-- Build helper variables for the onclick --%>
-                                <c:set var="itemPhone"  value="${not empty item.phone ? item.phone : ''}"/>
-                                <c:set var="itemSource" value="${item.sourceId != null && not empty sourceMap[item.sourceId] ? sourceMap[item.sourceId] : ''}"/>
-                                <c:set var="itemDate"   value=""/>
-                                <c:if test="${item.createdAt != null}">
-                                    <c:set var="itemDate"
-                                           value="${fn:substring(item.createdAt.toString(),8,10)}/${fn:substring(item.createdAt.toString(),5,7)}/${fn:substring(item.createdAt.toString(),0,4)}"/>
+                            <c:forEach var="lead" items="${poolLeads}">
+                                <c:set var="leadDate" value=""/>
+                                <c:if test="${lead.createdAt != null}">
+                                    <c:set var="leadDate"
+                                           value="${fn:substring(lead.createdAt.toString(),8,10)}/${fn:substring(lead.createdAt.toString(),5,7)}/${fn:substring(lead.createdAt.toString(),0,4)}"/>
                                 </c:if>
                                 <tr>
+                                    <td class="fw-semibold">${lead.fullName}</td>
+                                    <td><small class="text-muted">${lead.leadCode}</small></td>
                                     <td>
                                         <c:choose>
-                                            <c:when test="${item.itemType == 'LEAD'}">
-                                                <span class="badge bg-info text-dark">Lead</span>
+                                            <c:when test="${not empty lead.phone}">${lead.phone}</c:when>
+                                            <c:otherwise><span class="text-muted">-</span></c:otherwise>
+                                        </c:choose>
+                                    </td>
+                                    <td>
+                                        <c:choose>
+                                            <c:when test="${lead.sourceId != null && not empty sourceMap[lead.sourceId]}">
+                                                <small class="text-muted">${sourceMap[lead.sourceId]}</small>
                                             </c:when>
-                                            <c:otherwise>
-                                                <span class="badge bg-success">Khách hàng</span>
-                                            </c:otherwise>
+                                            <c:otherwise><span class="text-muted">-</span></c:otherwise>
                                         </c:choose>
                                     </td>
-                                    <td class="fw-semibold">${item.fullName}</td>
-                                    <td>
-                                        <c:choose>
-                                            <c:when test="${not empty item.phone}">${item.phone}</c:when>
-                                            <c:otherwise><span class="text-muted">—</span></c:otherwise>
-                                        </c:choose>
-                                    </td>
-                                    <td>
-                                        <c:choose>
-                                            <c:when test="${item.sourceId != null && not empty sourceMap[item.sourceId]}">
-                                                <small class="text-muted">${sourceMap[item.sourceId]}</small>
-                                            </c:when>
-                                            <c:otherwise><span class="text-muted">—</span></c:otherwise>
-                                        </c:choose>
-                                    </td>
-                                    <td>
-                                        <c:if test="${item.createdAt != null}">
-                                            <small>${itemDate}</small>
-                                        </c:if>
-                                    </td>
+                                    <td><small>${leadDate}</small></td>
                                     <td class="text-center">
                                         <button type="button"
                                                 class="btn btn-sm btn-success"
                                                 title="Giao việc"
                                                 onclick="openAssignModal(
-                                                    '${item.itemType}',
-                                                    ${item.itemId},
-                                                    '${fn:escapeXml(item.fullName)}',
-                                                    '${fn:escapeXml(itemPhone)}',
-                                                    '${fn:escapeXml(itemSource)}',
-                                                    '${itemDate}'
+                                                    'LEAD',
+                                                    ${lead.leadId},
+                                                    '${fn:escapeXml(lead.fullName)}',
+                                                    '${fn:escapeXml(lead.phone)}',
+                                                    '${lead.sourceId != null && not empty sourceMap[lead.sourceId] ? fn:escapeXml(sourceMap[lead.sourceId]) : ""}',
+                                                    '${leadDate}'
                                                 )">
                                             <i class="bi bi-plus-circle me-1"></i>Giao việc
                                         </button>
@@ -154,27 +132,127 @@
         </div>
     </div>
 
-    <%-- Pagination --%>
-    <c:if test="${totalPages > 1}">
-        <nav class="mt-4">
-            <ul class="pagination justify-content-center">
+    <%-- Lead Pagination --%>
+    <c:if test="${totalLeadPages > 1}">
+        <nav class="mb-4">
+            <ul class="pagination justify-content-center pagination-sm">
                 <li class="page-item ${currentPage == 1 ? 'disabled' : ''}">
-                    <a class="page-link"
-                       href="?page=${currentPage - 1}&keyword=${keyword}&type=${typeFilter}">
+                    <a class="page-link" href="?page=${currentPage - 1}&keyword=${keyword}">
                         <i class="bi bi-chevron-left"></i>
                     </a>
                 </li>
-                <c:forEach begin="1" end="${totalPages}" var="p">
+                <c:forEach begin="1" end="${totalLeadPages}" var="p">
                     <c:if test="${p >= currentPage - 2 && p <= currentPage + 2}">
                         <li class="page-item ${p == currentPage ? 'active' : ''}">
-                            <a class="page-link"
-                               href="?page=${p}&keyword=${keyword}&type=${typeFilter}">${p}</a>
+                            <a class="page-link" href="?page=${p}&keyword=${keyword}">${p}</a>
                         </li>
                     </c:if>
                 </c:forEach>
-                <li class="page-item ${currentPage == totalPages ? 'disabled' : ''}">
-                    <a class="page-link"
-                       href="?page=${currentPage + 1}&keyword=${keyword}&type=${typeFilter}">
+                <li class="page-item ${currentPage == totalLeadPages ? 'disabled' : ''}">
+                    <a class="page-link" href="?page=${currentPage + 1}&keyword=${keyword}">
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </c:if>
+
+    <%-- ═══════════════ CUSTOMER TABLE ═══════════════ --%>
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-success bg-opacity-10 d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="bi bi-people-fill me-2 text-success"></i>Khách hàng chưa giao
+                <span class="badge bg-success ms-1">${totalCustomers}</span>
+            </h5>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Họ tên</th>
+                        <th>Mã</th>
+                        <th>SĐT</th>
+                        <th>Nguồn</th>
+                        <th>Ngày tạo</th>
+                        <th class="text-center" style="width:130px">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <c:choose>
+                        <c:when test="${empty poolCustomers}">
+                            <tr>
+                                <td colspan="6" class="text-center py-4 text-muted">
+                                    <i class="bi bi-inbox fs-4 d-block mb-2"></i>
+                                    Không có Khách hàng nào chưa được giao
+                                </td>
+                            </tr>
+                        </c:when>
+                        <c:otherwise>
+                            <c:forEach var="cust" items="${poolCustomers}">
+                                <c:set var="custDate" value=""/>
+                                <c:if test="${cust.createdAt != null}">
+                                    <c:set var="custDate"
+                                           value="${fn:substring(cust.createdAt.toString(),8,10)}/${fn:substring(cust.createdAt.toString(),5,7)}/${fn:substring(cust.createdAt.toString(),0,4)}"/>
+                                </c:if>
+                                <tr>
+                                    <td class="fw-semibold">${cust.fullName}</td>
+                                    <td><small class="text-muted">${cust.customerCode}</small></td>
+                                    <td>
+                                        <c:choose>
+                                            <c:when test="${not empty cust.phone}">${cust.phone}</c:when>
+                                            <c:otherwise><span class="text-muted">-</span></c:otherwise>
+                                        </c:choose>
+                                    </td>
+                                    <td>
+                                        <c:choose>
+                                            <c:when test="${cust.sourceId != null && not empty sourceMap[cust.sourceId]}">
+                                                <small class="text-muted">${sourceMap[cust.sourceId]}</small>
+                                            </c:when>
+                                            <c:otherwise><span class="text-muted">-</span></c:otherwise>
+                                        </c:choose>
+                                    </td>
+                                    <td><small>${custDate}</small></td>
+                                    <td class="text-center">
+                                        <button type="button"
+                                                class="btn btn-sm btn-success"
+                                                title="Giao việc"
+                                                onclick="openAssignModal(
+                                                    'CUSTOMER',
+                                                    ${cust.customerId},
+                                                    '${fn:escapeXml(cust.fullName)}',
+                                                    '${fn:escapeXml(cust.phone)}',
+                                                    '${cust.sourceId != null && not empty sourceMap[cust.sourceId] ? fn:escapeXml(sourceMap[cust.sourceId]) : ""}',
+                                                    '${custDate}'
+                                                )">
+                                            <i class="bi bi-plus-circle me-1"></i>Giao việc
+                                        </button>
+                                    </td>
+                                </tr>
+                            </c:forEach>
+                        </c:otherwise>
+                    </c:choose>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <%-- Customer Pagination --%>
+    <c:if test="${totalCustomerPages > 1}">
+        <nav class="mb-4">
+            <ul class="pagination justify-content-center pagination-sm">
+                <li class="page-item ${currentPage == 1 ? 'disabled' : ''}">
+                    <a class="page-link" href="?page=${currentPage - 1}&keyword=${keyword}">
+                        <i class="bi bi-chevron-left"></i>
+                    </a>
+                </li>
+                <c:forEach begin="1" end="${totalCustomerPages}" var="p">
+                    <c:if test="${p >= currentPage - 2 && p <= currentPage + 2}">
+                        <li class="page-item ${p == currentPage ? 'active' : ''}">
+                            <a class="page-link" href="?page=${p}&keyword=${keyword}">${p}</a>
+                        </li>
+                    </c:if>
+                </c:forEach>
+                <li class="page-item ${currentPage == totalCustomerPages ? 'disabled' : ''}">
+                    <a class="page-link" href="?page=${currentPage + 1}&keyword=${keyword}">
                         <i class="bi bi-chevron-right"></i>
                     </a>
                 </li>
@@ -195,7 +273,7 @@
                 <input type="hidden" name="relatedType" id="modalRelatedType" value="">
                 <input type="hidden" name="relatedId"   id="modalRelatedId"   value="">
                 <input type="hidden" name="returnUrl"
-                       value="${pageContext.request.contextPath}/manager/crm/pool?keyword=${keyword}&type=${typeFilter}&page=${currentPage}">
+                       value="${pageContext.request.contextPath}/manager/crm/pool?keyword=${keyword}&page=${currentPage}">
 
                 <div class="modal-header bg-success text-white">
                     <h5 class="modal-title" id="assignTaskModalLabel">
@@ -205,7 +283,6 @@
                 </div>
 
                 <div class="modal-body">
-                    <%-- Guard: warn if no sales staff available --%>
                     <c:if test="${empty salesForAssign}">
                         <div class="alert alert-warning">
                             <i class="bi bi-exclamation-triangle me-2"></i>
@@ -263,8 +340,6 @@
                     </div>
 
                     <div class="row g-3">
-
-                        <%-- Title --%>
                         <div class="col-12">
                             <label class="form-label fw-semibold">
                                 Tiêu đề công việc <span class="text-danger">*</span>
@@ -274,14 +349,12 @@
                             <div class="invalid-feedback">Vui lòng nhập tiêu đề</div>
                         </div>
 
-                        <%-- Description --%>
                         <div class="col-12">
                             <label class="form-label fw-semibold">Mô tả</label>
                             <textarea name="description" class="form-control" rows="2"
                                       placeholder="Mô tả chi tiết công việc..."></textarea>
                         </div>
 
-                        <%-- Assign type --%>
                         <div class="col-12">
                             <label class="form-label fw-semibold">Hình thức giao</label>
                             <div class="d-flex gap-4">
@@ -304,7 +377,6 @@
                             </div>
                         </div>
 
-                        <%-- Individual section --%>
                         <div class="col-md-6" id="sectionIndividual">
                             <label class="form-label fw-semibold">
                                 Giao cho Sales <span class="text-danger">*</span>
@@ -318,7 +390,6 @@
                             <div class="invalid-feedback">Vui lòng chọn nhân viên</div>
                         </div>
 
-                        <%-- Group section (hidden by default) --%>
                         <div class="col-12 d-none" id="sectionGroup">
                             <label class="form-label fw-semibold">
                                 Chọn nhóm nhân viên <span class="text-danger">*</span>
@@ -349,7 +420,6 @@
                             </div>
                         </div>
 
-                        <%-- Priority --%>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Độ ưu tiên</label>
                             <select name="priority" class="form-select">
@@ -359,14 +429,12 @@
                             </select>
                         </div>
 
-                        <%-- Due date --%>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Hạn chót</label>
                             <input type="datetime-local" name="dueDate" class="form-control">
                         </div>
-
-                    </div><%-- /row --%>
-                </div><%-- /modal-body --%>
+                    </div>
+                </div>
 
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Hủy</button>
@@ -383,11 +451,9 @@
 function openAssignModal(relatedType, relatedId, objectName, phone, source, createdAt) {
     var form = document.getElementById('assignTaskForm');
 
-    // Set hidden fields
     document.getElementById('modalRelatedType').value = relatedType;
     document.getElementById('modalRelatedId').value   = relatedId;
 
-    // Type badge
     var badge = document.getElementById('modalObjectBadge');
     if (relatedType === 'LEAD') {
         badge.innerHTML = '<span class="badge bg-info text-dark">Lead</span>';
@@ -395,39 +461,35 @@ function openAssignModal(relatedType, relatedId, objectName, phone, source, crea
         badge.innerHTML = '<span class="badge bg-success">Khách hàng</span>';
     }
 
-    // Info card fields
-    document.getElementById('modalObjectName').textContent = objectName || '—';
+    document.getElementById('modalObjectName').textContent = objectName || '-';
 
     var phoneEl = document.getElementById('modalObjectPhone');
     if (phone) {
         phoneEl.innerHTML = '<a href="tel:' + phone + '" class="text-decoration-none">' + phone + '</a>';
     } else {
-        phoneEl.innerHTML = '<span class="text-muted">—</span>';
+        phoneEl.innerHTML = '<span class="text-muted">-</span>';
     }
 
     var sourceEl = document.getElementById('modalObjectSource');
-    sourceEl.textContent = source || '—';
+    sourceEl.textContent = source || '-';
     if (!source) sourceEl.classList.add('text-muted');
     else sourceEl.classList.remove('text-muted');
 
     var dateEl = document.getElementById('modalObjectDate');
-    dateEl.textContent = createdAt || '—';
+    dateEl.textContent = createdAt || '-';
     if (!createdAt) dateEl.classList.add('text-muted');
     else dateEl.classList.remove('text-muted');
 
-    // Reset form fields
     document.getElementById('modalTitle').value = '';
     form.querySelector('[name="description"]').value = '';
     form.querySelector('[name="priority"]').value    = 'MEDIUM';
     form.querySelector('[name="dueDate"]').value     = '';
 
-    // Reset assign type to Individual
     document.getElementById('assignIndividual').checked = true;
     document.getElementById('modalAssignedTo').value = '';
     document.getElementById('sectionIndividual').classList.remove('d-none');
     document.getElementById('sectionGroup').classList.add('d-none');
 
-    // Uncheck all group checkboxes
     form.querySelectorAll('.group-checkbox').forEach(function(cb) { cb.checked = false; });
     document.getElementById('groupError').classList.add('d-none');
 
