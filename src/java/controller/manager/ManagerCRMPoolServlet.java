@@ -62,11 +62,17 @@ public class ManagerCRMPoolServlet extends HttpServlet {
         LeadDAO leadDAO         = new LeadDAO();
         CustomerDAO customerDAO = new CustomerDAO();
 
-        List<Lead> poolLeads         = leadDAO.getPoolLeads(departmentId, keyword, offset, pageSize);
-        int totalLeads               = leadDAO.countPoolLeads(departmentId, keyword);
+        System.out.println("[CRM Pool] keyword=" + keyword + ", offset=" + offset + ", pageSize=" + pageSize);
 
-        List<Customer> poolCustomers = customerDAO.getPoolCustomers(departmentId, keyword, offset, pageSize);
-        int totalCustomers           = customerDAO.countPoolCustomers(departmentId, keyword);
+        List<Lead> poolLeads         = leadDAO.getPoolLeads(keyword, offset, pageSize);
+        int totalLeads               = leadDAO.countPoolLeads(keyword);
+
+        System.out.println("[CRM Pool] poolLeads.size()=" + poolLeads.size() + ", totalLeads=" + totalLeads);
+
+        List<Customer> poolCustomers = customerDAO.getPoolCustomers(keyword, offset, pageSize);
+        int totalCustomers           = customerDAO.countPoolCustomers(keyword);
+
+        System.out.println("[CRM Pool] poolCustomers.size()=" + poolCustomers.size() + ", totalCustomers=" + totalCustomers);
 
         int totalLeadPages    = Math.max(1, (int) Math.ceil((double) totalLeads / pageSize));
         int totalCustomerPages = Math.max(1, (int) Math.ceil((double) totalCustomers / pageSize));

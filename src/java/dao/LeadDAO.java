@@ -37,8 +37,8 @@ public class LeadDAO extends DBContext {
         lead.convertedAt = rs.getTimestamp("converted_at") != null ? rs.getTimestamp("converted_at").toLocalDateTime() : null;
         lead.convertedCustomerId = rs.getObject("converted_customer_id", Integer.class);
         lead.notes = rs.getString("notes");
-        lead.createdAt = rs.getTimestamp("created_at").toLocalDateTime();
-        lead.updatedAt = rs.getTimestamp("updated_at").toLocalDateTime();
+        lead.createdAt = rs.getTimestamp("created_at") != null ? rs.getTimestamp("created_at").toLocalDateTime() : null;
+        lead.updatedAt = rs.getTimestamp("updated_at") != null ? rs.getTimestamp("updated_at").toLocalDateTime() : null;
         lead.createdBy = rs.getObject("created_by", Integer.class);
 
         return lead;
@@ -579,12 +579,15 @@ public class LeadDAO extends DBContext {
     }
 
     // ── CRM Pool: unassigned leads with no active tasks ──
-    public List<Lead> getPoolLeads(int deptId, String keyword, int offset, int pageSize) {
+    public List<Lead> getPoolLeads(String keyword, int offset, int pageSize) {
         List<Lead> list = new ArrayList<>();
         StringBuilder sql = new StringBuilder(
             "SELECT * FROM leads l" +
             " WHERE l.assigned_to IS NULL" +
-            " AND l.created_by IN (SELECT user_id FROM users WHERE department_id = ?)" +
+            " AND l.created_by NOT IN (" +
+            "   SELECT ur.user_id FROM user_roles ur" +
+            "   INNER JOIN roles r ON r.role_id = ur.role_id" +
+            "   WHERE r.role_code = 'SALE')" +
             " AND NOT EXISTS (" +
             "   SELECT 1 FROM task_relations tr" +
             "   INNER JOIN tasks t ON t.task_id = tr.task_id" +
@@ -592,7 +595,6 @@ public class LeadDAO extends DBContext {
             "   AND (t.is_deleted = 0 OR t.is_deleted IS NULL) AND t.status NOT IN (2,3))"
         );
         List<Object> params = new ArrayList<>();
-        params.add(deptId);
         if (keyword != null && !keyword.trim().isEmpty()) {
             sql.append(" AND (l.full_name LIKE ? OR l.phone LIKE ? OR l.lead_code LIKE ?)");
             String kw = "%" + keyword.trim() + "%";
@@ -601,20 +603,28 @@ public class LeadDAO extends DBContext {
         sql.append(" ORDER BY l.created_at DESC OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
         params.add(offset); params.add(pageSize);
 
+        System.out.println("[LeadDAO.getPoolLeads] SQL: " + sql.toString());
         try (PreparedStatement st = connection.prepareStatement(sql.toString())) {
             for (int i = 0; i < params.size(); i++) st.setObject(i + 1, params.get(i));
             try (ResultSet rs = st.executeQuery()) {
                 while (rs.next()) list.add(mapResultSetToLead(rs));
             }
-        } catch (SQLException e) { e.printStackTrace(); }
+        } catch (Exception e) {
+            System.out.println("[LeadDAO.getPoolLeads] ERROR: " + e.getMessage());
+            e.printStackTrace();
+        }
+        System.out.println("[LeadDAO.getPoolLeads] Result size: " + list.size());
         return list;
     }
 
-    public int countPoolLeads(int deptId, String keyword) {
+    public int countPoolLeads(String keyword) {
         StringBuilder sql = new StringBuilder(
             "SELECT COUNT(*) FROM leads l" +
             " WHERE l.assigned_to IS NULL" +
-            " AND l.created_by IN (SELECT user_id FROM users WHERE department_id = ?)" +
+            " AND l.created_by NOT IN (" +
+            "   SELECT ur.user_id FROM user_roles ur" +
+            "   INNER JOIN roles r ON r.role_id = ur.role_id" +
+            "   WHERE r.role_code = 'SALE')" +
             " AND NOT EXISTS (" +
             "   SELECT 1 FROM task_relations tr" +
             "   INNER JOIN tasks t ON t.task_id = tr.task_id" +
@@ -622,7 +632,6 @@ public class LeadDAO extends DBContext {
             "   AND (t.is_deleted = 0 OR t.is_deleted IS NULL) AND t.status NOT IN (2,3))"
         );
         List<Object> params = new ArrayList<>();
-        params.add(deptId);
         if (keyword != null && !keyword.trim().isEmpty()) {
             sql.append(" AND (l.full_name LIKE ? OR l.phone LIKE ? OR l.lead_code LIKE ?)");
             String kw = "%" + keyword.trim() + "%";
@@ -633,7 +642,7 @@ public class LeadDAO extends DBContext {
             try (ResultSet rs = st.executeQuery()) {
                 if (rs.next()) return rs.getInt(1);
             }
-        } catch (SQLException e) { e.printStackTrace(); }
+        } catch (Exception e) { e.printStackTrace(); }
         return 0;
     }
 
