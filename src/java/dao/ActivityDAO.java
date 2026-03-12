@@ -38,20 +38,18 @@ public class ActivityDAO extends DBContext {
      * hoàn thành ('Completed') để hiển thị trong Lịch sử.
      */
     // 1. CHỈ LẤY CÁC BÁO CÁO ĐÃ XONG CHO TRANG LỊCH SỬ
-    public List<Activity> getActivitiesByCustomerId(int customerId) {
+    public List<Activity> getReportsHistory(int id, String type) {
         List<Activity> list = new ArrayList<>();
-        // Đảm bảo có điều kiện: AND a.status = 'Completed'
         String sql = "SELECT a.*, (u.last_name + ' ' + u.first_name) AS full_performer_name "
-                + "FROM activities a "
-                + "LEFT JOIN users u ON a.performed_by = u.user_id "
-                + "WHERE a.related_id = ? AND a.related_type = 'Customer' "
-                + "AND a.status = 'Completed' "
-                + "ORDER BY a.created_at DESC";
+                + "FROM activities a LEFT JOIN users u ON a.performed_by = u.user_id "
+                + "WHERE a.related_id = ? AND a.related_type = ? " // Lọc theo ID và Loại (Lead/Customer)
+                + "AND a.status = 'Completed' ORDER BY a.created_at DESC";
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
-            ps.setInt(1, customerId);
+            ps.setInt(1, id);
+            ps.setString(2, type);
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
-                Activity a = mapResultSetToActivity(rs);
+                Activity a = mapResultSetToActivity(rs); // Dùng hàm map có sẵn của bạn
                 a.setPerformerName(rs.getString("full_performer_name"));
                 list.add(a);
             }
@@ -81,19 +79,25 @@ public class ActivityDAO extends DBContext {
      * THÊM MỚI: Lấy danh sách các báo cáo đang ở trạng thái 'Pending'. Sử dụng
      * cho trang "Hàng chờ".
      */
-    public List<Activity> getPendingActivities() {
+   public List<Activity> getPendingActivities(int userId) {
         List<Activity> list = new ArrayList<>();
         String sql = "SELECT a.*, c.full_name, c.phone "
                 + "FROM activities a "
                 + "INNER JOIN customers c ON a.related_id = c.customer_id "
                 + "WHERE a.status = 'Pending' AND a.related_type = 'Customer' "
-                + "ORDER BY a.created_at ASC"; // Ưu tiên việc cũ hiện lên trước
+                + "AND a.performed_by = ? " 
+                // Thêm dòng này để chặn phiếu chuyển tiếp
+                + "AND (a.[description] NOT LIKE N'Phiếu yêu cầu hỗ trợ được chuyển tiếp%' OR a.[description] IS NULL) "
+                + "ORDER BY a.created_at ASC";
+                
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setInt(1, userId); 
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
                 Activity a = mapResultSetToActivity(rs);
                 a.setCustomerName(rs.getString("full_name"));
                 a.setCustomerPhone(rs.getString("phone"));
+                a.setRelatedType("Customer");
                 list.add(a);
             }
         } catch (SQLException e) {
@@ -365,26 +369,35 @@ public class ActivityDAO extends DBContext {
         return a;
     }
 
-    // Giữ nguyên hàm báo cáo theo tháng (Có bổ sung Mapping sạch hơn)
+    // CẬP NHẬT: Lấy nhật ký hoạt động cho cả Lead và Customer
     public List<Activity> getActivitiesByMonth(int staffId, int month, int year) {
         List<Activity> list = new ArrayList<>();
-        // THÊM: AND a.status = 'Completed' để không hiện phiếu đang chờ
-        String sql = "SELECT a.*, c.full_name, c.phone "
+        // Dùng LEFT JOIN kết hợp COALESCE để lấy dữ liệu từ cả 2 bảng
+        String sql = "SELECT a.*, "
+                + "COALESCE(c.full_name, l.full_name) AS contact_name, "
+                + "COALESCE(c.phone, l.phone) AS contact_phone "
                 + "FROM activities a "
-                + "INNER JOIN customers c ON a.related_id = c.customer_id "
-                + "WHERE a.performed_by = ? AND a.related_type = 'Customer' "
+                + "LEFT JOIN customers c ON a.related_type = 'Customer' AND a.related_id = c.customer_id "
+                + "LEFT JOIN leads l ON a.related_type = 'Lead' AND a.related_id = l.lead_id "
+                + "WHERE a.performed_by = ? "
                 + "AND a.status = 'Completed' "
                 + "AND MONTH(a.created_at) = ? AND YEAR(a.created_at) = ? "
                 + "ORDER BY a.created_at DESC";
+
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setInt(1, staffId);
             ps.setInt(2, month);
             ps.setInt(3, year);
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
+                // Tận dụng hàm map cơ bản của bạn
                 Activity a = mapResultSetToActivity(rs);
-                a.setCustomerName(rs.getString("full_name"));
-                a.setCustomerPhone(rs.getString("phone"));
+
+                // Gán tên và SĐT lấy được (không phân biệt là Lead hay Customer)
+                a.setCustomerName(rs.getString("contact_name"));
+                a.setCustomerPhone(rs.getString("contact_phone"));
+                a.setRelatedType(rs.getString("related_type")); // Lưu lại type để phân biệt trên giao diện
+
                 list.add(a);
             }
         } catch (SQLException e) {
@@ -436,6 +449,66 @@ public class ActivityDAO extends DBContext {
                 a.setStatus(rs.getString("status"));
                 a.setCreatedBy(rs.getInt("created_by"));
                 a.setPerformerName(rs.getString("creator_name"));
+                list.add(a);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    public List<Activity> getPendingLeads(int userId) {
+        List<Activity> list = new ArrayList<>();
+        String sql = "SELECT a.*, l.full_name, l.phone "
+                + "FROM activities a "
+                + "INNER JOIN leads l ON a.related_id = l.lead_id "
+                + "WHERE a.status = 'Pending' AND a.related_type = 'Lead' "
+                + "AND a.performed_by = ? " 
+                // Thêm dòng này để chặn phiếu chuyển tiếp
+                + "AND (a.[description] NOT LIKE N'Phiếu yêu cầu hỗ trợ được chuyển tiếp%' OR a.[description] IS NULL) "
+                + "ORDER BY a.created_at ASC";
+                
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                Activity a = mapResultSetToActivity(rs);
+                a.setCustomerName(rs.getString("full_name"));
+                a.setCustomerPhone(rs.getString("phone"));
+                a.setRelatedType("Lead");
+                list.add(a);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    // LẤY DANH SÁCH PHIẾU ĐƯỢC CHUYỂN TIẾP CHO RIÊNG NHÂN VIÊN
+   // LẤY DANH SÁCH PHIẾU ĐƯỢC CHUYỂN TIẾP CHO RIÊNG NHÂN VIÊN
+    public List<Activity> getMyAssignedTickets(int userId) {
+        List<Activity> list = new ArrayList<>();
+        
+        // CẬP NHẬT: Thêm điều kiện lọc a.[description] LIKE N'Phiếu yêu cầu hỗ trợ được chuyển tiếp%'
+        String sql = "SELECT a.*, "
+                   + "COALESCE(c.full_name, l.full_name) AS contact_name, "
+                   + "COALESCE(c.phone, l.phone) AS contact_phone "
+                   + "FROM activities a "
+                   + "LEFT JOIN customers c ON a.related_type = 'Customer' AND a.related_id = c.customer_id "
+                   + "LEFT JOIN leads l ON a.related_type = 'Lead' AND a.related_id = l.lead_id "
+                   + "WHERE a.performed_by = ? AND a.status = 'Pending' "
+                   + "AND a.[description] LIKE N'Phiếu yêu cầu hỗ trợ được chuyển tiếp%' "
+                   + "ORDER BY a.created_at ASC";
+
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                // Tận dụng hàm map có sẵn của bạn
+                Activity a = mapResultSetToActivity(rs);
+                a.setCustomerName(rs.getString("contact_name"));
+                a.setCustomerPhone(rs.getString("contact_phone"));
+                a.setRelatedType(rs.getString("related_type"));
                 list.add(a);
             }
         } catch (SQLException e) {

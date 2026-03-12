@@ -26,29 +26,32 @@ public class ActivityController extends HttpServlet {
         }
 
         ActivityDAO dao = new ActivityDAO();
-        String customerIdParam = request.getParameter("customerId");
+        
+        // ĐỒNG BỘ: Nhận id và type (Lead/Customer) từ URL để lọc báo cáo
+        String idParam = request.getParameter("id");
+        String typeParam = request.getParameter("type");
 
-        if (customerIdParam != null && !customerIdParam.isEmpty()) {
-            // TRƯỜNG HỢP 1: Xem lịch sử chi tiết của 1 khách hàng cụ thể
-            // Lưu ý: DAO của bạn hiện đã lọc AND status = 'Completed' trong hàm này
-            int customerId = Integer.parseInt(customerIdParam);
-            List<Activity> list = dao.getActivitiesByCustomerId(customerId);
+        if (idParam != null && typeParam != null) {
+            // TRƯỜNG HỢP 1: Xem lịch sử phiếu báo cáo chi tiết
+            int id = Integer.parseInt(idParam);
+            
+            // Gọi hàm lấy báo cáo linh hoạt (Lead hoặc Customer)
+            List<Activity> list = dao.getReportsHistory(id, typeParam);
 
             request.setAttribute("activities", list);
-            request.setAttribute("pageTitle", "Chi tiết lịch sử chăm sóc");
+            request.setAttribute("pageTitle", "Lịch sử phiếu báo cáo - " + typeParam);
+            
+            // Chỉ định trang nội dung hiển thị trong main_layout
             request.setAttribute("contentPage", "/view/customersuccess/pages/activity_history.jsp");
+            
         } else {
-            // TRƯỜNG HỢP 2: Xem Nhật ký công việc theo THÁNG hiện tại
+            // TRƯỜNG HỢP 2: Nhật ký hoạt động cá nhân theo tháng
             LocalDate now = LocalDate.now();
-            int currentMonth = now.getMonthValue();
-            int currentYear = now.getYear();
-
-            // Chỉ hiển thị các báo cáo đã Hoàn thành trong nhật ký
-            List<Activity> staffLogs = dao.getActivitiesByMonth(user.getUserId(), currentMonth, currentYear);
+            List<Activity> staffLogs = dao.getActivitiesByMonth(user.getUserId(), now.getMonthValue(), now.getYear());
 
             request.setAttribute("activities", staffLogs);
-            request.setAttribute("month", currentMonth);
-            request.setAttribute("year", currentYear);
+            request.setAttribute("month", now.getMonthValue());
+            request.setAttribute("year", now.getYear());
             request.setAttribute("pageTitle", "Nhật ký hoạt động của tôi");
             request.setAttribute("contentPage", "/view/customersuccess/pages/activity_log.jsp");
         }
@@ -61,7 +64,6 @@ public class ActivityController extends HttpServlet {
             throws ServletException, IOException {
 
         HttpSession session = request.getSession(false);
-        // Lấy thông tin nhân viên từ session
         Users user = (session != null) ? (Users) session.getAttribute("user") : null;
 
         if (user == null) {
@@ -70,35 +72,41 @@ public class ActivityController extends HttpServlet {
         }
 
         try {
-            // 1. Lấy dữ liệu định danh từ Modal
-            int relatedId = Integer.parseInt(request.getParameter("customerId"));
+            // 1. Lấy dữ liệu cơ bản từ các Modal
+            int relatedId = Integer.parseInt(request.getParameter("id"));
+            String relatedType = request.getParameter("type"); // Xác định phiếu cho Lead hay Customer
             String subject = request.getParameter("subject");
+            String status = request.getParameter("status"); // 'Completed' (Lưu) hoặc 'Pending' (Hàng chờ)
+
+            // Lấy nội dung chi tiết (Modal chuyển tiếp có thể gửi null, nên cần bắt lỗi)
             String description = request.getParameter("description");
+            if (description == null) description = "";
 
-            // 2. LẤY LOẠI ĐỐI TƯỢNG (Mới): Để biết là Customer hay Lead
-            String relatedType = request.getParameter("relatedType");
-            if (relatedType == null || relatedType.isEmpty()) {
-                relatedType = "Customer"; // Mặc định nếu trang gọi không truyền (ví dụ trang List Customer cũ)
-            }
+            // Kiểm tra mặc định nếu thiếu tham số
+            if (relatedType == null || relatedType.isEmpty()) relatedType = "Customer";
+            if (status == null || status.isEmpty()) status = "Completed";
 
-            // 3. LẤY TRẠNG THÁI (Mấu chốt để phân loại Hàng chờ hay Lịch sử)
-            String status = request.getParameter("status");
-            if (status == null || status.isEmpty()) {
-                status = "Completed"; // Mặc định là Hoàn thành
+            // 2. XỬ LÝ CHUYỂN TIẾP: Xác định người sẽ nhận phiếu hỗ trợ này
+            String assignToParam = request.getParameter("assignTo");
+            int performedBy;
+            if (assignToParam != null && !assignToParam.isEmpty()) {
+                // Nếu có tham số assignTo (từ Modal Chuyển tiếp), giao việc cho nhân viên phụ trách đó
+                performedBy = Integer.parseInt(assignToParam); 
+            } else {
+                // Nếu không có (từ Modal Tạo phiếu bình thường), tự giao cho chính mình
+                performedBy = user.getUserId(); 
             }
 
             ActivityDAO dao = new ActivityDAO();
 
-            // 4. THỰC THI LƯU: Truyền đủ 6 tham số vào DAO để xử lý chính xác
-            boolean success = dao.insertActivity(relatedId, relatedType, subject, description, user.getUserId(), status);
+            // 3. Thực hiện lưu vào DB với biến performedBy linh hoạt
+            boolean success = dao.insertActivity(relatedId, relatedType, subject, description, performedBy, status);
 
-            // 5. TRẢ VỀ KẾT QUẢ CHO AJAX
+            // 4. Trả về kết quả cho AJAX để hiện thông báo
             response.setContentType("text/plain");
             response.setCharacterEncoding("UTF-8");
             response.getWriter().write(success ? "success" : "error");
 
-        } catch (NumberFormatException e) {
-            response.getWriter().write("invalid_id");
         } catch (Exception e) {
             e.printStackTrace();
             response.getWriter().write("error");

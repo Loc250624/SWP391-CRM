@@ -70,6 +70,13 @@
                         <span>Tìm kiếm khách hàng</span>
                     </a>
                 </li>
+                <li class="nav-item mb-1">
+                    <a href="${pageContext.request.contextPath}/support/receive" 
+                       class="nav-link rounded-2 d-flex align-items-center gap-2 py-2 px-3 ${pageTitle == 'Phiếu hỗ trợ được phân công' ? 'active bg-primary text-white' : 'text-body-secondary'}">
+                        <i class="bi bi-inbox-fill"></i>
+                        <span>Tiếp nhận</span>
+                    </a>
+                </li>
             </ul>
         </div>
 
@@ -115,12 +122,14 @@
 </style>
 
 <script>
-    (function() {
+    (function () {
         var nav = document.getElementById('sidebarNav');
-        if (!nav) return;
+        if (!nav)
+            return;
         var saved = sessionStorage.getItem('sidebarScroll_Support');
-        if (saved) nav.scrollTop = parseInt(saved, 10);
-        nav.addEventListener('scroll', function() {
+        if (saved)
+            nav.scrollTop = parseInt(saved, 10);
+        nav.addEventListener('scroll', function () {
             sessionStorage.setItem('sidebarScroll_Support', nav.scrollTop);
         });
     })();
