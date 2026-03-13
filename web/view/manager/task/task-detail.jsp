@@ -16,7 +16,7 @@
         <div class="d-flex justify-content-between align-items-center">
             <h3><i class="bi bi-file-earmark-text me-2"></i>Chi tiết Công việc</h3>
             <div class="d-flex gap-2 flex-wrap">
-                <c:if test="${task.status != 'COMPLETED' && task.status != 'CANCELLED'}">
+                <c:if test="${task.statusName != 'COMPLETED' && task.statusName != 'CANCELLED'}">
                     <a href="${pageContext.request.contextPath}/manager/task/status?id=${task.taskId}"
                        class="btn btn-success btn-sm">
                         <i class="bi bi-arrow-repeat me-1"></i>Trạng thái
@@ -73,13 +73,13 @@
                     <div class="mt-2">
                         <span class="badge bg-secondary me-2">${task.taskCode}</span>
                         <c:choose>
-                            <c:when test="${task.status == 'COMPLETED'}">
+                            <c:when test="${task.statusName == 'COMPLETED'}">
                                 <span class="badge bg-success">Hoàn thành</span>
                             </c:when>
-                            <c:when test="${task.status == 'IN_PROGRESS'}">
+                            <c:when test="${task.statusName == 'IN_PROGRESS'}">
                                 <span class="badge bg-info">Đang thực hiện</span>
                             </c:when>
-                            <c:when test="${task.status == 'CANCELLED'}">
+                            <c:when test="${task.statusName == 'CANCELLED'}">
                                 <span class="badge bg-dark">Đã hủy</span>
                             </c:when>
                             <c:otherwise>
@@ -87,10 +87,10 @@
                             </c:otherwise>
                         </c:choose>
                         <c:choose>
-                            <c:when test="${task.priority == 'HIGH'}">
+                            <c:when test="${task.priorityName == 'HIGH'}">
                                 <span class="badge bg-danger ms-2">Ưu tiên cao</span>
                             </c:when>
-                            <c:when test="${task.priority == 'MEDIUM'}">
+                            <c:when test="${task.priorityName == 'MEDIUM'}">
                                 <span class="badge bg-warning text-dark ms-2">Ưu tiên trung bình</span>
                             </c:when>
                             <c:otherwise>
@@ -203,19 +203,19 @@
                                 <p class="text-muted mb-0 small">Loại: ${task.relatedType}</p>
                             </div>
                             <c:choose>
-                                <c:when test="${task.relatedType == 'Lead'}">
+                                <c:when test="${task.relatedType == 'LEAD' || task.relatedType == 'Lead'}">
                                     <a href="${pageContext.request.contextPath}/manager/lead/detail?id=${task.relatedId}"
                                        class="btn btn-sm btn-outline-primary">
                                         Xem chi tiết <i class="bi bi-arrow-right ms-1"></i>
                                     </a>
                                 </c:when>
-                                <c:when test="${task.relatedType == 'Customer'}">
+                                <c:when test="${task.relatedType == 'CUSTOMER' || task.relatedType == 'Customer'}">
                                     <a href="${pageContext.request.contextPath}/manager/customer/detail?id=${task.relatedId}"
                                        class="btn btn-sm btn-outline-primary">
                                         Xem chi tiết <i class="bi bi-arrow-right ms-1"></i>
                                     </a>
                                 </c:when>
-                                <c:when test="${task.relatedType == 'Opportunity'}">
+                                <c:when test="${task.relatedType == 'OPPORTUNITY' || task.relatedType == 'Opportunity'}">
                                     <a href="${pageContext.request.contextPath}/manager/opportunity/detail?id=${task.relatedId}"
                                        class="btn btn-sm btn-outline-primary">
                                         Xem chi tiết <i class="bi bi-arrow-right ms-1"></i>
@@ -231,7 +231,7 @@
             <div class="card mb-4">
                 <div class="card-header bg-white d-flex justify-content-between align-items-center">
                     <h6 class="mb-0"><i class="bi bi-diagram-2 me-2"></i>Công việc con (${subtaskCount})</h6>
-                    <c:if test="${task.status != 'COMPLETED' && task.status != 'CANCELLED'}">
+                    <c:if test="${task.statusName != 'COMPLETED' && task.statusName != 'CANCELLED'}">
                         <button class="btn btn-sm btn-outline-success" type="button"
                                 data-bs-toggle="collapse" data-bs-target="#addSubtaskForm">
                             <i class="bi bi-plus me-1"></i>Thêm
@@ -284,13 +284,13 @@
                                             </td>
                                             <td>
                                                 <c:choose>
-                                                    <c:when test="${sub.status == 'COMPLETED'}">
+                                                    <c:when test="${sub.statusName == 'COMPLETED'}">
                                                         <span class="badge bg-success">Hoàn thành</span>
                                                     </c:when>
-                                                    <c:when test="${sub.status == 'IN_PROGRESS'}">
+                                                    <c:when test="${sub.statusName == 'IN_PROGRESS'}">
                                                         <span class="badge bg-info">Đang làm</span>
                                                     </c:when>
-                                                    <c:when test="${sub.status == 'CANCELLED'}">
+                                                    <c:when test="${sub.statusName == 'CANCELLED'}">
                                                         <span class="badge bg-dark">Đã hủy</span>
                                                     </c:when>
                                                     <c:otherwise>
@@ -315,7 +315,7 @@
                     </c:if>
 
                     <%-- Add Subtask Form (collapsed) --%>
-                    <c:if test="${task.status != 'COMPLETED' && task.status != 'CANCELLED'}">
+                    <c:if test="${task.statusName != 'COMPLETED' && task.statusName != 'CANCELLED'}">
                         <div class="collapse mt-3" id="addSubtaskForm">
                             <div class="border rounded p-3 bg-light">
                                 <h6 class="mb-3">Thêm công việc con</h6>
@@ -378,7 +378,7 @@
                             <c:forEach var="dep" items="${dependencyTasks}">
                                 <li class="d-flex align-items-center mb-2">
                                     <c:choose>
-                                        <c:when test="${dep.status == 'COMPLETED'}">
+                                        <c:when test="${dep.statusName == 'COMPLETED'}">
                                             <i class="bi bi-check-circle-fill text-success me-2"></i>
                                         </c:when>
                                         <c:otherwise>
@@ -391,10 +391,10 @@
                                         ${dep.title}
                                     </a>
                                     <c:choose>
-                                        <c:when test="${dep.status == 'COMPLETED'}">
+                                        <c:when test="${dep.statusName == 'COMPLETED'}">
                                             <span class="badge bg-success ms-2">Hoàn thành</span>
                                         </c:when>
-                                        <c:when test="${dep.status == 'IN_PROGRESS'}">
+                                        <c:when test="${dep.statusName == 'IN_PROGRESS'}">
                                             <span class="badge bg-info ms-2">Đang làm</span>
                                         </c:when>
                                         <c:otherwise>
@@ -407,6 +407,56 @@
                     </div>
                 </div>
             </c:if>
+            <!-- Comments -->
+            <div class="card mb-4">
+                <div class="card-header bg-white">
+                    <h6 class="mb-0"><i class="bi bi-chat-left-text me-2"></i>Bình luận (${fn:length(comments)})</h6>
+                </div>
+                <div class="card-body">
+                    <c:choose>
+                        <c:when test="${empty comments}">
+                            <p class="text-muted fst-italic mb-3">Chưa có bình luận nào</p>
+                        </c:when>
+                        <c:otherwise>
+                            <ul class="list-unstyled mb-3">
+                                <c:forEach var="cmt" items="${comments}">
+                                    <li class="mb-3 d-flex gap-2">
+                                        <div class="avatar-sm bg-secondary rounded-circle d-flex align-items-center justify-content-center text-white flex-shrink-0" style="width:32px;height:32px;font-size:0.75rem;">
+                                            <c:forEach var="u" items="${allUsers}">
+                                                <c:if test="${u.userId == cmt.createdBy}">${fn:substring(u.firstName,0,1)}</c:if>
+                                            </c:forEach>
+                                        </div>
+                                        <div class="bg-light rounded p-2 flex-grow-1">
+                                            <div class="d-flex justify-content-between mb-1">
+                                                <strong class="small">
+                                                    <c:forEach var="u" items="${allUsers}">
+                                                        <c:if test="${u.userId == cmt.createdBy}">${u.firstName} ${u.lastName}</c:if>
+                                                    </c:forEach>
+                                                </strong>
+                                                <small class="text-muted">
+                                                    ${fn:substring(cmt.createdAt, 8, 10)}/${fn:substring(cmt.createdAt, 5, 7)}/${fn:substring(cmt.createdAt, 0, 4)}
+                                                    ${fn:substring(cmt.createdAt, 11, 16)}
+                                                </small>
+                                            </div>
+                                            <p class="mb-0 small">${cmt.content}</p>
+                                        </div>
+                                    </li>
+                                </c:forEach>
+                            </ul>
+                        </c:otherwise>
+                    </c:choose>
+                    <form method="post" action="${pageContext.request.contextPath}/manager/task/comment">
+                        <input type="hidden" name="taskId" value="${task.taskId}">
+                        <div class="input-group">
+                            <input type="text" class="form-control form-control-sm"
+                                   name="content" placeholder="Thêm bình luận..." required maxlength="500">
+                            <button type="submit" class="btn btn-sm btn-success">
+                                <i class="bi bi-send"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </div>
 
         <!-- Sidebar -->
@@ -474,7 +524,7 @@
 <script>
 <%-- FIX: Overdue detection via JavaScript (EL cannot call LocalDateTime.isBefore(now())) --%>
 document.addEventListener('DOMContentLoaded', function () {
-    <c:if test="${task.dueDate != null && task.status != 'COMPLETED' && task.status != 'CANCELLED'}">
+    <c:if test="${task.dueDate != null && task.statusName != 'COMPLETED' && task.statusName != 'CANCELLED'}">
     (function () {
         var dueStr = '${fn:substring(task.dueDate, 0, 10)}'; // YYYY-MM-DD
         var today = new Date();

@@ -18,9 +18,7 @@
             <!-- Custom Page CSS -->
             <c:if test="${not empty customCSS}">
                 <style>
-                    $ {
-                        customCSS
-                    }
+                    ${customCSS}
                 </style>
             </c:if>
         </head>

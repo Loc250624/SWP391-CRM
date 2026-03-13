@@ -20,9 +20,6 @@ import model.Campaign;
 import model.Lead;
 import model.LeadSource;
 import model.Opportunity;
-import model.Users;
-import dao.UserDAO;
-import java.time.LocalDateTime;
 
 @WebServlet(name = "SaleLeadFormServlet", urlPatterns = {"/sale/lead/form"})
 public class SaleLeadFormServlet extends HttpServlet {
@@ -31,7 +28,6 @@ public class SaleLeadFormServlet extends HttpServlet {
     private LeadSourceDAO leadSourceDAO = new LeadSourceDAO();
     private CampaignDAO campaignDAO = new CampaignDAO();
     private OpportunityDAO opportunityDAO = new OpportunityDAO();
-    private UserDAO userDAO = new UserDAO();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -94,7 +90,6 @@ public class SaleLeadFormServlet extends HttpServlet {
 
         request.setAttribute("leadSources", sources);
         request.setAttribute("campaigns", campaigns);
-        request.setAttribute("users", userDAO.getAllUsers());
 
         // Set page metadata
         request.setAttribute("ACTIVE_MENU", "LEAD_FORM");
@@ -137,9 +132,6 @@ public class SaleLeadFormServlet extends HttpServlet {
         String notes = request.getParameter("notes");
         String sourceIdParam = request.getParameter("sourceId");
         String campaignIdParam = request.getParameter("campaignId");
-        String status = request.getParameter("status");
-        String leadScoreParam = request.getParameter("leadScore");
-        String assignedToParam = request.getParameter("assignedTo");
 
         boolean isEdit = (leadIdParam != null && !leadIdParam.isEmpty());
 
@@ -159,13 +151,6 @@ public class SaleLeadFormServlet extends HttpServlet {
         if (campaignIdParam != null && !campaignIdParam.isEmpty()) {
             try { formLead.setCampaignId(Integer.parseInt(campaignIdParam)); } catch (NumberFormatException ignored) {}
         }
-        if (leadScoreParam != null && !leadScoreParam.isEmpty()) {
-            try { formLead.setLeadScore(Integer.parseInt(leadScoreParam)); } catch (NumberFormatException ignored) {}
-        }
-        if (assignedToParam != null && !assignedToParam.isEmpty()) {
-            try { formLead.setAssignedTo(Integer.parseInt(assignedToParam)); } catch (NumberFormatException ignored) {}
-        }
-        formLead.setStatus(status != null && !status.isEmpty() ? status : "Assigned");
         if (isEdit) {
             try { formLead.setLeadId(Integer.parseInt(leadIdParam)); } catch (NumberFormatException ignored) {}
         }
@@ -227,15 +212,6 @@ public class SaleLeadFormServlet extends HttpServlet {
             }
         }
 
-        // --- Status: optional, must be valid enum ---
-        if (status != null && !status.isEmpty()) {
-            try {
-                LeadStatus.valueOf(status);
-            } catch (IllegalArgumentException e) {
-                errors.add("Trang thai khong hop le!");
-            }
-        }
-
         // Return errors if any
         if (!errors.isEmpty()) {
             request.setAttribute("error", String.join("<br>", errors));
@@ -254,12 +230,10 @@ public class SaleLeadFormServlet extends HttpServlet {
         lead.setInterests(interests != null && !interests.trim().isEmpty() ? interests.trim() : null);
         lead.setRating(rating != null && !rating.isEmpty() ? rating : null);
         lead.setNotes(notes != null && !notes.trim().isEmpty() ? notes.trim() : null);
-        lead.setLeadScore(formLead.getLeadScore());
+        lead.setLeadScore(0);
         lead.setIsConverted(false);
         lead.setSourceId(formLead.getSourceId());
         lead.setCampaignId(formLead.getCampaignId());
-        lead.setAssignedTo(formLead.getAssignedTo());
-        lead.setStatus(formLead.getStatus());
 
         if (isEdit) {
             lead.setLeadId(formLead.getLeadId());
@@ -272,18 +246,18 @@ public class SaleLeadFormServlet extends HttpServlet {
                 return;
             }
 
-            // Edit mode: determine if assignedTo has changed to set assignedAt
-            if (formLead.getAssignedTo() != null && (existing.getAssignedTo() == null || !existing.getAssignedTo().equals(formLead.getAssignedTo()))) {
-                lead.setAssignedAt(LocalDateTime.now());
-            } else {
-                lead.setAssignedAt(existing.getAssignedAt());
-            }
+            // Edit mode: keep existing status (user cannot change status via edit form)
+            lead.setStatus(existing.getStatus());
+
+            // Preserve assignedTo from existing lead
+            lead.setAssignedTo(existing.getAssignedTo());
+            lead.setAssignedAt(existing.getAssignedAt());
         } else {
-            // Create mode: createdBy = current user
+            // Create mode: default status = Assigned, NO assignedTo (self-created), createdBy = current user
+            lead.setStatus(LeadStatus.Assigned.name());
+            lead.setAssignedTo(null);
+            lead.setAssignedAt(null);
             lead.setCreatedBy(currentUserId);
-            if (lead.getAssignedTo() != null) {
-                lead.setAssignedAt(LocalDateTime.now());
-            }
         }
 
         // Save to database

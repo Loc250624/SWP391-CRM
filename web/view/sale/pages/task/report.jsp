@@ -65,8 +65,8 @@
                     <tr>
                         <td><a href="${pageContext.request.contextPath}/sale/task/detail?id=${task.taskId}">${task.title}</a></td>
                         <td>${task.dueDate}</td>
-                        <td>${task.priority.vietnamese}</td>
-                        <td>${task.status.vietnamese}</td>
+                        <td>${task.priorityVietnamese}</td>
+                        <td>${task.statusVietnamese}</td>
                     </tr>
                 </c:forEach>
                 </tbody>

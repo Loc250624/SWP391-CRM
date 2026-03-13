@@ -69,8 +69,8 @@
                                                             <a href="${pageContext.request.contextPath}/support/task/detail?id=${task.taskId}"
                                                                class="d-block text-decoration-none mt-1" title="${task.title}">
                                                                 <div class="rounded px-1 text-truncate
-                                                                    ${task.priority == 'HIGH' ? 'bg-danger bg-opacity-15 border border-danger' :
-                                                                      task.priority == 'MEDIUM' ? 'bg-warning bg-opacity-15 border border-warning' :
+                                                                    ${task.priorityName == 'HIGH' ? 'bg-danger bg-opacity-15 border border-danger' :
+                                                                      task.priorityName == 'MEDIUM' ? 'bg-warning bg-opacity-15 border border-warning' :
                                                                       'bg-secondary bg-opacity-15 border border-secondary'}"
                                                                      style="font-size:10px; max-width:100%;">
                                                                     <span class="text-dark">${task.title}</span>

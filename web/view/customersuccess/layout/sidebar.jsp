@@ -1,80 +1,127 @@
-<%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ page contentType="text/html;charset=UTF-8" %>
 
-<aside class="sidebar position-fixed top-0 start-0 bottom-0 bg-dark text-white shadow-lg" 
-       style="width: 250px; z-index: 1030; background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);">
+<aside class="d-flex flex-column vh-100 position-fixed start-0 top-0 bg-white border-end" style="width: 260px; z-index: 1040;">
 
-    <div class="sidebar-brand px-4 py-4 d-flex align-items-center border-bottom border-secondary border-opacity-25" style="height: 64px;">
-        <i class="bi bi-cloud-check-fill text-info fs-3 me-2"></i>
-        <span class="fs-5 fw-bold tracking-tight text-uppercase">CRM Support</span>
-    </div>
-
-    <div class="sidebar-menu py-3">
-        <div class="px-4 mb-2 small text-uppercase text-muted fw-bold" style="font-size: 11px; letter-spacing: 1px;">
-            Main Menu
-        </div>
-
-        <nav class="nav flex-column gap-1 px-2">
-            <a href="${pageContext.request.contextPath}/support/dashboard" 
-               class="nav-link text-white d-flex align-items-center py-2 px-3 rounded ${pageTitle == 'Tổng quan' ? 'bg-primary bg-opacity-25 border-start border-4 border-primary' : 'opacity-75'}">
-                <i class="bi bi-speedometer2 me-3 fs-5"></i>
-                <span>Tổng quan</span>
-            </a>
-
-            <a href="${pageContext.request.contextPath}/support/activities" 
-               class="nav-link text-white d-flex align-items-center py-2 px-3 rounded ${pageTitle == 'Lịch sử hoạt động' ? 'bg-primary bg-opacity-25 border-start border-4 border-primary' : 'opacity-75'}">
-                <i class="bi bi-clock-history me-3 fs-5"></i> <span>Lịch sử hoạt động</span>
-                <span class="badge bg-danger ms-auto rounded-pill" style="font-size: 10px;">New</span>
-            </a>
-
-            <a href="${pageContext.request.contextPath}/support/customers" 
-               class="nav-link text-white d-flex align-items-center py-2 px-3 rounded ${pageTitle == 'Quản lý Customer' || pageTitle == 'Danh sách khách hàng' ? 'bg-primary bg-opacity-25 border-start border-4 border-primary' : 'opacity-75'}">
-                <i class="bi bi-people me-3 fs-5"></i>
-                <span>Khách hàng</span>
-            </a>
-            <a href="${pageContext.request.contextPath}/support/leads" 
-               class="nav-link text-white d-flex align-items-center py-2 px-3 rounded ${pageTitle == 'Quản lý Leads' ? 'bg-primary bg-opacity-25 border-start border-4 border-primary' : 'opacity-75'}">
-                <i class="bi bi-person-plus me-3 fs-5"></i>
-                <span>Quản lý Leads</span>
-            </a>
-            <a href="${pageContext.request.contextPath}/support/queue" 
-               class="nav-link text-white d-flex align-items-center py-2 px-3 rounded ${pageTitle == 'Hàng chờ' ? 'bg-primary bg-opacity-25 border-start border-4 border-primary' : 'opacity-75'}">
-                <i class="bi bi-hourglass-split me-3 fs-5"></i>
-                <span>Hàng chờ</span>
-            </a>
-
-            <div class="px-4 mt-4 mb-2 small text-uppercase text-muted fw-bold" style="font-size: 11px; letter-spacing: 1px;">
-                Báo cáo & Phản hồi
+    <div class="p-3 border-bottom">
+        <a href="${pageContext.request.contextPath}/support/dashboard" class="d-flex align-items-center gap-2 text-decoration-none">
+            <div class="d-flex align-items-center justify-content-center rounded bg-info text-white" style="width: 40px; height: 40px;">
+                <i class="bi bi-cloud-check-fill fs-5"></i>
             </div>
-
-            <a href="#" class="nav-link text-white d-flex align-items-center py-2 px-3 rounded opacity-75">
-                <i class="bi bi-chat-heart me-3 fs-5"></i>
-                <span>Phản hồi khách hàng</span>
-            </a>
-
-            <a href="#" class="nav-link text-white d-flex align-items-center py-2 px-3 rounded opacity-75">
-                <i class="bi bi-bar-chart-line me-3 fs-5"></i>
-                <span>Báo cáo hiệu suất</span>
-            </a>
-        </nav>
-    </div>
-
-    <div class="sidebar-footer position-absolute bottom-0 start-0 end-0 p-3 border-top border-secondary border-opacity-25">
-        <a href="${pageContext.request.contextPath}/logout" 
-           class="btn btn-outline-danger w-100 d-flex align-items-center justify-content-center gap-2 py-2 border-0">
-            <i class="bi bi-box-arrow-left"></i>
-            <span>Đăng xuất</span>
+            <div>
+                <h6 class="mb-0 fw-bold text-dark">CRM Support</h6>
+                <small class="text-muted" style="font-size: 11px;">Hệ thống hỗ trợ</small>
+            </div>
         </a>
     </div>
+
+    <nav class="flex-grow-1 overflow-auto py-2" id="sidebarNav">
+
+        <div class="mb-1">
+            <div class="px-3 py-2">
+                <small class="text-uppercase text-muted fw-semibold" style="font-size: 10px; letter-spacing: 0.5px;">Main Menu</small>
+            </div>
+            <ul class="nav flex-column px-2">
+                <li class="nav-item mb-1">
+                    <a href="${pageContext.request.contextPath}/support/dashboard" 
+                       class="nav-link rounded-2 d-flex align-items-center gap-2 py-2 px-3 ${pageTitle == 'Tổng quan' ? 'active bg-primary text-white' : 'text-body-secondary'}">
+                        <i class="bi bi-speedometer2"></i>
+                        <span>Tổng quan</span>
+                    </a>
+                </li>
+
+                <li class="nav-item mb-1">
+                    <a href="${pageContext.request.contextPath}/support/activities" 
+                       class="nav-link rounded-2 d-flex align-items-center gap-2 py-2 px-3 ${pageTitle == 'Lịch sử hoạt động' ? 'active bg-primary text-white' : 'text-body-secondary'}">
+                        <i class="bi bi-clock-history"></i>
+                        <span class="flex-grow-1">Lịch sử hoạt động</span>
+                        <span class="badge bg-danger rounded-pill" style="font-size: 9px;">New</span>
+                    </a>
+                </li>
+
+                <li class="nav-item mb-1">
+                    <a href="${pageContext.request.contextPath}/support/customers" 
+                       class="nav-link rounded-2 d-flex align-items-center gap-2 py-2 px-3 ${pageTitle == 'Quản lý Customer' || pageTitle == 'Danh sách khách hàng' ? 'active bg-primary text-white' : 'text-body-secondary'}">
+                        <i class="bi bi-people"></i>
+                        <span>Khách hàng</span>
+                    </a>
+                </li>
+
+                <li class="nav-item mb-1">
+                    <a href="${pageContext.request.contextPath}/support/leads" 
+                       class="nav-link rounded-2 d-flex align-items-center gap-2 py-2 px-3 ${pageTitle == 'Quản lý Leads' ? 'active bg-primary text-white' : 'text-body-secondary'}">
+                        <i class="bi bi-person-plus"></i>
+                        <span>Quản lý Leads</span>
+                    </a>
+                </li>
+
+                <li class="nav-item mb-1">
+                    <a href="${pageContext.request.contextPath}/support/queue" 
+                       class="nav-link rounded-2 d-flex align-items-center gap-2 py-2 px-3 ${pageTitle == 'Hàng chờ' ? 'active bg-primary text-white' : 'text-body-secondary'}">
+                        <i class="bi bi-hourglass-split"></i>
+                        <span>Hàng chờ</span>
+                    </a>
+                </li>
+
+                <li class="nav-item mb-1">
+                    <a href="${pageContext.request.contextPath}/support/search" 
+                       class="nav-link rounded-2 d-flex align-items-center gap-2 py-2 px-3 ${pageTitle == 'Tìm kiếm tổng hợp' ? 'active bg-primary text-white' : 'text-body-secondary'}">
+                        <i class="bi bi-search"></i>
+                        <span>Tìm kiếm khách hàng</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="mb-1 mt-3">
+            <div class="px-3 py-2">
+                <small class="text-uppercase text-muted fw-semibold" style="font-size: 10px; letter-spacing: 0.5px;">Báo cáo & Phản hồi</small>
+            </div>
+            <ul class="nav flex-column px-2">
+                <li class="nav-item mb-1">
+                    <a href="#" class="nav-link rounded-2 d-flex align-items-center gap-2 py-2 px-3 text-body-secondary">
+                        <i class="bi bi-chat-heart"></i>
+                        <span>Phản hồi khách hàng</span>
+                    </a>
+                </li>
+                <li class="nav-item mb-1">
+                    <a href="#" class="nav-link rounded-2 d-flex align-items-center gap-2 py-2 px-3 text-body-secondary">
+                        <i class="bi bi-bar-chart-line"></i>
+                        <span>Báo cáo hiệu suất</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+    </nav>
+
+    <div class="p-3 border-top">
+        <a href="${pageContext.request.contextPath}/logout" class="btn btn-outline-danger btn-sm w-100 d-flex align-items-center justify-content-center gap-2 py-2 border-0 fw-bold">
+            <i class="bi bi-box-arrow-left"></i>
+            <span>ĐĂNG XUẤT</span>
+        </a>
+    </div>
+
 </aside>
 
 <style>
-    .sidebar .nav-link:hover {
-        background-color: rgba(255, 255, 255, 0.1);
-        opacity: 1 !important;
-        transition: all 0.3s ease;
+    .nav-link:not(.active):hover {
+        background-color: #f8f9fa !important;
+        color: #0d6efd !important;
     }
-    .sidebar .nav-link {
-        transition: all 0.3s ease;
+    .nav-link.active {
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     }
 </style>
+
+<script>
+    (function() {
+        var nav = document.getElementById('sidebarNav');
+        if (!nav) return;
+        var saved = sessionStorage.getItem('sidebarScroll_Support');
+        if (saved) nav.scrollTop = parseInt(saved, 10);
+        nav.addEventListener('scroll', function() {
+            sessionStorage.setItem('sidebarScroll_Support', nav.scrollTop);
+        });
+    })();
+</script>

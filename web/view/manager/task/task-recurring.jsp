@@ -52,10 +52,10 @@
                             <small class="text-muted d-block">Trạng thái</small>
                             <p>
                                 <c:choose>
-                                    <c:when test="${task.status == 'COMPLETED'}">
+                                    <c:when test="${task.statusName == 'COMPLETED'}">
                                         <span class="badge bg-success">Hoàn thành</span>
                                     </c:when>
-                                    <c:when test="${task.status == 'IN_PROGRESS'}">
+                                    <c:when test="${task.statusName == 'IN_PROGRESS'}">
                                         <span class="badge bg-info">Đang thực hiện</span>
                                     </c:when>
                                     <c:otherwise>

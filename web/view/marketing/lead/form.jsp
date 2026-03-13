@@ -71,6 +71,11 @@
                                                 value="${lead.jobTitle}">
                                         </div>
                                     </div>
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-bold">Sở thích / Quan tâm</label>
+                                        <input type="text" name="interests" class="form-control"
+                                            value="${lead.interests}" placeholder="Ví dụ: Khóa học Marketing, AI...">
+                                    </div>
                                     <div class="mb-0">
                                         <label class="form-label small fw-bold">Ghi chú</label>
                                         <textarea name="notes" class="form-control" rows="4">${lead.notes}</textarea>
@@ -89,37 +94,27 @@
                                     <div class="mb-3">
                                         <label class="form-label small fw-bold">Trạng thái</label>
                                         <select name="status" class="form-select">
-                                            <c:forEach var="st" items="${leadStatuses}">
-                                                <option value="${st}" ${lead.status == st.toString() ? 'selected' : ''}>${st}</option>
-                                            </c:forEach>
+                                            <option value="New" ${lead.status=='New' ? 'selected' : '' }>Mới (New)</option>
+                                            <option value="Contacted" ${lead.status=='Contacted' ? 'selected' : '' }>Đã liên hệ (Contacted)</option>
+                                            <option value="Qualified" ${lead.status=='Qualified' ? 'selected' : '' }>Đủ điều kiện (Qualified)</option>
+                                            <option value="Unqualified" ${lead.status=='Unqualified' ? 'selected' : '' }>Không đủ điều kiện (Unqualified)</option>
+                                            <option value="Converted" ${lead.status=='Converted' ? 'selected' : '' }>Đã chuyển đổi (Converted)</option>
                                         </select>
                                     </div>
-                                    <div class="mb-3">
-                                        <label class="form-label small fw-bold">Rating</label>
-                                        <select name="rating" class="form-select">
-                                            <option value="">-- Chọn rating --</option>
-                                            <c:forEach var="rt" items="${leadRatings}">
-                                                <option value="${rt}" ${lead.rating == rt.toString() ? 'selected' : ''}>${rt}</option>
-                                            </c:forEach>
-                                        </select>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label class="form-label small fw-bold">Diem tiềm năng (Lead Score)</label>
-                                        <input type="number" name="leadScore" class="form-control" value="${lead.leadScore}" min="0" max="100">
-                                    </div>
-                                    <div class="mb-3">
-                                        <label class="form-label small fw-bold">Phân công cho</label>
-                                        <select name="assignedTo" class="form-select">
-                                            <option value="">-- Chưa phân công --</option>
-                                            <c:forEach var="u" items="${users}">
-                                                <option value="${u.userId}" ${lead.assignedTo == u.userId ? 'selected' : ''}>${u.firstName} ${u.lastName}</option>
-                                            </c:forEach>
-                                        </select>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label class="form-label small fw-bold">Sở thích / Quan tâm</label>
-                                        <input type="text" name="interests" class="form-control" value="${lead.interests}">
-                                    </div>
+                                    <div class="row g-3 mb-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label small fw-bold">Đánh giá (Rating)</label>
+                                            <select name="rating" class="form-select">
+                                                <option value="">-- Chọn --</option>
+                                                <option value="Hot" ${lead.rating=='Hot' ? 'selected' : '' }>Hot 🔥</option>
+                                                <option value="Warm" ${lead.rating=='Warm' ? 'selected' : '' }>Warm ⚡</option>
+                                                <option value="Cold" ${lead.rating=='Cold' ? 'selected' : '' }>Cold ❄️</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label small fw-bold">Điểm số (Score)</label>
+                                            <input type="number" name="leadScore" class="form-control" value="${lead.leadScore != null ? lead.leadScore : 0}">
+                                        </div>
                                     </div>
                                     <div class="mb-3">
                                         <label class="form-label small fw-bold">Nguồn Lead</label>

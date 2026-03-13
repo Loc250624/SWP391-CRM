@@ -63,7 +63,7 @@ public class ManagerTaskTeamServlet extends HttpServlet {
 
         // Pagination
         int page = 1;
-        int pageSize = 20;
+        int pageSize = 10;
         try {
             String pageParam = request.getParameter("page");
             if (pageParam != null && !pageParam.isEmpty()) {

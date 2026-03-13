@@ -1,7 +1,7 @@
 package dao;
 
 import dbConnection.DBContext;
-import java.sql.Connection;
+
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -127,10 +127,24 @@ public class UserDAO extends DBContext {
         return -1;
     }
 
+    public List<Users> getUsersByDepartment(int departmentId) {
+        List<Users> list = new ArrayList<>();
+        String sql = "SELECT * FROM users WHERE department_id = ? AND status = 'Active' ORDER BY first_name, last_name";
+        try (PreparedStatement st = connection.prepareStatement(sql)) {
+            st.setInt(1, departmentId);
+            try (ResultSet rs = st.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapResultSetToUser(rs));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
     public boolean updateUser(Users u) {
-        String sql = "UPDATE users SET firstName = ?, lastName = ?, email = ?, phone = ?, employeeCode = ?, status = ?, updated_at = GETDATE() WHERE userId = ?";
-        // Correcting column names based on mapResultSetToUser
-        sql = "UPDATE users SET first_name = ?, last_name = ?, email = ?, phone = ?, employee_code = ?, status = ?, updated_at = GETDATE() WHERE user_id = ?";
+        String sql = "UPDATE users SET first_name = ?, last_name = ?, email = ?, phone = ?, employee_code = ?, status = ?, updated_at = GETDATE() WHERE user_id = ?";
         try (PreparedStatement st = connection.prepareStatement(sql)) {
             st.setString(1, u.getFirstName());
             st.setString(2, u.getLastName());

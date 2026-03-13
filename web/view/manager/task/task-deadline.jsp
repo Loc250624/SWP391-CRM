@@ -32,7 +32,7 @@
                                 <c:choose>
                                     <c:when test="${task.dueDate != null}">
                                         <fmt:formatDate value="${task.dueDate}" pattern="dd/MM/yyyy" />
-                                        <c:if test="${task.dueDate.isBefore(now()) && task.status != 'COMPLETED'}">
+                                        <c:if test="${task.dueDate.isBefore(now()) && task.statusName != 'COMPLETED'}">
                                             <span class="badge bg-danger ms-2">Quá hạn</span>
                                         </c:if>
                                     </c:when>
@@ -180,13 +180,13 @@
                     <div class="mb-3">
                         <small class="text-muted d-block">Trạng thái</small>
                         <c:choose>
-                            <c:when test="${task.status == 'COMPLETED'}">
+                            <c:when test="${task.statusName == 'COMPLETED'}">
                                 <span class="badge bg-success">Hoàn thành</span>
                             </c:when>
-                            <c:when test="${task.status == 'IN_PROGRESS'}">
+                            <c:when test="${task.statusName == 'IN_PROGRESS'}">
                                 <span class="badge bg-info">Đang thực hiện</span>
                             </c:when>
-                            <c:when test="${task.status == 'CANCELLED'}">
+                            <c:when test="${task.statusName == 'CANCELLED'}">
                                 <span class="badge bg-dark">Đã hủy</span>
                             </c:when>
                             <c:otherwise>
@@ -197,10 +197,10 @@
                     <div class="mb-0">
                         <small class="text-muted d-block">Ưu tiên</small>
                         <c:choose>
-                            <c:when test="${task.priority == 'HIGH'}">
+                            <c:when test="${task.priorityName == 'HIGH'}">
                                 <span class="badge bg-danger">Cao</span>
                             </c:when>
-                            <c:when test="${task.priority == 'MEDIUM'}">
+                            <c:when test="${task.priorityName == 'MEDIUM'}">
                                 <span class="badge bg-warning">Trung bình</span>
                             </c:when>
                             <c:otherwise>

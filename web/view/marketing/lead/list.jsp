@@ -36,10 +36,10 @@
                             <select name="status" class="form-select bg-light" onchange="this.form.submit()">
                                 <option value="">Tất cả trạng thái</option>
                                 <option value="New" ${status=='New' ? 'selected' : '' }>Mới (New)</option>
-                                <option value="Assigned" ${status=='Assigned' ? 'selected' : '' }>Đã phân công</option>
-                                <option value="Working" ${status=='Working' ? 'selected' : '' }>Đang xử lý</option>
-                                <option value="Converted" ${status=='Converted' ? 'selected' : '' }>Đã chuyển đổi
-                                </option>
+                                <option value="Contacted" ${status=='Contacted' ? 'selected' : '' }>Đã liên hệ (Contacted)</option>
+                                <option value="Qualified" ${status=='Qualified' ? 'selected' : '' }>Đủ điều kiện (Qualified)</option>
+                                <option value="Unqualified" ${status=='Unqualified' ? 'selected' : '' }>Không đủ điều kiện (Unqualified)</option>
+                                <option value="Converted" ${status=='Converted' ? 'selected' : '' }>Đã chuyển đổi (Converted)</option>
                             </select>
                         </div>
                         <div class="col-md-1">
@@ -54,7 +54,9 @@
                                 <th class="ps-4">Họ tên / Email</th>
                                 <th>Số điện thoại</th>
                                 <th>Công ty / Chức vụ</th>
+                                <th>Sở thích</th>
                                 <th>Trạng thái</th>
+                                <th>Đánh giá</th>
                                 <th>Điểm số</th>
                                 <th>Phân công cho</th>
                                 <th class="text-end pe-4">Thao tác</th>
@@ -83,18 +85,42 @@
                                                 <div class="text-muted small">${lead.jobTitle}</div>
                                             </td>
                                             <td>
+                                                <div class="text-muted small" style="max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${lead.interests}">
+                                                    ${not empty lead.interests ? lead.interests : '-'}
+                                                </div>
+                                            </td>
+                                             <td>
                                                 <c:choose>
                                                     <c:when test="${lead.status == 'New'}">
-                                                        <span
-                                                            class="badge bg-info-subtle text-info px-2 py-1">New</span>
+                                                        <span class="badge bg-info-subtle text-info px-2 py-1">New</span>
+                                                    </c:when>
+                                                    <c:when test="${lead.status == 'Contacted'}">
+                                                        <span class="badge bg-primary-subtle text-primary px-2 py-1">Contacted</span>
+                                                    </c:when>
+                                                    <c:when test="${lead.status == 'Qualified'}">
+                                                        <span class="badge bg-success-subtle text-success px-2 py-1">Qualified</span>
                                                     </c:when>
                                                     <c:when test="${lead.status == 'Converted'}">
-                                                        <span
-                                                            class="badge bg-success-subtle text-success px-2 py-1">Converted</span>
+                                                        <span class="badge bg-success text-white px-2 py-1">Converted</span>
                                                     </c:when>
                                                     <c:otherwise>
-                                                        <span
-                                                            class="badge bg-warning-subtle text-warning px-2 py-1">${lead.status}</span>
+                                                        <span class="badge bg-light text-dark px-2 py-1">${lead.status}</span>
+                                                    </c:otherwise>
+                                                </c:choose>
+                                            </td>
+                                            <td>
+                                                <c:choose>
+                                                    <c:when test="${lead.rating == 'Hot'}">
+                                                        <span class="badge bg-danger shadow-sm">Hot 🔥</span>
+                                                    </c:when>
+                                                    <c:when test="${lead.rating == 'Warm'}">
+                                                        <span class="badge bg-warning text-dark shadow-sm">Warm ⚡</span>
+                                                    </c:when>
+                                                    <c:when test="${lead.rating == 'Cold'}">
+                                                        <span class="badge bg-info text-dark shadow-sm">Cold ❄️</span>
+                                                    </c:when>
+                                                    <c:otherwise>
+                                                        <span class="text-muted small">-</span>
                                                     </c:otherwise>
                                                 </c:choose>
                                             </td>
@@ -143,7 +169,7 @@
                                 </c:when>
                                 <c:otherwise>
                                     <tr>
-                                        <td colspan="7" class="text-center py-5">
+                                        <td colspan="9" class="text-center py-5">
                                             <div class="text-muted">Không tìm thấy Lead nào tương ứng.</div>
                                         </td>
                                     </tr>

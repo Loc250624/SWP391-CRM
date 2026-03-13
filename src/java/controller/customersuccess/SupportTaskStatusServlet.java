@@ -55,7 +55,7 @@ public class SupportTaskStatusServlet extends HttpServlet {
             }
 
             // FIX: Cannot update terminal-state tasks
-            if ("COMPLETED".equals(task.getStatus()) || "CANCELLED".equals(task.getStatus())) {
+            if ("COMPLETED".equals(task.getStatusName()) || "CANCELLED".equals(task.getStatusName())) {
                 session.setAttribute("errorMessage",
                         "Công việc đã hoàn thành hoặc đã hủy, không thể cập nhật trạng thái");
                 response.sendRedirect(request.getContextPath() + "/support/task/detail?id=" + taskId);
@@ -132,7 +132,7 @@ public class SupportTaskStatusServlet extends HttpServlet {
             }
 
             // FIX: Block updating terminal-state tasks
-            if ("COMPLETED".equals(task.getStatus()) || "CANCELLED".equals(task.getStatus())) {
+            if ("COMPLETED".equals(task.getStatusName()) || "CANCELLED".equals(task.getStatusName())) {
                 session.setAttribute("errorMessage",
                         "Công việc đã hoàn thành hoặc đã hủy, không thể cập nhật");
                 response.sendRedirect(request.getContextPath() + "/support/task/detail?id=" + taskId);
@@ -144,16 +144,16 @@ public class SupportTaskStatusServlet extends HttpServlet {
             //   PENDING    → COMPLETED    ✓  (shortcut)
             //   IN_PROGRESS → COMPLETED   ✓
             //   IN_PROGRESS → PENDING     ✗  (going backward is blocked)
-            if (!isValidTransition(task.getStatus(), newStatus)) {
+            if (!isValidTransition(task.getStatusName(), newStatus)) {
                 session.setAttribute("errorMessage",
                         "Chuyển trạng thái không hợp lệ: "
-                        + getVietnameseStatus(task.getStatus())
+                        + getVietnameseStatus(task.getStatusName())
                         + " → " + getVietnameseStatus(newStatus));
                 response.sendRedirect(redirectBack);
                 return;
             }
 
-            task.setStatus(newStatus);
+            task.setStatus(TaskStatus.valueOf(newStatus).ordinal());
             boolean success = taskDAO.updateTask(task);
 
             if (success) {

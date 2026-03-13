@@ -10,10 +10,6 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import model.Lead;
-import dao.UserDAO;
-import enums.LeadStatus;
-import enums.LeadRating;
-import java.time.LocalDateTime;
 
 @WebServlet(name = "MarketingLeadFormServlet", urlPatterns = {"/marketing/lead/form"})
 public class MarketingLeadFormServlet extends HttpServlet {
@@ -21,7 +17,6 @@ public class MarketingLeadFormServlet extends HttpServlet {
     private LeadDAO leadDAO = new LeadDAO();
     private LeadSourceDAO sourceDAO = new LeadSourceDAO();
     private CampaignDAO campaignDAO = new CampaignDAO();
-    private UserDAO userDAO = new UserDAO();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -36,9 +31,6 @@ public class MarketingLeadFormServlet extends HttpServlet {
 
         request.setAttribute("sources", sourceDAO.getAllActiveSources());
         request.setAttribute("campaigns", campaignDAO.getAllActiveCampaigns());
-        request.setAttribute("users", userDAO.getAllUsers());
-        request.setAttribute("leadStatuses", LeadStatus.values());
-        request.setAttribute("leadRatings", LeadRating.values());
         request.setAttribute("ACTIVE_MENU", "LEAD_FORM");
         request.setAttribute("pageTitle", idStr == null ? "Tạo Lead mới" : "Chỉnh sửa Lead");
         request.setAttribute("CONTENT_PAGE", "/view/marketing/lead/form.jsp");
@@ -61,7 +53,20 @@ public class MarketingLeadFormServlet extends HttpServlet {
         lead.setPhone(request.getParameter("phone"));
         lead.setCompanyName(request.getParameter("companyName"));
         lead.setJobTitle(request.getParameter("jobTitle"));
+        lead.setInterests(request.getParameter("interests"));
         lead.setStatus(request.getParameter("status"));
+        lead.setRating(request.getParameter("rating"));
+        
+        String scoreStr = request.getParameter("leadScore");
+        if (scoreStr != null && !scoreStr.isEmpty()) {
+            try {
+                lead.setLeadScore(Integer.parseInt(scoreStr));
+            } catch (NumberFormatException e) {
+                lead.setLeadScore(0);
+            }
+        }
+        
+        lead.setNotes(request.getParameter("notes"));
         
         String sourceId = request.getParameter("sourceId");
         if (sourceId != null && !sourceId.isEmpty()) lead.setSourceId(Integer.parseInt(sourceId));
@@ -69,31 +74,18 @@ public class MarketingLeadFormServlet extends HttpServlet {
         String campaignId = request.getParameter("campaignId");
         if (campaignId != null && !campaignId.isEmpty()) lead.setCampaignId(Integer.parseInt(campaignId));
         
-        lead.setRating(request.getParameter("rating"));
-        lead.setInterests(request.getParameter("interests"));
-        lead.setNotes(request.getParameter("notes"));
-        
-        String leadScore = request.getParameter("leadScore");
-        if (leadScore != null && !leadScore.isEmpty()) lead.setLeadScore(Integer.parseInt(leadScore));
-        
-        String assignedTo = request.getParameter("assignedTo");
-        if (assignedTo != null && !assignedTo.isEmpty()) lead.setAssignedTo(Integer.parseInt(assignedTo));
+        // Set createdBy if new lead
+        if (lead.getLeadId() == 0) {
+            model.Users user = (model.Users) request.getSession().getAttribute("user");
+            if (user != null) {
+                lead.setCreatedBy(user.getUserId());
+            }
+        }
         
         boolean success;
         if (lead.getLeadId() > 0) {
-            Lead existing = leadDAO.getLeadById(lead.getLeadId());
-            if (existing != null) {
-                if (lead.getAssignedTo() != null && (existing.getAssignedTo() == null || !existing.getAssignedTo().equals(lead.getAssignedTo()))) {
-                    lead.setAssignedAt(LocalDateTime.now());
-                } else {
-                    lead.setAssignedAt(existing.getAssignedAt());
-                }
-            }
             success = leadDAO.updateLead(lead);
         } else {
-            if (lead.getAssignedTo() != null) {
-                lead.setAssignedAt(LocalDateTime.now());
-            }
             success = leadDAO.insertLead(lead);
         }
         

@@ -113,19 +113,29 @@
                 </div>
                 <div class="card-body">
                     <div class="mb-3">
-                        <label class="form-label fw-medium" for="status">Trang thai</label>
-                        <select class="form-select" id="status" name="status">
-                            <c:forEach var="statusEnum" items="${leadStatuses}">
-                                <option value="${statusEnum}" <c:if test="${lead.status == statusEnum.toString()}">selected</c:if>>${statusEnum}</option>
-                            </c:forEach>
-                        </select>
-                        <div class="form-text">Trang thai hien tai cua lead</div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-medium" for="leadScore">Diem tiem nang (Lead Score)</label>
-                        <input type="number" class="form-control" id="leadScore" name="leadScore"
-                               placeholder="0" value="${lead.leadScore}" min="0" max="100">
-                        <div class="form-text">Thang diem 0-100</div>
+                        <label class="form-label fw-medium">Trang thai</label>
+                        <c:choose>
+                            <c:when test="${mode == 'edit'}">
+                                <!-- Edit mode: status is read-only, displayed as badge -->
+                                <div class="form-control bg-light">
+                                    <c:choose>
+                                        <c:when test="${lead.status == 'Assigned'}"><span class="badge bg-primary">Assigned</span></c:when>
+                                        <c:when test="${lead.status == 'Working'}"><span class="badge bg-info">Working</span></c:when>
+                                        <c:when test="${lead.status == 'Nurturing'}"><span class="badge bg-warning text-dark">Nurturing</span></c:when>
+                                        <c:when test="${lead.status == 'Unqualified'}"><span class="badge bg-secondary">Unqualified</span></c:when>
+                                        <c:when test="${lead.status == 'Converted'}"><span class="badge bg-success">Converted</span></c:when>
+                                        <c:otherwise><span class="badge bg-secondary">${lead.status}</span></c:otherwise>
+                                    </c:choose>
+                                </div>
+                                <div class="form-text">Trang thai khong the thay doi truc tiep</div>
+                            </c:when>
+                            <c:otherwise>
+                                <!-- Create mode: default Assigned, hidden -->
+                                <input type="hidden" name="status" value="Assigned">
+                                <div class="form-control bg-light"><span class="badge bg-primary">Assigned</span> (Mac dinh)</div>
+                                <div class="form-text">Lead moi se tu dong o trang thai Assigned</div>
+                            </c:otherwise>
+                        </c:choose>
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-medium" for="rating">Rating</label>
@@ -134,20 +144,13 @@
                             <c:forEach var="ratingEnum" items="${leadRatings}">
                                 <option value="${ratingEnum}" <c:if test="${lead.rating == ratingEnum.toString()}">selected</c:if>>${ratingEnum}</option>
                             </c:forEach>
+                            <c:if test="${empty leadRatings}">
+                                <option value="Hot">Hot</option>
+                                <option value="Warm">Warm</option>
+                                <option value="Cold">Cold</option>
+                            </c:if>
                         </select>
                         <div class="form-text">Muc do tiem nang cua lead</div>
-                    </div>
-                    <div class="mb-0">
-                        <label class="form-label fw-medium" for="assignedTo">Phan cong cho (Assigned To)</label>
-                        <select class="form-select" id="assignedTo" name="assignedTo">
-                            <option value="">-- De trong (Chua giao) --</option>
-                            <c:forEach var="u" items="${users}">
-                                <option value="${u.userId}" <c:if test="${lead.assignedTo == u.userId}">selected</c:if>>
-                                    ${u.firstName} ${u.lastName} (${u.email})
-                                </option>
-                            </c:forEach>
-                        </select>
-                        <div class="form-text">Nhan vien phu trach lead nay</div>
                     </div>
                 </div>
             </div>
@@ -293,11 +296,6 @@
         var jobTitle = document.getElementById('jobTitle').value.trim();
         var interests = document.getElementById('interests').value.trim();
         var notes = document.getElementById('notes').value.trim();
-        var leadScore = document.getElementById('leadScore').value;
-
-        if (leadScore && (parseInt(leadScore) < 0 || parseInt(leadScore) > 100)) {
-            errors.push('Lead score phai tu 0 den 100!');
-        }
 
         if (!fullName) {
             errors.push('Ho ten la bat buoc!');
