@@ -41,7 +41,6 @@ public class ActivityDAO extends DBContext {
                 + "FROM activities a "
                 + "LEFT JOIN users u ON a.performed_by = u.user_id "
                 + "WHERE a.related_id = ? AND a.related_type = 'Customer' "
-                + "AND a.status = 'Completed' "
                 + "ORDER BY a.created_at DESC";
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setInt(1, customerId);
@@ -57,7 +56,7 @@ public class ActivityDAO extends DBContext {
         return list;
     }
 
-// 2. HÀM CẬP NHẬT NỘI DUNG VÀ HOÀN THÀNH
+    // 2. HÀM CẬP NHẬT NỘI DUNG VÀ HOÀN THÀNH
     public boolean updateAndCompleteActivity(int activityId, String subject, String description) {
         // Cho phép cập nhật lại cả tiêu đề và nội dung trước khi đóng phiếu
         String sql = "UPDATE activities SET subject = ?, [description] = ?, status = 'Completed', created_at = GETDATE() "

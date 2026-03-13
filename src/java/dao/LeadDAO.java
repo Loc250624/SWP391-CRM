@@ -30,9 +30,11 @@ public class LeadDAO extends DBContext {
         lead.rating = rs.getString("rating");
         lead.leadScore = rs.getInt("lead_score");
         lead.assignedTo = rs.getObject("assigned_to", Integer.class);
-        lead.assignedAt = rs.getTimestamp("assigned_at") != null ? rs.getTimestamp("assigned_at").toLocalDateTime() : null;
+        lead.assignedAt = rs.getTimestamp("assigned_at") != null ? rs.getTimestamp("assigned_at").toLocalDateTime()
+                : null;
         lead.isConverted = rs.getBoolean("is_converted");
-        lead.convertedAt = rs.getTimestamp("converted_at") != null ? rs.getTimestamp("converted_at").toLocalDateTime() : null;
+        lead.convertedAt = rs.getTimestamp("converted_at") != null ? rs.getTimestamp("converted_at").toLocalDateTime()
+                : null;
         lead.convertedCustomerId = rs.getObject("converted_customer_id", Integer.class);
         lead.notes = rs.getString("notes");
         lead.createdAt = rs.getTimestamp("created_at").toLocalDateTime();
@@ -82,7 +84,7 @@ public class LeadDAO extends DBContext {
 
     // Generate unique lead code (LD-000001, LD-000002, ...)
     public String generateLeadCode() {
-        String sql = "SELECT TOP 1 lead_code FROM leads ORDER BY lead_id DESC";
+        String sql = "SELECT TOP 1 lead_code FROM leads WHERE lead_code LIKE 'LD-%' ORDER BY lead_id DESC";
 
         try {
             PreparedStatement st = connection.prepareStatement(sql);
@@ -90,18 +92,36 @@ public class LeadDAO extends DBContext {
 
             if (rs.next()) {
                 String lastCode = rs.getString("lead_code");
-                // Extract number from LD-000001
-                int number = Integer.parseInt(lastCode.substring(3));
-                return String.format("LD-%06d", number + 1);
-            } else {
-                // First lead
-                return "LD-000001";
+                try {
+                    // Standard format is LD-XXXXXX
+                    // But if it's LD-2026-1015, we need to handle it
+                    String numericPart = lastCode.substring(3); // Remove 'LD-'
+
+                    // If it contains more hyphens, take the last part
+                    if (numericPart.contains("-")) {
+                        String[] parts = numericPart.split("-");
+                        numericPart = parts[parts.length - 1];
+                    }
+
+                    // Extract only digits just in case
+                    numericPart = numericPart.replaceAll("[^0-9]", "");
+
+                    if (!numericPart.isEmpty()) {
+                        long number = Long.parseLong(numericPart);
+                        return String.format("LD-%06d", number + 1);
+                    }
+                } catch (Exception e) {
+                    // If parsing fails, fall back to timestamp
+                }
             }
+
+            // Default or fallback
+            return "LD-" + (System.currentTimeMillis() / 10000);
         } catch (SQLException e) {
             e.printStackTrace();
         }
 
-        // Fallback
+        // Final fallback
         return "LD-" + System.currentTimeMillis();
     }
 
@@ -354,7 +374,8 @@ public class LeadDAO extends DBContext {
         return leadList;
     }
 
-    // Get leads eligible for opportunity creation (filtered by status, not converted)
+    // Get leads eligible for opportunity creation (filtered by status, not
+    // converted)
     public List<Lead> getLeadsForOpportunity(int userId) {
         List<Lead> leadList = new ArrayList<>();
         String sql = "SELECT * FROM leads WHERE (created_by = ? OR assigned_to = ?) "
@@ -412,20 +433,63 @@ public class LeadDAO extends DBContext {
         return leadList;
     }
 
-    public List<Lead> searchLeadsByPhone(String phoneQuery) {
+    public util.PagedResult<Lead> search(String phoneQuery, String status, int page, int pageSize) {
         List<Lead> list = new ArrayList<>();
-        // Chỉ lọc theo cột phone
-        String sql = "SELECT * FROM leads WHERE phone LIKE ? AND is_converted = 0 ORDER BY created_at DESC";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
-            ps.setString(1, "%" + phoneQuery + "%");
-            ResultSet rs = ps.executeQuery();
-            while (rs.next()) {
-                list.add(mapResultSetToLead(rs));
+        int totalItems = 0;
+
+        StringBuilder sql = new StringBuilder("SELECT * FROM leads WHERE status != 'Inactive' ");
+        StringBuilder countSql = new StringBuilder("SELECT COUNT(*) FROM leads WHERE status != 'Inactive' ");
+        List<Object> params = new ArrayList<>();
+
+        if (phoneQuery != null && !phoneQuery.trim().isEmpty()) {
+            String cond = "AND phone LIKE ? ";
+            sql.append(cond);
+            countSql.append(cond);
+            params.add("%" + phoneQuery.trim() + "%");
+        }
+
+        if (status != null && !status.trim().isEmpty()) {
+            String cond = "AND status = ? ";
+            sql.append(cond);
+            countSql.append(cond);
+            params.add(status.trim());
+        }
+
+        // Count Query
+        try (PreparedStatement st = connection.prepareStatement(countSql.toString())) {
+            for (int i = 0; i < params.size(); i++) {
+                st.setObject(i + 1, params.get(i));
+            }
+            try (ResultSet rs = st.executeQuery()) {
+                if (rs.next()) {
+                    totalItems = rs.getInt(1);
+                }
             }
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        return list;
-    }
 
+        // Items Query
+        sql.append("ORDER BY created_at DESC ");
+        sql.append("OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
+
+        try (PreparedStatement st = connection.prepareStatement(sql.toString())) {
+            int pIdx = 1;
+            for (Object p : params) {
+                st.setObject(pIdx++, p);
+            }
+            st.setInt(pIdx++, (page - 1) * pageSize);
+            st.setInt(pIdx++, pageSize);
+
+            try (ResultSet rs = st.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapResultSetToLead(rs));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return new util.PagedResult<>(list, totalItems, page, pageSize);
+    }
 }

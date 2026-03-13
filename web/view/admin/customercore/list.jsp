@@ -12,7 +12,7 @@
                     <div class="d-flex gap-2">
                         <div class="btn-group shadow-sm">
                             <a class="btn btn-white border px-3 py-2 rounded-3 text-dark bg-white"
-                                href="${pageContext.request.contextPath}/admin/customer/export?q=${fn:escapeXml(q)}&status=${fn:escapeXml(status)}&segment=${fn:escapeXml(segment)}&tag=${fn:escapeXml(tag)}">
+                                href="${pageContext.request.contextPath}/admin/customer/export?q=${fn:escapeXml(q)}&status=${fn:escapeXml(status)}&segment=${fn:escapeXml(segment)}">
                                 <i class="bi bi-download me-2 text-indigo"></i>Export
                             </a>
                             <a class="btn btn-white border-start-0 border px-3 py-2 rounded-3 text-dark bg-white"
@@ -42,34 +42,6 @@
                                         placeholder="Name, email, phone..." value="${fn:escapeXml(q)}">
                                 </div>
                             </div>
-                            <div class="col-md-2">
-                                <label class="form-label small fw-bold text-muted">Status</label>
-                                <select name="status" class="form-select bg-light border-0">
-                                    <option value="">All Status</option>
-                                    <option value="Active" ${status=='Active' ? 'selected' : '' }>Active</option>
-                                    <option value="Inactive" ${status=='Inactive' ? 'selected' : '' }>Inactive</option>
-                                </select>
-                            </div>
-                            <div class="col-md-2">
-                                <label class="form-label small fw-bold text-muted">Segment</label>
-                                <select name="segment" class="form-select bg-light border-0">
-                                    <option value="">All Segments</option>
-                                    <option value="VIP" ${segment=='VIP' ? 'selected' : '' }>VIP</option>
-                                    <option value="MBI" ${segment=='MBI' ? 'selected' : '' }>MBI</option>
-                                    <option value="Lust" ${segment=='Lust' ? 'selected' : '' }>Lust</option>
-                                </select>
-                            </div>
-                            <div class="col-md-2">
-                                <label class="form-label small fw-bold text-muted">Tag</label>
-                                <select name="tag" class="form-select bg-light border-0">
-                                    <option value="">All Tags</option>
-                                    <c:forEach items="${allTags}" var="t">
-                                        <option value="${t.tagId}" ${tag==(t.tagId).toString() ? 'selected' : '' }>
-                                            ${t.tagName}
-                                        </option>
-                                    </c:forEach>
-                                </select>
-                            </div>
                             <div class="col-md-3 d-flex gap-2">
                                 <button type="submit" class="btn btn-indigo flex-grow-1 text-white"
                                     style="background-color: #4f46e5;">Apply Filter</button>
@@ -98,7 +70,6 @@
                                     <th class="text-uppercase small fw-bold text-muted py-3 border-0">Name</th>
                                     <th class="text-uppercase small fw-bold text-muted py-3 border-0">Contact</th>
                                     <th class="text-uppercase small fw-bold text-muted py-3 border-0">Status</th>
-                                    <th class="text-uppercase small fw-bold text-muted py-3 border-0">Tags</th>
                                     <th class="pe-4 text-end text-uppercase small fw-bold text-muted py-3 border-0">
                                         Actions</th>
                                 </tr>
@@ -135,15 +106,6 @@
                                                 </c:otherwise>
                                             </c:choose>
                                         </td>
-                                        <td>
-                                            <c:set var="tags" value="${tagsByCustomer[c.customerId]}" />
-                                            <c:if test="${empty tags}"><span class="text-muted small">---</span></c:if>
-                                            <c:forEach items="${tags}" var="t">
-                                                <span
-                                                    class="badge rounded-pill bg-indigo bg-opacity-10 text-indigo border border-indigo me-1 mb-1"
-                                                    style="color: #4f46e5;">${fn:escapeXml(t.tagName)}</span>
-                                            </c:forEach>
-                                        </td>
                                         <td class="pe-4 text-end">
                                             <div class="dropdown">
                                                 <button class="btn btn-white btn-sm border-0 bg-transparent text-muted"
@@ -154,8 +116,8 @@
                                                     class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-3">
                                                     <li>
                                                         <a class="dropdown-item py-2"
-                                                            href="${pageContext.request.contextPath}/admin/customer/detail?id=${c.customerId}">
-                                                            <i class="bi bi-eye me-2 text-primary"></i>View Details
+                                                            href="${pageContext.request.contextPath}/admin/customer/360?id=${c.customerId}">
+                                                            <i class="bi bi-eye me-2 text-primary"></i>View Customer 360
                                                         </a>
                                                     </li>
                                                     <li>
@@ -193,7 +155,7 @@
                     <nav class="mt-4">
                         <ul class="pagination justify-content-center">
                             <c:set var="base"
-                                value="${pageContext.request.contextPath}/admin/customer/list?q=${fn:escapeXml(q)}&status=${fn:escapeXml(status)}&segment=${fn:escapeXml(segment)}&tag=${fn:escapeXml(tag)}&pageSize=${paged.pageSize}" />
+                                value="${pageContext.request.contextPath}/admin/customer/list?q=${fn:escapeXml(q)}&status=${fn:escapeXml(status)}&segment=${fn:escapeXml(segment)}&pageSize=${paged.pageSize}" />
 
                             <li class="page-item ${paged.page == 1 ? 'disabled' : ''}">
                                 <a class="page-link border-0 shadow-sm rounded-3 me-2"

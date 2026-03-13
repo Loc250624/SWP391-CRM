@@ -8,12 +8,12 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
 
-@WebServlet(name = "LeadListServlet", urlPatterns = {"/support/leads"})
+@WebServlet(name = "LeadListServlet", urlPatterns = { "/support/leads" })
 public class LeadListServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        
+
         // Kiểm tra đăng nhập
         HttpSession session = request.getSession(false);
         if (session == null || session.getAttribute("user") == null) {
@@ -27,12 +27,12 @@ public class LeadListServlet extends HttpServlet {
 
         // Logic lọc theo số điện thoại
         if (phoneQuery != null && !phoneQuery.trim().isEmpty()) {
-            list = dao.searchLeadsByPhone(phoneQuery.trim());
+            list = dao.search(phoneQuery.trim(), null, 1, 1000).getItems();
             request.setAttribute("searchValue", phoneQuery);
         } else {
             list = dao.getAllLeads();
         }
-        
+
         request.setAttribute("leadList", list);
         request.setAttribute("pageTitle", "Quản lý Leads");
         request.setAttribute("contentPage", "/view/customersuccess/pages/leads_list.jsp");

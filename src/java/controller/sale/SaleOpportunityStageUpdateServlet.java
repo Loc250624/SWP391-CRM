@@ -29,7 +29,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import util.SessionHelper;
 
-@WebServlet(name = "SaleOpportunityStageUpdateServlet", urlPatterns = {"/sale/opportunity/stage"})
+@WebServlet(name = "SaleOpportunityStageUpdateServlet", urlPatterns = { "/sale/opportunity/stage" })
 public class SaleOpportunityStageUpdateServlet extends HttpServlet {
 
     private OpportunityDAO opportunityDAO = new OpportunityDAO();
@@ -84,7 +84,8 @@ public class SaleOpportunityStageUpdateServlet extends HttpServlet {
             }
 
             // Block if opportunity is already Won or Lost
-            if (OpportunityStatus.Won.name().equals(opp.getStatus()) || OpportunityStatus.Lost.name().equals(opp.getStatus())) {
+            if (OpportunityStatus.Won.name().equals(opp.getStatus())
+                    || OpportunityStatus.Lost.name().equals(opp.getStatus())) {
                 out.print("{\"success\":false,\"message\":\"Opportunity da dong (Won/Lost), khong the thay doi.\"}");
                 return;
             }
@@ -136,7 +137,8 @@ public class SaleOpportunityStageUpdateServlet extends HttpServlet {
 
             if (success) {
                 // Log history
-                historyDAO.logChange(oppId, "stage_id", String.valueOf(oldStageId), String.valueOf(newStageId), currentUserId);
+                historyDAO.logChange(oppId, "stage_id", String.valueOf(oldStageId), String.valueOf(newStageId),
+                        currentUserId);
                 if (!oldStatus.equals(opp.getStatus())) {
                     historyDAO.logChange(oppId, "status", oldStatus, opp.getStatus(), currentUserId);
                 }
@@ -146,9 +148,10 @@ public class SaleOpportunityStageUpdateServlet extends HttpServlet {
                     updateLeadStatus(targetStageCode, targetStageType, lead);
                 }
 
-                // Auto-convert lead to customer when Won on LEAD_CONVERSION pipeline
+                // Auto-convert lead to customer when Won if not already converted
                 boolean leadConverted = false;
-                if (OpportunityStatus.Won.name().equals(opp.getStatus()) && lead != null && isLeadConversion) {
+                if (OpportunityStatus.Won.name().equals(opp.getStatus()) && lead != null
+                        && opp.getCustomerId() == null) {
                     if (!lead.isIsConverted()) {
                         Customer newCustomer = new Customer();
                         newCustomer.setFullName(lead.getFullName());
@@ -164,10 +167,13 @@ public class SaleOpportunityStageUpdateServlet extends HttpServlet {
                         // Enrich customer from best quotation
                         Quotation bestQuotation = getBestQuotation(opp.getOpportunityId());
                         if (bestQuotation != null) {
-                            newCustomer.setTotalSpent(bestQuotation.getTotalAmount() != null ? bestQuotation.getTotalAmount() : BigDecimal.ZERO);
+                            newCustomer.setTotalSpent(
+                                    bestQuotation.getTotalAmount() != null ? bestQuotation.getTotalAmount()
+                                            : BigDecimal.ZERO);
 
                             // Get quotation items to extract course info
-                            List<Map<String, Object>> items = quotationDAO.getItemsByQuotationId(bestQuotation.getQuotationId());
+                            List<Map<String, Object>> items = quotationDAO
+                                    .getItemsByQuotationId(bestQuotation.getQuotationId());
                             int totalCourses = 0;
                             StringBuilder courseNames = new StringBuilder();
                             for (Map<String, Object> item : items) {
@@ -177,7 +183,8 @@ public class SaleOpportunityStageUpdateServlet extends HttpServlet {
                                     totalCourses += (qty != null ? qty : 1);
                                     String courseName = (String) item.get("courseName");
                                     if (courseName != null && !courseName.isEmpty()) {
-                                        if (courseNames.length() > 0) courseNames.append(", ");
+                                        if (courseNames.length() > 0)
+                                            courseNames.append(", ");
                                         courseNames.append(courseName);
                                     }
                                 }
@@ -186,7 +193,8 @@ public class SaleOpportunityStageUpdateServlet extends HttpServlet {
                             newCustomer.setPurchasedCourses(courseNames.length() > 0 ? courseNames.toString() : null);
                             newCustomer.setFirstPurchaseDate(LocalDate.now());
                             newCustomer.setLastPurchaseDate(LocalDate.now());
-                            newCustomer.setNotes("Chuyen doi tu Lead: " + lead.getLeadCode() + " | Bao gia: " + bestQuotation.getQuotationCode());
+                            newCustomer.setNotes("Chuyen doi tu Lead: " + lead.getLeadCode() + " | Bao gia: "
+                                    + bestQuotation.getQuotationCode());
                         } else {
                             newCustomer.setTotalCourses(0);
                             newCustomer.setTotalSpent(BigDecimal.ZERO);
@@ -206,7 +214,8 @@ public class SaleOpportunityStageUpdateServlet extends HttpServlet {
                 String msg = leadConverted
                         ? "Stage updated. Lead da duoc chuyen doi thanh Customer!"
                         : "Stage updated";
-                out.print("{\"success\":true,\"message\":\"" + escapeJson(msg) + "\",\"newStatus\":\"" + opp.getStatus() + "\",\"leadConverted\":" + leadConverted + "}");
+                out.print("{\"success\":true,\"message\":\"" + escapeJson(msg) + "\",\"newStatus\":\"" + opp.getStatus()
+                        + "\",\"leadConverted\":" + leadConverted + "}");
             } else {
                 response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
                 out.print("{\"success\":false,\"message\":\"Update failed\"}");
@@ -222,11 +231,13 @@ public class SaleOpportunityStageUpdateServlet extends HttpServlet {
      * Validate stage transition conditions.
      * Returns error message if invalid, null if OK.
      */
-    private String validateStageTransition(String targetStageCode, String targetStageType, Opportunity opp, Lead lead, HttpServletRequest request) {
+    private String validateStageTransition(String targetStageCode, String targetStageType, Opportunity opp, Lead lead,
+            HttpServletRequest request) {
         switch (targetStageCode) {
             case "CONTACTED":
                 // Lead must have phone OR email
-                if (lead == null) return "Khong tim thay Lead lien ket.";
+                if (lead == null)
+                    return "Khong tim thay Lead lien ket.";
                 if ((lead.getPhone() == null || lead.getPhone().trim().isEmpty())
                         && (lead.getEmail() == null || lead.getEmail().trim().isEmpty())) {
                     return "Lead phai co so dien thoai hoac email de chuyen sang Contacted.";
@@ -235,7 +246,8 @@ public class SaleOpportunityStageUpdateServlet extends HttpServlet {
 
             case "QUALIFIED":
                 // Lead must have companyName AND (email OR phone)
-                if (lead == null) return "Khong tim thay Lead lien ket.";
+                if (lead == null)
+                    return "Khong tim thay Lead lien ket.";
                 if (lead.getCompanyName() == null || lead.getCompanyName().trim().isEmpty()) {
                     return "Lead phai co ten cong ty de chuyen sang Qualified.";
                 }
@@ -289,7 +301,8 @@ public class SaleOpportunityStageUpdateServlet extends HttpServlet {
      */
     private boolean hasApprovedOrSentQuotation(int opportunityId) {
         List<Quotation> quotations = quotationDAO.getQuotationsByOpportunityId(opportunityId);
-        if (quotations == null || quotations.isEmpty()) return false;
+        if (quotations == null || quotations.isEmpty())
+            return false;
         for (Quotation q : quotations) {
             String status = q.getStatus();
             if (QuotationStatus.Approved.name().equals(status) || QuotationStatus.Sent.name().equals(status)) {
@@ -299,7 +312,8 @@ public class SaleOpportunityStageUpdateServlet extends HttpServlet {
         return false;
     }
 
-    private void applyStatusSideEffects(String targetStageCode, String targetStageType, Opportunity opp, Lead lead, boolean isLeadConversion) {
+    private void applyStatusSideEffects(String targetStageCode, String targetStageType, Opportunity opp, Lead lead,
+            boolean isLeadConversion) {
         if ("won".equals(targetStageType)) {
             opp.setStatus(OpportunityStatus.Won.name());
             opp.setActualCloseDate(LocalDate.now());
@@ -351,7 +365,8 @@ public class SaleOpportunityStageUpdateServlet extends HttpServlet {
      */
     private Quotation getBestQuotation(int opportunityId) {
         List<Quotation> quotations = quotationDAO.getQuotationsByOpportunityId(opportunityId);
-        if (quotations == null || quotations.isEmpty()) return null;
+        if (quotations == null || quotations.isEmpty())
+            return null;
 
         Quotation best = null;
         int bestPriority = -1;
@@ -382,7 +397,8 @@ public class SaleOpportunityStageUpdateServlet extends HttpServlet {
     }
 
     private String escapeJson(String text) {
-        if (text == null) return "";
+        if (text == null)
+            return "";
         return text.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r");
     }
 }

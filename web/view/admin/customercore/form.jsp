@@ -79,7 +79,7 @@
                                     </div>
 
                                     <!-- Status & Segment -->
-                                    <div class="col-md-6">
+                                    <div class="col-md-12">
                                         <label class="form-label fw-bold text-muted small text-uppercase mb-2">Trạng
                                             thái</label>
                                         <select name="status"
@@ -90,21 +90,6 @@
                                                 Vô hiệu (Inactive)</option>
                                         </select>
                                     </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label fw-bold text-muted small text-uppercase mb-2">Phân
-                                            khúc</label>
-                                        <select name="segment"
-                                            class="form-select form-select-lg bg-light border-0 rounded-3 shadow-none px-4">
-                                            <option value="VIP" ${customer.customerSegment=='VIP' ? 'selected' : '' }>
-                                                VIP</option>
-                                            <option value="MBI" ${customer.customerSegment=='MBI' ? 'selected' : '' }>
-                                                MBI</option>
-                                            <option value="Lust" ${customer.customerSegment=='Lust' ? 'selected' : '' }>
-                                                Lust</option>
-                                            <option value="GUEST" ${customer.customerSegment=='GUEST' ? 'selected' : ''
-                                                }>GUEST</option>
-                                        </select>
-                                    </div>
 
                                     <!-- City -->
                                     <div class="col-md-12">
@@ -113,32 +98,6 @@
                                         <input type="text" name="city"
                                             class="form-control form-control-lg bg-light border-0 rounded-3 shadow-none px-4"
                                             placeholder="Hà Nội, TP.HCM..." value="${fn:escapeXml(customer.city)}">
-                                    </div>
-
-                                    <!-- Tags Selection -->
-                                    <div class="col-12 mt-4">
-                                        <label
-                                            class="form-label fw-bold text-muted small text-uppercase mb-3 d-block">Gắn
-                                            thẻ (Tags)</label>
-                                        <div class="bg-light p-4 rounded-4 border-0">
-                                            <div class="row g-3">
-                                                <c:forEach items="${allTags}" var="t">
-                                                    <div class="col-sm-6 col-md-4 col-lg-3">
-                                                        <div class="form-check custom-tag-check">
-                                                            <input class="form-check-input" type="checkbox"
-                                                                name="tagIds" value="${t.tagId}" id="tag-${t.tagId}"
-                                                                <c:if
-                                                                test="${checkedTagIds != null && checkedTagIds.contains(t.tagId)}">checked
-                                                            </c:if>>
-                                                            <label class="form-check-label ps-2 fw-medium text-dark"
-                                                                for="tag-${t.tagId}" style="cursor: pointer;">
-                                                                ${fn:escapeXml(t.tagName)}
-                                                            </label>
-                                                        </div>
-                                                    </div>
-                                                </c:forEach>
-                                            </div>
-                                        </div>
                                     </div>
 
                                     <div class="col-12 mt-5">
@@ -179,17 +138,5 @@
                 .form-check-input:checked {
                     background-color: #4f46e5;
                     border-color: #4f46e5;
-                }
-
-                .custom-tag-check:hover {
-                    background-color: #fff;
-                    border-radius: 8px;
-                    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-                }
-
-                .custom-tag-check {
-                    padding: 8px 12px;
-                    transition: all 0.2s;
-                    border: 1px solid transparent;
                 }
             </style>

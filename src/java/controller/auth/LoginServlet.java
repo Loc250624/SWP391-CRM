@@ -10,7 +10,7 @@ import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import model.Users;
 
-@WebServlet(name = "LoginServlet", urlPatterns = {"/login"})
+@WebServlet(name = "LoginServlet", urlPatterns = { "/login", "/auth/login" })
 public class LoginServlet extends HttpServlet {
 
     @Override
@@ -34,9 +34,9 @@ public class LoginServlet extends HttpServlet {
         Users user = userDAO.login(email, password);
 
         if (user != null) {
-        
+
             String roleCode = userDAO.getRoleCodeByUserId(user.getUserId());
-            
+
             // 2. Lưu thông tin vào Session để quản lý đăng nhập
             HttpSession session = request.getSession();
             session.setAttribute("user", user);
@@ -68,7 +68,7 @@ public class LoginServlet extends HttpServlet {
                 }
             }
         } else {
-         
+
             request.setAttribute("error", "Email hoặc mật khẩu không đúng.");
             request.getRequestDispatcher("view/auth/login.jsp").forward(request, response);
         }
