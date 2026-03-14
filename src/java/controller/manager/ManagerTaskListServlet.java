@@ -46,7 +46,13 @@ public class ManagerTaskListServlet extends HttpServlet {
 
         TaskDAO taskDAO = new TaskDAO();
 
-        // ── View type: "lead" (default) or "customer" ──────────────────────
+        // ── Task type: "personal" (default) or "team" ────────────────────────
+        String taskType = request.getParameter("taskType");
+        if (taskType == null || taskType.isEmpty()) {
+            taskType = "personal";
+        }
+
+        // ── View type: "lead" (default) or "customer" ───────────────────────
         String viewType = request.getParameter("view");
         if (viewType == null || viewType.isEmpty()) {
             viewType = "lead";
@@ -75,7 +81,7 @@ public class ManagerTaskListServlet extends HttpServlet {
             page = 1;
         }
 
-        // ── Build team member list (SALES + SUPPORT roles) ─────────────────
+        // ── Build team member list (SALES + SUPPORT roles) ──────────────────
         List<Users> salesUsers = userDAO.getUsersByRoleCode("SALES");
         List<Users> supportUsers = userDAO.getUsersByRoleCode("SUPPORT");
         List<Users> teamMembersList = new ArrayList<>();
@@ -98,51 +104,49 @@ public class ManagerTaskListServlet extends HttpServlet {
             }
         }
 
-        // ── Fetch ALL tasks (individual + group), then filter by relatedType ─
-        // Fetch individual tasks (assignee count <= 1)
-        List<Task> individualTasks = taskDAO.getTasksByManager(
-                currentUser.getUserId(),
-                statusFilter, priorityFilter, keyword,
-                sortBy, sortOrder, 0, 1000);
-
-        // Fetch group tasks (assignee count > 1)
-        List<Task> groupTasks = new ArrayList<>();
-        if (!teamMemberIds.isEmpty()) {
-            Integer selectedEmployee = null;
-            if (employeeFilter != null && !employeeFilter.isEmpty()) {
-                try {
-                    int parsed = Integer.parseInt(employeeFilter);
-                    if (teamMemberIds.contains(parsed)) {
-                        selectedEmployee = parsed;
-                    } else {
-                        employeeFilter = null;
-                    }
-                } catch (NumberFormatException e) {
-                    employeeFilter = null;
-                }
-            }
-            groupTasks = taskDAO.getGroupTaskSummaries(
-                    teamMemberIds, selectedEmployee,
-                    statusFilter, priorityFilter, keyword,
-                    sortBy, sortOrder, 0, 1000);
-        }
-
-        // Merge and deduplicate
-        Set<Integer> seenIds = new HashSet<>();
+        // ── Fetch tasks based on taskType ───────────────────────────────────
         List<Task> allTasks = new ArrayList<>();
         Map<Integer, List<Task>> groupMembersMap = new HashMap<>();
 
-        for (Task t : individualTasks) {
-            if (seenIds.add(t.getTaskId())) {
-                allTasks.add(t);
+        if ("team".equals(taskType)) {
+            // Team tasks: group tasks with multiple assignees
+            if (!teamMemberIds.isEmpty()) {
+                Integer selectedEmployee = null;
+                if (employeeFilter != null && !employeeFilter.isEmpty()) {
+                    try {
+                        int parsed = Integer.parseInt(employeeFilter);
+                        if (teamMemberIds.contains(parsed)) {
+                            selectedEmployee = parsed;
+                        } else {
+                            employeeFilter = null;
+                        }
+                    } catch (NumberFormatException e) {
+                        employeeFilter = null;
+                    }
+                }
+                List<Task> groupTasks = taskDAO.getGroupTaskSummaries(
+                        teamMemberIds, selectedEmployee,
+                        statusFilter, priorityFilter, keyword,
+                        sortBy, sortOrder, 0, 1000);
+
+                for (Task t : groupTasks) {
+                    allTasks.add(t);
+                    groupMembersMap.put(t.getTaskId(), taskDAO.getGroupTaskMembers(t.getTaskId()));
+                }
             }
-        }
-        for (Task t : groupTasks) {
-            if (seenIds.add(t.getTaskId())) {
-                allTasks.add(t);
+        } else {
+            // Personal tasks: individual tasks created by manager (assignee count <= 1)
+            List<Task> individualTasks = taskDAO.getTasksByManager(
+                    currentUser.getUserId(),
+                    statusFilter, priorityFilter, keyword,
+                    sortBy, sortOrder, 0, 1000);
+
+            Set<Integer> seenIds = new HashSet<>();
+            for (Task t : individualTasks) {
+                if (seenIds.add(t.getTaskId())) {
+                    allTasks.add(t);
+                }
             }
-            // Load group members for group tasks
-            groupMembersMap.put(t.getTaskId(), taskDAO.getGroupTaskMembers(t.getTaskId()));
         }
 
         // Filter by relatedType (LEAD or CUSTOMER)
@@ -162,7 +166,7 @@ public class ManagerTaskListServlet extends HttpServlet {
 
         int totalPages = (totalTasks == 0) ? 1 : (int) Math.ceil((double) totalTasks / pageSize);
 
-        // ── allUsers for JSP member lookup ─────────────────────────────────
+        // ── allUsers for JSP member lookup ──────────────────────────────────
         List<Users> allUsersList = new ArrayList<>();
         allUsersList.addAll(salesUsers);
         for (Users su : supportUsers) {
@@ -173,7 +177,7 @@ public class ManagerTaskListServlet extends HttpServlet {
             if (!exists) allUsersList.add(su);
         }
 
-        // ── Batch load related object names ────────────────────────────────
+        // ── Batch load related object names ─────────────────────────────────
         List<Integer> leadIds = new ArrayList<>();
         List<Integer> customerIds = new ArrayList<>();
         for (Task t : taskList) {
@@ -196,7 +200,7 @@ public class ManagerTaskListServlet extends HttpServlet {
             relatedObjectMap.put("CUSTOMER:" + e.getKey(), e.getValue());
         }
 
-        // ── Overdue count ──────────────────────────────────────────────────
+        // ── Overdue count ───────────────────────────────────────────────────
         int overdueCount = 0;
         java.time.LocalDate today = java.time.LocalDate.now();
         for (Task t : taskList) {
@@ -208,7 +212,7 @@ public class ManagerTaskListServlet extends HttpServlet {
             }
         }
 
-        // ── Count tasks per type (for tab badges) ──────────────────────────
+        // ── Count tasks per type (for tab badges) ───────────────────────────
         int leadCount = 0, customerCount = 0;
         for (Task t : allTasks) {
             if ("LEAD".equals(t.getRelatedType())) leadCount++;
@@ -220,6 +224,7 @@ public class ManagerTaskListServlet extends HttpServlet {
         request.setAttribute("taskList", taskList);
         request.setAttribute("allUsers", allUsersList);
         request.setAttribute("teamMembers", teamMembersList);
+        request.setAttribute("taskType", taskType);
         request.setAttribute("viewType", viewType);
         request.setAttribute("statusFilter", statusFilter);
         request.setAttribute("priorityFilter", priorityFilter);

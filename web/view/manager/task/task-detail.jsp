@@ -190,42 +190,147 @@
                 </div>
             </div>
 
-            <!-- Related Object -->
-            <c:if test="${relatedObject != null}">
-                <div class="card mb-4">
-                    <div class="card-header bg-white">
-                        <h6 class="mb-0"><i class="bi bi-link-45deg me-2"></i>Liên kết với</h6>
-                    </div>
-                    <div class="card-body">
-                        <div class="d-flex align-items-center">
-                            <div class="flex-grow-1">
-                                <h6 class="mb-1">${relatedObjectName}</h6>
-                                <p class="text-muted mb-0 small">Loại: ${task.relatedType}</p>
-                            </div>
-                            <c:choose>
-                                <c:when test="${task.relatedType == 'LEAD' || task.relatedType == 'Lead'}">
-                                    <a href="${pageContext.request.contextPath}/manager/lead/detail?id=${task.relatedId}"
-                                       class="btn btn-sm btn-outline-primary">
-                                        Xem chi tiết <i class="bi bi-arrow-right ms-1"></i>
-                                    </a>
-                                </c:when>
-                                <c:when test="${task.relatedType == 'CUSTOMER' || task.relatedType == 'Customer'}">
-                                    <a href="${pageContext.request.contextPath}/manager/customer/detail?id=${task.relatedId}"
-                                       class="btn btn-sm btn-outline-primary">
-                                        Xem chi tiết <i class="bi bi-arrow-right ms-1"></i>
-                                    </a>
-                                </c:when>
-                                <c:when test="${task.relatedType == 'OPPORTUNITY' || task.relatedType == 'Opportunity'}">
-                                    <a href="${pageContext.request.contextPath}/manager/opportunity/detail?id=${task.relatedId}"
-                                       class="btn btn-sm btn-outline-primary">
-                                        Xem chi tiết <i class="bi bi-arrow-right ms-1"></i>
-                                    </a>
-                                </c:when>
-                            </c:choose>
+            <!-- Related Objects -->
+            <c:choose>
+                <%-- Multiple related objects (group task) --%>
+                <c:when test="${hasMultipleRelations}">
+                    <div class="card mb-4">
+                        <div class="card-header bg-white">
+                            <h6 class="mb-0">
+                                <i class="bi bi-link-45deg me-2"></i>Đối tượng liên kết
+                                <span class="badge bg-primary ms-1">${fn:length(relatedLeads) + fn:length(relatedCustomers) + fn:length(relatedOpportunities)}</span>
+                            </h6>
+                        </div>
+                        <div class="card-body p-0">
+                            <c:if test="${not empty relatedLeads}">
+                                <div class="px-3 pt-3 pb-1">
+                                    <small class="text-muted fw-semibold text-uppercase">Lead (${fn:length(relatedLeads)})</small>
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-hover mb-0">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Mã</th>
+                                                <th>Họ tên</th>
+                                                <th>SĐT</th>
+                                                <th>Email</th>
+                                                <th>Trạng thái</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <c:forEach var="ld" items="${relatedLeads}">
+                                                <tr>
+                                                    <td><span class="badge bg-secondary">${ld.leadCode}</span></td>
+                                                    <td><a href="${pageContext.request.contextPath}/manager/lead/detail?id=${ld.leadId}" class="text-decoration-none">${ld.fullName}</a></td>
+                                                    <td><small>${not empty ld.phone ? ld.phone : '—'}</small></td>
+                                                    <td><small>${not empty ld.email ? ld.email : '—'}</small></td>
+                                                    <td>
+                                                        <c:choose>
+                                                            <c:when test="${ld.status == 'New'}"><span class="badge bg-secondary">New</span></c:when>
+                                                            <c:when test="${ld.status == 'Assigned'}"><span class="badge bg-primary">Assigned</span></c:when>
+                                                            <c:when test="${ld.status == 'Working'}"><span class="badge bg-info">Working</span></c:when>
+                                                            <c:when test="${ld.status == 'Converted'}"><span class="badge bg-success">Converted</span></c:when>
+                                                            <c:otherwise><span class="badge bg-secondary">${ld.status}</span></c:otherwise>
+                                                        </c:choose>
+                                                    </td>
+                                                </tr>
+                                            </c:forEach>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </c:if>
+                            <c:if test="${not empty relatedCustomers}">
+                                <div class="px-3 pt-3 pb-1">
+                                    <small class="text-muted fw-semibold text-uppercase">Khách hàng (${fn:length(relatedCustomers)})</small>
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-hover mb-0">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Mã</th>
+                                                <th>Họ tên</th>
+                                                <th>SĐT</th>
+                                                <th>Email</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <c:forEach var="cust" items="${relatedCustomers}">
+                                                <tr>
+                                                    <td><span class="badge bg-success">${cust.customerCode}</span></td>
+                                                    <td><a href="${pageContext.request.contextPath}/manager/customer/detail?id=${cust.customerId}" class="text-decoration-none">${cust.fullName}</a></td>
+                                                    <td><small>${not empty cust.phone ? cust.phone : '—'}</small></td>
+                                                    <td><small>${not empty cust.email ? cust.email : '—'}</small></td>
+                                                </tr>
+                                            </c:forEach>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </c:if>
+                            <c:if test="${not empty relatedOpportunities}">
+                                <div class="px-3 pt-3 pb-1">
+                                    <small class="text-muted fw-semibold text-uppercase">Opportunity (${fn:length(relatedOpportunities)})</small>
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-hover mb-0">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Mã</th>
+                                                <th>Tên</th>
+                                                <th>Trạng thái</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <c:forEach var="opp" items="${relatedOpportunities}">
+                                                <tr>
+                                                    <td><span class="badge bg-info">${opp.opportunityCode}</span></td>
+                                                    <td><a href="${pageContext.request.contextPath}/manager/opportunity/detail?id=${opp.opportunityId}" class="text-decoration-none">${opp.opportunityName}</a></td>
+                                                    <td><span class="badge bg-secondary">${opp.status}</span></td>
+                                                </tr>
+                                            </c:forEach>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </c:if>
                         </div>
                     </div>
-                </div>
-            </c:if>
+                </c:when>
+                <%-- Single related object --%>
+                <c:when test="${relatedObject != null}">
+                    <div class="card mb-4">
+                        <div class="card-header bg-white">
+                            <h6 class="mb-0"><i class="bi bi-link-45deg me-2"></i>Liên kết với</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-1">${relatedObjectName}</h6>
+                                    <p class="text-muted mb-0 small">Loại: ${task.relatedType}</p>
+                                </div>
+                                <c:choose>
+                                    <c:when test="${task.relatedType == 'LEAD' || task.relatedType == 'Lead'}">
+                                        <a href="${pageContext.request.contextPath}/manager/lead/detail?id=${task.relatedId}"
+                                           class="btn btn-sm btn-outline-primary">
+                                            Xem chi tiết <i class="bi bi-arrow-right ms-1"></i>
+                                        </a>
+                                    </c:when>
+                                    <c:when test="${task.relatedType == 'CUSTOMER' || task.relatedType == 'Customer'}">
+                                        <a href="${pageContext.request.contextPath}/manager/customer/detail?id=${task.relatedId}"
+                                           class="btn btn-sm btn-outline-primary">
+                                            Xem chi tiết <i class="bi bi-arrow-right ms-1"></i>
+                                        </a>
+                                    </c:when>
+                                    <c:when test="${task.relatedType == 'OPPORTUNITY' || task.relatedType == 'Opportunity'}">
+                                        <a href="${pageContext.request.contextPath}/manager/opportunity/detail?id=${task.relatedId}"
+                                           class="btn btn-sm btn-outline-primary">
+                                            Xem chi tiết <i class="bi bi-arrow-right ms-1"></i>
+                                        </a>
+                                    </c:when>
+                                </c:choose>
+                            </div>
+                        </div>
+                    </div>
+                </c:when>
+            </c:choose>
 
             <!-- Subtasks -->
             <div class="card mb-4">
@@ -461,17 +566,53 @@
 
         <!-- Sidebar -->
         <div class="col-lg-4">
-            <!-- Assigned User -->
+            <!-- Assigned User / Group Members -->
             <div class="card mb-4">
                 <div class="card-header bg-white">
-                    <h6 class="mb-0"><i class="bi bi-person me-2"></i>Người thực hiện</h6>
+                    <c:choose>
+                        <c:when test="${isGroupTask}">
+                            <h6 class="mb-0">
+                                <i class="bi bi-people me-2"></i>Nhóm thực hiện
+                                <span class="badge bg-primary ms-1">${fn:length(groupMembers)} người</span>
+                            </h6>
+                        </c:when>
+                        <c:otherwise>
+                            <h6 class="mb-0"><i class="bi bi-person me-2"></i>Người thực hiện</h6>
+                        </c:otherwise>
+                    </c:choose>
                 </div>
                 <div class="card-body">
                     <c:choose>
+                        <c:when test="${isGroupTask}">
+                            <%-- Group task: show all members with their status --%>
+                            <c:forEach var="member" items="${groupMembers}" varStatus="ms">
+                                <div class="d-flex align-items-center justify-content-between ${!ms.last ? 'mb-3 pb-3 border-bottom' : ''}">
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar-md bg-primary rounded-circle d-flex align-items-center justify-content-center text-white me-2">
+                                            ${fn:substring(member.firstName, 0, 1)}${fn:substring(member.lastName, 0, 1)}
+                                        </div>
+                                        <div>
+                                            <div class="fw-medium">${member.firstName} ${member.lastName}</div>
+                                            <small class="text-muted">${member.email}</small>
+                                        </div>
+                                    </div>
+                                    <%-- Find member status from groupMemberTasks --%>
+                                    <c:forEach var="mt" items="${groupMemberTasks}">
+                                        <c:if test="${mt.assignedTo == member.userId}">
+                                            <c:choose>
+                                                <c:when test="${mt.statusName == 'COMPLETED'}"><span class="badge bg-success">Hoàn thành</span></c:when>
+                                                <c:when test="${mt.statusName == 'IN_PROGRESS'}"><span class="badge bg-info">Đang làm</span></c:when>
+                                                <c:when test="${mt.statusName == 'CANCELLED'}"><span class="badge bg-dark">Đã hủy</span></c:when>
+                                                <c:otherwise><span class="badge bg-secondary">Chờ xử lý</span></c:otherwise>
+                                            </c:choose>
+                                        </c:if>
+                                    </c:forEach>
+                                </div>
+                            </c:forEach>
+                        </c:when>
                         <c:when test="${assignedUser != null}">
                             <div class="d-flex align-items-center">
                                 <div class="avatar-lg bg-primary rounded-circle d-flex align-items-center justify-content-center text-white me-3">
-                                    <%-- FIX: use fn:substring which is null-safe --%>
                                     <h4 class="mb-0">${fn:substring(assignedUser.firstName, 0, 1)}${fn:substring(assignedUser.lastName, 0, 1)}</h4>
                                 </div>
                                 <div>

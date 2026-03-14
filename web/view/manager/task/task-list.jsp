@@ -23,24 +23,46 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h3 class="mb-1"><i class="bi bi-list-task me-2"></i>Quản lý Công việc</h3>
-            <p class="text-muted mb-0">Tất cả công việc đã giao (Lead & Khách hàng)</p>
+            <p class="text-muted mb-0">
+                <c:choose>
+                    <c:when test="${taskType == 'team'}">Công việc nhóm đã giao cho nhân viên</c:when>
+                    <c:otherwise>Công việc cá nhân (Lead & Khách hàng)</c:otherwise>
+                </c:choose>
+            </p>
         </div>
         <a href="${pageContext.request.contextPath}/manager/task/form?action=create" class="btn btn-primary">
             <i class="bi bi-plus-circle me-2"></i>Tạo Công việc
         </a>
     </div>
 
+    <%-- Top-level: Personal / Team --%>
+    <ul class="nav nav-pills mb-3">
+        <li class="nav-item">
+            <a class="nav-link ${taskType == 'personal' || empty taskType ? 'active' : ''}"
+               href="${pageContext.request.contextPath}/manager/task/list?taskType=personal&view=${viewType}">
+                <i class="bi bi-person me-1"></i>Công việc cá nhân
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link ${taskType == 'team' ? 'active' : ''}"
+               href="${pageContext.request.contextPath}/manager/task/list?taskType=team&view=${viewType}">
+                <i class="bi bi-people me-1"></i>Công việc nhóm
+            </a>
+        </li>
+    </ul>
+
+    <%-- Sub-tabs: Lead / Customer --%>
     <ul class="nav nav-tabs mb-4">
         <li class="nav-item">
             <a class="nav-link ${viewType == 'lead' || empty viewType ? 'active' : ''}"
-               href="${pageContext.request.contextPath}/manager/task/list?view=lead">
+               href="${pageContext.request.contextPath}/manager/task/list?taskType=${taskType}&view=lead">
                 <i class="bi bi-person-lines-fill me-2"></i>Lead
                 <span class="badge bg-primary ms-1">${leadCount}</span>
             </a>
         </li>
         <li class="nav-item">
             <a class="nav-link ${viewType == 'customer' ? 'active' : ''}"
-               href="${pageContext.request.contextPath}/manager/task/list?view=customer">
+               href="${pageContext.request.contextPath}/manager/task/list?taskType=${taskType}&view=customer">
                 <i class="bi bi-people-fill me-2"></i>Customer
                 <span class="badge bg-success ms-1">${customerCount}</span>
             </a>
@@ -51,6 +73,7 @@
     <div class="card mb-4">
         <div class="card-body">
             <form method="get" action="${pageContext.request.contextPath}/manager/task/list" class="row g-3">
+                <input type="hidden" name="taskType" value="${taskType}">
                 <input type="hidden" name="view" value="${viewType}">
 
                 <div class="col-md-3">
@@ -85,7 +108,7 @@
                     </select>
                 </div>
 
-                <c:if test="${viewType == 'team'}">
+                <c:if test="${taskType == 'team'}">
                     <div class="col-md-3">
                         <label class="form-label">Nhân viên</label>
                         <select class="form-select" name="employee">
@@ -118,7 +141,8 @@
                 <select class="form-select form-select-sm" style="width: auto;"
                         onchange="
                                 var url = '${pageContext.request.contextPath}/manager/task/list'
-                                        + '?view=${viewType}'
+                                        + '?taskType=${taskType}'
+                                        + '&view=${viewType}'
                                         + '&sortBy=' + this.value
                                         + '&status=${statusFilter}'
                                         + '&priority=${priorityFilter}'
@@ -252,11 +276,17 @@
                                                 </td>
                                                 <%-- Actions --%>
                                                 <td class="text-end">
-                                                    <button type="button" class="btn btn-sm btn-outline-secondary"
-                                                            onclick="toggleGroupMembers(${task.taskId})"
-                                                            title="Xem thành viên">
-                                                        <i class="bi bi-chevron-down" id="icon-${task.taskId}"></i>
-                                                    </button>
+                                                    <div class="btn-group" role="group">
+                                                        <a href="${pageContext.request.contextPath}/manager/task/detail?id=${task.taskId}"
+                                                           class="btn btn-sm btn-outline-primary" title="Xem chi tiết">
+                                                            <i class="bi bi-eye"></i>
+                                                        </a>
+                                                        <button type="button" class="btn btn-sm btn-outline-secondary"
+                                                                onclick="toggleGroupMembers(${task.taskId})"
+                                                                title="Xem thành viên">
+                                                            <i class="bi bi-chevron-down" id="icon-${task.taskId}"></i>
+                                                        </button>
+                                                    </div>
                                                 </td>
                                             </tr>
                                             <%-- Expanded member sub-table (hidden by default) --%>
@@ -466,7 +496,7 @@
                     <ul class="pagination justify-content-center mb-0">
                         <li class="page-item ${currentPage == 1 ? 'disabled' : ''}">
                             <a class="page-link"
-                               href="${pageContext.request.contextPath}/manager/task/list?view=${viewType}&page=${currentPage - 1}&status=${statusFilter}&priority=${priorityFilter}&keyword=${keyword}&employee=${employeeFilter}&sortBy=${sortBy}&sortOrder=${sortOrder}">
+                               href="${pageContext.request.contextPath}/manager/task/list?taskType=${taskType}&view=${viewType}&page=${currentPage - 1}&status=${statusFilter}&priority=${priorityFilter}&keyword=${keyword}&employee=${employeeFilter}&sortBy=${sortBy}&sortOrder=${sortOrder}">
                                 <i class="bi bi-chevron-left"></i>
                             </a>
                         </li>
@@ -474,7 +504,7 @@
                             <c:if test="${i == 1 || i == totalPages || (i >= currentPage - 2 && i <= currentPage + 2)}">
                                 <li class="page-item ${currentPage == i ? 'active' : ''}">
                                     <a class="page-link"
-                                       href="${pageContext.request.contextPath}/manager/task/list?view=${viewType}&page=${i}&status=${statusFilter}&priority=${priorityFilter}&keyword=${keyword}&employee=${employeeFilter}&sortBy=${sortBy}&sortOrder=${sortOrder}">
+                                       href="${pageContext.request.contextPath}/manager/task/list?taskType=${taskType}&view=${viewType}&page=${i}&status=${statusFilter}&priority=${priorityFilter}&keyword=${keyword}&employee=${employeeFilter}&sortBy=${sortBy}&sortOrder=${sortOrder}">
                                         ${i}
                                     </a>
                                 </li>
@@ -482,7 +512,7 @@
                         </c:forEach>
                         <li class="page-item ${currentPage == totalPages ? 'disabled' : ''}">
                             <a class="page-link"
-                               href="${pageContext.request.contextPath}/manager/task/list?view=${viewType}&page=${currentPage + 1}&status=${statusFilter}&priority=${priorityFilter}&keyword=${keyword}&employee=${employeeFilter}&sortBy=${sortBy}&sortOrder=${sortOrder}">
+                               href="${pageContext.request.contextPath}/manager/task/list?taskType=${taskType}&view=${viewType}&page=${currentPage + 1}&status=${statusFilter}&priority=${priorityFilter}&keyword=${keyword}&employee=${employeeFilter}&sortBy=${sortBy}&sortOrder=${sortOrder}">
                                 <i class="bi bi-chevron-right"></i>
                             </a>
                         </li>
