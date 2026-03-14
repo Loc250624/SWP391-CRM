@@ -35,7 +35,7 @@
         <c:remove var="errorMessage" scope="session"/>
     </c:if>
 
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-2">
         <h3 class="mb-0">
             <i class="bi bi-${formAction == 'edit' ? 'pencil-square' : 'plus-circle'} me-2"></i>
             ${formAction == 'edit' ? 'Chỉnh sửa Công việc' : 'Tạo Công việc mới'}
@@ -47,21 +47,40 @@
         </c:if>
     </div>
 
+    <%-- ══════ Task Type Tabs (create mode) ══════ --%>
+    <c:if test="${formAction != 'edit'}">
+        <ul class="nav nav-tabs mb-4" role="tablist">
+            <li class="nav-item">
+                <a class="nav-link active" href="javascript:void(0)" id="tabLead" onclick="toggleTaskType('LEAD')">
+                    <i class="bi bi-person-lines-fill me-1"></i>Lead
+                    <span class="badge bg-primary ms-1" id="tabLeadBadge">Sales</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="javascript:void(0)" id="tabCustomer" onclick="toggleTaskType('CUSTOMER')">
+                    <i class="bi bi-people-fill me-1"></i>Customer
+                    <span class="badge bg-secondary ms-1" id="tabCustomerBadge">Support</span>
+                </a>
+            </li>
+        </ul>
+    </c:if>
+
+    <form action="${pageContext.request.contextPath}/manager/task/form"
+          method="post" id="taskForm" novalidate>
+        <input type="hidden" name="formAction" value="${formAction}">
+        <c:if test="${formAction == 'edit'}">
+            <input type="hidden" name="taskId" value="${task.taskId}">
+        </c:if>
+        <%-- Status: editable for edit; always IN_PROGRESS for create --%>
+        <c:if test="${formAction != 'edit'}">
+            <input type="hidden" name="status" value="IN_PROGRESS">
+        </c:if>
+
     <div class="row">
         <!-- ═══════════════════ Main Form ═══════════════════ -->
         <div class="col-lg-8">
             <div class="card shadow-sm">
                 <div class="card-body">
-                    <form action="${pageContext.request.contextPath}/manager/task/form"
-                          method="post" id="taskForm" novalidate>
-                        <input type="hidden" name="formAction" value="${formAction}">
-                        <c:if test="${formAction == 'edit'}">
-                            <input type="hidden" name="taskId" value="${task.taskId}">
-                        </c:if>
-                        <%-- Status: editable for edit; always IN_PROGRESS for create --%>
-                        <c:if test="${formAction != 'edit'}">
-                            <input type="hidden" name="status" value="IN_PROGRESS">
-                        </c:if>
 
                         <%-- ── Title ─────────────────────────────────────────── --%>
                         <div class="mb-3">
@@ -132,99 +151,31 @@
                         </div>
 
                         <%-- ════════════════════════════════════════════════════
-                             ASSIGN SECTION
-                             Create: Individual / Group — popup picker for assignee
-                             Edit:   Single assignee dropdown
+                             ASSIGN SECTION (edit mode only — in main form)
+                             Create mode: assign section is in sidebar
                              ════════════════════════════════════════════════════ --%>
-                        <div class="card border-primary border-opacity-25 mb-4">
-                            <div class="card-header bg-primary bg-opacity-10">
-                                <h6 class="mb-0"><i class="bi bi-person-check me-2"></i>Phân công</h6>
+                        <c:if test="${formAction == 'edit'}">
+                            <div class="card border-primary border-opacity-25 mb-4">
+                                <div class="card-header bg-primary bg-opacity-10">
+                                    <h6 class="mb-0"><i class="bi bi-person-check me-2"></i>Phân công</h6>
+                                </div>
+                                <div class="card-body">
+                                    <label for="assignedTo" class="form-label fw-semibold">
+                                        Người thực hiện <span class="text-danger">*</span>
+                                    </label>
+                                    <select class="form-select" id="assignedTo" name="assignedTo" required>
+                                        <option value="">-- Chọn người thực hiện --</option>
+                                        <c:forEach var="user" items="${allUsers}">
+                                            <option value="${user.userId}"
+                                                    ${task.assignedTo == user.userId ? 'selected' : ''}>
+                                                ${user.firstName} ${user.lastName}
+                                            </option>
+                                        </c:forEach>
+                                    </select>
+                                    <div class="invalid-feedback">Vui lòng chọn người thực hiện</div>
+                                </div>
                             </div>
-                            <div class="card-body">
-
-                                <c:choose>
-                                    <c:when test="${formAction != 'edit'}">
-                                        <%-- Assign type radio --%>
-                                        <div class="mb-3">
-                                            <label class="form-label fw-semibold">Hình thức giao <span class="text-danger">*</span></label>
-                                            <div class="d-flex gap-4">
-                                                <div class="form-check">
-                                                    <input class="form-check-input" type="radio"
-                                                           name="assignType" id="assignIndividual"
-                                                           value="INDIVIDUAL" checked
-                                                           onchange="toggleAssignType('INDIVIDUAL')">
-                                                    <label class="form-check-label" for="assignIndividual">
-                                                        <i class="bi bi-person me-1"></i>Cá nhân
-                                                    </label>
-                                                </div>
-                                                <div class="form-check">
-                                                    <input class="form-check-input" type="radio"
-                                                           name="assignType" id="assignGroup"
-                                                           value="GROUP"
-                                                           onchange="toggleAssignType('GROUP')">
-                                                    <label class="form-check-label" for="assignGroup">
-                                                        <i class="bi bi-people me-1"></i>Nhóm
-                                                    </label>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <%-- Individual: popup picker --%>
-                                        <div id="sectionIndividual">
-                                            <label class="form-label fw-semibold">
-                                                Người thực hiện <span class="text-danger">*</span>
-                                            </label>
-                                            <div class="d-flex align-items-center gap-2">
-                                                <input type="hidden" name="assignedTo" id="assignedTo" value="">
-                                                <div class="border rounded p-2 flex-grow-1 bg-white" id="assigneeDisplay">
-                                                    <span class="text-muted small">-- Chưa chọn --</span>
-                                                </div>
-                                                <button type="button" class="btn btn-sm btn-outline-primary" onclick="openAssigneePickerModal('INDIVIDUAL')">
-                                                    <i class="bi bi-search me-1"></i>Chọn
-                                                </button>
-                                            </div>
-                                            <div class="text-danger small d-none mt-1" id="assigneeError">Vui lòng chọn người thực hiện</div>
-                                        </div>
-
-                                        <%-- Group: popup picker for multiple --%>
-                                        <div id="sectionGroup" class="d-none">
-                                            <label class="form-label fw-semibold">
-                                                Thành viên nhóm — chọn ít nhất 2 người <span class="text-danger">*</span>
-                                            </label>
-                                            <div class="d-flex align-items-start gap-2 mb-2">
-                                                <div class="border rounded p-2 flex-grow-1 bg-white" id="groupMembersDisplay" style="min-height:40px;">
-                                                    <span class="text-muted small">-- Chưa chọn --</span>
-                                                </div>
-                                                <button type="button" class="btn btn-sm btn-outline-primary" onclick="openAssigneePickerModal('GROUP')">
-                                                    <i class="bi bi-search me-1"></i>Chọn
-                                                </button>
-                                            </div>
-                                            <div class="text-danger small d-none" id="groupMainError">
-                                                Vui lòng chọn ít nhất 2 thành viên
-                                            </div>
-                                        </div>
-                                    </c:when>
-
-                                    <c:otherwise>
-                                        <%-- Edit mode: single assignee dropdown --%>
-                                        <label for="assignedTo" class="form-label fw-semibold">
-                                            Người thực hiện <span class="text-danger">*</span>
-                                        </label>
-                                        <select class="form-select" id="assignedTo" name="assignedTo" required>
-                                            <option value="">-- Chọn người thực hiện --</option>
-                                            <c:forEach var="user" items="${allUsers}">
-                                                <option value="${user.userId}"
-                                                        ${task.assignedTo == user.userId ? 'selected' : ''}>
-                                                    ${user.firstName} ${user.lastName}
-                                                </option>
-                                            </c:forEach>
-                                        </select>
-                                        <div class="invalid-feedback">Vui lòng chọn người thực hiện</div>
-                                    </c:otherwise>
-                                </c:choose>
-
-                            </div><%-- /card-body assign --%>
-                        </div>
+                        </c:if>
 
                         <%-- ════════════════════════════════════════════════════
                              RELATED OBJECT (edit mode only — keeps old dropdown)
@@ -340,7 +291,6 @@
                             </a>
                         </div>
 
-                    </form>
                 </div>
             </div>
         </div>
@@ -348,16 +298,88 @@
         <!-- ═══════════════════ Sidebar ═══════════════════ -->
         <div class="col-lg-4">
 
-            <c:choose>
-                <%-- Case 1: Coming from lead page — show linked lead info --%>
-                <c:when test="${formAction != 'edit' && not empty linkedLead}">
-                    <div class="card border-primary mb-3">
+            <c:if test="${formAction != 'edit'}">
+                <%-- ══════ 1. Phân công (create mode — in sidebar) ══════ --%>
+                <div class="card border-primary border-opacity-25 mb-3">
+                    <div class="card-header bg-primary bg-opacity-10 py-2">
+                        <h6 class="mb-0"><i class="bi bi-person-check me-2"></i>Phân công</h6>
+                    </div>
+                    <div class="card-body py-3 px-3">
+                        <%-- Assign type radio --%>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold mb-1">Hình thức giao <span class="text-danger">*</span></label>
+                            <div class="d-flex gap-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio"
+                                           name="assignType" id="assignIndividual"
+                                           value="INDIVIDUAL" checked
+                                           onchange="toggleAssignType('INDIVIDUAL')">
+                                    <label class="form-check-label" for="assignIndividual">
+                                        <i class="bi bi-person me-1"></i>Cá nhân
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio"
+                                           name="assignType" id="assignGroup"
+                                           value="GROUP"
+                                           onchange="toggleAssignType('GROUP')">
+                                    <label class="form-check-label" for="assignGroup">
+                                        <i class="bi bi-people me-1"></i>Nhóm
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <%-- Individual: popup picker --%>
+                        <div id="sectionIndividual">
+                            <label class="form-label fw-semibold mb-1">
+                                <span id="assigneeRoleLabel">Nhân viên Sales</span> <span class="text-danger">*</span>
+                            </label>
+                            <div class="d-flex align-items-center gap-2">
+                                <input type="hidden" name="assignedTo" id="assignedTo" value="">
+                                <div class="border rounded p-2 flex-grow-1 bg-white" id="assigneeDisplay">
+                                    <span class="text-muted small">-- Chưa chọn --</span>
+                                </div>
+                                <button type="button" class="btn btn-sm btn-outline-primary" onclick="openAssigneePickerModal('INDIVIDUAL')">
+                                    <i class="bi bi-search me-1"></i>Chọn
+                                </button>
+                            </div>
+                            <div class="text-danger small d-none mt-1" id="assigneeError">Vui lòng chọn người thực hiện</div>
+                        </div>
+
+                        <%-- Group: popup picker for multiple --%>
+                        <div id="sectionGroup" class="d-none">
+                            <label class="form-label fw-semibold mb-1">
+                                Thành viên nhóm — chọn ít nhất 2 người <span class="text-danger">*</span>
+                            </label>
+                            <div class="d-flex align-items-start gap-2 mb-2">
+                                <div class="border rounded p-2 flex-grow-1 bg-white" id="groupMembersDisplay" style="min-height:40px;">
+                                    <span class="text-muted small">-- Chưa chọn --</span>
+                                </div>
+                                <button type="button" class="btn btn-sm btn-outline-primary" onclick="openAssigneePickerModal('GROUP')">
+                                    <i class="bi bi-search me-1"></i>Chọn
+                                </button>
+                            </div>
+                            <div class="text-danger small d-none" id="groupMainError">
+                                Vui lòng chọn ít nhất 2 thành viên
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <%-- ══════ 2. Linked Lead card (from lead page redirect) ══════ --%>
+                <c:if test="${not empty linkedLead}">
+                    <div class="card border-primary mb-3" id="linkedLeadCard">
                         <div class="card-header bg-primary bg-opacity-10 py-2 d-flex align-items-center gap-2">
                             <i class="bi bi-person-vcard-fill text-primary"></i>
                             <span class="fw-semibold text-primary">Lead liên kết</span>
                             <span class="badge bg-info text-dark ms-1">${linkedLead.leadCode}</span>
+                            <button type="button" class="btn btn-sm btn-outline-danger border-0 ms-auto"
+                                    onclick="removeLinkedObject('lead')" title="Bỏ liên kết">
+                                <i class="bi bi-x-lg"></i>
+                            </button>
                         </div>
-                        <div class="card-body py-2 px-3" id="linkedLeadInfo">
+                        <div class="card-body py-2 px-3">
                             <div class="d-flex flex-column gap-2">
                                 <div>
                                     <small class="text-muted d-block">Họ tên</small>
@@ -373,40 +395,22 @@
                                         <span class="small">${not empty linkedLead.email ? linkedLead.email : '—'}</span>
                                     </div>
                                 </div>
-                                <div class="row g-2">
-                                    <div class="col-6">
-                                        <small class="text-muted d-block">Trạng thái</small>
-                                        <span class="badge bg-secondary">${linkedLead.status}</span>
-                                    </div>
-                                    <div class="col-6">
-                                        <small class="text-muted d-block">Đánh giá</small>
-                                        <span>${not empty linkedLead.rating ? linkedLead.rating : '—'}</span>
-                                    </div>
-                                </div>
-                                <c:if test="${not empty linkedLead.interests}">
-                                    <div>
-                                        <small class="text-muted d-block">Quan tâm</small>
-                                        <span class="small">${fn:escapeXml(linkedLead.interests)}</span>
-                                    </div>
-                                </c:if>
-                                <c:if test="${not empty linkedLead.notes}">
-                                    <div>
-                                        <small class="text-muted d-block">Ghi chú</small>
-                                        <span class="small text-muted fst-italic">${fn:escapeXml(linkedLead.notes)}</span>
-                                    </div>
-                                </c:if>
                             </div>
                         </div>
                     </div>
-                </c:when>
+                </c:if>
 
-                <%-- Case 1b: Coming from customer page — show linked customer info --%>
-                <c:when test="${formAction != 'edit' && not empty linkedCustomer}">
-                    <div class="card border-success mb-3">
+                <%-- Linked Customer card (from customer page redirect) --%>
+                <c:if test="${not empty linkedCustomer}">
+                    <div class="card border-success mb-3" id="linkedCustomerCard">
                         <div class="card-header bg-success bg-opacity-10 py-2 d-flex align-items-center gap-2">
                             <i class="bi bi-people-fill text-success"></i>
                             <span class="fw-semibold text-success">Khách hàng liên kết</span>
                             <span class="badge bg-info text-dark ms-1">${linkedCustomer.customerCode}</span>
+                            <button type="button" class="btn btn-sm btn-outline-danger border-0 ms-auto"
+                                    onclick="removeLinkedObject('customer')" title="Bỏ liên kết">
+                                <i class="bi bi-x-lg"></i>
+                            </button>
                         </div>
                         <div class="card-body py-2 px-3">
                             <div class="d-flex flex-column gap-2">
@@ -424,48 +428,45 @@
                                         <span class="small">${not empty linkedCustomer.email ? linkedCustomer.email : '—'}</span>
                                     </div>
                                 </div>
-                                <div class="row g-2">
-                                    <div class="col-6">
-                                        <small class="text-muted d-block">Trạng thái</small>
-                                        <span class="badge bg-success">${linkedCustomer.status}</span>
-                                    </div>
-                                    <div class="col-6">
-                                        <small class="text-muted d-block">Phân khúc</small>
-                                        <span>${not empty linkedCustomer.customerSegment ? linkedCustomer.customerSegment : '—'}</span>
-                                    </div>
-                                </div>
-                                <c:if test="${not empty linkedCustomer.city}">
-                                    <div>
-                                        <small class="text-muted d-block">Thành phố</small>
-                                        <span class="small">${fn:escapeXml(linkedCustomer.city)}</span>
-                                    </div>
-                                </c:if>
                             </div>
                         </div>
                     </div>
-                </c:when>
+                </c:if>
 
-                <%-- Case 2: Normal create — show lead/customer picker --%>
-                <c:when test="${formAction != 'edit'}">
-                    <div class="card border-success mb-3">
-                        <div class="card-header bg-success bg-opacity-10 py-2 d-flex justify-content-between align-items-center">
-                            <span class="fw-semibold text-success">
-                                <i class="bi bi-link-45deg me-1"></i>Liên kết đối tượng
-                            </span>
-                            <button type="button" class="btn btn-sm btn-outline-success" onclick="openObjectPickerModal()">
-                                <i class="bi bi-plus-circle me-1"></i>Chọn
-                            </button>
-                        </div>
-                        <div class="card-body py-2 px-3">
-                            <div id="selectedObjectsContainer">
-                                <div class="text-muted small text-center py-2" id="noObjectSelected">
-                                    <i class="bi bi-inbox me-1"></i>Chưa chọn đối tượng nào
-                                </div>
+                <%-- ══════ 3. Object picker (Lead/Customer) ══════ --%>
+                <div class="card border-success mb-3" id="objectPickerSidebar"
+                     style="${not empty linkedLead || not empty linkedCustomer ? 'display:none;' : ''}">
+                    <div class="card-header bg-success bg-opacity-10 py-2 d-flex justify-content-between align-items-center">
+                        <span class="fw-semibold text-success" id="objectPickerTitle">
+                            <i class="bi bi-link-45deg me-1"></i>Chọn Lead
+                        </span>
+                        <button type="button" class="btn btn-sm btn-outline-success" onclick="openObjectPickerModal()">
+                            <i class="bi bi-plus-circle me-1"></i>Chọn
+                        </button>
+                    </div>
+                    <div class="card-body py-2 px-3">
+                        <div id="selectedObjectsContainer">
+                            <div class="text-muted small text-center py-2" id="noObjectSelected">
+                                <i class="bi bi-inbox me-1"></i>Chưa chọn đối tượng nào
                             </div>
                         </div>
                     </div>
-                </c:when>
-            </c:choose>
+                </div>
+
+                <%-- ══════ 4. Hướng dẫn ══════ --%>
+                <div class="card border-0 bg-light mb-3">
+                    <div class="card-body py-3 px-3">
+                        <h6 class="mb-2"><i class="bi bi-info-circle me-1 text-info"></i>Hướng dẫn</h6>
+                        <ul class="small text-muted mb-0 ps-3">
+                            <li class="mb-1"><strong>Tab Lead:</strong> Tạo task giao cho nhân viên <span class="text-primary fw-semibold">Sales</span>. Chọn 1 hoặc nhiều Lead cần xử lý.</li>
+                            <li class="mb-1"><strong>Tab Customer:</strong> Tạo task giao cho nhân viên <span class="text-success fw-semibold">Support</span>. Chọn 1 hoặc nhiều Customer cần chăm sóc.</li>
+                            <li class="mb-1">Khi tạo task thành công, Lead sẽ tự động chuyển trạng thái sang <span class="badge bg-warning text-dark" style="font-size:0.7rem">Assigned</span>.</li>
+                            <li class="mb-1">Task được tạo với trạng thái <span class="badge bg-success" style="font-size:0.7rem">Đang thực hiện</span> (không cần Sale xác nhận).</li>
+                            <li>Nhấn nút <i class="bi bi-x-lg text-danger"></i> trên đối tượng đã chọn để bỏ liên kết.</li>
+                        </ul>
+                    </div>
+                </div>
+            </c:if>
 
             <%-- Edit mode: creation info card --%>
             <c:if test="${formAction == 'edit' && task.createdAt != null}">
@@ -489,6 +490,7 @@
             </c:if>
         </div>
     </div>
+    </form>
 </div>
 
 <%-- ═══════════════════ Assignee Picker Modal ═══════════════════ --%>
@@ -516,7 +518,23 @@
                         </thead>
                         <tbody>
                             <c:forEach var="u" items="${allUsers}">
-                                <tr class="assignee-picker-row"
+                                <tr class="assignee-picker-row" data-role="SALES"
+                                    data-search="${fn:toLowerCase(u.employeeCode)} ${fn:toLowerCase(u.firstName)} ${fn:toLowerCase(u.lastName)} ${fn:toLowerCase(u.email)}">
+                                    <td>
+                                        <input type="checkbox" class="form-check-input assignee-picker-cb"
+                                               value="${u.userId}"
+                                               data-name="${fn:escapeXml(u.firstName)} ${fn:escapeXml(u.lastName)}"
+                                               data-code="${fn:escapeXml(u.employeeCode)}"
+                                               data-email="${fn:escapeXml(u.email)}">
+                                    </td>
+                                    <td><span class="badge bg-light text-dark border">${u.employeeCode}</span></td>
+                                    <td class="fw-semibold">${u.firstName} ${u.lastName}</td>
+                                    <td><small>${u.email}</small></td>
+                                    <td><small>${u.phone}</small></td>
+                                </tr>
+                            </c:forEach>
+                            <c:forEach var="u" items="${supportUsers}">
+                                <tr class="assignee-picker-row" data-role="SUPPORT" style="display:none;"
                                     data-search="${fn:toLowerCase(u.employeeCode)} ${fn:toLowerCase(u.firstName)} ${fn:toLowerCase(u.lastName)} ${fn:toLowerCase(u.email)}">
                                     <td>
                                         <input type="checkbox" class="form-check-input assignee-picker-cb"
@@ -547,7 +565,7 @@
 </c:if>
 
 <%-- ═══════════════════ Object Picker Modal (Lead + Customer tabs) ═══════════════════ --%>
-<c:if test="${formAction != 'edit' && empty linkedLead && empty linkedCustomer}">
+<c:if test="${formAction != 'edit'}">
 <div class="modal fade" id="objectPickerModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -665,6 +683,9 @@
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
 <script>
+// ── Global state ────────────────────────────────────────────────────────
+var _currentTaskType = 'LEAD';
+
 $(document).ready(function () {
 
     var CTX     = '${pageContext.request.contextPath}';
@@ -707,6 +728,67 @@ $(document).ready(function () {
         onRelatedChange($('#relatedObject').val() || '');
     }
 
+    // ── Task type toggle (create mode only) ────────────────────────────
+    window.toggleTaskType = function(type) {
+        _currentTaskType = type;
+
+        // Toggle tab active state
+        var tabLead = document.getElementById('tabLead');
+        var tabCustomer = document.getElementById('tabCustomer');
+        var badgeLead = document.getElementById('tabLeadBadge');
+        var badgeCustomer = document.getElementById('tabCustomerBadge');
+        if (type === 'LEAD') {
+            if (tabLead) tabLead.classList.add('active');
+            if (tabCustomer) tabCustomer.classList.remove('active');
+            if (badgeLead) { badgeLead.className = 'badge bg-primary ms-1'; }
+            if (badgeCustomer) { badgeCustomer.className = 'badge bg-secondary ms-1'; }
+        } else {
+            if (tabLead) tabLead.classList.remove('active');
+            if (tabCustomer) tabCustomer.classList.add('active');
+            if (badgeLead) { badgeLead.className = 'badge bg-secondary ms-1'; }
+            if (badgeCustomer) { badgeCustomer.className = 'badge bg-success ms-1'; }
+        }
+
+        // Update assignee role label
+        var roleLabel = document.getElementById('assigneeRoleLabel');
+        if (roleLabel) roleLabel.textContent = type === 'LEAD' ? 'Nhân viên Sales' : 'Nhân viên Support';
+
+        // Clear current assignee selections
+        var assignedTo = document.getElementById('assignedTo');
+        if (assignedTo) assignedTo.value = '';
+        var assigneeDisplay = document.getElementById('assigneeDisplay');
+        if (assigneeDisplay) assigneeDisplay.innerHTML = '<span class="text-muted small">-- Chưa chọn --</span>';
+        document.querySelectorAll('input[name="assignedToGroup"]').forEach(function(el) { el.remove(); });
+        var groupDisp = document.getElementById('groupMembersDisplay');
+        if (groupDisp) groupDisp.innerHTML = '<span class="text-muted small">-- Chưa chọn --</span>';
+
+        // Clear current object selections
+        var objContainer = document.getElementById('selectedObjectsContainer');
+        if (objContainer) {
+            objContainer.querySelectorAll('.selected-obj-item').forEach(function(el) { el.remove(); });
+            var noObj = document.getElementById('noObjectSelected');
+            if (noObj) noObj.style.display = '';
+        }
+        // Remove hidden selectedLeads/selectedCustomers
+        document.querySelectorAll('input[name="selectedLeads"], input[name="selectedCustomers"]').forEach(function(el) { el.remove(); });
+        // Also remove linked cards if switching type
+        var linkedLead = document.getElementById('linkedLeadCard');
+        var linkedCust = document.getElementById('linkedCustomerCard');
+        if (type === 'CUSTOMER' && linkedLead) linkedLead.remove();
+        if (type === 'LEAD' && linkedCust) linkedCust.remove();
+
+        // Update object picker sidebar title
+        var sidebarTitle = document.getElementById('objectPickerTitle');
+        if (sidebarTitle) {
+            sidebarTitle.innerHTML = type === 'LEAD'
+                ? '<i class="bi bi-link-45deg me-1"></i>Chọn Lead'
+                : '<i class="bi bi-link-45deg me-1"></i>Chọn Customer';
+        }
+        // Show object picker sidebar
+        var picker = document.getElementById('objectPickerSidebar');
+        if (picker) picker.style.display = '';
+    };
+
     // ── Assign-type toggle (create mode only) ────────────────────────────
     window.toggleAssignType = function(type) {
         var indiv = document.getElementById('sectionIndividual');
@@ -715,12 +797,37 @@ $(document).ready(function () {
         if (type === 'GROUP') {
             if (indiv) indiv.classList.add('d-none');
             if (group) group.classList.remove('d-none');
+            // Clear individual selection
+            var assignedTo = document.getElementById('assignedTo');
+            if (assignedTo) assignedTo.value = '';
+            var display = document.getElementById('assigneeDisplay');
+            if (display) display.innerHTML = '<span class="text-muted small">-- Chưa chọn --</span>';
         } else {
             if (indiv) indiv.classList.remove('d-none');
             if (group) group.classList.add('d-none');
+            // Clear group selection
+            document.querySelectorAll('input[name="assignedToGroup"]').forEach(function(el) { el.remove(); });
+            var groupDisp = document.getElementById('groupMembersDisplay');
+            if (groupDisp) groupDisp.innerHTML = '<span class="text-muted small">-- Chưa chọn --</span>';
             var mainErr = document.getElementById('groupMainError');
             if (mainErr) mainErr.classList.add('d-none');
         }
+    };
+
+    // ── Remove linked lead/customer (X button) ────────────────────────
+    window.removeLinkedObject = function(type) {
+        if (type === 'lead') {
+            var card = document.getElementById('linkedLeadCard');
+            if (card) card.remove();
+            document.querySelectorAll('input[name="selectedLeads"]').forEach(function(el) { el.remove(); });
+        } else {
+            var card = document.getElementById('linkedCustomerCard');
+            if (card) card.remove();
+            document.querySelectorAll('input[name="selectedCustomers"]').forEach(function(el) { el.remove(); });
+        }
+        // Show object picker sidebar
+        var picker = document.getElementById('objectPickerSidebar');
+        if (picker) picker.style.display = '';
     };
 
     // ── Form submit validation ────────────────────────────────────────────
@@ -768,9 +875,17 @@ $(document).ready(function () {
         inp.addEventListener('input', function() {
             var kw = this.value.toLowerCase().trim();
             document.querySelectorAll(rowSelector).forEach(function(row) {
-                // For object picker, also check active tab
                 var data = row.getAttribute('data-search') || '';
-                row.style.display = (!kw || data.indexOf(kw) !== -1) ? '' : 'none';
+                var matchesSearch = !kw || data.indexOf(kw) !== -1;
+
+                // For assignee picker: respect role filter
+                var role = row.getAttribute('data-role');
+                if (role) {
+                    var showRole = _currentTaskType === 'CUSTOMER' ? 'SUPPORT' : 'SALES';
+                    row.style.display = (matchesSearch && role === showRole) ? '' : 'none';
+                } else {
+                    row.style.display = matchesSearch ? '' : 'none';
+                }
             });
         });
     }
@@ -794,18 +909,30 @@ function openAssigneePickerModal(mode) {
     var modeLabel = document.getElementById('assigneePickerMode');
     if (modeLabel) modeLabel.textContent = mode === 'GROUP' ? 'Nhóm' : 'Cá nhân';
 
+    // Filter rows by task type: LEAD → SALES, CUSTOMER → SUPPORT
+    var showRole = _currentTaskType === 'CUSTOMER' ? 'SUPPORT' : 'SALES';
+    document.querySelectorAll('.assignee-picker-row').forEach(function(r) {
+        var role = r.getAttribute('data-role');
+        r.style.display = (role === showRole) ? '' : 'none';
+        // Uncheck hidden rows
+        if (role !== showRole) {
+            var cb = r.querySelector('.assignee-picker-cb');
+            if (cb) { cb.checked = false; cb.disabled = false; }
+        }
+    });
+
     // Pre-check current selection
-    document.querySelectorAll('.assignee-picker-cb').forEach(function(cb) { cb.checked = false; });
+    document.querySelectorAll('.assignee-picker-row[data-role="' + showRole + '"] .assignee-picker-cb').forEach(function(cb) { cb.checked = false; });
 
     if (mode === 'INDIVIDUAL') {
         var current = document.getElementById('assignedTo').value;
         if (current) {
-            var cb = document.querySelector('.assignee-picker-cb[value="' + current + '"]');
+            var cb = document.querySelector('.assignee-picker-row[data-role="' + showRole + '"] .assignee-picker-cb[value="' + current + '"]');
             if (cb) cb.checked = true;
         }
     } else {
         document.querySelectorAll('input[name="assignedToGroup"]').forEach(function(inp) {
-            var cb = document.querySelector('.assignee-picker-cb[value="' + inp.value + '"]');
+            var cb = document.querySelector('.assignee-picker-row[data-role="' + showRole + '"] .assignee-picker-cb[value="' + inp.value + '"]');
             if (cb) cb.checked = true;
         });
     }
@@ -813,23 +940,25 @@ function openAssigneePickerModal(mode) {
     updateAssigneePickerCount();
     var searchInp = document.getElementById('assigneePickerSearch');
     if (searchInp) { searchInp.value = ''; }
-    document.querySelectorAll('.assignee-picker-row').forEach(function(r) { r.style.display = ''; });
 
     new bootstrap.Modal(document.getElementById('assigneePickerModal')).show();
 }
 
 function updateAssigneePickerCount() {
-    var count = document.querySelectorAll('.assignee-picker-cb:checked').length;
+    var showRole = _currentTaskType === 'CUSTOMER' ? 'SUPPORT' : 'SALES';
+    var visibleChecked = document.querySelectorAll('.assignee-picker-row[data-role="' + showRole + '"] .assignee-picker-cb:checked');
+    var count = visibleChecked.length;
     var el = document.getElementById('assigneePickerCount');
     if (el) el.textContent = count;
 
     // Individual mode: only allow 1 selection
+    var visibleCbs = document.querySelectorAll('.assignee-picker-row[data-role="' + showRole + '"] .assignee-picker-cb');
     if (_assigneePickerMode === 'INDIVIDUAL' && count >= 1) {
-        document.querySelectorAll('.assignee-picker-cb:not(:checked)').forEach(function(cb) {
-            cb.disabled = true;
+        visibleCbs.forEach(function(cb) {
+            if (!cb.checked) cb.disabled = true;
         });
     } else {
-        document.querySelectorAll('.assignee-picker-cb').forEach(function(cb) { cb.disabled = false; });
+        visibleCbs.forEach(function(cb) { cb.disabled = false; });
     }
 }
 
@@ -884,6 +1013,30 @@ function confirmAssigneePicker() {
 // OBJECT PICKER (Lead + Customer)
 // ═══════════════════════════════════════════════════════════════════════════
 function openObjectPickerModal() {
+    // Show/hide tabs based on task type
+    var leadTab = document.querySelector('[data-bs-target="#tabPickerLead"]');
+    var customerTab = document.querySelector('[data-bs-target="#tabPickerCustomer"]');
+    var leadPane = document.getElementById('tabPickerLead');
+    var customerPane = document.getElementById('tabPickerCustomer');
+
+    if (_currentTaskType === 'CUSTOMER') {
+        // Show only Customer tab
+        if (leadTab) { leadTab.classList.remove('active'); leadTab.parentElement.style.display = 'none'; }
+        if (customerTab) { customerTab.classList.add('active'); customerTab.parentElement.style.display = ''; }
+        if (leadPane) { leadPane.classList.remove('show', 'active'); }
+        if (customerPane) { customerPane.classList.add('show', 'active'); }
+        // Uncheck all leads
+        document.querySelectorAll('.obj-picker-cb[data-type="LEAD"]').forEach(function(cb) { cb.checked = false; });
+    } else {
+        // Show only Lead tab
+        if (leadTab) { leadTab.classList.add('active'); leadTab.parentElement.style.display = ''; }
+        if (customerTab) { customerTab.classList.remove('active'); customerTab.parentElement.style.display = 'none'; }
+        if (leadPane) { leadPane.classList.add('show', 'active'); }
+        if (customerPane) { customerPane.classList.remove('show', 'active'); }
+        // Uncheck all customers
+        document.querySelectorAll('.obj-picker-cb[data-type="CUSTOMER"]').forEach(function(cb) { cb.checked = false; });
+    }
+
     // Pre-check current selections
     document.querySelectorAll('.obj-picker-cb').forEach(function(cb) { cb.checked = false; });
     document.querySelectorAll('input[name="selectedLeads"]').forEach(function(inp) {

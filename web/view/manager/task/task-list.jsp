@@ -23,7 +23,7 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h3 class="mb-1"><i class="bi bi-list-task me-2"></i>Quản lý Công việc</h3>
-            <p class="text-muted mb-0">Tất cả công việc đã giao trong phòng ban (Lead & Khách hàng)</p>
+            <p class="text-muted mb-0">Tất cả công việc đã giao (Lead & Khách hàng)</p>
         </div>
         <a href="${pageContext.request.contextPath}/manager/task/form?action=create" class="btn btn-primary">
             <i class="bi bi-plus-circle me-2"></i>Tạo Công việc
@@ -32,16 +32,17 @@
 
     <ul class="nav nav-tabs mb-4">
         <li class="nav-item">
-            <a class="nav-link ${viewType == 'personal' || empty viewType ? 'active' : ''}"
-               href="${pageContext.request.contextPath}/manager/task/list?view=personal">
-                <i class="bi bi-person me-2"></i>Danh sách công việc cá nhân
+            <a class="nav-link ${viewType == 'lead' || empty viewType ? 'active' : ''}"
+               href="${pageContext.request.contextPath}/manager/task/list?view=lead">
+                <i class="bi bi-person-lines-fill me-2"></i>Lead
+                <span class="badge bg-primary ms-1">${leadCount}</span>
             </a>
         </li>
         <li class="nav-item">
-            <%-- ĐỔI: dùng cùng URL /manager/task/list?view=team thay vì /manager/task/team --%>
-            <a class="nav-link ${viewType == 'team' ? 'active' : ''}"
-               href="${pageContext.request.contextPath}/manager/task/list?view=team">
-                <i class="bi bi-people me-2"></i>Công việc nhóm
+            <a class="nav-link ${viewType == 'customer' ? 'active' : ''}"
+               href="${pageContext.request.contextPath}/manager/task/list?view=customer">
+                <i class="bi bi-people-fill me-2"></i>Customer
+                <span class="badge bg-success ms-1">${customerCount}</span>
             </a>
         </li>
     </ul>

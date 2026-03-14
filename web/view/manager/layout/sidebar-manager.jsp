@@ -109,9 +109,9 @@
             </div>
             <ul class="nav flex-column px-2">
                 <li class="nav-item mb-1">
-                    <a href=""
-                       class="nav-link rounded-2 d-flex align-items-center gap-2 py-2 px-3 ${ACTIVE_MENU == 'PERFORMANCE' ? 'active bg-success text-white' : 'text-body-secondary'}">
-                        <i class="bi bi-award"></i>
+                    <a href="${pageContext.request.contextPath}/manager/email"
+                       class="nav-link rounded-2 d-flex align-items-center gap-2 py-2 px-3 ${ACTIVE_MENU == 'EMAIL_MANAGE' ? 'active bg-success text-white' : 'text-body-secondary'}">
+                        <i class="bi bi-envelope-paper"></i>
                         <span>Quản lý email</span>
                     </a>
                 </li>
@@ -123,16 +123,16 @@
                     </a>
                 </li>
                 <li class="nav-item mb-1">
-                    <a href=""
-                       class="nav-link rounded-2 d-flex align-items-center gap-2 py-2 px-3 ${ACTIVE_MENU == 'PERFORMANCE' ? 'active bg-success text-white' : 'text-body-secondary'}">
-                        <i class="bi bi-award"></i>
+                    <a href="${pageContext.request.contextPath}/manager/activity-log"
+                       class="nav-link rounded-2 d-flex align-items-center gap-2 py-2 px-3 ${ACTIVE_MENU == 'ACTIVITY_LOG' ? 'active bg-success text-white' : 'text-body-secondary'}">
+                        <i class="bi bi-activity"></i>
                         <span>Log activities</span>
                     </a>
                 </li>
-                 <li class="nav-item mb-1">
-                    <a href=""
-                       class="nav-link rounded-2 d-flex align-items-center gap-2 py-2 px-3 ${ACTIVE_MENU == 'PERFORMANCE' ? 'active bg-success text-white' : 'text-body-secondary'}">
-                        <i class="bi bi-award"></i>
+                <li class="nav-item mb-1">
+                    <a href="${pageContext.request.contextPath}/manager/audit-log"
+                       class="nav-link rounded-2 d-flex align-items-center gap-2 py-2 px-3 ${ACTIVE_MENU == 'AUDIT_LOG' ? 'active bg-success text-white' : 'text-body-secondary'}">
+                        <i class="bi bi-shield-check"></i>
                         <span>Audit Logs</span>
                     </a>
                 </li>
