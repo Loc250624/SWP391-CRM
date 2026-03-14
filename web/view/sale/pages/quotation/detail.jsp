@@ -1,11 +1,477 @@
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
-<!DOCTYPE html>
-<html>
-    <head>
-        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-        <title>JSP Page</title>
-    </head>
-    <body>
-        <h1>Hello World!</h1>
-    </body>
-</html>
+<%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+<%@taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt"%>
+
+<!-- Toast messages -->
+<c:if test="${param.approved == '1'}">
+    <script>document.addEventListener('DOMContentLoaded', function(){ CRM.showToast('Duyet bao gia thanh cong!', 'success'); });</script>
+</c:if>
+<c:if test="${param.rejected == '1'}">
+    <script>document.addEventListener('DOMContentLoaded', function(){ CRM.showToast('Da tu choi bao gia.', 'info'); });</script>
+</c:if>
+<c:if test="${param.sent == '1'}">
+    <script>document.addEventListener('DOMContentLoaded', function(){ CRM.showToast('Da gui bao gia thanh cong!', 'success'); });</script>
+</c:if>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="mb-1 fw-bold">Chi tiet Bao gia</h4>
+        <p class="text-muted mb-0">${quotation.quotationCode} - ${quotation.title}</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="${pageContext.request.contextPath}/sale/quotation/list" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Quay lai</a>
+        <c:if test="${quotation.status == 'Draft'}">
+            <a href="${pageContext.request.contextPath}/sale/quotation/form?id=${quotation.quotationId}" class="btn btn-outline-primary btn-sm"><i class="bi bi-pencil me-1"></i>Chinh sua</a>
+            <button type="button" class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#approveModal"><i class="bi bi-check-circle me-1"></i>Duyet</button>
+            <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#rejectModal"><i class="bi bi-x-circle me-1"></i>Tu choi</button>
+        </c:if>
+        <c:if test="${quotation.status == 'Approved'}">
+            <form method="POST" action="${pageContext.request.contextPath}/sale/quotation/send" style="display:inline;">
+                <input type="hidden" name="quotationId" value="${quotation.quotationId}">
+                <button type="submit" class="btn btn-warning btn-sm"><i class="bi bi-send me-1"></i>Gui bao gia</button>
+            </form>
+        </c:if>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-8">
+        <!-- Basic Info -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="text-muted small">Ma bao gia</label>
+                        <div class="fw-medium">${quotation.quotationCode}</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="text-muted small">Phien ban</label>
+                        <div class="fw-medium">v${quotation.version}</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="text-muted small">Opportunity</label>
+                        <div class="fw-medium">
+                            <c:choose>
+                                <c:when test="${not empty linkedOpp}">
+                                    <a href="${pageContext.request.contextPath}/sale/opportunity/detail?id=${linkedOpp.opportunityId}" class="text-decoration-none">
+                                        ${linkedOpp.opportunityCode} - ${linkedOpp.opportunityName}
+                                    </a>
+                                </c:when>
+                                <c:otherwise><span class="text-muted">-</span></c:otherwise>
+                            </c:choose>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="text-muted small">Khach hang / Lead</label>
+                        <div class="fw-medium">
+                            <c:if test="${not empty linkedCustomer}">
+                                <i class="bi bi-building text-success me-1"></i>${linkedCustomer.fullName}
+                            </c:if>
+                            <c:if test="${not empty linkedLead}">
+                                <i class="bi bi-person text-primary me-1"></i>${linkedLead.fullName}
+                            </c:if>
+                            <c:if test="${empty linkedCustomer && empty linkedLead}">
+                                <span class="text-muted">-</span>
+                            </c:if>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="text-muted small">Ngay tao</label>
+                        <div>
+                            <c:choose>
+                                <c:when test="${not empty quotation.createdAt}">${quotation.createdAt.toString().substring(0, 10)}</c:when>
+                                <c:otherwise>-</c:otherwise>
+                            </c:choose>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="text-muted small">Hieu luc den</label>
+                        <div>
+                            <c:choose>
+                                <c:when test="${not empty quotation.validUntil}">${quotation.validUntil}</c:when>
+                                <c:otherwise>-</c:otherwise>
+                            </c:choose>
+                        </div>
+                    </div>
+                    <c:if test="${not empty creatorName}">
+                        <div class="col-md-6">
+                            <label class="text-muted small">Nguoi tao</label>
+                            <div class="fw-medium">${creatorName}</div>
+                        </div>
+                    </c:if>
+                </div>
+            </div>
+        </div>
+
+        <!-- Items -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-transparent border-0"><h6 class="mb-0 fw-semibold">Hang muc</h6></div>
+            <div class="card-body pt-0">
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Khoa hoc / Dich vu</th>
+                                <th class="text-center">SL</th>
+                                <th class="text-end">Don gia</th>
+                                <th class="text-end">Giam gia</th>
+                                <th class="text-end">Thanh tien</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <c:choose>
+                                <c:when test="${not empty items}">
+                                    <c:forEach var="item" items="${items}">
+                                        <tr>
+                                            <td>
+                                                ${item.description}
+                                                <c:if test="${item.isOptional == true}">
+                                                    <span class="badge bg-secondary-subtle text-secondary ms-1">Tuy chon</span>
+                                                </c:if>
+                                            </td>
+                                            <td class="text-center">${item.quantity}</td>
+                                            <td class="text-end">
+                                                <c:if test="${not empty item.unitPrice}">
+                                                    <fmt:formatNumber value="${item.unitPrice}" type="number" groupingUsed="true" maxFractionDigits="0"/> d
+                                                </c:if>
+                                                <c:if test="${empty item.unitPrice}">-</c:if>
+                                            </td>
+                                            <td class="text-end">
+                                                <c:choose>
+                                                    <c:when test="${not empty item.discountPercent && item.discountPercent > 0}">${item.discountPercent}%</c:when>
+                                                    <c:otherwise>-</c:otherwise>
+                                                </c:choose>
+                                            </td>
+                                            <td class="text-end fw-semibold">
+                                                <c:if test="${not empty item.lineTotal}">
+                                                    <fmt:formatNumber value="${item.lineTotal}" type="number" groupingUsed="true" maxFractionDigits="0"/> d
+                                                </c:if>
+                                                <c:if test="${empty item.lineTotal}">-</c:if>
+                                            </td>
+                                        </tr>
+                                    </c:forEach>
+                                </c:when>
+                                <c:otherwise>
+                                    <tr><td colspan="5" class="text-center text-muted py-3">Chua co hang muc nao</td></tr>
+                                </c:otherwise>
+                            </c:choose>
+                        </tbody>
+                        <c:if test="${not empty items}">
+                            <tfoot class="table-light">
+                                <c:if test="${not empty quotation.subtotal && quotation.subtotal > 0}">
+                                    <tr>
+                                        <td colspan="4" class="text-end">Tong phu:</td>
+                                        <td class="text-end fw-semibold"><fmt:formatNumber value="${quotation.subtotal}" type="number" groupingUsed="true" maxFractionDigits="0"/> d</td>
+                                    </tr>
+                                </c:if>
+                                <c:if test="${not empty quotation.discountAmount && quotation.discountAmount > 0}">
+                                    <tr>
+                                        <td colspan="4" class="text-end">Giam gia<c:if test="${not empty quotation.discountPercent && quotation.discountPercent > 0}"> (${quotation.discountPercent}%)</c:if>:</td>
+                                        <td class="text-end text-danger">-<fmt:formatNumber value="${quotation.discountAmount}" type="number" groupingUsed="true" maxFractionDigits="0"/> d</td>
+                                    </tr>
+                                </c:if>
+                                <c:if test="${not empty quotation.taxAmount && quotation.taxAmount > 0}">
+                                    <tr>
+                                        <td colspan="4" class="text-end">Thue<c:if test="${not empty quotation.taxPercent && quotation.taxPercent > 0}"> (${quotation.taxPercent}%)</c:if>:</td>
+                                        <td class="text-end"><fmt:formatNumber value="${quotation.taxAmount}" type="number" groupingUsed="true" maxFractionDigits="0"/> d</td>
+                                    </tr>
+                                </c:if>
+                                <c:if test="${not empty quotation.totalAmount && quotation.totalAmount > 0}">
+                                    <tr>
+                                        <td colspan="4" class="text-end fw-bold">Tong cong:</td>
+                                        <td class="text-end fw-bold text-success fs-5"><fmt:formatNumber value="${quotation.totalAmount}" type="number" groupingUsed="true" maxFractionDigits="0"/> d</td>
+                                    </tr>
+                                </c:if>
+                            </tfoot>
+                        </c:if>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Terms -->
+        <c:if test="${not empty quotation.paymentTerms || not empty quotation.termsConditions || not empty quotation.deliveryTerms}">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-transparent border-0"><h6 class="mb-0 fw-semibold">Dieu khoan</h6></div>
+                <div class="card-body">
+                    <c:if test="${not empty quotation.paymentTerms}">
+                        <div class="mb-3">
+                            <label class="text-muted small fw-semibold">Dieu khoan thanh toan</label>
+                            <p class="mb-0" style="white-space: pre-wrap;">${quotation.paymentTerms}</p>
+                        </div>
+                    </c:if>
+                    <c:if test="${not empty quotation.deliveryTerms}">
+                        <div class="mb-3">
+                            <label class="text-muted small fw-semibold">Dieu khoan giao hang</label>
+                            <p class="mb-0" style="white-space: pre-wrap;">${quotation.deliveryTerms}</p>
+                        </div>
+                    </c:if>
+                    <c:if test="${not empty quotation.termsConditions}">
+                        <div>
+                            <label class="text-muted small fw-semibold">Dieu kien chung</label>
+                            <p class="mb-0" style="white-space: pre-wrap;">${quotation.termsConditions}</p>
+                        </div>
+                    </c:if>
+                </div>
+            </div>
+        </c:if>
+
+        <!-- Notes -->
+        <c:if test="${not empty quotation.notes || not empty quotation.description}">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-transparent border-0"><h6 class="mb-0 fw-semibold">Ghi chu</h6></div>
+                <div class="card-body">
+                    <c:if test="${not empty quotation.description}">
+                        <div class="mb-2">
+                            <label class="text-muted small fw-semibold">Mo ta</label>
+                            <p class="mb-0" style="white-space: pre-wrap;">${quotation.description}</p>
+                        </div>
+                    </c:if>
+                    <c:if test="${not empty quotation.notes}">
+                        <div>
+                            <label class="text-muted small fw-semibold">Ghi chu</label>
+                            <p class="mb-0" style="white-space: pre-wrap;">${quotation.notes}</p>
+                        </div>
+                    </c:if>
+                </div>
+            </div>
+        </c:if>
+
+        <!-- Tracking Logs -->
+        <c:if test="${not empty trackingLogs}">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-transparent border-0"><h6 class="mb-0 fw-semibold">Nhat ky hoat dong</h6></div>
+                <div class="card-body pt-0">
+                    <div class="table-responsive">
+                        <table class="table table-sm align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Su kien</th>
+                                    <th>Thoi gian</th>
+                                    <th>IP</th>
+                                    <th>Trinh duyet</th>
+                                    <th>Thiet bi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <c:forEach var="log" items="${trackingLogs}">
+                                    <tr>
+                                        <td>
+                                            <c:choose>
+                                                <c:when test="${log.eventType == 'CREATED'}"><span class="badge bg-primary-subtle text-primary">Tao moi</span></c:when>
+                                                <c:when test="${log.eventType == 'UPDATED'}"><span class="badge bg-info-subtle text-info">Cap nhat</span></c:when>
+                                                <c:when test="${log.eventType == 'VIEWED'}"><span class="badge bg-secondary-subtle text-secondary">Xem</span></c:when>
+                                                <c:when test="${log.eventType == 'APPROVED'}"><span class="badge bg-success-subtle text-success">Duyet</span></c:when>
+                                                <c:when test="${log.eventType == 'REJECTED'}"><span class="badge bg-danger-subtle text-danger">Tu choi</span></c:when>
+                                                <c:when test="${log.eventType == 'SENT'}"><span class="badge bg-warning-subtle text-warning">Gui</span></c:when>
+                                                <c:otherwise><span class="badge bg-secondary-subtle text-secondary">${log.eventType}</span></c:otherwise>
+                                            </c:choose>
+                                        </td>
+                                        <td><small class="text-muted">
+                                            <c:if test="${not empty log.eventDate}">${log.eventDate.toString().substring(0, 16).replace('T', ' ')}</c:if>
+                                        </small></td>
+                                        <td><small class="text-muted">${log.ipAddress}</small></td>
+                                        <td><small class="text-muted">${log.browser}</small></td>
+                                        <td><small class="text-muted">${log.deviceType}</small></td>
+                                    </tr>
+                                </c:forEach>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </c:if>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="col-lg-4">
+        <!-- Status -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-transparent border-0"><h6 class="mb-0 fw-semibold">Trang thai</h6></div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <c:choose>
+                        <c:when test="${quotation.status == 'Draft'}"><span class="badge bg-secondary-subtle text-secondary fs-6 px-3 py-2">De xuat (Draft)</span></c:when>
+                        <c:when test="${quotation.status == 'Approved'}"><span class="badge bg-success-subtle text-success fs-6 px-3 py-2">Da duyet</span></c:when>
+                        <c:when test="${quotation.status == 'Sent'}"><span class="badge bg-warning-subtle text-warning fs-6 px-3 py-2">Da gui - Cho phan hoi</span></c:when>
+                        <c:when test="${quotation.status == 'Accepted'}"><span class="badge bg-primary-subtle text-primary fs-6 px-3 py-2">Khach chap nhan</span></c:when>
+                        <c:when test="${quotation.status == 'Rejected'}"><span class="badge bg-danger-subtle text-danger fs-6 px-3 py-2">Tu choi</span></c:when>
+                        <c:otherwise><span class="badge bg-secondary-subtle text-secondary fs-6 px-3 py-2">${quotation.status}</span></c:otherwise>
+                    </c:choose>
+                </div>
+
+                <!-- Approval info -->
+                <c:if test="${not empty quotation.approvedDate}">
+                    <div class="mb-3">
+                        <label class="text-muted small">Duyet ngay</label>
+                        <div>${quotation.approvedDate.toString().substring(0, 16).replace('T', ' ')}</div>
+                    </div>
+                    <c:if test="${not empty approverName}">
+                        <div class="mb-3">
+                            <label class="text-muted small">Nguoi duyet</label>
+                            <div class="fw-medium">${approverName}</div>
+                        </div>
+                    </c:if>
+                    <c:if test="${not empty quotation.approvalNotes}">
+                        <div class="mb-3">
+                            <label class="text-muted small">Ghi chu duyet</label>
+                            <div>${quotation.approvalNotes}</div>
+                        </div>
+                    </c:if>
+                </c:if>
+
+                <!-- Sent info -->
+                <c:if test="${not empty quotation.sentDate}">
+                    <div class="mb-3">
+                        <label class="text-muted small">Gui ngay</label>
+                        <div>${quotation.sentDate.toString().substring(0, 16).replace('T', ' ')}</div>
+                    </div>
+                    <c:if test="${not empty senderName}">
+                        <div class="mb-3">
+                            <label class="text-muted small">Nguoi gui</label>
+                            <div class="fw-medium">${senderName}</div>
+                        </div>
+                    </c:if>
+                </c:if>
+
+                <!-- View tracking -->
+                <c:if test="${not empty quotation.lastViewedDate}">
+                    <div class="mb-3">
+                        <label class="text-muted small">Lan xem cuoi</label>
+                        <div>${quotation.lastViewedDate.toString().substring(0, 16).replace('T', ' ')}</div>
+                    </div>
+                </c:if>
+                <c:if test="${not empty quotation.viewCount && quotation.viewCount > 0}">
+                    <div>
+                        <label class="text-muted small">So lan xem</label>
+                        <div class="fw-bold">${quotation.viewCount} lan</div>
+                    </div>
+                </c:if>
+
+                <!-- Rejection info -->
+                <c:if test="${not empty quotation.rejectedDate}">
+                    <hr>
+                    <div class="mb-3">
+                        <label class="text-muted small">Tu choi ngay</label>
+                        <div class="text-danger">${quotation.rejectedDate.toString().substring(0, 16).replace('T', ' ')}</div>
+                    </div>
+                    <c:if test="${not empty quotation.rejectionReason}">
+                        <div>
+                            <label class="text-muted small">Ly do tu choi</label>
+                            <div>${quotation.rejectionReason}</div>
+                        </div>
+                    </c:if>
+                </c:if>
+
+                <!-- Customer acceptance -->
+                <c:if test="${not empty quotation.acceptedDate}">
+                    <hr>
+                    <div class="mb-3">
+                        <label class="text-muted small">Khach chap nhan ngay</label>
+                        <div class="text-success fw-medium">${quotation.acceptedDate.toString().substring(0, 16).replace('T', ' ')}</div>
+                    </div>
+                    <c:if test="${not empty quotation.acceptedByName}">
+                        <div class="mb-3">
+                            <label class="text-muted small">Nguoi chap nhan</label>
+                            <div>${quotation.acceptedByName} <c:if test="${not empty quotation.acceptedByEmail}"><small class="text-muted">(${quotation.acceptedByEmail})</small></c:if></div>
+                        </div>
+                    </c:if>
+                </c:if>
+
+                <!-- Customer rejection -->
+                <c:if test="${not empty quotation.customerRejectedDate}">
+                    <hr>
+                    <div class="mb-3">
+                        <label class="text-muted small">Khach tu choi ngay</label>
+                        <div class="text-danger">${quotation.customerRejectedDate.toString().substring(0, 16).replace('T', ' ')}</div>
+                    </div>
+                    <c:if test="${not empty quotation.customerRejectionReason}">
+                        <div>
+                            <label class="text-muted small">Ly do khach tu choi</label>
+                            <div>${quotation.customerRejectionReason}</div>
+                        </div>
+                    </c:if>
+                </c:if>
+            </div>
+        </div>
+
+        <!-- Version History -->
+        <c:if test="${not empty versions}">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-transparent border-0"><h6 class="mb-0 fw-semibold">Lich su phien ban</h6></div>
+                <div class="card-body">
+                    <div class="d-flex flex-column gap-2">
+                        <c:forEach var="ver" items="${versions}" varStatus="loop">
+                            <div class="d-flex justify-content-between align-items-center p-2 ${loop.first ? 'bg-primary-subtle' : 'bg-light'} rounded">
+                                <div>
+                                    <div class="fw-medium">v${ver.versionNumber}${loop.first ? ' (Hien tai)' : ''}</div>
+                                    <small class="text-muted">
+                                        <c:if test="${not empty ver.createdAt}">${ver.createdAt.toString().substring(0, 10)}</c:if>
+                                    </small>
+                                    <c:if test="${not empty ver.changeSummary}">
+                                        <div><small class="text-muted">${ver.changeSummary}</small></div>
+                                    </c:if>
+                                </div>
+                                <c:if test="${not empty ver.totalAmount}">
+                                    <span class="fw-semibold ${loop.first ? '' : 'text-muted'}"><fmt:formatNumber value="${ver.totalAmount}" type="number" groupingUsed="true" maxFractionDigits="0"/> d</span>
+                                </c:if>
+                            </div>
+                        </c:forEach>
+                    </div>
+                </div>
+            </div>
+        </c:if>
+    </div>
+</div>
+
+<!-- Approve Modal -->
+<div class="modal fade" id="approveModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="${pageContext.request.contextPath}/sale/quotation/approve">
+                <input type="hidden" name="quotationId" value="${quotation.quotationId}">
+                <div class="modal-header">
+                    <h5 class="modal-title">Duyet bao gia</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Ban co chac chan muon duyet bao gia <strong>${quotation.quotationCode}</strong>?</p>
+                    <div class="mb-3">
+                        <label class="form-label">Ghi chu duyet (tuy chon)</label>
+                        <textarea class="form-control" name="approvalNotes" rows="3" placeholder="Nhap ghi chu..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Huy</button>
+                    <button type="submit" class="btn btn-success btn-sm"><i class="bi bi-check-circle me-1"></i>Duyet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Reject Modal -->
+<div class="modal fade" id="rejectModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="${pageContext.request.contextPath}/sale/quotation/reject">
+                <input type="hidden" name="quotationId" value="${quotation.quotationId}">
+                <div class="modal-header">
+                    <h5 class="modal-title">Tu choi bao gia</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Ban co chac chan muon tu choi bao gia <strong>${quotation.quotationCode}</strong>?</p>
+                    <div class="mb-3">
+                        <label class="form-label">Ly do tu choi <span class="text-danger">*</span></label>
+                        <textarea class="form-control" name="rejectionReason" rows="3" placeholder="Nhap ly do tu choi..." required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Huy</button>
+                    <button type="submit" class="btn btn-danger btn-sm"><i class="bi bi-x-circle me-1"></i>Tu choi</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

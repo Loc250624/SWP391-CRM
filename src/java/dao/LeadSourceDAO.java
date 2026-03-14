@@ -3,6 +3,7 @@ package dao;
 import dbConnection.DBContext;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import model.LeadSource;
@@ -15,7 +16,7 @@ public class LeadSourceDAO extends DBContext {
         String sql = "SELECT * FROM lead_sources WHERE is_active = 1 ORDER BY source_name";
 
         try {
-            PreparedStatement st = getConnection().prepareStatement(sql);
+            PreparedStatement st = connection.prepareStatement(sql);
             ResultSet rs = st.executeQuery();
 
             while (rs.next()) {
@@ -29,7 +30,7 @@ public class LeadSourceDAO extends DBContext {
 
                 sourceList.add(source);
             }
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
         }
 
@@ -41,7 +42,7 @@ public class LeadSourceDAO extends DBContext {
         String sql = "SELECT * FROM lead_sources WHERE source_id = ?";
 
         try {
-            PreparedStatement st = getConnection().prepareStatement(sql);
+            PreparedStatement st = connection.prepareStatement(sql);
             st.setInt(1, sourceId);
             ResultSet rs = st.executeQuery();
 
@@ -55,7 +56,7 @@ public class LeadSourceDAO extends DBContext {
                 source.setCreatedAt(rs.getTimestamp("created_at").toLocalDateTime());
                 return source;
             }
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
         }
 

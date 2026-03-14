@@ -1,49 +1,105 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <title>Cập nhật trạng thái</title>
-    <jsp:include page="../../layout/head.jsp"/>
-</head>
-<body>
-<div class="d-flex">
-    <jsp:include page="../../layout/sidebar_module4.jsp"/>
-    <div class="container-fluid">
-        <jsp:include page="../../layout/header.jsp"/>
-        <div class="content">
-            <h3>Cập nhật trạng thái công việc</h3>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
 
-            <c:if test="${not empty errorMessage}">
-                <div class="alert alert-danger" role="alert">
-                    ${errorMessage}
+<div class="container-fluid">
+
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="${pageContext.request.contextPath}/sale/task/list">Công việc của tôi</a>
+            </li>
+            <li class="breadcrumb-item">
+                <a href="${pageContext.request.contextPath}/sale/task/detail?id=${task.taskId}">Chi tiết</a>
+            </li>
+            <li class="breadcrumb-item active">Cập nhật Trạng thái</li>
+        </ol>
+    </nav>
+
+    <!-- Error Messages -->
+    <c:if test="${not empty sessionScope.errorMessage}">
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle me-2"></i>${sessionScope.errorMessage}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        <c:remove var="errorMessage" scope="session" />
+    </c:if>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="bi bi-check2-circle me-2"></i>Cập nhật Trạng thái Công việc</h5>
                 </div>
-            </c:if>
+                <div class="card-body">
+                    <!-- Task Summary -->
+                    <div class="alert alert-light border mb-4">
+                        <h6 class="mb-1">${task.title}</h6>
+                        <small class="text-muted">
+                            Mã: <strong>${task.taskCode}</strong>
+                            <c:if test="${task.dueDate != null}">
+                                &nbsp;|&nbsp; Hạn chót:
+                                <strong>${fn:substring(task.dueDate, 8, 10)}/${fn:substring(task.dueDate, 5, 7)}/${fn:substring(task.dueDate, 0, 4)}</strong>
+                            </c:if>
+                        </small>
+                    </div>
 
-            <form action="${pageContext.request.contextPath}/sale/task/status" method="post">
-                <input type="hidden" name="taskId" value="${task.taskId}">
+                    <!-- Current Status -->
+                    <div class="mb-4">
+                        <label class="form-label text-muted small">Trạng thái hiện tại</label>
+                        <div>
+                            <c:choose>
+                                <c:when test="${task.statusName == 'COMPLETED'}">
+                                    <span class="badge bg-success fs-6 px-3 py-2">Hoàn thành</span>
+                                </c:when>
+                                <c:when test="${task.statusName == 'IN_PROGRESS'}">
+                                    <span class="badge bg-info fs-6 px-3 py-2">Đang thực hiện</span>
+                                </c:when>
+                                <c:when test="${task.statusName == 'CANCELLED'}">
+                                    <span class="badge bg-dark fs-6 px-3 py-2">Đã hủy</span>
+                                </c:when>
+                                <c:otherwise>
+                                    <span class="badge bg-secondary fs-6 px-3 py-2">Chờ xử lý</span>
+                                </c:otherwise>
+                            </c:choose>
+                        </div>
+                    </div>
 
-                <div class="mb-3">
-                    <label class="form-label">Tiêu đề</label>
-                    <input type="text" class="form-control" value="${task.title}" readonly>
+                    <!-- Update Form -->
+                    <form action="${pageContext.request.contextPath}/sale/task/status" method="post">
+                        <input type="hidden" name="taskId" value="${task.taskId}">
+
+                        <div class="mb-4">
+                            <label for="status" class="form-label fw-bold">
+                                Trạng thái mới <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-select form-select-lg" id="status" name="status" required>
+                                <c:forEach var="s" items="${taskStatusValues}">
+                                    <c:if test="${s.name() != 'CANCELLED'}">
+                                        <option value="${s.name()}" ${task.statusName == s.name() ? 'selected' : ''}>
+                                            ${s.vietnamese}
+                                        </option>
+                                    </c:if>
+                                </c:forEach>
+                            </select>
+                            <small class="text-muted mt-1 d-block">
+                                Chỉ có thể cập nhật trạng thái. Các thông tin khác chỉ quản lý mới được thay đổi.
+                            </small>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-success">
+                                <i class="bi bi-check2-circle me-2"></i>Lưu thay đổi
+                            </button>
+                            <a href="${pageContext.request.contextPath}/sale/task/detail?id=${task.taskId}"
+                               class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle me-2"></i>Hủy
+                            </a>
+                        </div>
+                    </form>
                 </div>
-
-                <div class="mb-3">
-                    <label for="status" class="form-label">Trạng thái</label>
-                    <select class="form-select" id="status" name="status" required>
-                        <c:forEach var="s" items="${taskStatusValues}">
-                            <option value="${s}" ${task.status == s ? 'selected' : ''}>${s.vietnamese}</option>
-                        </c:forEach>
-                    </select>
-                </div>
-
-                <button type="submit" class="btn btn-primary">Cập nhật</button>
-                <a href="${pageContext.request.contextPath}/sale/task/detail?id=${task.taskId}" class="btn btn-secondary">Quay lại</a>
-            </form>
+            </div>
         </div>
     </div>
 </div>
-<jsp:include page="../../layout/script.jsp"/>
-</body>
-</html>

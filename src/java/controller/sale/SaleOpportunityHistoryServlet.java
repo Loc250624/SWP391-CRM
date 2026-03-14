@@ -1,80 +1,166 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/JSP_Servlet/Servlet.java to edit this template
- */
-
 package controller.sale;
 
+import dao.OpportunityDAO;
+import dao.OpportunityHistoryDAO;
+import dao.PipelineDAO;
+import dao.PipelineStageDAO;
+import model.Opportunity;
+import model.OpportunityHistory;
+import model.Pipeline;
+import model.PipelineStage;
 import java.io.IOException;
-import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import util.SessionHelper;
 
-
-@WebServlet(name="SaleOpportunityHistoryServlet", urlPatterns={"/sale/opportunity/history"})
+@WebServlet(name = "SaleOpportunityHistoryServlet", urlPatterns = {"/sale/opportunity/history"})
 public class SaleOpportunityHistoryServlet extends HttpServlet {
-   
-    /** 
-     * Processes requests for both HTTP <code>GET</code> and <code>POST</code> methods.
-     * @param request servlet request
-     * @param response servlet response
-     * @throws ServletException if a servlet-specific error occurs
-     * @throws IOException if an I/O error occurs
-     */
-    protected void processRequest(HttpServletRequest request, HttpServletResponse response)
-    throws ServletException, IOException {
-        response.setContentType("text/html;charset=UTF-8");
-        try (PrintWriter out = response.getWriter()) {
-            /* TODO output your page here. You may use following sample code. */
-            out.println("<!DOCTYPE html>");
-            out.println("<html>");
-            out.println("<head>");
-            out.println("<title>Servlet SaleOpportunityHistoryServlet</title>");  
-            out.println("</head>");
-            out.println("<body>");
-            out.println("<h1>Servlet SaleOpportunityHistoryServlet at " + request.getContextPath () + "</h1>");
-            out.println("</body>");
-            out.println("</html>");
-        }
-    } 
 
-    // <editor-fold defaultstate="collapsed" desc="HttpServlet methods. Click on the + sign on the left to edit the code.">
-    /** 
-     * Handles the HTTP <code>GET</code> method.
-     * @param request servlet request
-     * @param response servlet response
-     * @throws ServletException if a servlet-specific error occurs
-     * @throws IOException if an I/O error occurs
-     */
+    private OpportunityDAO opportunityDAO = new OpportunityDAO();
+    private OpportunityHistoryDAO historyDAO = new OpportunityHistoryDAO();
+    private PipelineDAO pipelineDAO = new PipelineDAO();
+    private PipelineStageDAO stageDAO = new PipelineStageDAO();
+
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
-    throws ServletException, IOException {
-        processRequest(request, response);
-    } 
+            throws ServletException, IOException {
 
-    /** 
-     * Handles the HTTP <code>POST</code> method.
-     * @param request servlet request
-     * @param response servlet response
-     * @throws ServletException if a servlet-specific error occurs
-     * @throws IOException if an I/O error occurs
-     */
-    @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response)
-    throws ServletException, IOException {
-        processRequest(request, response);
+        Integer currentUserId = SessionHelper.getLoggedInUserId(request);
+        if (currentUserId == null) {
+            response.sendRedirect(request.getContextPath() + "/login");
+            return;
+        }
+
+        // Check if viewing history for a specific opportunity
+        String oppIdParam = request.getParameter("oppId");
+
+        // Build name maps for display
+        List<Pipeline> pipelines = pipelineDAO.getAllActivePipelines();
+        Map<Integer, String> pipelineNameMap = new HashMap<>();
+        if (pipelines != null) {
+            for (Pipeline p : pipelines) pipelineNameMap.put(p.getPipelineId(), p.getPipelineName());
+        }
+
+        List<PipelineStage> allStages = stageDAO.getAllStages();
+        Map<Integer, String> stageNameMap = new HashMap<>();
+        Map<String, String> stageIdNameMap = new HashMap<>();
+        if (allStages != null) {
+            for (PipelineStage s : allStages) {
+                stageNameMap.put(s.getStageId(), s.getStageName());
+                stageIdNameMap.put(String.valueOf(s.getStageId()), s.getStageName());
+            }
+        }
+
+        Map<String, String> pipelineIdNameMap = new HashMap<>();
+        if (pipelines != null) {
+            for (Pipeline p : pipelines) pipelineIdNameMap.put(String.valueOf(p.getPipelineId()), p.getPipelineName());
+        }
+
+        List<OpportunityHistory> historyList;
+        Opportunity selectedOpp = null;
+
+        if (oppIdParam != null && !oppIdParam.isEmpty()) {
+            // View history for a specific opportunity
+            try {
+                int oppId = Integer.parseInt(oppIdParam);
+                selectedOpp = opportunityDAO.getOpportunityById(oppId);
+                historyList = historyDAO.getHistoryByOpportunityId(oppId);
+            } catch (NumberFormatException e) {
+                historyList = new ArrayList<>();
+            }
+        } else {
+            // View all history for user's opportunities
+            historyList = historyDAO.getHistoryByUserId(currentUserId);
+        }
+
+        if (historyList == null) historyList = new ArrayList<>();
+
+        // Build opportunity name map for the history entries
+        Map<Integer, String> oppNameMap = new HashMap<>();
+        List<Opportunity> userOpps = opportunityDAO.getOpportunitiesBySalesUser(currentUserId);
+        if (userOpps != null) {
+            for (Opportunity o : userOpps) {
+                oppNameMap.put(o.getOpportunityId(), o.getOpportunityName());
+            }
+        }
+
+        // Filter by field name
+        String fieldFilter = request.getParameter("field");
+        if (fieldFilter != null && !fieldFilter.isEmpty()) {
+            List<OpportunityHistory> filtered = new ArrayList<>();
+            for (OpportunityHistory h : historyList) {
+                if (fieldFilter.equals(h.getFieldName())) filtered.add(h);
+            }
+            historyList = filtered;
+        }
+
+        // Filter by search keyword (matches opp name, old/new value)
+        String search = request.getParameter("search");
+        if (search != null && !search.trim().isEmpty()) {
+            String kw = search.trim().toLowerCase();
+            List<OpportunityHistory> filtered = new ArrayList<>();
+            for (OpportunityHistory h : historyList) {
+                String oppName = oppNameMap.getOrDefault(h.getOpportunityId(), "");
+                if (oppName.toLowerCase().contains(kw)
+                        || (h.getOldValue() != null && h.getOldValue().toLowerCase().contains(kw))
+                        || (h.getNewValue() != null && h.getNewValue().toLowerCase().contains(kw))
+                        || h.getFieldName().toLowerCase().contains(kw)) {
+                    filtered.add(h);
+                }
+            }
+            historyList = filtered;
+        }
+
+        // KPI counts (before pagination)
+        int totalStageChanges = 0, totalStatusChanges = 0, totalValueChanges = 0;
+        for (OpportunityHistory h : historyList) {
+            if ("stage_id".equals(h.getFieldName())) totalStageChanges++;
+            else if ("status".equals(h.getFieldName())) totalStatusChanges++;
+            else if ("estimated_value".equals(h.getFieldName())) totalValueChanges++;
+        }
+        request.setAttribute("totalStageChanges", totalStageChanges);
+        request.setAttribute("totalStatusChanges", totalStatusChanges);
+        request.setAttribute("totalValueChanges", totalValueChanges);
+
+        // Pagination
+        int pageSize = 20;
+        int totalItems = historyList.size();
+        int totalPages = (int) Math.ceil((double) totalItems / pageSize);
+        int currentPage = 1;
+        String pageParam = request.getParameter("page");
+        if (pageParam != null) {
+            try { currentPage = Math.max(1, Integer.parseInt(pageParam)); } catch (NumberFormatException e) { }
+        }
+        if (currentPage > totalPages && totalPages > 0) currentPage = totalPages;
+        int fromIndex = (currentPage - 1) * pageSize;
+        int toIndex = Math.min(fromIndex + pageSize, totalItems);
+        List<OpportunityHistory> pagedList = totalItems > 0 ? historyList.subList(fromIndex, toIndex) : historyList;
+
+        request.setAttribute("historyList", pagedList);
+        request.setAttribute("oppNameMap", oppNameMap);
+        request.setAttribute("stageNameMap", stageNameMap);
+        request.setAttribute("pipelineNameMap", pipelineNameMap);
+        request.setAttribute("stageIdNameMap", stageIdNameMap);
+        request.setAttribute("pipelineIdNameMap", pipelineIdNameMap);
+        request.setAttribute("selectedOpp", selectedOpp);
+        request.setAttribute("filterField", fieldFilter);
+        request.setAttribute("filterOppId", oppIdParam);
+        request.setAttribute("filterSearch", search);
+        request.setAttribute("userOpps", userOpps);
+        request.setAttribute("currentPage", currentPage);
+        request.setAttribute("totalPages", totalPages);
+        request.setAttribute("totalItems", totalItems);
+
+        request.setAttribute("ACTIVE_MENU", "OPP_HISTORY");
+        request.setAttribute("pageTitle", "Opportunity History");
+        request.setAttribute("CONTENT_PAGE", "/view/sale/pages/opportunity/history.jsp");
+        request.getRequestDispatcher("/view/sale/layout/layout.jsp").forward(request, response);
     }
-
-    /** 
-     * Returns a short description of the servlet.
-     * @return a String containing servlet description
-     */
-    @Override
-    public String getServletInfo() {
-        return "Short description";
-    }// </editor-fold>
-
 }

@@ -1,6 +1,7 @@
 package controller.sale;
 
 import dao.LeadDAO;
+import enums.LeadStatus;
 import model.Lead;
 import java.io.IOException;
 import jakarta.servlet.ServletException;
@@ -8,7 +9,7 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
+import util.SessionHelper;
 
 @WebServlet(name = "LeadToOpportunityServlet", urlPatterns = {"/sale/lead/convert"})
 public class LeadToOpportunityServlet extends HttpServlet {
@@ -30,15 +31,10 @@ public class LeadToOpportunityServlet extends HttpServlet {
         try {
             int leadId = Integer.parseInt(leadIdParam);
 
-            // Get current user ID
-            Integer currentUserId = 1;
-            HttpSession session = request.getSession(false);
-            if (session != null && session.getAttribute("userId") != null) {
-                try {
-                    currentUserId = (Integer) session.getAttribute("userId");
-                } catch (Exception e) {
-                    // Use default
-                }
+            Integer currentUserId = SessionHelper.getLoggedInUserId(request);
+            if (currentUserId == null) {
+                response.sendRedirect(request.getContextPath() + "/login");
+                return;
             }
 
             // Get lead to verify it exists and user has permission
@@ -91,7 +87,7 @@ public class LeadToOpportunityServlet extends HttpServlet {
             Lead lead = leadDAO.getLeadById(leadId);
             if (lead != null) {
                 lead.setIsConverted(true);
-                lead.setStatus("Converted");
+                lead.setStatus(LeadStatus.Converted.name());
                 leadDAO.updateLead(lead);
             }
 

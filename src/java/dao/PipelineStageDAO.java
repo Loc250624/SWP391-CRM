@@ -21,7 +21,7 @@ public class PipelineStageDAO extends DBContext {
         String sql = "SELECT * FROM pipeline_stages WHERE pipeline_id = ? AND is_active = 1 ORDER BY stage_order";
 
         try {
-            PreparedStatement stmt = getConnection().prepareStatement(sql);
+            PreparedStatement stmt = connection.prepareStatement(sql);
             stmt.setInt(1, pipelineId);
 
             ResultSet rs = stmt.executeQuery();
@@ -29,7 +29,7 @@ public class PipelineStageDAO extends DBContext {
                 PipelineStage stage = extractStageFromResultSet(rs);
                 stages.add(stage);
             }
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
         }
 
@@ -44,14 +44,14 @@ public class PipelineStageDAO extends DBContext {
         String sql = "SELECT * FROM pipeline_stages ORDER BY pipeline_id, stage_order";
 
         try {
-            PreparedStatement stmt = getConnection().prepareStatement(sql);
+            PreparedStatement stmt = connection.prepareStatement(sql);
             ResultSet rs = stmt.executeQuery();
 
             while (rs.next()) {
                 PipelineStage stage = extractStageFromResultSet(rs);
                 stages.add(stage);
             }
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
         }
 
@@ -65,14 +65,14 @@ public class PipelineStageDAO extends DBContext {
         String sql = "SELECT * FROM pipeline_stages WHERE stage_id = ?";
 
         try {
-            PreparedStatement stmt = getConnection().prepareStatement(sql);
+            PreparedStatement stmt = connection.prepareStatement(sql);
             stmt.setInt(1, stageId);
 
             ResultSet rs = stmt.executeQuery();
             if (rs.next()) {
                 return extractStageFromResultSet(rs);
             }
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
         }
 
@@ -88,14 +88,14 @@ public class PipelineStageDAO extends DBContext {
                 + "ORDER BY stage_order";
 
         try {
-            PreparedStatement stmt = getConnection().prepareStatement(sql);
+            PreparedStatement stmt = connection.prepareStatement(sql);
             stmt.setInt(1, pipelineId);
 
             ResultSet rs = stmt.executeQuery();
             if (rs.next()) {
                 return extractStageFromResultSet(rs);
             }
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
         }
 
@@ -111,7 +111,7 @@ public class PipelineStageDAO extends DBContext {
                 + "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
 
         try {
-            PreparedStatement stmt = getConnection().prepareStatement(sql);
+            PreparedStatement stmt = connection.prepareStatement(sql);
             stmt.setInt(1, stage.getPipelineId());
             stmt.setString(2, stage.getStageCode());
             stmt.setString(3, stage.getStageName());
@@ -124,7 +124,7 @@ public class PipelineStageDAO extends DBContext {
             int rowsAffected = stmt.executeUpdate();
             return rowsAffected > 0;
 
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
             return false;
         }
@@ -140,7 +140,7 @@ public class PipelineStageDAO extends DBContext {
                 + "WHERE stage_id = ?";
 
         try {
-            PreparedStatement stmt = getConnection().prepareStatement(sql);
+            PreparedStatement stmt = connection.prepareStatement(sql);
             stmt.setString(1, stage.getStageName());
             stmt.setInt(2, stage.getStageOrder());
             stmt.setInt(3, stage.getProbability());
@@ -152,7 +152,7 @@ public class PipelineStageDAO extends DBContext {
             int rowsAffected = stmt.executeUpdate();
             return rowsAffected > 0;
 
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
             return false;
         }
@@ -162,7 +162,7 @@ public class PipelineStageDAO extends DBContext {
     /**
      * Extract PipelineStage object from ResultSet
      */
-    private PipelineStage extractStageFromResultSet(ResultSet rs) throws Exception {
+    private PipelineStage extractStageFromResultSet(ResultSet rs) throws SQLException {
         PipelineStage stage = new PipelineStage();
 
         stage.setStageId(rs.getInt("stage_id"));

@@ -22,14 +22,14 @@ public class PipelineDAO extends DBContext {
         String sql = "SELECT * FROM pipelines WHERE is_active = 1 ORDER BY is_default DESC, pipeline_name";
 
         try {
-            PreparedStatement stmt = getConnection().prepareStatement(sql);
+            PreparedStatement stmt = connection.prepareStatement(sql);
             ResultSet rs = stmt.executeQuery();
 
             while (rs.next()) {
                 Pipeline pipeline = extractPipelineFromResultSet(rs);
                 pipelines.add(pipeline);
             }
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
         }
 
@@ -44,14 +44,14 @@ public class PipelineDAO extends DBContext {
         String sql = "SELECT * FROM pipelines ORDER BY is_default DESC, pipeline_name";
 
         try {
-            PreparedStatement stmt = getConnection().prepareStatement(sql);
+            PreparedStatement stmt = connection.prepareStatement(sql);
             ResultSet rs = stmt.executeQuery();
 
             while (rs.next()) {
                 Pipeline pipeline = extractPipelineFromResultSet(rs);
                 pipelines.add(pipeline);
             }
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
         }
 
@@ -65,14 +65,14 @@ public class PipelineDAO extends DBContext {
         String sql = "SELECT * FROM pipelines WHERE pipeline_id = ?";
 
         try {
-            PreparedStatement stmt = getConnection().prepareStatement(sql);
+            PreparedStatement stmt = connection.prepareStatement(sql);
             stmt.setInt(1, pipelineId);
 
             ResultSet rs = stmt.executeQuery();
             if (rs.next()) {
                 return extractPipelineFromResultSet(rs);
             }
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
         }
 
@@ -86,13 +86,13 @@ public class PipelineDAO extends DBContext {
         String sql = "SELECT * FROM pipelines WHERE is_default = 1 AND is_active = 1";
 
         try {
-            PreparedStatement stmt = getConnection().prepareStatement(sql);
+            PreparedStatement stmt = connection.prepareStatement(sql);
             ResultSet rs = stmt.executeQuery();
 
             if (rs.next()) {
                 return extractPipelineFromResultSet(rs);
             }
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
         }
 
@@ -108,7 +108,7 @@ public class PipelineDAO extends DBContext {
                 + "VALUES (?, ?, ?, ?, ?, GETDATE(), ?)";
 
         try {
-            PreparedStatement stmt = getConnection().prepareStatement(sql);
+            PreparedStatement stmt = connection.prepareStatement(sql);
             stmt.setString(1, pipeline.getPipelineCode());
             stmt.setString(2, pipeline.getPipelineName());
             stmt.setString(3, pipeline.getDescription());
@@ -119,7 +119,7 @@ public class PipelineDAO extends DBContext {
             int rowsAffected = stmt.executeUpdate();
             return rowsAffected > 0;
 
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
             return false;
         }
@@ -134,7 +134,7 @@ public class PipelineDAO extends DBContext {
                 + "WHERE pipeline_id = ?";
 
         try {
-            PreparedStatement stmt = getConnection().prepareStatement(sql);
+            PreparedStatement stmt = connection.prepareStatement(sql);
             stmt.setString(1, pipeline.getPipelineName());
             stmt.setString(2, pipeline.getDescription());
             stmt.setBoolean(3, pipeline.isIsDefault());
@@ -144,7 +144,7 @@ public class PipelineDAO extends DBContext {
             int rowsAffected = stmt.executeUpdate();
             return rowsAffected > 0;
 
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
             return false;
         }
@@ -154,7 +154,7 @@ public class PipelineDAO extends DBContext {
     /**
      * Extract Pipeline object from ResultSet
      */
-    private Pipeline extractPipelineFromResultSet(ResultSet rs) throws Exception {
+    private Pipeline extractPipelineFromResultSet(ResultSet rs) throws SQLException {
         Pipeline pipeline = new Pipeline();
 
         pipeline.setPipelineId(rs.getInt("pipeline_id"));
@@ -172,7 +172,7 @@ public class PipelineDAO extends DBContext {
     /**
      * Set nullable integer parameter
      */
-    private void setNullableInt(PreparedStatement stmt, int index, Integer value) throws Exception {
+    private void setNullableInt(PreparedStatement stmt, int index, Integer value) throws SQLException {
         if (value == null) {
             stmt.setNull(index, Types.INTEGER);
         } else {
@@ -183,7 +183,7 @@ public class PipelineDAO extends DBContext {
     /**
      * Get nullable integer from ResultSet
      */
-    private Integer getNullableInt(ResultSet rs, String columnName) throws Exception {
+    private Integer getNullableInt(ResultSet rs, String columnName) throws SQLException {
         int value = rs.getInt(columnName);
         return rs.wasNull() ? null : value;
     }
@@ -191,7 +191,7 @@ public class PipelineDAO extends DBContext {
     /**
      * Get nullable LocalDateTime from ResultSet
      */
-    private LocalDateTime getNullableLocalDateTime(ResultSet rs, String columnName) throws Exception {
+    private LocalDateTime getNullableLocalDateTime(ResultSet rs, String columnName) throws SQLException {
         Timestamp timestamp = rs.getTimestamp(columnName);
         return timestamp != null ? timestamp.toLocalDateTime() : null;
     }
