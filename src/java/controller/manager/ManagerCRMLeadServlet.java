@@ -84,7 +84,13 @@ public class ManagerCRMLeadServlet extends HttpServlet {
         List<Lead> leads;
         int totalLeads;
 
-        if ("assigned".equals(tab)) {
+        if ("all".equals(tab)) {
+            // Tab 3: All leads
+            leads = leadDAO.getAllLeadsFiltered(
+                    keyword, statusFilter, sourceId, dateFrom, dateTo, offset, pageSize);
+            totalLeads = leadDAO.countAllLeadsFiltered(
+                    keyword, statusFilter, sourceId, dateFrom, dateTo);
+        } else if ("assigned".equals(tab)) {
             // Tab 2: Leads assigned by this manager (via task_relations)
             leads = leadDAO.getAssignedLeadsByManager(
                     managerId, keyword, statusFilter, sourceId, dateFrom, dateTo, offset, pageSize);
@@ -105,18 +111,25 @@ public class ManagerCRMLeadServlet extends HttpServlet {
         List<Users> salesUsers = userDAO.getUsersByRoleCode("SALES");
         List<Users> salesForAssign = new ArrayList<>(salesUsers);
 
+        // Build set of sales user IDs for JSP logic
+        Set<Integer> salesUserIds = new HashSet<>();
+        for (Users su : salesUsers) {
+            salesUserIds.add(su.getUserId());
+        }
+
         // Lead sources for filter dropdown
         List<LeadSource> leadSources = new LeadSourceDAO().getAllActiveSources();
 
         // Preload tasks per lead for progress modal and cache user names
         Map<Integer, List<Task>> leadTasksMap = new HashMap<>();
         Map<Integer, String> userNameMap = new HashMap<>();
-        if ("assigned".equals(tab)) {
+        if ("assigned".equals(tab) || "all".equals(tab)) {
             Set<Integer> userIds = new HashSet<>();
             for (Lead ld : leads) {
                 List<Task> tasks = taskDAO.getTasksByRelatedLead(ld.getLeadId());
                 leadTasksMap.put(ld.getLeadId(), tasks);
                 if (ld.getAssignedTo() != null) userIds.add(ld.getAssignedTo());
+                if (ld.getCreatedBy() != null) userIds.add(ld.getCreatedBy());
                 for (Task t : tasks) {
                     if (t.getAssignedTo() != null) userIds.add(t.getAssignedTo());
                     if (t.getCreatedBy() != null) userIds.add(t.getCreatedBy());
@@ -142,6 +155,7 @@ public class ManagerCRMLeadServlet extends HttpServlet {
         request.setAttribute("leadSources",    leadSources);
         request.setAttribute("leadTasksMap",   leadTasksMap);
         request.setAttribute("userNameMap",    userNameMap);
+        request.setAttribute("salesUserIds",   salesUserIds);
         request.setAttribute("keyword",        keyword != null ? keyword : "");
         request.setAttribute("statusFilter",   statusFilter != null ? statusFilter : "");
         request.setAttribute("sourceFilter",   sourceFilter != null ? sourceFilter : "");

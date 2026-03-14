@@ -542,6 +542,21 @@ public class LeadDAO extends DBContext {
         return list;
     }
 
+    public List<Lead> searchLeadsByEmail(String emailQuery) {
+        List<Lead> list = new ArrayList<>();
+        String sql = "SELECT * FROM leads WHERE email LIKE ? AND is_converted = 0 ORDER BY created_at DESC";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, "%" + emailQuery + "%");
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                list.add(mapResultSetToLead(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
     // Batch fetch lead full_name by IDs — used for "related object" column in task list
     public Map<Integer, String> getLeadNameMap(List<Integer> leadIds) {
         Map<Integer, String> map = new HashMap<>();
@@ -821,6 +836,83 @@ public class LeadDAO extends DBContext {
             + " AND (t.is_deleted = 0 OR t.is_deleted IS NULL)");
         List<Object> params = new ArrayList<>();
         params.add(managerId);
+
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            String kw = "%" + keyword.trim() + "%";
+            sql.append(" AND (l.full_name LIKE ? OR l.lead_code LIKE ? OR l.phone LIKE ? OR l.email LIKE ?)");
+            params.add(kw); params.add(kw); params.add(kw); params.add(kw);
+        }
+        if (status != null && !status.trim().isEmpty()) {
+            sql.append(" AND LOWER(l.status) = LOWER(?)");
+            params.add(status);
+        }
+        if (sourceId != null) {
+            sql.append(" AND l.source_id = ?");
+            params.add(sourceId);
+        }
+        if (dateFrom != null) {
+            sql.append(" AND CAST(l.created_at AS DATE) >= ?");
+            params.add(dateFrom);
+        }
+        if (dateTo != null) {
+            sql.append(" AND CAST(l.created_at AS DATE) <= ?");
+            params.add(dateTo);
+        }
+        try (PreparedStatement st = connection.prepareStatement(sql.toString())) {
+            for (int i = 0; i < params.size(); i++) st.setObject(i + 1, params.get(i));
+            try (ResultSet rs = st.executeQuery()) {
+                if (rs.next()) return rs.getInt(1);
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return 0;
+    }
+
+    // ── All leads with filters + pagination (for Manager "Tất cả Lead" tab) ──
+    public List<Lead> getAllLeadsFiltered(
+            String keyword, String status, Integer sourceId,
+            String dateFrom, String dateTo, int offset, int pageSize) {
+        List<Lead> list = new ArrayList<>();
+        StringBuilder sql = new StringBuilder("SELECT * FROM leads l WHERE 1=1");
+        List<Object> params = new ArrayList<>();
+
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            String kw = "%" + keyword.trim() + "%";
+            sql.append(" AND (l.full_name LIKE ? OR l.lead_code LIKE ? OR l.phone LIKE ? OR l.email LIKE ?)");
+            params.add(kw); params.add(kw); params.add(kw); params.add(kw);
+        }
+        if (status != null && !status.trim().isEmpty()) {
+            sql.append(" AND LOWER(l.status) = LOWER(?)");
+            params.add(status);
+        }
+        if (sourceId != null) {
+            sql.append(" AND l.source_id = ?");
+            params.add(sourceId);
+        }
+        if (dateFrom != null) {
+            sql.append(" AND CAST(l.created_at AS DATE) >= ?");
+            params.add(dateFrom);
+        }
+        if (dateTo != null) {
+            sql.append(" AND CAST(l.created_at AS DATE) <= ?");
+            params.add(dateTo);
+        }
+        sql.append(" ORDER BY l.created_at DESC OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
+        params.add(offset); params.add(pageSize);
+
+        try (PreparedStatement st = connection.prepareStatement(sql.toString())) {
+            for (int i = 0; i < params.size(); i++) st.setObject(i + 1, params.get(i));
+            try (ResultSet rs = st.executeQuery()) {
+                while (rs.next()) list.add(mapResultSetToLead(rs));
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return list;
+    }
+
+    public int countAllLeadsFiltered(
+            String keyword, String status, Integer sourceId,
+            String dateFrom, String dateTo) {
+        StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM leads l WHERE 1=1");
+        List<Object> params = new ArrayList<>();
 
         if (keyword != null && !keyword.trim().isEmpty()) {
             String kw = "%" + keyword.trim() + "%";

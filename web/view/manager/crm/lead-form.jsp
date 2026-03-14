@@ -5,20 +5,10 @@
 <!-- Page Header -->
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h4 class="mb-1 fw-bold">
-            <c:choose>
-                <c:when test="${mode == 'edit'}">Chinh sua Lead</c:when>
-                <c:otherwise>Tao Lead moi</c:otherwise>
-            </c:choose>
-        </h4>
-        <p class="text-muted mb-0">
-            <c:choose>
-                <c:when test="${mode == 'edit'}">Cap nhat thong tin lead ${lead.leadCode}</c:when>
-                <c:otherwise>Nhap thong tin khach hang tiem nang moi</c:otherwise>
-            </c:choose>
-        </p>
+        <h4 class="mb-1 fw-bold">Tao Lead moi</h4>
+        <p class="text-muted mb-0">Nhap thong tin khach hang tiem nang moi</p>
     </div>
-    <a href="${pageContext.request.contextPath}/sale/lead/list" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Quay lai</a>
+    <a href="${pageContext.request.contextPath}/manager/crm/leads" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Quay lai</a>
 </div>
 
 <!-- Toast Messages -->
@@ -26,10 +16,7 @@
     <script>document.addEventListener('DOMContentLoaded', function(){ CRM.showToast('${error}', 'error'); });</script>
 </c:if>
 
-<form method="POST" action="${pageContext.request.contextPath}/sale/lead/form" id="leadForm" novalidate>
-    <c:if test="${mode == 'edit'}">
-        <input type="hidden" name="leadId" value="${lead.leadId}">
-    </c:if>
+<form method="POST" action="${pageContext.request.contextPath}/manager/crm/lead-form" id="leadForm" novalidate>
 
     <div class="row g-4">
         <!-- Main Content -->
@@ -114,28 +101,9 @@
                 <div class="card-body">
                     <div class="mb-3">
                         <label class="form-label fw-medium">Trang thai</label>
-                        <c:choose>
-                            <c:when test="${mode == 'edit'}">
-                                <!-- Edit mode: status is read-only, displayed as badge -->
-                                <div class="form-control bg-light">
-                                    <c:choose>
-                                        <c:when test="${lead.status == 'Assigned'}"><span class="badge bg-primary">Assigned</span></c:when>
-                                        <c:when test="${lead.status == 'Working'}"><span class="badge bg-info">Working</span></c:when>
-                                        <c:when test="${lead.status == 'Nurturing'}"><span class="badge bg-warning text-dark">Nurturing</span></c:when>
-                                        <c:when test="${lead.status == 'Unqualified'}"><span class="badge bg-secondary">Unqualified</span></c:when>
-                                        <c:when test="${lead.status == 'Converted'}"><span class="badge bg-success">Converted</span></c:when>
-                                        <c:otherwise><span class="badge bg-secondary">${lead.status}</span></c:otherwise>
-                                    </c:choose>
-                                </div>
-                                <div class="form-text">Trang thai khong the thay doi truc tiep</div>
-                            </c:when>
-                            <c:otherwise>
-                                <!-- Create mode: default Assigned, hidden -->
-                                <input type="hidden" name="status" value="Assigned">
-                                <div class="form-control bg-light"><span class="badge bg-primary">Assigned</span> (Mac dinh)</div>
-                                <div class="form-text">Lead moi se tu dong o trang thai Assigned</div>
-                            </c:otherwise>
-                        </c:choose>
+                        <input type="hidden" name="status" value="New">
+                        <div class="form-control bg-light"><span class="badge bg-secondary">New</span> (Mac dinh)</div>
+                        <div class="form-text">Lead moi se o trang thai New, chua duoc giao viec</div>
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-medium" for="rating">Rating</label>
@@ -193,105 +161,12 @@
 
             <!-- Action buttons -->
             <div class="d-grid gap-2">
-                <button type="submit" class="btn btn-primary" id="submitBtn"><i class="bi bi-check-lg me-1"></i>
-                    <c:choose>
-                        <c:when test="${mode == 'edit'}">Cap nhat Lead</c:when>
-                        <c:otherwise>Tao Lead</c:otherwise>
-                    </c:choose>
-                </button>
-                <c:if test="${mode == 'edit' && lead.status != 'Inactive'}">
-                    <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#inactiveModal">
-                        <i class="bi bi-x-circle me-1"></i>Vo hieu hoa Lead
-                    </button>
-                </c:if>
-                <a href="${pageContext.request.contextPath}/sale/lead/list" class="btn btn-outline-secondary">Huy</a>
+                <button type="submit" class="btn btn-primary" id="submitBtn"><i class="bi bi-check-lg me-1"></i>Tao Lead</button>
+                <a href="${pageContext.request.contextPath}/manager/crm/leads" class="btn btn-outline-secondary">Huy</a>
             </div>
         </div>
     </div>
 </form>
-
-<!-- Inactive Confirmation Modal (edit mode only) -->
-<c:if test="${mode == 'edit'}">
-    <div class="modal fade" id="inactiveModal" tabindex="-1" aria-labelledby="inactiveModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header bg-danger text-white">
-                    <h5 class="modal-title" id="inactiveModalLabel"><i class="bi bi-exclamation-triangle me-2"></i>Xac nhan vo hieu hoa Lead</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="alert alert-warning d-flex align-items-start mb-3">
-                        <i class="bi bi-exclamation-triangle-fill me-2 mt-1"></i>
-                        <div>
-                            <strong>Canh bao:</strong> Vo hieu hoa lead <strong>"${lead.fullName}"</strong> (${lead.leadCode}) se:
-                            <ul class="mb-0 mt-1">
-                                <li>Chuyen lead sang trang thai <strong>Inactive</strong></li>
-                                <li>Dong (Cancelled) <strong>tat ca Opportunity</strong> lien quan</li>
-                                <li>Cac Opportunity bi dong se <strong>chi co the xem</strong>, khong the chinh sua</li>
-                            </ul>
-                        </div>
-                    </div>
-
-                    <c:choose>
-                        <c:when test="${not empty leadOpportunities}">
-                            <h6 class="fw-semibold mb-2">Cac Opportunity se bi dong:</h6>
-                            <div class="table-responsive">
-                                <table class="table table-sm table-bordered mb-0">
-                                    <thead class="table-light">
-                                        <tr>
-                                            <th>Ma OPP</th>
-                                            <th>Ten Opportunity</th>
-                                            <th>Trang thai</th>
-                                            <th>Gia tri</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <c:forEach var="opp" items="${leadOpportunities}">
-                                            <tr>
-                                                <td><span class="fw-semibold text-primary">${opp.opportunityCode}</span></td>
-                                                <td>${opp.opportunityName}</td>
-                                                <td>
-                                                    <c:choose>
-                                                        <c:when test="${opp.status == 'Open'}"><span class="badge bg-primary-subtle text-primary">Open</span></c:when>
-                                                        <c:when test="${opp.status == 'InProgress'}"><span class="badge bg-info-subtle text-info">In Progress</span></c:when>
-                                                        <c:when test="${opp.status == 'Won'}"><span class="badge bg-success">Won</span></c:when>
-                                                        <c:when test="${opp.status == 'Lost'}"><span class="badge bg-danger">Lost</span></c:when>
-                                                        <c:when test="${opp.status == 'OnHold'}"><span class="badge bg-warning-subtle text-warning">On Hold</span></c:when>
-                                                        <c:when test="${opp.status == 'Cancelled'}"><span class="badge bg-secondary">Cancelled</span></c:when>
-                                                        <c:otherwise><span class="badge bg-secondary">${opp.status}</span></c:otherwise>
-                                                    </c:choose>
-                                                </td>
-                                                <td>
-                                                    <c:choose>
-                                                        <c:when test="${opp.estimatedValue != null}">
-                                                            <fmt:formatNumber value="${opp.estimatedValue}" type="number" groupingUsed="true"/> VND
-                                                        </c:when>
-                                                        <c:otherwise>-</c:otherwise>
-                                                    </c:choose>
-                                                </td>
-                                            </tr>
-                                        </c:forEach>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </c:when>
-                        <c:otherwise>
-                            <p class="text-muted mb-0"><i class="bi bi-info-circle me-1"></i>Lead nay khong co Opportunity nao.</p>
-                        </c:otherwise>
-                    </c:choose>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Huy</button>
-                    <form method="POST" action="${pageContext.request.contextPath}/sale/lead/form" class="d-inline">
-                        <input type="hidden" name="action" value="inactive">
-                        <input type="hidden" name="leadId" value="${lead.leadId}">
-                        <button type="submit" class="btn btn-danger"><i class="bi bi-x-circle me-1"></i>Xac nhan vo hieu hoa</button>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
-</c:if>
 
 <script>
     document.getElementById('leadForm').addEventListener('submit', function (e) {

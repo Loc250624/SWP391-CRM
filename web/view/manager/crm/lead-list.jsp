@@ -26,13 +26,24 @@
             <h3 class="mb-1"><i class="bi bi-person-lines-fill me-2 text-primary"></i>Quản lý Lead (CRM)</h3>
             <p class="text-muted mb-0">Quản lý Lead chưa được giao và theo dõi tiến độ Lead đã giao việc.</p>
         </div>
-        <a href="${pageContext.request.contextPath}/manager/crm/customers" class="btn btn-outline-secondary">
-            <i class="bi bi-people me-1"></i>Xem Khách hàng
-        </a>
+        <div class="d-flex gap-2">
+            <a href="${pageContext.request.contextPath}/manager/crm/lead-form" class="btn btn-primary">
+                <i class="bi bi-plus-lg me-1"></i>Tao Lead
+            </a>
+            <a href="${pageContext.request.contextPath}/manager/crm/customers" class="btn btn-outline-secondary">
+                <i class="bi bi-people me-1"></i>Xem Khách hàng
+            </a>
+        </div>
     </div>
 
     <%-- Tabs --%>
     <ul class="nav nav-tabs mb-4" role="tablist">
+        <li class="nav-item">
+            <a class="nav-link ${currentTab == 'all' ? 'active' : ''}"
+               href="${pageContext.request.contextPath}/manager/crm/leads?tab=all">
+                <i class="bi bi-list-ul me-1"></i>Tất cả Lead
+            </a>
+        </li>
         <li class="nav-item">
             <a class="nav-link ${currentTab == 'unassigned' ? 'active' : ''}"
                href="${pageContext.request.contextPath}/manager/crm/leads?tab=unassigned">
@@ -56,7 +67,7 @@
                     <label class="form-label fw-semibold small">Tìm kiếm</label>
                     <input type="text" name="keyword" class="form-control" placeholder="Tên, mã, SĐT, email..." value="${keyword}">
                 </div>
-                <c:if test="${currentTab == 'assigned'}">
+                <c:if test="${currentTab == 'assigned' || currentTab == 'all'}">
                     <div class="col-md-2">
                         <label class="form-label fw-semibold small">Trạng thái</label>
                         <select name="status" class="form-select">
@@ -104,6 +115,7 @@
         <span class="text-muted small">
             Tìm thấy <strong>${totalLeads}</strong> lead
             <c:choose>
+                <c:when test="${currentTab == 'all'}">trong hệ thống</c:when>
                 <c:when test="${currentTab == 'assigned'}">đã giao việc</c:when>
                 <c:otherwise>chưa được giao</c:otherwise>
             </c:choose>
@@ -122,8 +134,13 @@
                         <th>SĐT</th>
                         <th>Email</th>
                         <th>Trạng thái</th>
+                        <c:if test="${currentTab == 'all'}">
+                            <th>Người phụ trách</th>
+                        </c:if>
                         <th>Nguồn</th>
-                        <th>Ngày tạo</th>
+                        <c:if test="${currentTab != 'all'}">
+                            <th>Ngày tạo</th>
+                        </c:if>
                         <th class="text-center">Thao tác</th>
                     </tr>
                 </thead>
@@ -134,6 +151,7 @@
                                 <td colspan="8" class="text-center py-5 text-muted">
                                     <i class="bi bi-inbox fs-3 d-block mb-2"></i>
                                     <c:choose>
+                                        <c:when test="${currentTab == 'all'}">Không tìm thấy Lead nào</c:when>
                                         <c:when test="${currentTab == 'assigned'}">Chưa có Lead nào được giao việc</c:when>
                                         <c:otherwise>Không có Lead nào chưa được giao</c:otherwise>
                                     </c:choose>
@@ -174,6 +192,20 @@
                                                   ${lead.status}
                                               </span>
                                         </td>
+                                        <c:if test="${currentTab == 'all'}">
+                                            <td>
+                                                <c:choose>
+                                                    <c:when test="${not empty lead.assignedTo}">
+                                                        <small>${not empty userNameMap[lead.assignedTo] ? userNameMap[lead.assignedTo] : 'ID: '.concat(lead.assignedTo)}</small>
+                                                    </c:when>
+                                                    <c:when test="${not empty lead.createdBy && salesUserIds.contains(lead.createdBy)}">
+                                                        <small>${not empty userNameMap[lead.createdBy] ? userNameMap[lead.createdBy] : 'ID: '.concat(lead.createdBy)}</small>
+                                                        <span class="badge bg-info-subtle text-info ms-1" style="font-size:0.65em">Tự tạo</span>
+                                                    </c:when>
+                                                    <c:otherwise><span class="text-muted">Chưa giao</span></c:otherwise>
+                                                </c:choose>
+                                            </td>
+                                        </c:if>
                                         <td>
                                             <c:choose>
                                                 <c:when test="${not empty lead.sourceId}">
@@ -186,14 +218,40 @@
                                                 <c:otherwise><span class="text-muted">—</span></c:otherwise>
                                             </c:choose>
                                         </td>
-                                        <td>
-                                            <c:if test="${lead.createdAt != null}">
-                                                <small>${fn:substring(lead.createdAt.toString(), 8, 10)}/${fn:substring(lead.createdAt.toString(), 5, 7)}/${fn:substring(lead.createdAt.toString(), 0, 4)}</small>
-                                            </c:if>
-                                        </td>
+                                        <c:if test="${currentTab != 'all'}">
+                                            <td>
+                                                <c:if test="${lead.createdAt != null}">
+                                                    <small>${fn:substring(lead.createdAt.toString(), 8, 10)}/${fn:substring(lead.createdAt.toString(), 5, 7)}/${fn:substring(lead.createdAt.toString(), 0, 4)}</small>
+                                                </c:if>
+                                            </td>
+                                        </c:if>
                                         <td class="text-center">
                                             <div class="d-flex gap-1 justify-content-center">
                                                 <c:choose>
+                                                    <c:when test="${currentTab == 'all'}">
+                                                        <%-- Tab "Tất cả": detail + progress (nếu có task) + giao việc (nếu chưa giao) --%>
+                                                        <button type="button"
+                                                                class="btn btn-sm btn-outline-secondary"
+                                                                title="Xem chi tiết"
+                                                                data-bs-toggle="modal" data-bs-target="#leadModal_${lead.leadId}">
+                                                            <i class="bi bi-eye"></i>
+                                                        </button>
+                                                        <c:if test="${not empty leadTasksMap[lead.leadId]}">
+                                                            <button type="button"
+                                                                    class="btn btn-sm btn-outline-info"
+                                                                    title="Xem tiến độ"
+                                                                    data-bs-toggle="modal" data-bs-target="#leadProgressModal_${lead.leadId}">
+                                                                <i class="bi bi-bar-chart-steps me-1"></i>Tiến độ
+                                                            </button>
+                                                        </c:if>
+                                                        <c:if test="${empty lead.assignedTo && (empty lead.createdBy || !salesUserIds.contains(lead.createdBy))}">
+                                                            <a href="${pageContext.request.contextPath}/manager/task/form?action=create&leadId=${lead.leadId}"
+                                                               class="btn btn-sm btn-primary"
+                                                               title="Giao việc cho Lead này">
+                                                                <i class="bi bi-plus-circle me-1"></i>Giao việc
+                                                            </a>
+                                                        </c:if>
+                                                    </c:when>
                                                     <c:when test="${currentTab == 'assigned'}">
                                                         <%-- Tab "Đã giao việc": show progress popup --%>
                                                         <button type="button"
