@@ -395,12 +395,17 @@ public class LeadDAO extends DBContext {
 
     // Get unassigned leads in manager's department (assigned_to IS NULL).
     // Scope: lead was created by someone in the manager's department.
+    // Excludes leads created by SALE role users (sales tự tạo).
     public List<Lead> getLeadsByManagerScope(int departmentId,
             String keyword, String status, Integer sourceId, int offset, int pageSize) {
         List<Lead> list = new ArrayList<>();
         StringBuilder sql = new StringBuilder(
                 "SELECT * FROM leads l WHERE l.assigned_to IS NULL"
-                + " AND l.created_by IN (SELECT user_id FROM users WHERE department_id = ?)");
+                + " AND l.created_by IN (SELECT user_id FROM users WHERE department_id = ?)"
+                + " AND l.created_by NOT IN ("
+                + "   SELECT ur.user_id FROM user_roles ur"
+                + "   INNER JOIN roles r ON r.role_id = ur.role_id"
+                + "   WHERE LOWER(r.role_code) = 'sales')");
         List<Object> params = new ArrayList<>();
         params.add(departmentId);
 
@@ -440,11 +445,16 @@ public class LeadDAO extends DBContext {
     }
 
     // Count unassigned leads in manager's department scope for pagination
+    // Excludes leads created by SALE role users.
     public int countLeadsByManagerScope(int departmentId,
             String keyword, String status, Integer sourceId) {
         StringBuilder sql = new StringBuilder(
                 "SELECT COUNT(*) FROM leads l WHERE l.assigned_to IS NULL"
-                + " AND l.created_by IN (SELECT user_id FROM users WHERE department_id = ?)");
+                + " AND l.created_by IN (SELECT user_id FROM users WHERE department_id = ?)"
+                + " AND l.created_by NOT IN ("
+                + "   SELECT ur.user_id FROM user_roles ur"
+                + "   INNER JOIN roles r ON r.role_id = ur.role_id"
+                + "   WHERE LOWER(r.role_code) = 'sales')");
         List<Object> params = new ArrayList<>();
         params.add(departmentId);
 
@@ -578,6 +588,112 @@ public class LeadDAO extends DBContext {
         return list;
     }
 
+    // ── Unassigned leads (Pool logic) with filters for Manager Lead page ──
+    // Only status = 'New' (case-insensitive), excludes SALES-created leads, excludes leads with active tasks.
+    public List<Lead> getUnassignedLeadsForManager(
+            String keyword, Integer sourceId, String dateFrom, String dateTo, int offset, int pageSize) {
+        List<Lead> list = new ArrayList<>();
+        StringBuilder sql = new StringBuilder(
+            "SELECT * FROM leads l" +
+            " WHERE l.assigned_to IS NULL" +
+            " AND LOWER(l.status) = 'new'" +
+            " AND l.created_by NOT IN (" +
+            "   SELECT ur.user_id FROM user_roles ur" +
+            "   INNER JOIN roles r ON r.role_id = ur.role_id" +
+            "   WHERE LOWER(r.role_code) = 'sales')" +
+            " AND NOT EXISTS (" +
+            "   SELECT 1 FROM task_relations tr" +
+            "   INNER JOIN tasks t ON t.task_id = tr.task_id" +
+            "   WHERE tr.related_type = 'LEAD' AND tr.related_id = l.lead_id" +
+            "   AND (t.is_deleted = 0 OR t.is_deleted IS NULL) AND t.status NOT IN (2,3))"
+        );
+        List<Object> params = new ArrayList<>();
+        appendCommonFilters(sql, params, keyword, sourceId, dateFrom, dateTo);
+        sql.append(" ORDER BY l.created_at DESC OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
+        params.add(offset); params.add(pageSize);
+
+        try (PreparedStatement st = connection.prepareStatement(sql.toString())) {
+            for (int i = 0; i < params.size(); i++) st.setObject(i + 1, params.get(i));
+            try (ResultSet rs = st.executeQuery()) {
+                while (rs.next()) list.add(mapResultSetToLead(rs));
+            }
+        } catch (Exception e) { e.printStackTrace(); }
+        return list;
+    }
+
+    public int countUnassignedLeadsForManager(
+            String keyword, Integer sourceId, String dateFrom, String dateTo) {
+        StringBuilder sql = new StringBuilder(
+            "SELECT COUNT(*) FROM leads l" +
+            " WHERE l.assigned_to IS NULL" +
+            " AND LOWER(l.status) = 'new'" +
+            " AND l.created_by NOT IN (" +
+            "   SELECT ur.user_id FROM user_roles ur" +
+            "   INNER JOIN roles r ON r.role_id = ur.role_id" +
+            "   WHERE LOWER(r.role_code) = 'sales')" +
+            " AND NOT EXISTS (" +
+            "   SELECT 1 FROM task_relations tr" +
+            "   INNER JOIN tasks t ON t.task_id = tr.task_id" +
+            "   WHERE tr.related_type = 'LEAD' AND tr.related_id = l.lead_id" +
+            "   AND (t.is_deleted = 0 OR t.is_deleted IS NULL) AND t.status NOT IN (2,3))"
+        );
+        List<Object> params = new ArrayList<>();
+        appendCommonFilters(sql, params, keyword, sourceId, dateFrom, dateTo);
+        try (PreparedStatement st = connection.prepareStatement(sql.toString())) {
+            for (int i = 0; i < params.size(); i++) st.setObject(i + 1, params.get(i));
+            try (ResultSet rs = st.executeQuery()) {
+                if (rs.next()) return rs.getInt(1);
+            }
+        } catch (Exception e) { e.printStackTrace(); }
+        return 0;
+    }
+
+    // Helper: append keyword, source, date filters
+    private void appendCommonFilters(StringBuilder sql, List<Object> params,
+            String keyword, Integer sourceId, String dateFrom, String dateTo) {
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            sql.append(" AND (l.full_name LIKE ? OR l.phone LIKE ? OR l.lead_code LIKE ? OR l.email LIKE ?)");
+            String kw = "%" + keyword.trim() + "%";
+            params.add(kw); params.add(kw); params.add(kw); params.add(kw);
+        }
+        if (sourceId != null) {
+            sql.append(" AND l.source_id = ?");
+            params.add(sourceId);
+        }
+        if (dateFrom != null) {
+            sql.append(" AND CAST(l.created_at AS DATE) >= ?");
+            params.add(dateFrom);
+        }
+        if (dateTo != null) {
+            sql.append(" AND CAST(l.created_at AS DATE) <= ?");
+            params.add(dateTo);
+        }
+    }
+
+    // ── All unassigned leads for picker (status=new, not SALES-created, no active tasks) ──
+    public List<Lead> getUnassignedLeadsForPicker() {
+        List<Lead> list = new ArrayList<>();
+        String sql =
+            "SELECT * FROM leads l" +
+            " WHERE l.assigned_to IS NULL" +
+            " AND LOWER(l.status) = 'new'" +
+            " AND l.created_by NOT IN (" +
+            "   SELECT ur.user_id FROM user_roles ur" +
+            "   INNER JOIN roles r ON r.role_id = ur.role_id" +
+            "   WHERE LOWER(r.role_code) = 'sales')" +
+            " AND NOT EXISTS (" +
+            "   SELECT 1 FROM task_relations tr" +
+            "   INNER JOIN tasks t ON t.task_id = tr.task_id" +
+            "   WHERE tr.related_type = 'LEAD' AND tr.related_id = l.lead_id" +
+            "   AND (t.is_deleted = 0 OR t.is_deleted IS NULL) AND t.status NOT IN (2,3))" +
+            " ORDER BY l.created_at DESC";
+        try (PreparedStatement st = connection.prepareStatement(sql);
+             ResultSet rs = st.executeQuery()) {
+            while (rs.next()) list.add(mapResultSetToLead(rs));
+        } catch (Exception e) { e.printStackTrace(); }
+        return list;
+    }
+
     // ── CRM Pool: unassigned leads with no active tasks ──
     public List<Lead> getPoolLeads(String keyword, int offset, int pageSize) {
         List<Lead> list = new ArrayList<>();
@@ -587,7 +703,7 @@ public class LeadDAO extends DBContext {
             " AND l.created_by NOT IN (" +
             "   SELECT ur.user_id FROM user_roles ur" +
             "   INNER JOIN roles r ON r.role_id = ur.role_id" +
-            "   WHERE r.role_code = 'SALE')" +
+            "   WHERE LOWER(r.role_code) = 'sales')" +
             " AND NOT EXISTS (" +
             "   SELECT 1 FROM task_relations tr" +
             "   INNER JOIN tasks t ON t.task_id = tr.task_id" +
@@ -624,7 +740,7 @@ public class LeadDAO extends DBContext {
             " AND l.created_by NOT IN (" +
             "   SELECT ur.user_id FROM user_roles ur" +
             "   INNER JOIN roles r ON r.role_id = ur.role_id" +
-            "   WHERE r.role_code = 'SALE')" +
+            "   WHERE LOWER(r.role_code) = 'sales')" +
             " AND NOT EXISTS (" +
             "   SELECT 1 FROM task_relations tr" +
             "   INNER JOIN tasks t ON t.task_id = tr.task_id" +
@@ -643,6 +759,96 @@ public class LeadDAO extends DBContext {
                 if (rs.next()) return rs.getInt(1);
             }
         } catch (Exception e) { e.printStackTrace(); }
+        return 0;
+    }
+
+    // ── Leads assigned by a specific manager (via task_relations) ──
+    // Returns leads that have tasks created by this manager linked via task_relations.
+    public List<Lead> getAssignedLeadsByManager(int managerId,
+            String keyword, String status, Integer sourceId,
+            String dateFrom, String dateTo, int offset, int pageSize) {
+        List<Lead> list = new ArrayList<>();
+        StringBuilder sql = new StringBuilder(
+            "SELECT DISTINCT l.* FROM leads l"
+            + " INNER JOIN task_relations tr ON tr.related_type = 'LEAD' AND tr.related_id = l.lead_id"
+            + " INNER JOIN tasks t ON t.task_id = tr.task_id"
+            + " WHERE t.created_by = ?"
+            + " AND (t.is_deleted = 0 OR t.is_deleted IS NULL)");
+        List<Object> params = new ArrayList<>();
+        params.add(managerId);
+
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            String kw = "%" + keyword.trim() + "%";
+            sql.append(" AND (l.full_name LIKE ? OR l.lead_code LIKE ? OR l.phone LIKE ? OR l.email LIKE ?)");
+            params.add(kw); params.add(kw); params.add(kw); params.add(kw);
+        }
+        if (status != null && !status.trim().isEmpty()) {
+            sql.append(" AND LOWER(l.status) = LOWER(?)");
+            params.add(status);
+        }
+        if (sourceId != null) {
+            sql.append(" AND l.source_id = ?");
+            params.add(sourceId);
+        }
+        if (dateFrom != null) {
+            sql.append(" AND CAST(l.created_at AS DATE) >= ?");
+            params.add(dateFrom);
+        }
+        if (dateTo != null) {
+            sql.append(" AND CAST(l.created_at AS DATE) <= ?");
+            params.add(dateTo);
+        }
+        sql.append(" ORDER BY l.created_at DESC OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
+        params.add(offset); params.add(pageSize);
+
+        try (PreparedStatement st = connection.prepareStatement(sql.toString())) {
+            for (int i = 0; i < params.size(); i++) st.setObject(i + 1, params.get(i));
+            try (ResultSet rs = st.executeQuery()) {
+                while (rs.next()) list.add(mapResultSetToLead(rs));
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return list;
+    }
+
+    public int countAssignedLeadsByManager(int managerId,
+            String keyword, String status, Integer sourceId,
+            String dateFrom, String dateTo) {
+        StringBuilder sql = new StringBuilder(
+            "SELECT COUNT(DISTINCT l.lead_id) FROM leads l"
+            + " INNER JOIN task_relations tr ON tr.related_type = 'LEAD' AND tr.related_id = l.lead_id"
+            + " INNER JOIN tasks t ON t.task_id = tr.task_id"
+            + " WHERE t.created_by = ?"
+            + " AND (t.is_deleted = 0 OR t.is_deleted IS NULL)");
+        List<Object> params = new ArrayList<>();
+        params.add(managerId);
+
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            String kw = "%" + keyword.trim() + "%";
+            sql.append(" AND (l.full_name LIKE ? OR l.lead_code LIKE ? OR l.phone LIKE ? OR l.email LIKE ?)");
+            params.add(kw); params.add(kw); params.add(kw); params.add(kw);
+        }
+        if (status != null && !status.trim().isEmpty()) {
+            sql.append(" AND LOWER(l.status) = LOWER(?)");
+            params.add(status);
+        }
+        if (sourceId != null) {
+            sql.append(" AND l.source_id = ?");
+            params.add(sourceId);
+        }
+        if (dateFrom != null) {
+            sql.append(" AND CAST(l.created_at AS DATE) >= ?");
+            params.add(dateFrom);
+        }
+        if (dateTo != null) {
+            sql.append(" AND CAST(l.created_at AS DATE) <= ?");
+            params.add(dateTo);
+        }
+        try (PreparedStatement st = connection.prepareStatement(sql.toString())) {
+            for (int i = 0; i < params.size(); i++) st.setObject(i + 1, params.get(i));
+            try (ResultSet rs = st.executeQuery()) {
+                if (rs.next()) return rs.getInt(1);
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
         return 0;
     }
 

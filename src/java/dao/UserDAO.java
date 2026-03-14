@@ -90,6 +90,26 @@ public class UserDAO extends DBContext {
         return list;
     }
 
+    public List<Users> getUsersByRoleCode(String roleCode) {
+        List<Users> list = new ArrayList<>();
+        String sql = "SELECT u.* FROM users u "
+                   + "INNER JOIN user_roles ur ON ur.user_id = u.user_id "
+                   + "INNER JOIN roles r ON r.role_id = ur.role_id "
+                   + "WHERE LOWER(r.role_code) = LOWER(?) AND u.status = 'Active' "
+                   + "ORDER BY u.first_name, u.last_name";
+        try (PreparedStatement st = connection.prepareStatement(sql)) {
+            st.setString(1, roleCode);
+            try (ResultSet rs = st.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapResultSetToUser(rs));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
     private Users mapResultSetToUser(ResultSet rs) throws SQLException {
         Users u = new Users();
         u.setUserId(rs.getInt("user_id"));

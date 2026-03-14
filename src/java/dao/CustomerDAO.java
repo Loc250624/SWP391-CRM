@@ -30,6 +30,19 @@ public class CustomerDAO extends DBContext {
         return danhSach;
     }
 
+    // Unassigned customers for picker: owner_id IS NULL + status = 'active' (case-insensitive)
+    public List<Customer> getUnassignedCustomersForPicker() {
+        List<Customer> list = new ArrayList<>();
+        String sql = "SELECT * FROM customers WHERE owner_id IS NULL"
+                + " AND LOWER(status) = 'active'"
+                + " ORDER BY created_at DESC";
+        try (PreparedStatement st = connection.prepareStatement(sql);
+             ResultSet rs = st.executeQuery()) {
+            while (rs.next()) list.add(mapResultSetToCustomer(rs));
+        } catch (SQLException e) { e.printStackTrace(); }
+        return list;
+    }
+
     public Customer getCustomerById(int customerId) {
         String sql = "SELECT * FROM customers WHERE customer_id = ?";
         try (PreparedStatement st = connection.prepareStatement(sql)) {
@@ -213,80 +226,182 @@ public class CustomerDAO extends DBContext {
 
     // Get unassigned customers in manager's department (owner_id IS NULL).
     // Scope: customer was created by someone in the manager's department.
-    public List<Customer> getCustomersByManagerScope(int departmentId,
-            String keyword, String status, int offset, int pageSize) {
+    // ── Unassigned customers (owner_id IS NULL) with filters ──
+    public List<Customer> getCustomersByManagerScope(
+            String keyword, String status, String segment,
+            String dateFrom, String dateTo, String course,
+            int offset, int pageSize) {
         List<Customer> list = new ArrayList<>();
         StringBuilder sql = new StringBuilder(
-                "SELECT * FROM customers c WHERE c.owner_id IS NULL"
-                + " AND c.created_by IN (SELECT user_id FROM users WHERE department_id = ?)");
+                "SELECT * FROM customers c WHERE c.owner_id IS NULL");
         List<Object> params = new ArrayList<>();
-        params.add(departmentId);
 
-        if (keyword != null && !keyword.trim().isEmpty()) {
-            String kw = "%" + keyword.trim() + "%";
-            sql.append(" AND (c.full_name LIKE ? OR c.customer_code LIKE ? OR c.phone LIKE ? OR c.email LIKE ?)");
-            params.add(kw);
-            params.add(kw);
-            params.add(kw);
-            params.add(kw);
-        }
-        if (status != null && !status.trim().isEmpty()) {
-            sql.append(" AND c.status = ?");
-            params.add(status);
-        }
+        appendCustomerFilters(sql, params, keyword, status, segment, dateFrom, dateTo, course);
         sql.append(" ORDER BY c.created_at DESC OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
         params.add(offset);
         params.add(pageSize);
 
         try (PreparedStatement st = connection.prepareStatement(sql.toString())) {
-            for (int i = 0; i < params.size(); i++) {
-                st.setObject(i + 1, params.get(i));
-            }
+            for (int i = 0; i < params.size(); i++) st.setObject(i + 1, params.get(i));
             try (ResultSet rs = st.executeQuery()) {
-                while (rs.next()) {
-                    list.add(mapResultSetToCustomer(rs));
-                }
+                while (rs.next()) list.add(mapResultSetToCustomer(rs));
             }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+        } catch (SQLException e) { e.printStackTrace(); }
         return list;
     }
 
-    // Count unassigned customers in manager's department scope for pagination
-    public int countCustomersByManagerScope(int departmentId,
-            String keyword, String status) {
+    public int countCustomersByManagerScope(
+            String keyword, String status, String segment,
+            String dateFrom, String dateTo, String course) {
         StringBuilder sql = new StringBuilder(
-                "SELECT COUNT(*) FROM customers c WHERE c.owner_id IS NULL"
-                + " AND c.created_by IN (SELECT user_id FROM users WHERE department_id = ?)");
+                "SELECT COUNT(*) FROM customers c WHERE c.owner_id IS NULL");
         List<Object> params = new ArrayList<>();
-        params.add(departmentId);
+        appendCustomerFilters(sql, params, keyword, status, segment, dateFrom, dateTo, course);
+        try (PreparedStatement st = connection.prepareStatement(sql.toString())) {
+            for (int i = 0; i < params.size(); i++) st.setObject(i + 1, params.get(i));
+            try (ResultSet rs = st.executeQuery()) { if (rs.next()) return rs.getInt(1); }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return 0;
+    }
 
+    // ── Assigned customers (owner_id IS NOT NULL) with filters ──
+    public List<Customer> getAssignedCustomers(
+            String keyword, String status, String segment,
+            String dateFrom, String dateTo, String course,
+            int offset, int pageSize) {
+        List<Customer> list = new ArrayList<>();
+        StringBuilder sql = new StringBuilder(
+                "SELECT * FROM customers c WHERE c.owner_id IS NOT NULL");
+        List<Object> params = new ArrayList<>();
+
+        appendCustomerFilters(sql, params, keyword, status, segment, dateFrom, dateTo, course);
+        sql.append(" ORDER BY c.created_at DESC OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
+        params.add(offset);
+        params.add(pageSize);
+
+        try (PreparedStatement st = connection.prepareStatement(sql.toString())) {
+            for (int i = 0; i < params.size(); i++) st.setObject(i + 1, params.get(i));
+            try (ResultSet rs = st.executeQuery()) {
+                while (rs.next()) list.add(mapResultSetToCustomer(rs));
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return list;
+    }
+
+    public int countAssignedCustomers(
+            String keyword, String status, String segment,
+            String dateFrom, String dateTo, String course) {
+        StringBuilder sql = new StringBuilder(
+                "SELECT COUNT(*) FROM customers c WHERE c.owner_id IS NOT NULL");
+        List<Object> params = new ArrayList<>();
+        appendCustomerFilters(sql, params, keyword, status, segment, dateFrom, dateTo, course);
+        try (PreparedStatement st = connection.prepareStatement(sql.toString())) {
+            for (int i = 0; i < params.size(); i++) st.setObject(i + 1, params.get(i));
+            try (ResultSet rs = st.executeQuery()) { if (rs.next()) return rs.getInt(1); }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return 0;
+    }
+
+    // ── Shared filter builder ──
+    private void appendCustomerFilters(StringBuilder sql, List<Object> params,
+            String keyword, String status, String segment,
+            String dateFrom, String dateTo, String course) {
+        sql.append(" AND LOWER(c.status) = 'active'");
         if (keyword != null && !keyword.trim().isEmpty()) {
             String kw = "%" + keyword.trim() + "%";
             sql.append(" AND (c.full_name LIKE ? OR c.customer_code LIKE ? OR c.phone LIKE ? OR c.email LIKE ?)");
-            params.add(kw);
-            params.add(kw);
-            params.add(kw);
-            params.add(kw);
+            params.add(kw); params.add(kw); params.add(kw); params.add(kw);
         }
-        if (status != null && !status.trim().isEmpty()) {
-            sql.append(" AND c.status = ?");
-            params.add(status);
+        if (segment != null && !segment.trim().isEmpty()) {
+            sql.append(" AND LOWER(c.customer_segment) = LOWER(?)");
+            params.add(segment);
         }
-        try (PreparedStatement st = connection.prepareStatement(sql.toString())) {
-            for (int i = 0; i < params.size(); i++) {
-                st.setObject(i + 1, params.get(i));
-            }
+        if (dateFrom != null && !dateFrom.trim().isEmpty()) {
+            sql.append(" AND c.created_at >= ?");
+            params.add(dateFrom.trim() + " 00:00:00");
+        }
+        if (dateTo != null && !dateTo.trim().isEmpty()) {
+            sql.append(" AND c.created_at <= ?");
+            params.add(dateTo.trim() + " 23:59:59");
+        }
+        if (course != null && !course.trim().isEmpty()) {
+            sql.append(" AND c.purchased_courses LIKE ?");
+            params.add("%" + course.trim() + "%");
+        }
+    }
+
+    // Get distinct customer segments for filter dropdown
+    public List<String> getDistinctSegments() {
+        List<String> list = new ArrayList<>();
+        String sql = "SELECT DISTINCT customer_segment FROM customers WHERE customer_segment IS NOT NULL AND customer_segment != '' ORDER BY customer_segment";
+        try (PreparedStatement st = connection.prepareStatement(sql);
+             ResultSet rs = st.executeQuery()) {
+            while (rs.next()) list.add(rs.getString("customer_segment"));
+        } catch (SQLException e) { e.printStackTrace(); }
+        return list;
+    }
+
+    // Get distinct statuses for filter dropdown
+    public List<String> getDistinctStatuses() {
+        List<String> list = new ArrayList<>();
+        String sql = "SELECT DISTINCT status FROM customers WHERE status IS NOT NULL AND status != '' ORDER BY status";
+        try (PreparedStatement st = connection.prepareStatement(sql);
+             ResultSet rs = st.executeQuery()) {
+            while (rs.next()) list.add(rs.getString("status"));
+        } catch (SQLException e) { e.printStackTrace(); }
+        return list;
+    }
+
+    // Get distinct course names from courses table for filter dropdown
+    public List<String> getDistinctCourseNames() {
+        List<String> list = new ArrayList<>();
+        String sql = "SELECT course_name FROM courses WHERE status = 'Active' ORDER BY course_name";
+        try (PreparedStatement st = connection.prepareStatement(sql);
+             ResultSet rs = st.executeQuery()) {
+            while (rs.next()) list.add(rs.getString("course_name"));
+        } catch (SQLException e) { e.printStackTrace(); }
+        return list;
+    }
+
+    // Get enrolled courses for a customer from customer_enrollments JOIN courses
+    public List<Map<String, Object>> getEnrolledCourses(int customerId) {
+        List<Map<String, Object>> list = new ArrayList<>();
+        String sql = "SELECT c.course_code, c.course_name, c.price, c.level, c.duration_hours, "
+                + "c.total_lessons, c.instructor_name, c.status AS course_status, "
+                + "ce.enrollment_code, ce.enrolled_date, ce.original_price, ce.discount_amount, "
+                + "ce.final_amount, ce.payment_status, ce.learning_status, "
+                + "ce.progress_percentage, ce.lessons_completed "
+                + "FROM customer_enrollments ce "
+                + "INNER JOIN courses c ON c.course_id = ce.course_id "
+                + "WHERE ce.customer_id = ? "
+                + "ORDER BY ce.enrolled_date DESC";
+        try (PreparedStatement st = connection.prepareStatement(sql)) {
+            st.setInt(1, customerId);
             try (ResultSet rs = st.executeQuery()) {
-                if (rs.next()) {
-                    return rs.getInt(1);
+                while (rs.next()) {
+                    Map<String, Object> m = new HashMap<>();
+                    m.put("courseCode", rs.getString("course_code"));
+                    m.put("courseName", rs.getString("course_name"));
+                    m.put("price", rs.getBigDecimal("price"));
+                    m.put("level", rs.getString("level"));
+                    m.put("durationHours", rs.getObject("duration_hours"));
+                    m.put("totalLessons", rs.getObject("total_lessons"));
+                    m.put("instructorName", rs.getString("instructor_name"));
+                    m.put("courseStatus", rs.getString("course_status"));
+                    m.put("enrollmentCode", rs.getString("enrollment_code"));
+                    m.put("enrolledDate", rs.getObject("enrolled_date"));
+                    m.put("originalPrice", rs.getBigDecimal("original_price"));
+                    m.put("discountAmount", rs.getBigDecimal("discount_amount"));
+                    m.put("finalAmount", rs.getBigDecimal("final_amount"));
+                    m.put("paymentStatus", rs.getString("payment_status"));
+                    m.put("learningStatus", rs.getString("learning_status"));
+                    m.put("progressPercentage", rs.getInt("progress_percentage"));
+                    m.put("lessonsCompleted", rs.getInt("lessons_completed"));
+                    list.add(m);
                 }
             }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return 0;
+        } catch (SQLException e) { e.printStackTrace(); }
+        return list;
     }
 
     // Assign a Customer to a Sales user (set owner_id)

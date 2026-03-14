@@ -21,7 +21,7 @@ import jakarta.servlet.http.HttpSession;
 import model.Task;
 import model.Users;
 
-@WebServlet(name = "ManagerTaskListServlet", urlPatterns = { "/manager/task/list" })
+@WebServlet(name = "ManagerTaskListServlet", urlPatterns = {"/manager/task/list"})
 public class ManagerTaskListServlet extends HttpServlet {
 
     @Override
@@ -48,16 +48,16 @@ public class ManagerTaskListServlet extends HttpServlet {
         // ── View type: mặc định "team" (manager xem toàn bộ nhóm) ──────────
         String viewType = request.getParameter("view");
         if (viewType == null || viewType.isEmpty()) {
-            viewType = "team"; // ← ĐỔI: default = team, không phải personal
+            viewType = "personal"; // ← ĐỔI: default = team, không phải personal
         }
 
         // Filters
-        String statusFilter   = request.getParameter("status");
+        String statusFilter = request.getParameter("status");
         String priorityFilter = request.getParameter("priority");
         String employeeFilter = request.getParameter("employee");
-        String keyword        = request.getParameter("keyword");
-        String sortBy         = request.getParameter("sortBy");
-        String sortOrder      = request.getParameter("sortOrder");
+        String keyword = request.getParameter("keyword");
+        String sortBy = request.getParameter("sortBy");
+        String sortOrder = request.getParameter("sortOrder");
 
         // Pagination
         int page = 1, pageSize = 10;
@@ -65,16 +65,20 @@ public class ManagerTaskListServlet extends HttpServlet {
             String pageParam = request.getParameter("page");
             if (pageParam != null && !pageParam.isEmpty()) {
                 page = Integer.parseInt(pageParam);
-                if (page < 1) page = 1;
+                if (page < 1) {
+                    page = 1;
+                }
             }
-        } catch (NumberFormatException e) { page = 1; }
+        } catch (NumberFormatException e) {
+            page = 1;
+        }
         int offset = (page - 1) * pageSize;
 
         // ── Build team member list ──────────────────────────────────────────
-        List<Users> allUsers         = userDAO.getAllUsers();
-        List<Users> teamMembersList  = new ArrayList<>();
-        List<Integer> teamMemberIds  = new ArrayList<>(); // thành viên team (trừ manager)
-        List<Integer> allDeptIds     = new ArrayList<>(); // toàn bộ dept kể cả manager
+        List<Users> allUsers = userDAO.getAllUsers();
+        List<Users> teamMembersList = new ArrayList<>();
+        List<Integer> teamMemberIds = new ArrayList<>(); // thành viên team (trừ manager)
+        List<Integer> allDeptIds = new ArrayList<>(); // toàn bộ dept kể cả manager
 
         for (Users u : allUsers) {
             if (u.getDepartmentId() == currentUser.getDepartmentId()) {
@@ -117,7 +121,9 @@ public class ManagerTaskListServlet extends HttpServlet {
                         session.setAttribute("errorMessage", "Nhân viên không thuộc nhóm của bạn");
                         employeeFilter = null;
                     }
-                } catch (NumberFormatException e) { employeeFilter = null; }
+                } catch (NumberFormatException e) {
+                    employeeFilter = null;
+                }
             }
 
             if (!teamMemberIds.isEmpty()) {
@@ -149,7 +155,7 @@ public class ManagerTaskListServlet extends HttpServlet {
 
                 totalTasks = merged.size();
                 int fromIdx = Math.min(offset, merged.size());
-                int toIdx   = Math.min(fromIdx + pageSize, merged.size());
+                int toIdx = Math.min(fromIdx + pageSize, merged.size());
                 taskList = new ArrayList<>(merged.subList(fromIdx, toIdx));
             }
 
@@ -158,23 +164,27 @@ public class ManagerTaskListServlet extends HttpServlet {
 
         // ── Batch load related object names (tránh N+1) ─────────────────────
         // FIX: query bằng assigned_to — không cần filter created_by nữa
-        List<Integer> leadIds     = new ArrayList<>();
+        List<Integer> leadIds = new ArrayList<>();
         List<Integer> customerIds = new ArrayList<>();
         for (Task t : taskList) {
-            if ("LEAD".equals(t.getRelatedType()) && t.getRelatedId() != null)
+            if ("LEAD".equals(t.getRelatedType()) && t.getRelatedId() != null) {
                 leadIds.add(t.getRelatedId());
-            if ("CUSTOMER".equals(t.getRelatedType()) && t.getRelatedId() != null)
+            }
+            if ("CUSTOMER".equals(t.getRelatedType()) && t.getRelatedId() != null) {
                 customerIds.add(t.getRelatedId());
+            }
         }
 
-        Map<Integer, String> leadNameMap     = new LeadDAO().getLeadNameMap(leadIds);
+        Map<Integer, String> leadNameMap = new LeadDAO().getLeadNameMap(leadIds);
         Map<Integer, String> customerNameMap = new CustomerDAO().getCustomerNameMap(customerIds);
 
         Map<String, String> relatedObjectMap = new HashMap<>();
-        for (Map.Entry<Integer, String> e : leadNameMap.entrySet())
+        for (Map.Entry<Integer, String> e : leadNameMap.entrySet()) {
             relatedObjectMap.put("LEAD:" + e.getKey(), e.getValue());
-        for (Map.Entry<Integer, String> e : customerNameMap.entrySet())
+        }
+        for (Map.Entry<Integer, String> e : customerNameMap.entrySet()) {
             relatedObjectMap.put("CUSTOMER:" + e.getKey(), e.getValue());
+        }
 
         // ── Statistics (overdue, in-progress, completed today) ───────────────
         // Đếm task quá hạn trong team để hiển thị banner cảnh báo
@@ -191,29 +201,29 @@ public class ManagerTaskListServlet extends HttpServlet {
 
         int totalPages = (totalTasks == 0) ? 1 : (int) Math.ceil((double) totalTasks / pageSize);
 
-        request.setAttribute("relatedObjectMap",  relatedObjectMap);
-        request.setAttribute("groupMembersMap",   groupMembersMap);
-        request.setAttribute("taskList",          taskList);
-        request.setAttribute("allUsers",          allUsers);
-        request.setAttribute("viewType",          viewType);
-        request.setAttribute("statusFilter",      statusFilter);
-        request.setAttribute("priorityFilter",    priorityFilter);
-        request.setAttribute("employeeFilter",    employeeFilter);
-        request.setAttribute("keyword",           keyword);
-        request.setAttribute("sortBy",            sortBy);
-        request.setAttribute("sortOrder",         sortOrder);
-        request.setAttribute("currentPage",       page);
-        request.setAttribute("totalPages",        totalPages);
-        request.setAttribute("totalTasks",        totalTasks);
-        request.setAttribute("overdueCount",      overdueCount);
-        request.setAttribute("pageSize",          pageSize);
-        request.setAttribute("taskStatusValues",  TaskStatus.values());
-        request.setAttribute("priorityValues",    Priority.values());
+        request.setAttribute("relatedObjectMap", relatedObjectMap);
+        request.setAttribute("groupMembersMap", groupMembersMap);
+        request.setAttribute("taskList", taskList);
+        request.setAttribute("allUsers", allUsers);
+        request.setAttribute("viewType", viewType);
+        request.setAttribute("statusFilter", statusFilter);
+        request.setAttribute("priorityFilter", priorityFilter);
+        request.setAttribute("employeeFilter", employeeFilter);
+        request.setAttribute("keyword", keyword);
+        request.setAttribute("sortBy", sortBy);
+        request.setAttribute("sortOrder", sortOrder);
+        request.setAttribute("currentPage", page);
+        request.setAttribute("totalPages", totalPages);
+        request.setAttribute("totalTasks", totalTasks);
+        request.setAttribute("overdueCount", overdueCount);
+        request.setAttribute("pageSize", pageSize);
+        request.setAttribute("taskStatusValues", TaskStatus.values());
+        request.setAttribute("priorityValues", Priority.values());
 
-        request.setAttribute("ACTIVE_MENU",  "team".equals(viewType) ? "TASK_TEAM_LIST" : "TASK_MY_LIST");
-        request.setAttribute("pageTitle",    "Quản lý Công việc");
+        request.setAttribute("ACTIVE_MENU", "team".equals(viewType) ? "TASK_TEAM_LIST" : "TASK_MY_LIST");
+        request.setAttribute("pageTitle", "Quản lý Công việc");
         request.setAttribute("CONTENT_PAGE", "/view/manager/task/task-list.jsp");
         request.getRequestDispatcher("/view/manager/layout/layout-manager.jsp")
-               .forward(request, response);
+                .forward(request, response);
     }
 }

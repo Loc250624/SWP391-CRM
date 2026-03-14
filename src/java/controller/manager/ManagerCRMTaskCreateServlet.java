@@ -80,8 +80,8 @@ public class ManagerCRMTaskCreateServlet extends HttpServlet {
             response.sendRedirect(redirectTo); return;
         }
 
-        int departmentId = currentUser.getDepartmentId();
-        List<Users> teamMembers = userDAO.getUsersByDepartment(departmentId);
+        // Lấy danh sách nhân viên SALES để validate assignee
+        List<Users> teamMembers = userDAO.getUsersByRoleCode("SALES");
 
         // ── Validate Lead/Customer: exists, in scope, not already assigned ─
         LeadDAO     leadDAO     = new LeadDAO();
@@ -97,10 +97,7 @@ public class ManagerCRMTaskCreateServlet extends HttpServlet {
                 session.setAttribute("errorMessage", "Lead này đã được giao rồi, không thể giao lại");
                 response.sendRedirect(redirectTo); return;
             }
-            if (!isInDeptScope(lead.getCreatedBy(), currentUser.getUserId(), teamMembers)) {
-                session.setAttribute("errorMessage", "Lead này không thuộc phạm vi quản lý của bạn");
-                response.sendRedirect(redirectTo); return;
-            }
+            // Lead chưa giao (assigned_to = NULL) thì manager nào cũng được phép giao việc
         } else {
             Customer customer = customerDAO.getCustomerById(relatedId);
             if (customer == null) {
@@ -111,10 +108,7 @@ public class ManagerCRMTaskCreateServlet extends HttpServlet {
                 session.setAttribute("errorMessage", "Khách hàng này đã được giao rồi, không thể giao lại");
                 response.sendRedirect(redirectTo); return;
             }
-            if (!isInDeptScope(customer.getCreatedBy(), currentUser.getUserId(), teamMembers)) {
-                session.setAttribute("errorMessage", "Khách hàng này không thuộc phạm vi quản lý của bạn");
-                response.sendRedirect(redirectTo); return;
-            }
+            // Customer chưa giao (owner_id = NULL) thì manager nào cũng được phép giao việc
         }
 
         // ── Parse priority and due date ────────────────────────────────────
@@ -161,7 +155,7 @@ public class ManagerCRMTaskCreateServlet extends HttpServlet {
             try {
                 int aId = Integer.parseInt(assignedToStr.trim());
                 if (!isValidAssignee(aId, currentUser.getUserId(), teamMembers)) {
-                    session.setAttribute("errorMessage", "Nhân viên không thuộc phòng ban của bạn");
+                    session.setAttribute("errorMessage", "Nhân viên không có role SALES");
                     response.sendRedirect(redirectTo); return;
                 }
                 assigneeIds.add(aId);

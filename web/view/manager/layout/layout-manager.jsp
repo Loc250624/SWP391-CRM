@@ -23,8 +23,8 @@
         <!-- Manager Sidebar -->
         <jsp:include page="/view/manager/layout/sidebar-manager.jsp"/>
 
-        <!-- Shared Header -->
-        <jsp:include page="/view/sale/layout/header.jsp"/>
+        <!-- Manager Header -->
+        <jsp:include page="/view/manager/layout/header-manager.jsp"/>
 
         <!-- Main Content Wrapper -->
         <main style="margin-left: 260px; margin-top: 64px; min-height: calc(100vh - 64px);">

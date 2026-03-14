@@ -1355,6 +1355,24 @@ public class TaskDAO extends DBContext {
         return tasks;
     }
 
+    // ── Get tasks related to a specific lead (via task_relations) ──
+    public List<Task> getTasksByRelatedLead(int leadId) {
+        List<Task> tasks = new ArrayList<>();
+        String sql = BASE_SELECT +
+            "INNER JOIN task_relations tr2 ON tr2.task_id = t.task_id " +
+            "WHERE tr2.related_type = 'LEAD' AND tr2.related_id = ? " +
+            "AND " + NOT_DELETED + " ORDER BY t.created_at DESC";
+        try (PreparedStatement st = connection.prepareStatement(sql)) {
+            st.setInt(1, leadId);
+            try (ResultSet rs = st.executeQuery()) {
+                while (rs.next()) tasks.add(mapResultSetToTask(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return tasks;
+    }
+
     // ── Check if a related object already has an active task ──
     public boolean hasActiveTaskForRelated(String relatedType, int relatedId) {
         String sql = "SELECT COUNT(*) AS cnt FROM tasks t " +

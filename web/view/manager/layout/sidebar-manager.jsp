@@ -33,55 +33,11 @@
                         <span>Dashboard</span>
                     </a>
                 </li>
-            </ul>
-        </div>
-
-        <!-- Tasks -->
-        <div class="mb-1">
-            <div class="px-3 py-2">
-                <small class="text-uppercase text-muted fw-semibold" style="font-size: 10px; letter-spacing: 0.5px;">Công việc</small>
-            </div>
-            <ul class="nav flex-column px-2">
-                <li class="nav-item mb-1">
-                    <a href="${pageContext.request.contextPath}/manager/task/list"
-                       class="nav-link rounded-2 d-flex align-items-center gap-2 py-2 px-3 ${ACTIVE_MENU == 'TASK_MY_LIST' ? 'active bg-success text-white' : 'text-body-secondary'}">
-                        <i class="bi bi-person-check"></i>
-                        <span>Quản lý task</span>
-                    </a>
-                </li>
-                <li class="nav-item mb-1">
-                    <a href="${pageContext.request.contextPath}/manager/task/team"
-                       class="nav-link rounded-2 d-flex align-items-center gap-2 py-2 px-3 ${ACTIVE_MENU == 'TASK_TEAM_LIST' ? 'active bg-success text-white' : 'text-body-secondary'}">
-                        <i class="bi bi-people"></i>
-                        <span>Nhóm</span>
-                    </a>
-                </li>
-                <li class="nav-item mb-1">
-                    <a href="${pageContext.request.contextPath}/manager/task/form?action=create"
-                       class="nav-link rounded-2 d-flex align-items-center gap-2 py-2 px-3 ${ACTIVE_MENU == 'TASK_FORM' ? 'active bg-success text-white' : 'text-body-secondary'}">
-                        <i class="bi bi-plus-circle"></i>
-                        <span>Tạo công việc</span>
-                    </a>
-                </li>
-                <li class="nav-item mb-1">
-                    <a href="${pageContext.request.contextPath}/manager/task/calendar"
-                       class="nav-link rounded-2 d-flex align-items-center gap-2 py-2 px-3 ${ACTIVE_MENU == 'TASK_CALENDAR' ? 'active bg-success text-white' : 'text-body-secondary'}">
-                        <i class="bi bi-calendar3"></i>
-                        <span>Lịch công việc</span>
-                    </a>
-                </li>
                 <li class="nav-item mb-1">
                     <a href="${pageContext.request.contextPath}/manager/task/report"
                        class="nav-link rounded-2 d-flex align-items-center gap-2 py-2 px-3 ${ACTIVE_MENU == 'TASK_REPORT' ? 'active bg-success text-white' : 'text-body-secondary'}">
                         <i class="bi bi-bar-chart-line"></i>
                         <span>Báo cáo</span>
-                    </a>
-                </li>
-                <li class="nav-item mb-1">
-                    <a href="${pageContext.request.contextPath}/manager/task/all"
-                       class="nav-link rounded-2 d-flex align-items-center gap-2 py-2 px-3 ${ACTIVE_MENU == 'TASK_ALL' ? 'active bg-success text-white' : 'text-body-secondary'}">
-                        <i class="bi bi-grid-3x3-gap"></i>
-                        <span>Tất cả công việc</span>
                     </a>
                 </li>
                 <li class="nav-item mb-1">
@@ -100,22 +56,89 @@
                 </li>
             </ul>
         </div>
-
-        <!-- CRM -->
+        <!-- Tasks -->
         <div class="mb-1">
             <div class="px-3 py-2">
-                <small class="text-uppercase text-muted fw-semibold" style="font-size: 10px; letter-spacing: 0.5px;">CRM</small>
+                <small class="text-uppercase text-muted fw-semibold" style="font-size: 10px; letter-spacing: 0.5px;">Công việc</small>
             </div>
             <ul class="nav flex-column px-2">
+
                 <li class="nav-item mb-1">
-                    <a href="${pageContext.request.contextPath}/manager/crm/pool"
-                       class="nav-link rounded-2 d-flex align-items-center gap-2 py-2 px-3 ${ACTIVE_MENU == 'CRM_POOL' ? 'active bg-success text-white' : 'text-body-secondary'}">
-                        <i class="bi bi-inbox-fill"></i>
-                        <span>CRM Pool</span>
+                    <a href="${pageContext.request.contextPath}/manager/crm/leads"
+                       class="nav-link rounded-2 d-flex align-items-center gap-2 py-2 px-3 ${ACTIVE_MENU == 'CRM_LEADS' ? 'active bg-success text-white' : 'text-body-secondary'}">
+                        <i class="bi bi-person-lines-fill"></i>
+                        <span>Quản lý Lead</span>
+                    </a>
+                </li>
+
+                <li class="nav-item mb-1">
+                    <a href="${pageContext.request.contextPath}/manager/crm/customers"
+                       class="nav-link rounded-2 d-flex align-items-center gap-2 py-2 px-3 ${ACTIVE_MENU == 'CRM_CUSTOMERS' ? 'active bg-success text-white' : 'text-body-secondary'}">
+                        <i class="bi bi-people"></i>
+                        <span>Quản lý Customer</span>
+                    </a>
+                </li>
+
+                <li class="nav-item mb-1">
+                    <a href="${pageContext.request.contextPath}/manager/task/list"
+                       class="nav-link rounded-2 d-flex align-items-center gap-2 py-2 px-3 ${ACTIVE_MENU == 'TASK_MY_LIST' || ACTIVE_MENU == 'TASK_TEAM_LIST' ? 'active bg-success text-white' : 'text-body-secondary'}">
+                        <i class="bi bi-person-check"></i>
+                        <span>Quản lý task</span>
+                    </a>
+                </li>
+                <li class="nav-item mb-1">
+                    <a href="${pageContext.request.contextPath}/manager/task/form?action=create"
+                       class="nav-link rounded-2 d-flex align-items-center gap-2 py-2 px-3 ${ACTIVE_MENU == 'TASK_FORM' ? 'active bg-success text-white' : 'text-body-secondary'}">
+                        <i class="bi bi-plus-circle"></i>
+                        <span>Tạo công việc</span>
+                    </a>
+                </li>
+                <li class="nav-item mb-1">
+                    <a href="${pageContext.request.contextPath}/manager/task/calendar"
+                       class="nav-link rounded-2 d-flex align-items-center gap-2 py-2 px-3 ${ACTIVE_MENU == 'TASK_CALENDAR' ? 'active bg-success text-white' : 'text-body-secondary'}">
+                        <i class="bi bi-calendar3"></i>
+                        <span>Lịch công việc</span>
                     </a>
                 </li>
             </ul>
         </div>
+
+        <div class="mb-1">
+            <div class="px-3 py-2">
+                <small class="text-uppercase text-muted fw-semibold" style="font-size: 10px; letter-spacing: 0.5px;">Config</small>
+            </div>
+            <ul class="nav flex-column px-2">
+                <li class="nav-item mb-1">
+                    <a href=""
+                       class="nav-link rounded-2 d-flex align-items-center gap-2 py-2 px-3 ${ACTIVE_MENU == 'PERFORMANCE' ? 'active bg-success text-white' : 'text-body-secondary'}">
+                        <i class="bi bi-award"></i>
+                        <span>Quản lý email</span>
+                    </a>
+                </li>
+                 <li class="nav-item mb-1">
+                    <a href=""
+                       class="nav-link rounded-2 d-flex align-items-center gap-2 py-2 px-3 ${ACTIVE_MENU == 'PERFORMANCE' ? 'active bg-success text-white' : 'text-body-secondary'}">
+                        <i class="bi bi-award"></i>
+                        <span>Quản lý thông báo</span>
+                    </a>
+                </li>
+                <li class="nav-item mb-1">
+                    <a href=""
+                       class="nav-link rounded-2 d-flex align-items-center gap-2 py-2 px-3 ${ACTIVE_MENU == 'PERFORMANCE' ? 'active bg-success text-white' : 'text-body-secondary'}">
+                        <i class="bi bi-award"></i>
+                        <span>Log activities</span>
+                    </a>
+                </li>
+                 <li class="nav-item mb-1">
+                    <a href=""
+                       class="nav-link rounded-2 d-flex align-items-center gap-2 py-2 px-3 ${ACTIVE_MENU == 'PERFORMANCE' ? 'active bg-success text-white' : 'text-body-secondary'}">
+                        <i class="bi bi-award"></i>
+                        <span>Audit Logs</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+
 
         <!-- Analytics -->
         <div class="mb-1">
@@ -154,12 +177,14 @@
 
 <!-- Sidebar scroll persistence -->
 <script>
-    (function() {
+    (function () {
         var nav = document.getElementById('sidebarNav');
-        if (!nav) return;
+        if (!nav)
+            return;
         var saved = sessionStorage.getItem('mgrSidebarScroll');
-        if (saved) nav.scrollTop = parseInt(saved, 10);
-        nav.addEventListener('scroll', function() {
+        if (saved)
+            nav.scrollTop = parseInt(saved, 10);
+        nav.addEventListener('scroll', function () {
             sessionStorage.setItem('mgrSidebarScroll', nav.scrollTop);
         });
     })();
