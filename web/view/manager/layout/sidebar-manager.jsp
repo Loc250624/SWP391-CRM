@@ -116,9 +116,9 @@
                     </a>
                 </li>
                  <li class="nav-item mb-1">
-                    <a href=""
-                       class="nav-link rounded-2 d-flex align-items-center gap-2 py-2 px-3 ${ACTIVE_MENU == 'PERFORMANCE' ? 'active bg-success text-white' : 'text-body-secondary'}">
-                        <i class="bi bi-award"></i>
+                    <a href="${pageContext.request.contextPath}/manager/notifications"
+                       class="nav-link rounded-2 d-flex align-items-center gap-2 py-2 px-3 ${ACTIVE_MENU == 'NOTIFICATION_MANAGE' ? 'active bg-success text-white' : 'text-body-secondary'}">
+                        <i class="bi bi-bell"></i>
                         <span>Quản lý thông báo</span>
                     </a>
                 </li>

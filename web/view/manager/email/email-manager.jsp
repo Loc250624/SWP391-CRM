@@ -11,9 +11,9 @@
             <button class="btn btn-outline-secondary">
                 <i class="bi bi-upload me-2"></i>Import danh sách
             </button>
-            <button class="btn btn-primary">
+            <a href="${pageContext.request.contextPath}/manager/email/send" class="btn btn-primary">
                 <i class="bi bi-send me-2"></i>Gửi email mới
-            </button>
+            </a>
         </div>
     </div>
 
