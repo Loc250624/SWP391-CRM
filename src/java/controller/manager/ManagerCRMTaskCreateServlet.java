@@ -2,6 +2,7 @@ package controller.manager;
 
 import dao.CustomerDAO;
 import dao.LeadDAO;
+import dao.NotificationDAO;
 import dao.TaskAssigneeDAO;
 import dao.TaskDAO;
 import dao.UserDAO;
@@ -216,6 +217,33 @@ public class ManagerCRMTaskCreateServlet extends HttpServlet {
             leadDAO.updateLeadStatus(relatedId, "Assigned");
         } else {
             customerDAO.updateCustomerOwnerId(relatedId, primaryAssignee);
+        }
+
+        // ── Gui thong bao cho tat ca assignees ──────────────────────
+        try {
+            NotificationDAO notifDAO = new NotificationDAO();
+            String taskUrl = "/manager/task/detail?id=" + task.getTaskId();
+            String notifSummary = task.getTaskCode() != null
+                    ? task.getTaskCode() + ": " + title.trim()
+                    : title.trim();
+
+            for (int assigneeId : assigneeIds) {
+                notifDAO.createAndSend(
+                        "Bạn được giao công việc mới",
+                        notifSummary,
+                        "TASK_ASSIGNED",
+                        "SYSTEM",
+                        "HIGH".equals(priorityStr) ? "HIGH" : "NORMAL",
+                        "TASK",
+                        task.getTaskId(),
+                        taskUrl,
+                        currentUser.getUserId(),
+                        false,
+                        assigneeId
+                );
+            }
+        } catch (Exception notifEx) {
+            notifEx.printStackTrace();
         }
 
         // Build success message

@@ -64,44 +64,26 @@
             <div class="vr mx-2 d-none d-md-block"></div>
 
             <!-- Notifications -->
-            <div class="dropdown">
+            <div class="dropdown" id="notifDropdown">
                 <button class="btn btn-light btn-sm position-relative" type="button"
-                        data-bs-toggle="dropdown" aria-expanded="false">
+                        data-bs-toggle="dropdown" aria-expanded="false" onclick="loadNotifications()">
                     <i class="bi bi-bell"></i>
                     <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 10px;"
                           id="notiCount"></span>
                 </button>
-                <ul class="dropdown-menu dropdown-menu-end" style="width: 340px;">
+                <ul class="dropdown-menu dropdown-menu-end shadow" style="width: 370px; max-height: 480px; overflow-y: auto;">
                     <li class="dropdown-header d-flex justify-content-between align-items-center">
                         <span class="fw-semibold">Thông báo</span>
-                        <a href="#" class="text-decoration-none small">Đánh dấu đã đọc</a>
+                        <a href="javascript:void(0)" class="text-decoration-none small" onclick="markAllRead()">Đánh dấu đã đọc</a>
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li id="notifList">
+                        <div class="text-center py-3 text-muted small">Đang tải...</div>
                     </li>
                     <li><hr class="dropdown-divider"></li>
                     <li>
-                        <a class="dropdown-item d-flex gap-2 py-2" href="${pageContext.request.contextPath}/manager/task/list?view=team">
-                            <div class="bg-warning bg-opacity-10 rounded p-2">
-                                <i class="bi bi-exclamation-triangle text-warning"></i>
-                            </div>
-                            <div class="flex-grow-1">
-                                <div class="small fw-medium">Có task sắp đến hạn</div>
-                                <div class="text-muted" style="font-size: 11px;">Kiểm tra danh sách task</div>
-                            </div>
-                        </a>
-                    </li>
-                    <li>
-                        <a class="dropdown-item d-flex gap-2 py-2" href="${pageContext.request.contextPath}/manager/crm/leads">
-                            <div class="bg-info bg-opacity-10 rounded p-2">
-                                <i class="bi bi-person-plus text-info"></i>
-                            </div>
-                            <div class="flex-grow-1">
-                                <div class="small fw-medium">Lead mới cần giao</div>
-                                <div class="text-muted" style="font-size: 11px;">Xem danh sách lead chưa giao</div>
-                            </div>
-                        </a>
-                    </li>
-                    <li><hr class="dropdown-divider"></li>
-                    <li>
-                        <a class="dropdown-item text-center small text-primary" href="#">
+                        <a class="dropdown-item text-center small text-primary"
+                           href="${pageContext.request.contextPath}/manager/notifications">
                             Xem tất cả thông báo
                         </a>
                     </li>
