@@ -186,6 +186,11 @@ public class ManagerCRMTaskCreateServlet extends HttpServlet {
             response.sendRedirect(redirectTo); return;
         }
 
+        // Fix: insertTask() hardcodes first assignee taskStatus=0 (PENDING)
+        // Update to IN_PROGRESS to match the task status
+        TaskAssigneeDAO taDao0 = new TaskAssigneeDAO();
+        taDao0.updateTaskStatus(task.getTaskId(), assigneeIds.get(0), TaskStatus.IN_PROGRESS.ordinal());
+
         // Add remaining assignees for GROUP
         if ("GROUP".equals(assignType) && assigneeIds.size() >= 2) {
             TaskAssigneeDAO taDao = new TaskAssigneeDAO();
@@ -208,6 +213,7 @@ public class ManagerCRMTaskCreateServlet extends HttpServlet {
 
         if ("LEAD".equals(relatedType)) {
             leadDAO.updateLeadAssignedTo(relatedId, primaryAssignee);
+            leadDAO.updateLeadStatus(relatedId, "Assigned");
         } else {
             customerDAO.updateCustomerOwnerId(relatedId, primaryAssignee);
         }

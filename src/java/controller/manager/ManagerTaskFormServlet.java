@@ -114,11 +114,13 @@ public class ManagerTaskFormServlet extends HttpServlet {
         request.setAttribute("pickerLeads", leadDAO.getUnassignedLeadsForPicker());
         request.setAttribute("pickerCustomers", customerDAO.getUnassignedCustomersForPicker());
 
-        // All users with SALES role for assignee picker
+        // Users by role for assignee picker
         List<Users> salesUsers = userDAO.getUsersByRoleCode("SALES");
+        List<Users> supportUsers = userDAO.getUsersByRoleCode("SUPPORT");
 
         request.setAttribute("task",             task);
         request.setAttribute("allUsers",         salesUsers);
+        request.setAttribute("supportUsers",     supportUsers);
         request.setAttribute("salesForAssign",   salesForAssign);
         request.setAttribute("leads",            leadDAO.getAllLeads());
         request.setAttribute("customers",        customerDAO.getAllCustomers());
@@ -283,22 +285,13 @@ public class ManagerTaskFormServlet extends HttpServlet {
                     for (String s : groupArr) {
                         try {
                             int gId = Integer.parseInt(s.trim());
-                            if (isInTeam(gId, team) && !mainIds.contains(gId)) mainIds.add(gId);
+                            if (userDAO.getUserById(gId) != null && !mainIds.contains(gId))
+                                mainIds.add(gId);
                         } catch (NumberFormatException ignored) {}
                     }
                     if (mainIds.size() < 2) {
                         session.setAttribute("errorMessage", "Nhóm cần ít nhất 2 người");
                         response.sendRedirect(errorBase); return;
-                    }
-                    String[] supportArr = request.getParameterValues("supportMembers");
-                    if (supportArr != null) {
-                        for (String s : supportArr) {
-                            try {
-                                int sId = Integer.parseInt(s.trim());
-                                if (isInTeam(sId, team) && !mainIds.contains(sId)
-                                        && !supportIds.contains(sId)) supportIds.add(sId);
-                            } catch (NumberFormatException ignored) {}
-                        }
                     }
                 } else {
                     String aStr = request.getParameter("assignedTo");
@@ -324,12 +317,19 @@ public class ManagerTaskFormServlet extends HttpServlet {
                 createdTask.setAssignedTo(mainIds.get(0));
                 createdTask.setDueDate(dueDate);
                 createdTask.setPriority(priority);
-                createdTask.setStatus(TaskStatus.PENDING.ordinal());
+                createdTask.setStatus(TaskStatus.IN_PROGRESS.ordinal());
                 createdTask.setRelatedType(relatedType);
                 createdTask.setRelatedId(relatedId);
                 createdTask.setCreatedBy(currentUser.getUserId());
                 createdTask.setReminderAt(dueDate.minusHours(24));
                 success = taskDAO.insertTask(createdTask);
+
+                if (success && createdTask.getTaskId() != null) {
+                    // Fix: insertTask() hardcodes first assignee taskStatus=0 (PENDING)
+                    // Update to IN_PROGRESS to match the task status
+                    TaskAssigneeDAO taDao = new TaskAssigneeDAO();
+                    taDao.updateTaskStatus(createdTask.getTaskId(), mainIds.get(0), TaskStatus.IN_PROGRESS.ordinal());
+                }
 
                 if ("GROUP".equals(assignType) && success && createdTask.getTaskId() != null) {
                     TaskAssigneeDAO taDao = new TaskAssigneeDAO();
@@ -338,7 +338,7 @@ public class ManagerTaskFormServlet extends HttpServlet {
                         ta.setTaskId(createdTask.getTaskId());
                         ta.setUserId(mainIds.get(i));
                         ta.setRole("ASSIGNEE");
-                        ta.setTaskStatus(0);
+                        ta.setTaskStatus(TaskStatus.IN_PROGRESS.ordinal());
                         ta.setProgress(0);
                         ta.setAssignedBy(currentUser.getUserId());
                         ta.setAssignedAt(LocalDateTime.now());
@@ -349,7 +349,7 @@ public class ManagerTaskFormServlet extends HttpServlet {
                         ta.setTaskId(createdTask.getTaskId());
                         ta.setUserId(sId);
                         ta.setRole("SUPPORT");
-                        ta.setTaskStatus(0);
+                        ta.setTaskStatus(TaskStatus.IN_PROGRESS.ordinal());
                         ta.setProgress(0);
                         ta.setAssignedBy(currentUser.getUserId());
                         ta.setAssignedAt(LocalDateTime.now());
@@ -400,8 +400,10 @@ public class ManagerTaskFormServlet extends HttpServlet {
                     if (relatedId != null) {
                         if ("LEAD".equals(relatedType)) {
                             Lead lead = ldDao.getLeadById(relatedId);
-                            if (lead != null && lead.getAssignedTo() == null)
+                            if (lead != null && lead.getAssignedTo() == null) {
                                 ldDao.updateLeadAssignedTo(relatedId, primary);
+                                ldDao.updateLeadStatus(relatedId, "Assigned");
+                            }
                         } else if ("CUSTOMER".equals(relatedType)) {
                             Customer c = cdDao.getCustomerById(relatedId);
                             if (c != null && c.getOwnerId() == null)
@@ -409,11 +411,13 @@ public class ManagerTaskFormServlet extends HttpServlet {
                         }
                     }
 
-                    // Auto-assign extra leads
+                    // Auto-assign extra leads + update status to Assigned
                     for (int extraLid : extraLeadIds) {
                         Lead lead = ldDao.getLeadById(extraLid);
-                        if (lead != null && lead.getAssignedTo() == null)
+                        if (lead != null && lead.getAssignedTo() == null) {
                             ldDao.updateLeadAssignedTo(extraLid, primary);
+                            ldDao.updateLeadStatus(extraLid, "Assigned");
+                        }
                     }
 
                     // Auto-assign extra customers
@@ -427,7 +431,7 @@ public class ManagerTaskFormServlet extends HttpServlet {
                 String who = (mainIds.size() + supportIds.size()) > 1
                         ? (mainIds.size() + supportIds.size()) + " nhân viên" : "1 nhân viên";
                 session.setAttribute("successMessage",
-                    "Đã tạo công việc cho " + who + ". Trạng thái: Chờ xử lý — Sale xác nhận nhận việc sẽ chuyển sang Đang thực hiện.");
+                    "Đã tạo và giao công việc cho " + who + ". Trạng thái: Đang thực hiện.");
                 response.sendRedirect(request.getContextPath() + "/manager/task/list?view=team");
 
 
