@@ -17,33 +17,27 @@
             <h3><i class="bi bi-file-earmark-text me-2"></i>Chi tiết Công việc</h3>
             <div class="d-flex gap-2 flex-wrap">
                 <c:if test="${task.statusName != 'COMPLETED' && task.statusName != 'CANCELLED'}">
-                    <a href="${pageContext.request.contextPath}/manager/task/status?id=${task.taskId}"
-                       class="btn btn-success btn-sm">
-                        <i class="bi bi-arrow-repeat me-1"></i>Trạng thái
-                    </a>
-                    <a href="${pageContext.request.contextPath}/manager/task/assign?id=${task.taskId}"
-                       class="btn btn-outline-primary btn-sm">
-                        <i class="bi bi-person-check me-1"></i>Gán lại
-                    </a>
+                    <form method="post"
+                          action="${pageContext.request.contextPath}/manager/task/status"
+                          class="d-inline"
+                          onsubmit="return confirm('Bạn có chắc chắn muốn đóng công việc này?');">
+                        <input type="hidden" name="taskId" value="${task.taskId}">
+                        <input type="hidden" name="status" value="COMPLETED">
+                        <button type="submit" class="btn btn-success btn-sm">
+                            <i class="bi bi-check-circle me-1"></i>Đóng công việc
+                        </button>
+                    </form>
                 </c:if>
-                <a href="${pageContext.request.contextPath}/manager/task/recurring?id=${task.taskId}"
-                   class="btn btn-outline-info btn-sm">
-                    <i class="bi bi-arrow-clockwise me-1"></i>Lặp lại
-                </a>
-                <a href="${pageContext.request.contextPath}/manager/task/form?action=edit&id=${task.taskId}"
-                   class="btn btn-outline-secondary btn-sm">
-                    <i class="bi bi-pencil me-1"></i>Sửa
-                </a>
-                <%-- FIX: Delete via POST form to prevent CSRF / accidental GET deletion --%>
-                <form method="post"
-                      action="${pageContext.request.contextPath}/manager/task/delete"
-                      class="d-inline"
-                      onsubmit="return confirm('Bạn có chắc chắn muốn xóa công việc này?');">
-                    <input type="hidden" name="id" value="${task.taskId}">
-                    <button type="submit" class="btn btn-outline-danger btn-sm">
-                        <i class="bi bi-trash me-1"></i>Xóa
-                    </button>
-                </form>
+                <c:if test="${task.statusName == 'COMPLETED'}">
+                    <span class="badge bg-success fs-6 py-2 px-3">
+                        <i class="bi bi-check-circle me-1"></i>Đã hoàn thành
+                    </span>
+                </c:if>
+                <c:if test="${task.statusName == 'CANCELLED'}">
+                    <span class="badge bg-dark fs-6 py-2 px-3">
+                        <i class="bi bi-x-circle me-1"></i>Đã hủy
+                    </span>
+                </c:if>
             </div>
         </div>
     </div>
@@ -190,272 +184,79 @@
                 </div>
             </div>
 
-            <!-- Related Objects -->
-            <c:choose>
-                <%-- Multiple related objects (group task) --%>
-                <c:when test="${hasMultipleRelations}">
-                    <div class="card mb-4">
-                        <div class="card-header bg-white">
-                            <h6 class="mb-0">
-                                <i class="bi bi-link-45deg me-2"></i>Đối tượng liên kết
-                                <span class="badge bg-primary ms-1">${fn:length(relatedLeads) + fn:length(relatedCustomers) + fn:length(relatedOpportunities)}</span>
-                            </h6>
-                        </div>
-                        <div class="card-body p-0">
-                            <c:if test="${not empty relatedLeads}">
-                                <div class="px-3 pt-3 pb-1">
-                                    <small class="text-muted fw-semibold text-uppercase">Lead (${fn:length(relatedLeads)})</small>
-                                </div>
-                                <div class="table-responsive">
-                                    <table class="table table-sm table-hover mb-0">
-                                        <thead class="table-light">
-                                            <tr>
-                                                <th>Mã</th>
-                                                <th>Họ tên</th>
-                                                <th>SĐT</th>
-                                                <th>Email</th>
-                                                <th>Trạng thái</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <c:forEach var="ld" items="${relatedLeads}">
-                                                <tr>
-                                                    <td><span class="badge bg-secondary">${ld.leadCode}</span></td>
-                                                    <td><a href="${pageContext.request.contextPath}/manager/lead/detail?id=${ld.leadId}" class="text-decoration-none">${ld.fullName}</a></td>
-                                                    <td><small>${not empty ld.phone ? ld.phone : '—'}</small></td>
-                                                    <td><small>${not empty ld.email ? ld.email : '—'}</small></td>
-                                                    <td>
-                                                        <c:choose>
-                                                            <c:when test="${ld.status == 'New'}"><span class="badge bg-secondary">New</span></c:when>
-                                                            <c:when test="${ld.status == 'Assigned'}"><span class="badge bg-primary">Assigned</span></c:when>
-                                                            <c:when test="${ld.status == 'Working'}"><span class="badge bg-info">Working</span></c:when>
-                                                            <c:when test="${ld.status == 'Converted'}"><span class="badge bg-success">Converted</span></c:when>
-                                                            <c:otherwise><span class="badge bg-secondary">${ld.status}</span></c:otherwise>
-                                                        </c:choose>
-                                                    </td>
-                                                </tr>
-                                            </c:forEach>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </c:if>
-                            <c:if test="${not empty relatedCustomers}">
-                                <div class="px-3 pt-3 pb-1">
-                                    <small class="text-muted fw-semibold text-uppercase">Khách hàng (${fn:length(relatedCustomers)})</small>
-                                </div>
-                                <div class="table-responsive">
-                                    <table class="table table-sm table-hover mb-0">
-                                        <thead class="table-light">
-                                            <tr>
-                                                <th>Mã</th>
-                                                <th>Họ tên</th>
-                                                <th>SĐT</th>
-                                                <th>Email</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <c:forEach var="cust" items="${relatedCustomers}">
-                                                <tr>
-                                                    <td><span class="badge bg-success">${cust.customerCode}</span></td>
-                                                    <td><a href="${pageContext.request.contextPath}/manager/customer/detail?id=${cust.customerId}" class="text-decoration-none">${cust.fullName}</a></td>
-                                                    <td><small>${not empty cust.phone ? cust.phone : '—'}</small></td>
-                                                    <td><small>${not empty cust.email ? cust.email : '—'}</small></td>
-                                                </tr>
-                                            </c:forEach>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </c:if>
-                            <c:if test="${not empty relatedOpportunities}">
-                                <div class="px-3 pt-3 pb-1">
-                                    <small class="text-muted fw-semibold text-uppercase">Opportunity (${fn:length(relatedOpportunities)})</small>
-                                </div>
-                                <div class="table-responsive">
-                                    <table class="table table-sm table-hover mb-0">
-                                        <thead class="table-light">
-                                            <tr>
-                                                <th>Mã</th>
-                                                <th>Tên</th>
-                                                <th>Trạng thái</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <c:forEach var="opp" items="${relatedOpportunities}">
-                                                <tr>
-                                                    <td><span class="badge bg-info">${opp.opportunityCode}</span></td>
-                                                    <td><a href="${pageContext.request.contextPath}/manager/opportunity/detail?id=${opp.opportunityId}" class="text-decoration-none">${opp.opportunityName}</a></td>
-                                                    <td><span class="badge bg-secondary">${opp.status}</span></td>
-                                                </tr>
-                                            </c:forEach>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </c:if>
-                        </div>
+            <!-- Related Objects: Compact cards + Modal popup -->
+            <c:if test="${not empty relatedLeads || not empty relatedCustomers || relatedObject != null}">
+                <div class="card mb-4">
+                    <div class="card-header bg-white">
+                        <h6 class="mb-0"><i class="bi bi-link-45deg me-2"></i>Đối tượng liên kết</h6>
                     </div>
-                </c:when>
-                <%-- Single related object --%>
-                <c:when test="${relatedObject != null}">
-                    <div class="card mb-4">
-                        <div class="card-header bg-white">
-                            <h6 class="mb-0"><i class="bi bi-link-45deg me-2"></i>Liên kết với</h6>
-                        </div>
-                        <div class="card-body">
-                            <div class="d-flex align-items-center">
-                                <div class="flex-grow-1">
-                                    <h6 class="mb-1">${relatedObjectName}</h6>
-                                    <p class="text-muted mb-0 small">Loại: ${task.relatedType}</p>
-                                </div>
-                                <c:choose>
-                                    <c:when test="${task.relatedType == 'LEAD' || task.relatedType == 'Lead'}">
-                                        <a href="${pageContext.request.contextPath}/manager/lead/detail?id=${task.relatedId}"
-                                           class="btn btn-sm btn-outline-primary">
-                                            Xem chi tiết <i class="bi bi-arrow-right ms-1"></i>
-                                        </a>
-                                    </c:when>
-                                    <c:when test="${task.relatedType == 'CUSTOMER' || task.relatedType == 'Customer'}">
-                                        <a href="${pageContext.request.contextPath}/manager/customer/detail?id=${task.relatedId}"
-                                           class="btn btn-sm btn-outline-primary">
-                                            Xem chi tiết <i class="bi bi-arrow-right ms-1"></i>
-                                        </a>
-                                    </c:when>
-                                    <c:when test="${task.relatedType == 'OPPORTUNITY' || task.relatedType == 'Opportunity'}">
-                                        <a href="${pageContext.request.contextPath}/manager/opportunity/detail?id=${task.relatedId}"
-                                           class="btn btn-sm btn-outline-primary">
-                                            Xem chi tiết <i class="bi bi-arrow-right ms-1"></i>
-                                        </a>
-                                    </c:when>
-                                </c:choose>
-                            </div>
-                        </div>
-                    </div>
-                </c:when>
-            </c:choose>
-
-            <!-- Subtasks -->
-            <div class="card mb-4">
-                <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                    <h6 class="mb-0"><i class="bi bi-diagram-2 me-2"></i>Công việc con (${subtaskCount})</h6>
-                    <c:if test="${task.statusName != 'COMPLETED' && task.statusName != 'CANCELLED'}">
-                        <button class="btn btn-sm btn-outline-success" type="button"
-                                data-bs-toggle="collapse" data-bs-target="#addSubtaskForm">
-                            <i class="bi bi-plus me-1"></i>Thêm
-                        </button>
-                    </c:if>
-                </div>
-                <div class="card-body">
-                    <%-- Subtask progress bar --%>
-                    <c:if test="${subtaskCount > 0}">
-                        <div class="mb-3">
-                            <div class="d-flex justify-content-between mb-1">
-                                <small class="text-muted">Tiến độ subtask</small>
-                                <small class="fw-bold">${completedSubtaskCount}/${subtaskCount}</small>
-                            </div>
-                            <div class="progress" style="height: 8px;">
-                                <div class="progress-bar bg-success" role="progressbar"
-                                     style="width: ${subtaskCount > 0 ? (completedSubtaskCount * 100 / subtaskCount) : 0}%">
-                                </div>
-                            </div>
-                        </div>
-                        <div class="table-responsive">
-                            <table class="table table-sm table-hover mb-0">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th>Tiêu đề</th>
-                                        <th>Người thực hiện</th>
-                                        <th>Hạn chót</th>
-                                        <th>Trạng thái</th>
-                                        <th></th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <c:forEach var="sub" items="${subtasks}">
-                                        <tr>
-                                            <td>
-                                                <a href="${pageContext.request.contextPath}/manager/task/detail?id=${sub.taskId}"
-                                                   class="text-decoration-none">${sub.title}</a>
-                                            </td>
-                                            <td>
-                                                <c:forEach var="u" items="${allUsers}">
-                                                    <c:if test="${u.userId == sub.assignedTo}">
-                                                        <small>${u.firstName} ${u.lastName}</small>
-                                                    </c:if>
-                                                </c:forEach>
-                                            </td>
-                                            <td>
-                                                <c:if test="${sub.dueDate != null}">
-                                                    <small>${fn:substring(sub.dueDate, 8, 10)}/${fn:substring(sub.dueDate, 5, 7)}/${fn:substring(sub.dueDate, 0, 4)}</small>
-                                                </c:if>
-                                            </td>
-                                            <td>
-                                                <c:choose>
-                                                    <c:when test="${sub.statusName == 'COMPLETED'}">
-                                                        <span class="badge bg-success">Hoàn thành</span>
-                                                    </c:when>
-                                                    <c:when test="${sub.statusName == 'IN_PROGRESS'}">
-                                                        <span class="badge bg-info">Đang làm</span>
-                                                    </c:when>
-                                                    <c:when test="${sub.statusName == 'CANCELLED'}">
-                                                        <span class="badge bg-dark">Đã hủy</span>
-                                                    </c:when>
-                                                    <c:otherwise>
-                                                        <span class="badge bg-secondary">Chờ</span>
-                                                    </c:otherwise>
-                                                </c:choose>
-                                            </td>
-                                            <td>
-                                                <a href="${pageContext.request.contextPath}/manager/task/detail?id=${sub.taskId}"
-                                                   class="btn btn-xs btn-outline-primary" style="font-size:0.7rem; padding:1px 6px;">
-                                                    <i class="bi bi-eye"></i>
-                                                </a>
-                                            </td>
-                                        </tr>
-                                    </c:forEach>
-                                </tbody>
-                            </table>
-                        </div>
-                    </c:if>
-                    <c:if test="${subtaskCount == 0}">
-                        <p class="text-muted fst-italic mb-0">Chưa có công việc con</p>
-                    </c:if>
-
-                    <%-- Add Subtask Form (collapsed) --%>
-                    <c:if test="${task.statusName != 'COMPLETED' && task.statusName != 'CANCELLED'}">
-                        <div class="collapse mt-3" id="addSubtaskForm">
-                            <div class="border rounded p-3 bg-light">
-                                <h6 class="mb-3">Thêm công việc con</h6>
-                                <form method="post" action="${pageContext.request.contextPath}/manager/task/form">
-                                    <input type="hidden" name="action"      value="create">
-                                    <input type="hidden" name="relatedType" value="SUBTASK">
-                                    <input type="hidden" name="relatedId"   value="${task.taskId}">
-                                    <div class="row g-2">
-                                        <div class="col-md-5">
-                                            <input type="text" class="form-control form-control-sm"
-                                                   name="title" placeholder="Tiêu đề công việc con *" required>
-                                        </div>
-                                        <div class="col-md-3">
-                                            <select class="form-select form-select-sm" name="assignedTo">
-                                                <option value="">-- Người thực hiện --</option>
-                                                <c:forEach var="u" items="${allUsers}">
-                                                    <option value="${u.userId}">${u.firstName} ${u.lastName}</option>
-                                                </c:forEach>
-                                            </select>
-                                        </div>
-                                        <div class="col-md-2">
-                                            <input type="date" class="form-control form-control-sm" name="dueDate">
-                                        </div>
-                                        <div class="col-md-2">
-                                            <button type="submit" class="btn btn-sm btn-success w-100">
-                                                <i class="bi bi-check2"></i> Lưu
-                                            </button>
-                                        </div>
+                    <div class="card-body">
+                        <%-- Lead list --%>
+                        <c:forEach var="ld" items="${relatedLeads}" varStatus="ls">
+                            <div class="d-flex align-items-center justify-content-between ${!ls.last || not empty relatedCustomers ? 'mb-3 pb-3 border-bottom' : ''}">
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="avatar-md bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center">
+                                        <i class="bi bi-person-lines-fill text-primary"></i>
                                     </div>
-                                </form>
+                                    <div>
+                                        <div class="fw-semibold">${fn:escapeXml(ld.fullName)}</div>
+                                        <small class="text-muted">${ld.leadCode} · ${not empty ld.phone ? ld.phone : ld.email}</small>
+                                    </div>
+                                </div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <c:choose>
+                                        <c:when test="${ld.status == 'New'}"><span class="badge bg-secondary">${ld.status}</span></c:when>
+                                        <c:when test="${ld.status == 'Assigned'}"><span class="badge bg-primary">${ld.status}</span></c:when>
+                                        <c:when test="${ld.status == 'Working'}"><span class="badge bg-info">${ld.status}</span></c:when>
+                                        <c:when test="${ld.status == 'Converted'}"><span class="badge bg-success">${ld.status}</span></c:when>
+                                        <c:otherwise><span class="badge bg-secondary">${ld.status}</span></c:otherwise>
+                                    </c:choose>
+                                    <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#leadModal-${ld.leadId}">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                </div>
                             </div>
-                        </div>
-                    </c:if>
+                        </c:forEach>
+                        <%-- Customer list --%>
+                        <c:forEach var="cust" items="${relatedCustomers}" varStatus="cs">
+                            <div class="d-flex align-items-center justify-content-between ${!cs.last ? 'mb-3 pb-3 border-bottom' : ''}">
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="avatar-md bg-success bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center">
+                                        <i class="bi bi-people-fill text-success"></i>
+                                    </div>
+                                    <div>
+                                        <div class="fw-semibold">${fn:escapeXml(cust.fullName)}</div>
+                                        <small class="text-muted">${cust.customerCode} · ${not empty cust.phone ? cust.phone : cust.email}</small>
+                                    </div>
+                                </div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <c:if test="${not empty cust.status}"><span class="badge bg-success">${cust.status}</span></c:if>
+                                    <button type="button" class="btn btn-sm btn-outline-success" data-bs-toggle="modal" data-bs-target="#custModal-${cust.customerId}">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </c:forEach>
+                        <%-- Single related object fallback --%>
+                        <c:if test="${empty relatedLeads && empty relatedCustomers && relatedObject != null}">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="avatar-md ${task.relatedType == 'LEAD' || task.relatedType == 'Lead' ? 'bg-primary' : 'bg-success'} bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center">
+                                        <i class="bi ${task.relatedType == 'LEAD' || task.relatedType == 'Lead' ? 'bi-person-lines-fill text-primary' : 'bi-people-fill text-success'}"></i>
+                                    </div>
+                                    <div>
+                                        <div class="fw-semibold">${relatedObjectName}</div>
+                                        <small class="text-muted">${task.relatedType}</small>
+                                    </div>
+                                </div>
+                                <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#singleObjModal">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                            </div>
+                        </c:if>
+                    </div>
                 </div>
-            </div>
+            </c:if>
 
             <!-- Dependencies -->
             <c:if test="${not empty dependencyTasks}">
@@ -656,6 +457,256 @@
         </div>
     </div>
 </div>
+
+<%-- ═══════════════ Lead Detail Modals ═══════════════ --%>
+<c:forEach var="ld" items="${relatedLeads}">
+    <div class="modal fade" id="leadModal-${ld.leadId}" tabindex="-1" aria-labelledby="leadModalLabel-${ld.leadId}" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header bg-primary bg-opacity-10">
+                    <h5 class="modal-title" id="leadModalLabel-${ld.leadId}">
+                        <i class="bi bi-person-lines-fill text-primary me-2"></i>Chi tiết Lead
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small mb-0">Mã Lead</label>
+                            <div class="fw-semibold">${fn:escapeXml(ld.leadCode)}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small mb-0">Họ tên</label>
+                            <div class="fw-semibold">${fn:escapeXml(ld.fullName)}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small mb-0">Email</label>
+                            <div>${not empty ld.email ? fn:escapeXml(ld.email) : '<span class="text-muted fst-italic">Chưa có</span>'}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small mb-0">Số điện thoại</label>
+                            <div>${not empty ld.phone ? fn:escapeXml(ld.phone) : '<span class="text-muted fst-italic">Chưa có</span>'}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small mb-0">Chức danh</label>
+                            <div>${not empty ld.jobTitle ? fn:escapeXml(ld.jobTitle) : '<span class="text-muted fst-italic">Chưa có</span>'}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small mb-0">Công ty</label>
+                            <div>${not empty ld.companyName ? fn:escapeXml(ld.companyName) : '<span class="text-muted fst-italic">Chưa có</span>'}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small mb-0">Sở thích / Quan tâm</label>
+                            <div>${not empty ld.interests ? fn:escapeXml(ld.interests) : '<span class="text-muted fst-italic">Chưa có</span>'}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small mb-0">Trạng thái</label>
+                            <div>
+                                <c:choose>
+                                    <c:when test="${ld.status == 'New'}"><span class="badge bg-secondary">${ld.status}</span></c:when>
+                                    <c:when test="${ld.status == 'Assigned'}"><span class="badge bg-primary">${ld.status}</span></c:when>
+                                    <c:when test="${ld.status == 'Working'}"><span class="badge bg-info">${ld.status}</span></c:when>
+                                    <c:when test="${ld.status == 'Converted'}"><span class="badge bg-success">${ld.status}</span></c:when>
+                                    <c:otherwise><span class="badge bg-secondary">${ld.status}</span></c:otherwise>
+                                </c:choose>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small mb-0">Đánh giá (Rating)</label>
+                            <div>${not empty ld.rating ? ld.rating : '<span class="text-muted fst-italic">Chưa có</span>'}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small mb-0">Điểm Lead</label>
+                            <div>${ld.leadScore != null ? ld.leadScore : '<span class="text-muted fst-italic">Chưa có</span>'}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small mb-0">Chuyển đổi</label>
+                            <div>
+                                <c:choose>
+                                    <c:when test="${ld.isConverted}"><span class="badge bg-success">Đã chuyển đổi</span></c:when>
+                                    <c:otherwise><span class="badge bg-warning text-dark">Chưa chuyển đổi</span></c:otherwise>
+                                </c:choose>
+                            </div>
+                        </div>
+                        <c:if test="${ld.isConverted && ld.convertedAt != null}">
+                            <div class="col-md-6">
+                                <label class="form-label text-muted small mb-0">Ngày chuyển đổi</label>
+                                <div>${fn:substring(ld.convertedAt, 8, 10)}/${fn:substring(ld.convertedAt, 5, 7)}/${fn:substring(ld.convertedAt, 0, 4)}</div>
+                            </div>
+                        </c:if>
+                        <div class="col-12">
+                            <label class="form-label text-muted small mb-0">Ghi chú</label>
+                            <div class="bg-light rounded p-2">${not empty ld.notes ? fn:escapeXml(ld.notes) : '<span class="text-muted fst-italic">Không có ghi chú</span>'}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small mb-0">Ngày tạo</label>
+                            <div class="small text-muted">
+                                <c:if test="${ld.createdAt != null}">${fn:substring(ld.createdAt, 8, 10)}/${fn:substring(ld.createdAt, 5, 7)}/${fn:substring(ld.createdAt, 0, 4)} ${fn:substring(ld.createdAt, 11, 16)}</c:if>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small mb-0">Cập nhật lần cuối</label>
+                            <div class="small text-muted">
+                                <c:if test="${ld.updatedAt != null}">${fn:substring(ld.updatedAt, 8, 10)}/${fn:substring(ld.updatedAt, 5, 7)}/${fn:substring(ld.updatedAt, 0, 4)} ${fn:substring(ld.updatedAt, 11, 16)}</c:if>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</c:forEach>
+
+<%-- ═══════════════ Customer Detail Modals ═══════════════ --%>
+<c:forEach var="cust" items="${relatedCustomers}">
+    <div class="modal fade" id="custModal-${cust.customerId}" tabindex="-1" aria-labelledby="custModalLabel-${cust.customerId}" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header bg-success bg-opacity-10">
+                    <h5 class="modal-title" id="custModalLabel-${cust.customerId}">
+                        <i class="bi bi-people-fill text-success me-2"></i>Chi tiết Khách hàng
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small mb-0">Mã KH</label>
+                            <div class="fw-semibold">${fn:escapeXml(cust.customerCode)}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small mb-0">Họ tên</label>
+                            <div class="fw-semibold">${fn:escapeXml(cust.fullName)}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small mb-0">Email</label>
+                            <div>${not empty cust.email ? fn:escapeXml(cust.email) : '<span class="text-muted fst-italic">Chưa có</span>'}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small mb-0">Số điện thoại</label>
+                            <div>${not empty cust.phone ? fn:escapeXml(cust.phone) : '<span class="text-muted fst-italic">Chưa có</span>'}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small mb-0">Ngày sinh</label>
+                            <div>
+                                <c:choose>
+                                    <c:when test="${cust.dateOfBirth != null}">${fn:substring(cust.dateOfBirth, 8, 10)}/${fn:substring(cust.dateOfBirth, 5, 7)}/${fn:substring(cust.dateOfBirth, 0, 4)}</c:when>
+                                    <c:otherwise><span class="text-muted fst-italic">Chưa có</span></c:otherwise>
+                                </c:choose>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small mb-0">Giới tính</label>
+                            <div>
+                                <c:choose>
+                                    <c:when test="${cust.gender == 'Male'}">Nam</c:when>
+                                    <c:when test="${cust.gender == 'Female'}">Nữ</c:when>
+                                    <c:when test="${not empty cust.gender}">${cust.gender}</c:when>
+                                    <c:otherwise><span class="text-muted fst-italic">Chưa có</span></c:otherwise>
+                                </c:choose>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small mb-0">Địa chỉ</label>
+                            <div>${not empty cust.address ? fn:escapeXml(cust.address) : '<span class="text-muted fst-italic">Chưa có</span>'}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small mb-0">Thành phố</label>
+                            <div>${not empty cust.city ? fn:escapeXml(cust.city) : '<span class="text-muted fst-italic">Chưa có</span>'}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small mb-0">Phân khúc</label>
+                            <div>${not empty cust.customerSegment ? cust.customerSegment : '<span class="text-muted fst-italic">Chưa có</span>'}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small mb-0">Trạng thái</label>
+                            <div><c:if test="${not empty cust.status}"><span class="badge bg-success">${cust.status}</span></c:if></div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small mb-0">Tổng khóa học</label>
+                            <div>${cust.totalCourses != null ? cust.totalCourses : 0}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small mb-0">Tổng chi tiêu</label>
+                            <div class="fw-semibold text-success">${cust.totalSpent != null ? cust.totalSpent : 0} VNĐ</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small mb-0">Điểm sức khỏe</label>
+                            <div>
+                                <c:choose>
+                                    <c:when test="${cust.healthScore != null && cust.healthScore >= 80}"><span class="badge bg-success">${cust.healthScore}</span></c:when>
+                                    <c:when test="${cust.healthScore != null && cust.healthScore >= 50}"><span class="badge bg-warning text-dark">${cust.healthScore}</span></c:when>
+                                    <c:when test="${cust.healthScore != null}"><span class="badge bg-danger">${cust.healthScore}</span></c:when>
+                                    <c:otherwise><span class="text-muted fst-italic">N/A</span></c:otherwise>
+                                </c:choose>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small mb-0">Điểm hài lòng</label>
+                            <div>
+                                <c:choose>
+                                    <c:when test="${cust.satisfactionScore != null && cust.satisfactionScore >= 80}"><span class="badge bg-success">${cust.satisfactionScore}</span></c:when>
+                                    <c:when test="${cust.satisfactionScore != null && cust.satisfactionScore >= 50}"><span class="badge bg-warning text-dark">${cust.satisfactionScore}</span></c:when>
+                                    <c:when test="${cust.satisfactionScore != null}"><span class="badge bg-danger">${cust.satisfactionScore}</span></c:when>
+                                    <c:otherwise><span class="text-muted fst-italic">N/A</span></c:otherwise>
+                                </c:choose>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label text-muted small mb-0">Ghi chú</label>
+                            <div class="bg-light rounded p-2">${not empty cust.notes ? fn:escapeXml(cust.notes) : '<span class="text-muted fst-italic">Không có ghi chú</span>'}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small mb-0">Ngày tạo</label>
+                            <div class="small text-muted">
+                                <c:if test="${cust.createdAt != null}">${fn:substring(cust.createdAt, 8, 10)}/${fn:substring(cust.createdAt, 5, 7)}/${fn:substring(cust.createdAt, 0, 4)} ${fn:substring(cust.createdAt, 11, 16)}</c:if>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small mb-0">Cập nhật lần cuối</label>
+                            <div class="small text-muted">
+                                <c:if test="${cust.updatedAt != null}">${fn:substring(cust.updatedAt, 8, 10)}/${fn:substring(cust.updatedAt, 5, 7)}/${fn:substring(cust.updatedAt, 0, 4)} ${fn:substring(cust.updatedAt, 11, 16)}</c:if>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</c:forEach>
+
+<%-- ═══════════════ Single Object Fallback Modal ═══════════════ --%>
+<c:if test="${empty relatedLeads && empty relatedCustomers && relatedObject != null}">
+    <div class="modal fade" id="singleObjModal" tabindex="-1" aria-labelledby="singleObjModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header ${task.relatedType == 'LEAD' || task.relatedType == 'Lead' ? 'bg-primary' : 'bg-success'} bg-opacity-10">
+                    <h5 class="modal-title" id="singleObjModalLabel">
+                        <i class="bi ${task.relatedType == 'LEAD' || task.relatedType == 'Lead' ? 'bi-person-lines-fill text-primary' : 'bi-people-fill text-success'} me-2"></i>
+                        Chi tiết ${task.relatedType == 'LEAD' || task.relatedType == 'Lead' ? 'Lead' : 'Khách hàng'}
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="text-center py-3">
+                        <div class="fw-semibold fs-5 mb-2">${fn:escapeXml(relatedObjectName)}</div>
+                        <span class="badge ${task.relatedType == 'LEAD' || task.relatedType == 'Lead' ? 'bg-primary' : 'bg-success'} fs-6">${task.relatedType}</span>
+                        <p class="text-muted mt-2 mb-0">ID: ${task.relatedId}</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</c:if>
 
 <style>
     .avatar-lg { width: 60px; height: 60px; flex-shrink: 0; }

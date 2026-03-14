@@ -457,26 +457,10 @@
                                                     </c:choose>
                                                 </td>
                                                 <td class="text-end">
-                                                    <div class="btn-group" role="group">
-                                                        <a href="${pageContext.request.contextPath}/manager/task/detail?id=${task.taskId}"
-                                                           class="btn btn-sm btn-outline-primary" title="Chi tiết">
-                                                            <i class="bi bi-eye"></i>
-                                                        </a>
-                                                        <a href="${pageContext.request.contextPath}/manager/task/form?action=edit&id=${task.taskId}"
-                                                           class="btn btn-sm btn-outline-secondary" title="Chỉnh sửa">
-                                                            <i class="bi bi-pencil"></i>
-                                                        </a>
-                                                        <%-- FIX: Delete via POST form to prevent CSRF / accidental GET deletion --%>
-                                                        <form method="post"
-                                                              action="${pageContext.request.contextPath}/manager/task/delete"
-                                                              class="d-inline"
-                                                              onsubmit="return confirm('Bạn có chắc chắn muốn xóa công việc này?');">
-                                                            <input type="hidden" name="id" value="${task.taskId}">
-                                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Xóa">
-                                                                <i class="bi bi-trash"></i>
-                                                            </button>
-                                                        </form>
-                                                    </div>
+                                                    <a href="${pageContext.request.contextPath}/manager/task/detail?id=${task.taskId}"
+                                                       class="btn btn-sm btn-outline-primary" title="Chi tiết">
+                                                        <i class="bi bi-eye"></i>
+                                                    </a>
                                                 </td>
                                             </tr>
                                         </c:otherwise>

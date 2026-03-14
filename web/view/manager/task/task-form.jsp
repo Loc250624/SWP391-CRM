@@ -1057,17 +1057,26 @@ function openObjectPickerModal() {
 }
 
 function updateObjectPickerCount() {
-    var count = document.querySelectorAll('.obj-picker-cb:checked').length;
+    // Only count items matching current task type
+    var type = _currentTaskType;
+    var count = document.querySelectorAll('.obj-picker-cb[data-type="' + type + '"]:checked').length;
     var el = document.getElementById('objectPickerSelectedCount');
     if (el) el.textContent = count;
 }
 
 function objectPickerSelectAll() {
-    document.querySelectorAll('.obj-picker-row:not([style*="display: none"]) .obj-picker-cb').forEach(function(cb) { cb.checked = true; });
+    // Only select items matching current task type (LEAD or CUSTOMER)
+    var type = _currentTaskType;
+    document.querySelectorAll('.obj-picker-cb[data-type="' + type + '"]').forEach(function(cb) {
+        var row = cb.closest('.obj-picker-row');
+        if (row && row.style.display !== 'none') cb.checked = true;
+    });
     updateObjectPickerCount();
 }
 function objectPickerDeselectAll() {
-    document.querySelectorAll('.obj-picker-cb').forEach(function(cb) { cb.checked = false; });
+    // Only deselect items matching current task type
+    var type = _currentTaskType;
+    document.querySelectorAll('.obj-picker-cb[data-type="' + type + '"]').forEach(function(cb) { cb.checked = false; });
     updateObjectPickerCount();
 }
 

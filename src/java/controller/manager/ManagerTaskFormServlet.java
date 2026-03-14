@@ -2,6 +2,7 @@ package controller.manager;
 
 import dao.CustomerDAO;
 import dao.LeadDAO;
+import dao.NotificationDAO;
 import dao.OpportunityDAO;
 import dao.TaskAssigneeDAO;
 import dao.TaskDAO;
@@ -428,11 +429,44 @@ public class ManagerTaskFormServlet extends HttpServlet {
                     }
                 }
 
+                // ── Gui thong bao cho tat ca assignees ──────────────────────
+                try {
+                    NotificationDAO notifDAO = new NotificationDAO();
+                    String taskUrl = "/manager/task/detail?id=" + createdTask.getTaskId();
+                    String notifSummary = createdTask.getTaskCode() != null
+                            ? createdTask.getTaskCode() + ": " + title.trim()
+                            : title.trim();
+
+                    List<Integer> allAssignees = new ArrayList<>();
+                    allAssignees.addAll(mainIds);
+                    allAssignees.addAll(supportIds);
+
+                    for (int assigneeId : allAssignees) {
+                        notifDAO.createAndSend(
+                                "Bạn được giao công việc mới",
+                                notifSummary,
+                                "TASK_ASSIGNED",
+                                "SYSTEM",
+                                "HIGH".equals(priorityStr) ? "HIGH" : "NORMAL",
+                                "TASK",
+                                createdTask.getTaskId(),
+                                taskUrl,
+                                currentUser.getUserId(),
+                                false,
+                                assigneeId
+                        );
+                    }
+                } catch (Exception notifEx) {
+                    notifEx.printStackTrace();
+                }
+
                 String who = (mainIds.size() + supportIds.size()) > 1
                         ? (mainIds.size() + supportIds.size()) + " nhân viên" : "1 nhân viên";
                 session.setAttribute("successMessage",
                     "Đã tạo và giao công việc cho " + who + ". Trạng thái: Đang thực hiện.");
-                response.sendRedirect(request.getContextPath() + "/manager/task/list?view=team");
+                String redirectView = "CUSTOMER".equals(relatedType) ? "customer" : "lead";
+                String redirectTaskType = (mainIds.size() + supportIds.size()) > 1 ? "team" : "personal";
+                response.sendRedirect(request.getContextPath() + "/manager/task/list?taskType=" + redirectTaskType + "&view=" + redirectView);
 
 
             } else if ("edit".equals(formAction)) {
