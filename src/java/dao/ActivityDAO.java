@@ -940,6 +940,7 @@ public class ActivityDAO extends DBContext {
             e.printStackTrace();
         }
         return list;
+    }
     // 1. HÀM ĐẾM SỐ PHIẾU CHƯA ĐỌC
     public int countUnreadAssignedTickets(int userId) {
         String sql = "SELECT COUNT(*) FROM activities WHERE performed_by = ? AND status = 'Pending' "
