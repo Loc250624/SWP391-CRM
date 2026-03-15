@@ -351,6 +351,7 @@
                             </ul>
                         </c:otherwise>
                     </c:choose>
+                    <c:if test="${task.statusName != 'CANCELLED'}">
                     <form method="post" action="${pageContext.request.contextPath}/manager/task/comment">
                         <input type="hidden" name="taskId" value="${task.taskId}">
                         <div class="input-group">
@@ -361,6 +362,7 @@
                             </button>
                         </div>
                     </form>
+                    </c:if>
                 </div>
             </div>
         </div>
