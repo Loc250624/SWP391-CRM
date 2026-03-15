@@ -3,15 +3,18 @@ package controller.customersuccess;
 import dao.CustomerDAO;
 import dao.LeadDAO;
 import dao.OpportunityDAO;
+import dao.TaskCommentDAO;
 import dao.TaskDAO;
 import dao.UserDAO;
 import java.io.IOException;
+import java.util.List;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
+import model.Comment;
 import model.Customer;
 import model.Lead;
 import model.Opportunity;
@@ -94,9 +97,15 @@ public class SupportTaskDetailServlet extends HttpServlet {
                 }
             }
 
+            // Comments
+            List<Comment> comments = new TaskCommentDAO().getCommentsByTaskId(taskId);
+            List<Users> allUsers = userDAO.getAllUsers();
+
             request.setAttribute("task", task);
             request.setAttribute("creator", creator);
             request.setAttribute("relatedObjectName", relatedObjectName);
+            request.setAttribute("comments", comments);
+            request.setAttribute("allUsers", allUsers);
 
             request.setAttribute("pageTitle", "Chi tiết Công việc");
             request.setAttribute("contentPage", "/view/support/task/task-detail.jsp");
