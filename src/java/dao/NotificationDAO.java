@@ -386,6 +386,54 @@ public class NotificationDAO extends DBContext {
     }
 
 
+    public List<Map<String, Object>> getNotificationListBySender(int senderId, String keyword,
+            int offset, int limit) {
+        List<Map<String, Object>> list = new ArrayList<>();
+        StringBuilder sql = new StringBuilder();
+        sql.append("SELECT n.*, ")
+                .append("(SELECT COUNT(*) FROM notification_recipients nr WHERE nr.notification_id = n.notification_id) AS recipient_count, ")
+                .append("(SELECT COUNT(*) FROM notification_recipients nr WHERE nr.notification_id = n.notification_id AND nr.is_read = 1) AS read_count ")
+                .append("FROM notifications n ")
+                .append("WHERE n.sender_id = ? ");
+
+        List<Object> params = new ArrayList<>();
+        params.add(senderId);
+
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            sql.append("AND (n.title LIKE ? OR n.summary LIKE ?) ");
+            params.add("%" + keyword.trim() + "%");
+            params.add("%" + keyword.trim() + "%");
+        }
+
+        sql.append("ORDER BY n.created_at DESC ")
+                .append("OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
+        params.add(offset);
+        params.add(limit);
+
+        try (PreparedStatement st = connection.prepareStatement(sql.toString())) {
+            for (int i = 0; i < params.size(); i++) {
+                Object p = params.get(i);
+                if (p instanceof String) {
+                    st.setString(i + 1, (String) p);
+                } else if (p instanceof Integer) {
+                    st.setInt(i + 1, (Integer) p);
+                }
+            }
+            try (ResultSet rs = st.executeQuery()) {
+                while (rs.next()) {
+                    Map<String, Object> row = new HashMap<>();
+                    row.put("notification", mapNotificationFromResultSet(rs));
+                    row.put("recipientCount", rs.getInt("recipient_count"));
+                    row.put("readCount", rs.getInt("read_count"));
+                    list.add(row);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
     public Notification getById(int notificationId) {
         String sql = "SELECT * FROM notifications WHERE notification_id = ?";
         try (PreparedStatement st = connection.prepareStatement(sql)) {

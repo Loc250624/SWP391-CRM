@@ -704,6 +704,23 @@ public class QuotationDAO extends DBContext {
         return q;
     }
 
+    // ── Get quotations expiring within N days (status = Sent, valid_until approaching) ──
+    public List<Quotation> getExpiringQuotations(int daysAhead) {
+        List<Quotation> list = new ArrayList<>();
+        String sql = "SELECT * FROM quotations WHERE status = 'Sent' "
+                + "AND valid_until IS NOT NULL "
+                + "AND valid_until BETWEEN GETDATE() AND DATEADD(day, ?, GETDATE())";
+        try (PreparedStatement st = connection.prepareStatement(sql)) {
+            st.setInt(1, daysAhead);
+            try (ResultSet rs = st.executeQuery()) {
+                while (rs.next()) list.add(extractFromResultSet(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
     // ==================== HELPERS ====================
 
     private void setNullableInt(PreparedStatement stmt, int index, Integer value) throws SQLException {

@@ -1324,6 +1324,39 @@ public class TaskDAO extends DBContext {
         return taDao.insert(primary);
     }
 
+    // ── Get ALL overdue tasks (for scheduler - no user filter) ──
+    public List<Task> getAllOverdueTasks() {
+        List<Task> tasks = new ArrayList<>();
+        String sql = BASE_SELECT + "WHERE t.due_date < GETDATE() AND t.status != 2 AND t.status != 3 AND " + NOT_DELETED
+                + " ORDER BY t.due_date ASC";
+        try (PreparedStatement st = connection.prepareStatement(sql)) {
+            try (ResultSet rs = st.executeQuery()) {
+                while (rs.next()) tasks.add(mapResultSetToTask(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return tasks;
+    }
+
+    // ── Get ALL upcoming tasks with due within N hours (for scheduler) ──
+    public List<Task> getAllUpcomingTasks(int hoursAhead) {
+        List<Task> tasks = new ArrayList<>();
+        String sql = BASE_SELECT
+                + "WHERE t.status != 2 AND t.status != 3 "
+                + "AND t.due_date BETWEEN GETDATE() AND DATEADD(HOUR, ?, GETDATE()) "
+                + "AND " + NOT_DELETED + " ORDER BY t.due_date ASC";
+        try (PreparedStatement st = connection.prepareStatement(sql)) {
+            st.setInt(1, hoursAhead);
+            try (ResultSet rs = st.executeQuery()) {
+                while (rs.next()) tasks.add(mapResultSetToTask(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return tasks;
+    }
+
     // ── Get overdue tasks ──
     public List<Task> getOverdueTasks(Integer userId, List<Integer> teamMemberIds) {
         List<Task> tasks = new ArrayList<>();
