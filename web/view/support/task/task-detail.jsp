@@ -130,7 +130,7 @@
 
         <!-- Related Object -->
         <c:if test="${not empty relatedObjectName}">
-            <div class="card shadow-sm">
+            <div class="card shadow-sm mb-4">
                 <div class="card-header bg-white">
                     <h6 class="mb-0"><i class="bi bi-link-45deg me-2"></i>Liên kết với</h6>
                 </div>
@@ -140,6 +140,59 @@
                 </div>
             </div>
         </c:if>
+
+        <!-- Comments -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="bi bi-chat-left-text me-2"></i>Bình luận (${fn:length(comments)})</h6>
+            </div>
+            <div class="card-body">
+                <c:choose>
+                    <c:when test="${empty comments}">
+                        <p class="text-muted fst-italic mb-3">Chưa có bình luận nào</p>
+                    </c:when>
+                    <c:otherwise>
+                        <ul class="list-unstyled mb-3">
+                            <c:forEach var="cmt" items="${comments}">
+                                <li class="mb-3 d-flex gap-2">
+                                    <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center text-white flex-shrink-0" style="width:32px;height:32px;font-size:0.75rem;">
+                                        <c:forEach var="u" items="${allUsers}">
+                                            <c:if test="${u.userId == cmt.createdBy}">${fn:substring(u.firstName,0,1)}</c:if>
+                                        </c:forEach>
+                                    </div>
+                                    <div class="bg-light rounded p-2 flex-grow-1">
+                                        <div class="d-flex justify-content-between mb-1">
+                                            <strong class="small">
+                                                <c:forEach var="u" items="${allUsers}">
+                                                    <c:if test="${u.userId == cmt.createdBy}">${u.firstName} ${u.lastName}</c:if>
+                                                </c:forEach>
+                                            </strong>
+                                            <small class="text-muted">
+                                                ${fn:substring(cmt.createdAt, 8, 10)}/${fn:substring(cmt.createdAt, 5, 7)}/${fn:substring(cmt.createdAt, 0, 4)}
+                                                ${fn:substring(cmt.createdAt, 11, 16)}
+                                            </small>
+                                        </div>
+                                        <p class="mb-0 small">${cmt.content}</p>
+                                    </div>
+                                </li>
+                            </c:forEach>
+                        </ul>
+                    </c:otherwise>
+                </c:choose>
+                <c:if test="${task.statusName != 'CANCELLED'}">
+                <form method="post" action="${pageContext.request.contextPath}/support/task/comment">
+                    <input type="hidden" name="taskId" value="${task.taskId}">
+                    <div class="input-group">
+                        <input type="text" class="form-control form-control-sm"
+                               name="content" placeholder="Thêm bình luận..." required maxlength="500">
+                        <button type="submit" class="btn btn-sm btn-success">
+                            <i class="bi bi-send"></i>
+                        </button>
+                    </div>
+                </form>
+                </c:if>
+            </div>
+        </div>
     </div>
 
     <!-- Sidebar -->
@@ -176,6 +229,7 @@
                     <ul class="list-unstyled small mb-0">
                         <li class="mb-1"><i class="bi bi-check2 text-success me-1"></i>Xem chi tiết công việc</li>
                         <li class="mb-1"><i class="bi bi-check2 text-success me-1"></i>Cập nhật trạng thái</li>
+                        <li class="mb-1"><i class="bi bi-check2 text-success me-1"></i>Bình luận</li>
                         <li class="mb-1"><i class="bi bi-x text-danger me-1"></i>Không thể chỉnh sửa thông tin khác</li>
                     </ul>
                 </div>
