@@ -29,6 +29,20 @@ public class EmailTemplateDAO extends DBContext {
         return list;
     }
 
+    public List<EmailTemplate> getActiveByRole(String roleCode) {
+        List<EmailTemplate> list = new ArrayList<>();
+        String sql = "SELECT * FROM email_templates WHERE is_active = 1 "
+                + "AND (allowed_roles IS NULL OR allowed_roles = '' OR allowed_roles LIKE ?) "
+                + "ORDER BY category, template_name";
+        try (PreparedStatement st = connection.prepareStatement(sql)) {
+            st.setString(1, "%" + roleCode + "%");
+            try (ResultSet rs = st.executeQuery()) {
+                while (rs.next()) list.add(map(rs));
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return list;
+    }
+
     public List<EmailTemplate> getActiveByCategory(String category) {
         List<EmailTemplate> list = new ArrayList<>();
         String sql = "SELECT * FROM email_templates WHERE is_active = 1 AND category = ? ORDER BY template_name";
@@ -66,8 +80,8 @@ public class EmailTemplateDAO extends DBContext {
     public boolean insert(EmailTemplate t) {
         String sql = "INSERT INTO email_templates "
                 + "(template_code, template_name, category, subject, body_html, body_text, "
-                + "available_variables, description, is_active, is_default, created_at, created_by, updated_at, updated_by) "
-                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, GETDATE(), ?, GETDATE(), ?)";
+                + "available_variables, description, is_active, is_default, allowed_roles, created_at, created_by, updated_at, updated_by) "
+                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, GETDATE(), ?, GETDATE(), ?)";
         try (PreparedStatement st = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             st.setString(1, t.getTemplateCode());
             st.setString(2, t.getTemplateName());
@@ -79,8 +93,9 @@ public class EmailTemplateDAO extends DBContext {
             st.setString(8, t.getDescription());
             st.setBoolean(9, t.getIsActive() != null ? t.getIsActive() : true);
             st.setBoolean(10, t.getIsDefault() != null ? t.getIsDefault() : false);
-            setNullableInt(st, 11, t.getCreatedBy());
+            st.setString(11, t.getAllowedRoles());
             setNullableInt(st, 12, t.getCreatedBy());
+            setNullableInt(st, 13, t.getCreatedBy());
             int rows = st.executeUpdate();
             if (rows > 0) {
                 try (ResultSet rs = st.getGeneratedKeys()) {
@@ -95,7 +110,7 @@ public class EmailTemplateDAO extends DBContext {
     public boolean update(EmailTemplate t) {
         String sql = "UPDATE email_templates SET "
                 + "template_code=?, template_name=?, category=?, subject=?, body_html=?, body_text=?, "
-                + "available_variables=?, description=?, is_active=?, is_default=?, updated_at=GETDATE(), updated_by=? "
+                + "available_variables=?, description=?, is_active=?, is_default=?, allowed_roles=?, updated_at=GETDATE(), updated_by=? "
                 + "WHERE template_id=?";
         try (PreparedStatement st = connection.prepareStatement(sql)) {
             st.setString(1, t.getTemplateCode());
@@ -108,8 +123,9 @@ public class EmailTemplateDAO extends DBContext {
             st.setString(8, t.getDescription());
             st.setBoolean(9, t.getIsActive() != null ? t.getIsActive() : true);
             st.setBoolean(10, t.getIsDefault() != null ? t.getIsDefault() : false);
-            setNullableInt(st, 11, t.getUpdatedBy());
-            st.setInt(12, t.getTemplateId());
+            st.setString(11, t.getAllowedRoles());
+            setNullableInt(st, 12, t.getUpdatedBy());
+            st.setInt(13, t.getTemplateId());
             return st.executeUpdate() > 0;
         } catch (SQLException e) { e.printStackTrace(); }
         return false;
@@ -162,6 +178,7 @@ public class EmailTemplateDAO extends DBContext {
         t.setDescription(rs.getString("description"));
         t.setIsActive(rs.getBoolean("is_active"));
         t.setIsDefault(rs.getBoolean("is_default"));
+        try { t.setAllowedRoles(rs.getString("allowed_roles")); } catch (SQLException ignored) {}
         t.setCreatedAt(getNullableDateTime(rs, "created_at"));
         t.setCreatedBy(getNullableInt(rs, "created_by"));
         t.setUpdatedAt(getNullableDateTime(rs, "updated_at"));
