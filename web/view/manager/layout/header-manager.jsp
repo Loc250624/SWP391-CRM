@@ -64,44 +64,26 @@
             <div class="vr mx-2 d-none d-md-block"></div>
 
             <!-- Notifications -->
-            <div class="dropdown">
+            <div class="dropdown" id="notifDropdown">
                 <button class="btn btn-light btn-sm position-relative" type="button"
-                        data-bs-toggle="dropdown" aria-expanded="false">
+                        data-bs-toggle="dropdown" aria-expanded="false" onclick="crmNotif.load()">
                     <i class="bi bi-bell"></i>
-                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 10px;"
-                          id="notiCount"></span>
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                          style="font-size: 10px;" id="notiCount"></span>
                 </button>
-                <ul class="dropdown-menu dropdown-menu-end" style="width: 340px;">
+                <ul class="dropdown-menu dropdown-menu-end shadow" style="width: 370px; max-height: 480px; overflow-y: auto;">
                     <li class="dropdown-header d-flex justify-content-between align-items-center">
                         <span class="fw-semibold">Thông báo</span>
-                        <a href="#" class="text-decoration-none small">Đánh dấu đã đọc</a>
+                        <a href="javascript:void(0)" class="text-decoration-none small" onclick="crmNotif.markAllRead()">Đánh dấu đã đọc</a>
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li id="notifList">
+                        <div class="text-center py-3 text-muted small">Đang tải...</div>
                     </li>
                     <li><hr class="dropdown-divider"></li>
                     <li>
-                        <a class="dropdown-item d-flex gap-2 py-2" href="${pageContext.request.contextPath}/manager/task/list?view=team">
-                            <div class="bg-warning bg-opacity-10 rounded p-2">
-                                <i class="bi bi-exclamation-triangle text-warning"></i>
-                            </div>
-                            <div class="flex-grow-1">
-                                <div class="small fw-medium">Có task sắp đến hạn</div>
-                                <div class="text-muted" style="font-size: 11px;">Kiểm tra danh sách task</div>
-                            </div>
-                        </a>
-                    </li>
-                    <li>
-                        <a class="dropdown-item d-flex gap-2 py-2" href="${pageContext.request.contextPath}/manager/crm/leads">
-                            <div class="bg-info bg-opacity-10 rounded p-2">
-                                <i class="bi bi-person-plus text-info"></i>
-                            </div>
-                            <div class="flex-grow-1">
-                                <div class="small fw-medium">Lead mới cần giao</div>
-                                <div class="text-muted" style="font-size: 11px;">Xem danh sách lead chưa giao</div>
-                            </div>
-                        </a>
-                    </li>
-                    <li><hr class="dropdown-divider"></li>
-                    <li>
-                        <a class="dropdown-item text-center small text-primary" href="#">
+                        <a class="dropdown-item text-center small text-primary"
+                           href="${pageContext.request.contextPath}/manager/notifications">
                             Xem tất cả thông báo
                         </a>
                     </li>
@@ -186,3 +168,140 @@
         </div>
     </div>
 </header>
+
+<script>
+var crmNotif = (function () {
+    var API = '${pageContext.request.contextPath}/manager/notifications-data';
+    var pollInterval = 30000;
+    var timer = null;
+
+    // Icon + mau theo type
+    function iconFor(type) {
+        switch (type) {
+            case 'TASK_ASSIGNED':       return {icon: 'bi-check2-square', bg: 'success'};
+            case 'TASK_COMPLETED':      return {icon: 'bi-check-circle', bg: 'success'};
+            case 'TASK_OVERDUE':        return {icon: 'bi-exclamation-triangle', bg: 'danger'};
+            case 'TASK_REMINDER':       return {icon: 'bi-alarm', bg: 'warning'};
+            case 'TASK_STATUS_CHANGED': return {icon: 'bi-arrow-repeat', bg: 'info'};
+            case 'TASK_COMMENT':        return {icon: 'bi-chat-left-text', bg: 'primary'};
+            case 'LEAD_ASSIGNED':       return {icon: 'bi-person-plus', bg: 'primary'};
+            case 'LEAD_CONVERTED':      return {icon: 'bi-arrow-up-circle', bg: 'success'};
+            case 'LEAD_STATUS_CHANGED': return {icon: 'bi-arrow-left-right', bg: 'info'};
+            case 'CUSTOMER_CREATED':    return {icon: 'bi-person-check', bg: 'success'};
+            case 'OPPORTUNITY_CREATED': return {icon: 'bi-star', bg: 'primary'};
+            case 'OPPORTUNITY_STAGE_CHANGED': return {icon: 'bi-signpost-split', bg: 'info'};
+            case 'OPPORTUNITY_WON':     return {icon: 'bi-trophy', bg: 'success'};
+            case 'OPPORTUNITY_LOST':    return {icon: 'bi-x-circle', bg: 'danger'};
+            case 'QUOTATION_SENT':      return {icon: 'bi-send', bg: 'primary'};
+            case 'QUOTATION_APPROVED':  return {icon: 'bi-check-circle', bg: 'success'};
+            case 'QUOTATION_REJECTED':  return {icon: 'bi-x-octagon', bg: 'danger'};
+            case 'QUOTATION_EXPIRING':  return {icon: 'bi-hourglass-split', bg: 'warning'};
+            case 'MANAGER_BROADCAST':   return {icon: 'bi-megaphone', bg: 'warning'};
+            case 'SYSTEM_ANNOUNCEMENT': return {icon: 'bi-info-circle', bg: 'secondary'};
+            default:                    return {icon: 'bi-bell', bg: 'secondary'};
+        }
+    }
+
+    // Tinh thoi gian tuong doi
+    function timeAgo(isoStr) {
+        if (!isoStr) return '';
+        var d = new Date(isoStr.replace('T', ' '));
+        var now = new Date();
+        var diff = Math.floor((now - d) / 1000);
+        if (diff < 60)    return 'Vừa xong';
+        if (diff < 3600)  return Math.floor(diff / 60) + ' phút trước';
+        if (diff < 86400) return Math.floor(diff / 3600) + ' giờ trước';
+        return Math.floor(diff / 86400) + ' ngày trước';
+    }
+
+    function updateBadge(count) {
+        var el = document.getElementById('notiCount');
+        if (!el) return;
+        if (count > 0) {
+            el.textContent = count > 99 ? '99+' : count;
+            el.style.display = '';
+        } else {
+            el.textContent = '';
+            el.style.display = 'none';
+        }
+    }
+
+    function renderList(data) {
+        var container = document.getElementById('notifList');
+        if (!container) return;
+
+        updateBadge(data.unreadCount);
+
+        if (!data.notifications || data.notifications.length === 0) {
+            container.innerHTML = '<div class="text-center py-3 text-muted small">Không có thông báo</div>';
+            return;
+        }
+
+        var html = '';
+        for (var i = 0; i < data.notifications.length; i++) {
+            var n = data.notifications[i];
+            var ic = iconFor(n.type);
+            var unreadClass = n.isRead ? '' : 'bg-light';
+            var rawUrl = n.actionUrl || '';
+            var url = rawUrl
+                ? '${pageContext.request.contextPath}/manager' + rawUrl
+                : 'javascript:void(0)';
+
+            html += '<a class="dropdown-item d-flex gap-2 py-2 ' + unreadClass + '" '
+                  + 'href="' + url + '" onclick="crmNotif.markRead(' + n.id + ')">'
+                  + '<div class="bg-' + ic.bg + ' bg-opacity-10 rounded p-2 flex-shrink-0">'
+                  + '<i class="bi ' + ic.icon + ' text-' + ic.bg + '"></i></div>'
+                  + '<div class="flex-grow-1">'
+                  + '<div class="small fw-medium">' + (n.title || '') + '</div>'
+                  + '<div class="text-muted text-truncate" style="font-size:11px;max-width:260px;">'
+                  + (n.summary || '') + '</div>'
+                  + '<div class="text-muted" style="font-size:10px;">' + timeAgo(n.createdAt) + '</div>'
+                  + '</div>';
+            if (!n.isRead) html += '<span class="bg-primary rounded-circle flex-shrink-0" style="width:8px;height:8px;margin-top:6px;"></span>';
+            html += '</a>';
+        }
+        container.innerHTML = html;
+    }
+
+    function fetchCount() {
+        fetch(API + '?action=count')
+            .then(function (r) { return r.json(); })
+            .then(function (d) { updateBadge(d.unreadCount); })
+            .catch(function () {});
+    }
+
+    function load() {
+        var container = document.getElementById('notifList');
+        if (container) container.innerHTML = '<div class="text-center py-3 text-muted small">Đang tải...</div>';
+        fetch(API + '?action=list&limit=15')
+            .then(function (r) { return r.json(); })
+            .then(function (d) { renderList(d); })
+            .catch(function () {
+                if (container) container.innerHTML = '<div class="text-center py-3 text-danger small">Lỗi tải thông báo</div>';
+            });
+    }
+
+    function markRead(notifId) {
+        fetch(API + '?action=markRead&notificationId=' + notifId, {method: 'POST'})
+            .then(function () { fetchCount(); })
+            .catch(function () {});
+    }
+
+    function markAllRead() {
+        fetch(API + '?action=markAllRead', {method: 'POST'})
+            .then(function () { load(); })
+            .catch(function () {});
+    }
+
+    // Auto-poll badge count
+    function startPolling() {
+        fetchCount();
+        timer = setInterval(fetchCount, pollInterval);
+    }
+
+    // Init khi trang load xong
+    document.addEventListener('DOMContentLoaded', startPolling);
+
+    return {load: load, markRead: markRead, markAllRead: markAllRead};
+})();
+</script>

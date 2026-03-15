@@ -485,6 +485,26 @@ public class SaleOpportunityFormServlet extends HttpServlet {
                 }
             }
 
+            // Notify opportunity created (only for new, not edit)
+            if (!isEdit) {
+                java.util.List<Integer> notifyIds = new java.util.ArrayList<>();
+                // Notify managers
+                dao.UserDAO userDAO = new dao.UserDAO();
+                for (model.Users u : userDAO.getAllUsers()) {
+                    String rc = userDAO.getRoleCodeByUserId(u.getUserId());
+                    if ("MANAGER".equals(rc) && u.getUserId() != currentUserId) {
+                        notifyIds.add(u.getUserId());
+                    }
+                }
+                if (!notifyIds.isEmpty()) {
+                    util.NotificationUtil.notifyOpportunityCreated(
+                            opportunity.getOpportunityId(),
+                            opportunity.getOpportunityCode(),
+                            opportunity.getOpportunityName(),
+                            currentUserId, notifyIds);
+                }
+            }
+
             // Success - redirect to list with success message
             response.sendRedirect(request.getContextPath() + "/sale/opportunity/list?success="
                     + (isEdit ? "updated" : "created"));

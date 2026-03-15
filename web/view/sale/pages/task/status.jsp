@@ -67,34 +67,24 @@
                     </div>
 
                     <!-- Update Form -->
-                    <form action="${pageContext.request.contextPath}/sale/task/status" method="post">
+                    <form action="${pageContext.request.contextPath}/sale/task/status" method="post"
+                          onsubmit="return confirm('Bạn có chắc chắn muốn đánh dấu công việc này là Hoàn thành?');">
                         <input type="hidden" name="taskId" value="${task.taskId}">
+                        <input type="hidden" name="status" value="COMPLETED">
 
-                        <div class="mb-4">
-                            <label for="status" class="form-label fw-bold">
-                                Trạng thái mới <span class="text-danger">*</span>
-                            </label>
-                            <select class="form-select form-select-lg" id="status" name="status" required>
-                                <c:forEach var="s" items="${taskStatusValues}">
-                                    <c:if test="${s.name() != 'CANCELLED'}">
-                                        <option value="${s.name()}" ${task.statusName == s.name() ? 'selected' : ''}>
-                                            ${s.vietnamese}
-                                        </option>
-                                    </c:if>
-                                </c:forEach>
-                            </select>
-                            <small class="text-muted mt-1 d-block">
-                                Chỉ có thể cập nhật trạng thái. Các thông tin khác chỉ quản lý mới được thay đổi.
-                            </small>
+                        <div class="alert alert-info mb-4">
+                            <i class="bi bi-info-circle me-2"></i>
+                            Bạn chỉ có thể cập nhật trạng thái sang <strong>Hoàn thành</strong>.
+                            Liên hệ quản lý nếu cần thay đổi khác.
                         </div>
 
                         <div class="d-flex gap-2">
-                            <button type="submit" class="btn btn-success">
-                                <i class="bi bi-check2-circle me-2"></i>Lưu thay đổi
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="bi bi-check2-circle me-2"></i>Đánh dấu Hoàn thành
                             </button>
                             <a href="${pageContext.request.contextPath}/sale/task/detail?id=${task.taskId}"
-                               class="btn btn-outline-secondary">
-                                <i class="bi bi-x-circle me-2"></i>Hủy
+                               class="btn btn-outline-secondary btn-lg">
+                                <i class="bi bi-arrow-left me-2"></i>Quay lại
                             </a>
                         </div>
                     </form>

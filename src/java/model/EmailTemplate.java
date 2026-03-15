@@ -22,6 +22,7 @@ public class EmailTemplate {
 
     public Boolean isActive;
     public Boolean isDefault;
+    public String allowedRoles;
 
     public LocalDateTime createdAt;
     public Integer createdBy;
@@ -31,7 +32,7 @@ public class EmailTemplate {
     public EmailTemplate() {
     }
 
-    public EmailTemplate(Integer templateId, String templateCode, String templateName, String category, String subject, String bodyHtml, String bodyText, String availableVariables, String description, Boolean isActive, Boolean isDefault, LocalDateTime createdAt, Integer createdBy, LocalDateTime updatedAt, Integer updatedBy) {
+    public EmailTemplate(Integer templateId, String templateCode, String templateName, String category, String subject, String bodyHtml, String bodyText, String availableVariables, String description, Boolean isActive, Boolean isDefault, String allowedRoles, LocalDateTime createdAt, Integer createdBy, LocalDateTime updatedAt, Integer updatedBy) {
         this.templateId = templateId;
         this.templateCode = templateCode;
         this.templateName = templateName;
@@ -43,6 +44,7 @@ public class EmailTemplate {
         this.description = description;
         this.isActive = isActive;
         this.isDefault = isDefault;
+        this.allowedRoles = allowedRoles;
         this.createdAt = createdAt;
         this.createdBy = createdBy;
         this.updatedAt = updatedAt;
@@ -135,6 +137,14 @@ public class EmailTemplate {
 
     public void setIsDefault(Boolean isDefault) {
         this.isDefault = isDefault;
+    }
+
+    public String getAllowedRoles() {
+        return allowedRoles;
+    }
+
+    public void setAllowedRoles(String allowedRoles) {
+        this.allowedRoles = allowedRoles;
     }
 
     public LocalDateTime getCreatedAt() {

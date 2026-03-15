@@ -48,6 +48,17 @@ public class SaleQuotationApproveServlet extends HttpServlet {
             String deviceType = parseDeviceType(ua);
             String browser = parseBrowser(ua);
             quotDAO.insertTrackingLog(quotationId, "APPROVED", ip, ua, deviceType, browser);
+
+            // Notify quotation approved
+            java.util.List<Integer> notifyIds = new java.util.ArrayList<>();
+            if (q.getCreatedBy() != null && q.getCreatedBy() != currentUserId) {
+                notifyIds.add(q.getCreatedBy());
+            }
+            if (!notifyIds.isEmpty()) {
+                util.NotificationUtil.notifyQuotationApproved(
+                        quotationId, q.getQuotationCode(),
+                        currentUserId, notifyIds);
+            }
         }
 
         response.sendRedirect(request.getContextPath() + "/sale/quotation/detail?id=" + quotationId + "&approved=1");

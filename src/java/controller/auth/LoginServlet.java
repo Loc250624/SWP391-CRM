@@ -9,6 +9,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import model.Users;
+import util.AuditUtil;
 
 @WebServlet(name = "LoginServlet", urlPatterns = {"/login"})
 public class LoginServlet extends HttpServlet {
@@ -41,6 +42,8 @@ public class LoginServlet extends HttpServlet {
             HttpSession session = request.getSession();
             session.setAttribute("user", user);
             session.setAttribute("role", roleCode != null ? roleCode.toUpperCase() : null);
+
+            AuditUtil.logLogin(request, user.getUserId());
 
             // 3. Điều hướng dựa trên danh sách Role
             if (roleCode == null) {

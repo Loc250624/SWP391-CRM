@@ -24,6 +24,7 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import util.AuditUtil;
 import util.SessionHelper;
 
 @WebServlet(name = "SaleQuotationFormServlet", urlPatterns = {"/sale/quotation/form"})
@@ -387,6 +388,19 @@ public class SaleQuotationFormServlet extends HttpServlet {
                 saved.setTotalAmount(total);
                 saved.setUpdatedBy(currentUserId);
                 quotDAO.updateQuotation(saved);
+            }
+        }
+
+        // Audit log
+        if (quotationId > 0) {
+            Quotation auditQ = quotDAO.getQuotationById(quotationId);
+            String qVals = auditQ != null
+                    ? "title=" + auditQ.getTitle() + ", total=" + auditQ.getTotalAmount() + ", validUntil=" + auditQ.getValidUntil()
+                    : "id=" + quotationId;
+            if (idParam != null && !idParam.trim().isEmpty()) {
+                AuditUtil.logUpdate(request, currentUserId, "Quotation", quotationId, null, qVals);
+            } else {
+                AuditUtil.logCreate(request, currentUserId, "Quotation", quotationId, qVals);
             }
         }
 

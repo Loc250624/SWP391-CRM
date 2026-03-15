@@ -183,10 +183,17 @@
                     </a>
                 </li>
                 <li class="nav-item mb-1">
-                    <a href="${pageContext.request.contextPath}/sale/activity/form" 
+                    <a href="${pageContext.request.contextPath}/sale/activity/form"
                        class="nav-link rounded-2 d-flex align-items-center gap-2 py-2 px-3 ${ACTIVE_MENU == 'ACT_FORM' ? 'active bg-primary text-white' : 'text-body-secondary'}">
                         <i class="bi bi-journal-plus"></i>
                         <span>Ghi nhận</span>
+                    </a>
+                </li>
+                <li class="nav-item mb-1">
+                    <a href="${pageContext.request.contextPath}/sale/email/send"
+                       class="nav-link rounded-2 d-flex align-items-center gap-2 py-2 px-3 ${ACTIVE_MENU == 'EMAIL_SEND' ? 'active bg-primary text-white' : 'text-body-secondary'}">
+                        <i class="bi bi-envelope"></i>
+                        <span>Gửi Email</span>
                     </a>
                 </li>
             </ul>
@@ -199,10 +206,26 @@
             </div>
             <ul class="nav flex-column px-2">
                 <li class="nav-item mb-1">
-                    <a href="${pageContext.request.contextPath}/sale/task/list" 
+                    <a href="${pageContext.request.contextPath}/sale/task/list"
                        class="nav-link rounded-2 d-flex align-items-center gap-2 py-2 px-3 ${ACTIVE_MENU == 'TASK_LIST' ? 'active bg-primary text-white' : 'text-body-secondary'}">
                         <i class="bi bi-check2-square"></i>
                         <span>Danh sách Task</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Thông báo -->
+        <div class="mb-1">
+            <div class="px-3 py-2">
+                <small class="text-uppercase text-muted fw-semibold" style="font-size: 10px; letter-spacing: 0.5px;">Thông báo</small>
+            </div>
+            <ul class="nav flex-column px-2">
+                <li class="nav-item mb-1">
+                    <a href="${pageContext.request.contextPath}/sale/notifications"
+                       class="nav-link rounded-2 d-flex align-items-center gap-2 py-2 px-3 ${ACTIVE_MENU == 'NOTIFICATIONS' ? 'active bg-primary text-white' : 'text-body-secondary'}">
+                        <i class="bi bi-bell"></i>
+                        <span>Thông báo</span>
                     </a>
                 </li>
             </ul>

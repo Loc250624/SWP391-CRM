@@ -437,7 +437,7 @@
             stageSelect.innerHTML = '<option value="">-- Chon pipeline truoc --</option>';
             return;
         }
-        fetch('${pageContext.request.contextPath}/sale/api/stages?pipelineId=' + pipelineId)
+        fetch('${pageContext.request.contextPath}/sale/stages?pipelineId=' + pipelineId)
             .then(function(res) { return res.json(); })
             .then(function(stages) {
                 stageSelect.innerHTML = '<option value="">-- Tu dong chon stage dau --</option>';
