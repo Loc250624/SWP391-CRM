@@ -349,7 +349,7 @@
 
         <div class="d-flex gap-1">
             <a href="${pageContext.request.contextPath}/sale/opportunity/list" class="btn btn-outline-secondary btn-sm" style="font-size:.75rem;"><i class="bi bi-list-ul"></i></a>
-            <a href="${pageContext.request.contextPath}/sale/opportunity/form" class="btn btn-primary btn-sm" style="font-size:.75rem;"><i class="bi bi-plus-lg me-1"></i>Tao deal</a>
+            <a href="${pageContext.request.contextPath}/sale/opportunity/form" class="btn btn-primary btn-sm" style="font-size:.75rem;"><i class="bi bi-plus-lg me-1"></i>Tạo deal</a>
         </div>
     </div>
 </div>
@@ -382,7 +382,7 @@
 
                     <div class="kb-col-actions" style="padding: 0 6px 4px;">
                         <a href="${pageContext.request.contextPath}/sale/opportunity/form?pipeline=${selectedPipeline.pipelineId}&stage=${stage.stageId}" class="kb-add-btn">
-                            <i class="bi bi-plus"></i>Tao deal
+                            <i class="bi bi-plus"></i>Tạo deal
                         </a>
                     </div>
 
@@ -439,7 +439,7 @@
                                 </c:forEach>
                             </c:when>
                             <c:otherwise>
-                                <div class="kb-empty"><i class="bi bi-inbox"></i><br>Trong</div>
+                                <div class="kb-empty"><i class="bi bi-inbox"></i><br>Trống</div>
                                 </c:otherwise>
                             </c:choose>
                     </div>
@@ -450,8 +450,8 @@
     <c:otherwise>
         <div class="text-center py-5">
             <i class="bi bi-kanban text-muted" style="font-size: 3rem;"></i>
-            <p class="text-muted mt-3 mb-1">Chua co pipeline hoac stage nao</p>
-            <small class="text-muted">Vui long cau hinh pipeline va stages trong he thong</small>
+            <p class="text-muted mt-3 mb-1">Chưa có pipeline hoặc stage nào</p>
+            <small class="text-muted">Vui lòng cấu hình pipeline và stages trong hệ thống</small>
         </div>
     </c:otherwise>
 </c:choose>
@@ -479,19 +479,19 @@
                     <div class="col-4">
                         <div class="opp-kpi-box">
                             <div class="value text-success" id="mdl-value">0</div>
-                            <div class="label">Gia tri (VND)</div>
+                            <div class="label">Giá trị (VND)</div>
                         </div>
                     </div>
                     <div class="col-4">
                         <div class="opp-kpi-box">
                             <div class="value text-primary" id="mdl-prob">0%</div>
-                            <div class="label">Xac suat</div>
+                            <div class="label">Xác suất</div>
                         </div>
                     </div>
                     <div class="col-4">
                         <div class="opp-kpi-box">
                             <div class="value text-warning" id="mdl-forecast">0</div>
-                            <div class="label">Du bao</div>
+                            <div class="label">Dự báo</div>
                         </div>
                     </div>
                 </div>
@@ -499,7 +499,7 @@
                 <!-- Probability Bar -->
                 <div class="mb-3">
                     <div class="d-flex justify-content-between mb-1">
-                        <small class="text-muted fw-semibold">Tien do xac suat</small>
+                        <small class="text-muted fw-semibold">Tiến độ xác suất</small>
                         <small class="fw-bold" id="mdl-prob-text"></small>
                     </div>
                     <div class="progress" style="height: 8px;">
@@ -510,27 +510,27 @@
                 <!-- Detail Info -->
                 <div class="row g-3">
                     <div class="col-md-6">
-                        <div class="opp-detail-label">Ngay dong du kien</div>
+                        <div class="opp-detail-label">Ngày đóng dự kiến</div>
                         <div class="opp-detail-value" id="mdl-close-date">-</div>
                     </div>
                     <div class="col-md-6">
-                        <div class="opp-detail-label">Ngay dong thuc te</div>
+                        <div class="opp-detail-label">Ngày đóng thực tế</div>
                         <div class="opp-detail-value" id="mdl-actual-close">-</div>
                     </div>
                     <div class="col-md-6">
-                        <div class="opp-detail-label">Ngay tao</div>
+                        <div class="opp-detail-label">Ngày tạo</div>
                         <div class="opp-detail-value" id="mdl-created">-</div>
                     </div>
                     <div class="col-md-6">
-                        <div class="opp-detail-label">Cap nhat</div>
+                        <div class="opp-detail-label">Cập nhật</div>
                         <div class="opp-detail-value" id="mdl-updated">-</div>
                     </div>
                     <div id="mdl-reason-wrap" class="col-12" style="display:none;">
-                        <div class="opp-detail-label">Ly do Won/Lost</div>
+                        <div class="opp-detail-label">Lý do Won/Lost</div>
                         <div class="opp-detail-value" id="mdl-reason"></div>
                     </div>
                     <div id="mdl-notes-wrap" class="col-12" style="display:none;">
-                        <div class="opp-detail-label">Ghi chu</div>
+                        <div class="opp-detail-label">Ghi chú</div>
                         <div class="opp-detail-value p-2 bg-light rounded" id="mdl-notes" style="white-space:pre-wrap; font-size:.85rem;"></div>
                     </div>
                 </div>
@@ -540,18 +540,18 @@
                     <div class="d-flex align-items-center justify-content-between p-2 bg-light rounded">
                         <div>
                             <i class="bi bi-file-earmark-text me-1 text-primary"></i>
-                            <span class="fw-medium">Bao gia:</span>
+                            <span class="fw-medium">Báo giá:</span>
                             <span class="badge bg-primary-subtle text-primary ms-1" id="mdl-quot-count">0</span>
                         </div>
-                        <a id="mdl-link-quot-list" href="#" class="btn btn-sm btn-outline-primary py-0 px-2" style="font-size:.75rem;">Xem bao gia</a>
+                        <a id="mdl-link-quot-list" href="#" class="btn btn-sm btn-outline-primary py-0 px-2" style="font-size:.75rem;">Xem báo giá</a>
                     </div>
                 </div>
             </div>
             <div class="modal-footer py-2">
-                <a id="mdl-link-detail" href="#" class="btn btn-outline-primary btn-sm"><i class="bi bi-eye me-1"></i>Xem chi tiet</a>
-                <a id="mdl-link-edit" href="#" class="btn btn-outline-secondary btn-sm"><i class="bi bi-pencil me-1"></i>Chinh sua</a>
-                <a id="mdl-link-quotation" href="#" class="btn btn-success btn-sm" style="display:none;"><i class="bi bi-file-earmark-text me-1"></i>Tao de xuat</a>
-                <button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal">Dong</button>
+                <a id="mdl-link-detail" href="#" class="btn btn-outline-primary btn-sm"><i class="bi bi-eye me-1"></i>Xem chi tiết</a>
+                <a id="mdl-link-edit" href="#" class="btn btn-outline-secondary btn-sm"><i class="bi bi-pencil me-1"></i>Chỉnh sửa</a>
+                <a id="mdl-link-quotation" href="#" class="btn btn-success btn-sm" style="display:none;"><i class="bi bi-file-earmark-text me-1"></i>Tạo đề xuất</a>
+                <button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal">Đóng</button>
             </div>
         </div>
     </div>
@@ -568,17 +568,17 @@
             <div class="modal-body">
                 <p class="mb-3" id="confirmCloseMsg"></p>
                 <div class="mb-3">
-                    <label class="form-label small fw-semibold" id="confirmCloseReasonLabel">Ly do <span id="reasonRequiredMark" class="text-danger" style="display:none;">*</span></label>
-                    <textarea class="form-control form-control-sm" id="confirmCloseReason" rows="3" placeholder="Nhap ly do..."></textarea>
-                    <div class="invalid-feedback" id="reasonError">Vui long nhap ly do.</div>
+                    <label class="form-label small fw-semibold" id="confirmCloseReasonLabel">Lý do <span id="reasonRequiredMark" class="text-danger" style="display:none;">*</span></label>
+                    <textarea class="form-control form-control-sm" id="confirmCloseReason" rows="3" placeholder="Nhập lý do..."></textarea>
+                    <div class="invalid-feedback" id="reasonError">Vui lòng nhập lý do.</div>
                 </div>
                 <div class="alert alert-warning small py-2 mb-0">
-                    <i class="bi bi-exclamation-triangle me-1"></i>Sau khi xac nhan, trang thai se <strong>khong the thay doi</strong> lai duoc.
+                    <i class="bi bi-exclamation-triangle me-1"></i>Sau khi xác nhận, trạng thái sẽ <strong>không thể thay đổi</strong> lại được.
                 </div>
             </div>
             <div class="modal-footer py-2">
-                <button type="button" class="btn btn-light btn-sm" id="confirmCloseCancel" data-bs-dismiss="modal">Huy</button>
-                <button type="button" class="btn btn-sm" id="confirmCloseBtn">Xac nhan</button>
+                <button type="button" class="btn btn-light btn-sm" id="confirmCloseCancel" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-sm" id="confirmCloseBtn">Xác nhận</button>
             </div>
         </div>
     </div>
@@ -629,17 +629,17 @@
                     var isWon = targetStageType === 'won';
                     var header = document.getElementById('confirmCloseHeader');
                     header.style.borderBottom = '3px solid ' + (isWon ? '#27ae60' : '#c0392b');
-                    document.getElementById('confirmCloseTitle').textContent = isWon ? 'Xac nhan Thanh cong' : 'Xac nhan That bai';
+                    document.getElementById('confirmCloseTitle').textContent = isWon ? 'Xác nhận Thành công' : 'Xác nhận Thất bại';
                     document.getElementById('confirmCloseMsg').innerHTML = (isWon
-                            ? 'Ban co chac muon danh dau <strong>' + oppName + '</strong> la <span class="text-success fw-bold">Thanh cong (Won)</span>?'
-                            : 'Ban co chac muon danh dau <strong>' + oppName + '</strong> la <span class="text-danger fw-bold">That bai (Lost)</span>?');
+                            ? 'Bạn có chắc muốn đánh dấu <strong>' + oppName + '</strong> là <span class="text-success fw-bold">Thành công (Won)</span>?'
+                            : 'Bạn có chắc muốn đánh dấu <strong>' + oppName + '</strong> là <span class="text-danger fw-bold">Thất bại (Lost)</span>?');
                     document.getElementById('confirmCloseReason').value = '';
                     document.getElementById('confirmCloseReason').classList.remove('is-invalid');
                     // LOST requires reason, WON does not
                     document.getElementById('reasonRequiredMark').style.display = isWon ? 'none' : 'inline';
                     var btn = document.getElementById('confirmCloseBtn');
                     btn.className = 'btn btn-sm ' + (isWon ? 'btn-success' : 'btn-danger');
-                    btn.textContent = isWon ? 'Xac nhan Won' : 'Xac nhan Lost';
+                    btn.textContent = isWon ? 'Xác nhận Won' : 'Xác nhận Lost';
 
                     getConfirmModal().show();
                     return;
@@ -662,7 +662,7 @@
 
         // Show empty message if source is now empty
         if (fromEl.querySelectorAll('.kb-card').length === 0) {
-            fromEl.innerHTML = '<div class="kb-empty"><i class="bi bi-inbox"></i><br>Trong</div>';
+            fromEl.innerHTML = '<div class="kb-empty"><i class="bi bi-inbox"></i><br>Trống</div>';
         }
 
         var body = 'opportunityId=' + oppId + '&stageId=' + newStageId;
@@ -676,17 +676,17 @@
                 .then(function (r) { return r.json(); })
                 .then(function (data) {
                     if (!data.success) {
-                        CRM.showToast('Loi: ' + data.message, 'error');
+                        CRM.showToast('Lỗi: ' + data.message, 'error');
                         setTimeout(function(){ location.reload(); }, 2000);
                     } else if (data.newStatus === 'Won' || data.newStatus === 'Lost') {
                         if (data.leadConverted) {
-                            CRM.showToast('Lead da duoc tu dong chuyen doi thanh Customer!', 'success');
+                            CRM.showToast('Lead đã được tự động chuyển đổi thành Customer!', 'success');
                         }
                         setTimeout(function(){ location.reload(); }, 2000);
                     }
                 })
                 .catch(function () {
-                    CRM.showToast('Loi ket noi', 'error');
+                    CRM.showToast('Lỗi kết nối', 'error');
                     setTimeout(function(){ location.reload(); }, 2000);
                 });
     }
@@ -739,7 +739,7 @@
             updateColumnCount(pendingClose.toEl);
             // Check empty
             if (pendingClose.toEl.querySelectorAll('.kb-card').length === 0) {
-                pendingClose.toEl.innerHTML = '<div class="kb-empty"><i class="bi bi-inbox"></i><br>Trong</div>';
+                pendingClose.toEl.innerHTML = '<div class="kb-empty"><i class="bi bi-inbox"></i><br>Trống</div>';
             }
             var emptyFrom = pendingClose.fromEl.querySelector('.kb-empty');
             if (emptyFrom) emptyFrom.remove();

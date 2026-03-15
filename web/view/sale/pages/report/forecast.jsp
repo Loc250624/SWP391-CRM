@@ -3,7 +3,7 @@
 <%@taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt"%>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <div><h4 class="mb-1 fw-bold">Bao cao Forecast</h4><p class="text-muted mb-0">Du bao doanh thu theo pipeline va xac suat</p></div>
+    <div><h4 class="mb-1 fw-bold">Báo cáo Forecast</h4><p class="text-muted mb-0">Dự báo doanh thu theo pipeline và xác suất</p></div>
 </div>
 
 <div class="row g-3 mb-4">
@@ -27,27 +27,27 @@
         <div class="card border-0 shadow-sm"><div class="card-body">
             <div class="d-flex align-items-center">
                 <div class="bg-warning bg-opacity-10 rounded-3 p-2 me-3"><i class="bi bi-question-circle text-warning fs-4"></i></div>
-                <div><small class="text-muted">Tong Weighted Forecast</small><h3 class="mb-0 fw-bold"><fmt:formatNumber value="${totalW}" type="number" groupingUsed="true" maxFractionDigits="0"/> <small class="fs-6 fw-normal">d</small></h3></div>
+                <div><small class="text-muted">Tổng Weighted Forecast</small><h3 class="mb-0 fw-bold"><fmt:formatNumber value="${totalW}" type="number" groupingUsed="true" maxFractionDigits="0"/> <small class="fs-6 fw-normal">d</small></h3></div>
             </div>
         </div></div>
     </div>
 </div>
 
 <div class="card border-0 shadow-sm mb-4">
-    <div class="card-header bg-transparent border-0"><h6 class="mb-0 fw-semibold">Forecast theo muc do</h6></div>
+    <div class="card-header bg-transparent border-0"><h6 class="mb-0 fw-semibold">Forecast theo mức độ</h6></div>
     <div class="card-body">
         <c:if test="${not empty tiers}">
             <canvas id="fcChart" height="80"></canvas>
         </c:if>
-        <c:if test="${empty tiers}"><p class="text-muted text-center">Chua co du lieu</p></c:if>
+        <c:if test="${empty tiers}"><p class="text-muted text-center">Chưa có dữ liệu</p></c:if>
     </div>
 </div>
 
 <div class="card border-0 shadow-sm">
-    <div class="card-header bg-transparent border-0"><h6 class="mb-0 fw-semibold">Chi tiet Forecast theo muc xac suat</h6></div>
+    <div class="card-header bg-transparent border-0"><h6 class="mb-0 fw-semibold">Chi tiết Forecast theo mức xác suất</h6></div>
     <div class="card-body pt-0">
         <div class="table-responsive"><table class="table table-hover align-middle mb-0">
-            <thead class="table-light"><tr><th>Muc</th><th class="text-center">So deal</th><th class="text-end">Pipeline Value</th><th class="text-end">Weighted Value</th><th style="width:200px;">Ti trong</th></tr></thead>
+            <thead class="table-light"><tr><th>Mức</th><th class="text-center">Số deal</th><th class="text-end">Pipeline Value</th><th class="text-end">Weighted Value</th><th style="width:200px;">Tỉ trọng</th></tr></thead>
             <tbody>
                 <c:choose>
                     <c:when test="${not empty tiers}">
@@ -61,7 +61,7 @@
                             </tr>
                         </c:forEach>
                     </c:when>
-                    <c:otherwise><tr><td colspan="5" class="text-center text-muted py-3">Chua co du lieu</td></tr></c:otherwise>
+                    <c:otherwise><tr><td colspan="5" class="text-center text-muted py-3">Chưa có dữ liệu</td></tr></c:otherwise>
                 </c:choose>
             </tbody>
         </table></div>

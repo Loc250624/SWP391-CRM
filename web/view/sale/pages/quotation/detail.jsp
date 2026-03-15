@@ -4,31 +4,31 @@
 
 <!-- Toast messages -->
 <c:if test="${param.approved == '1'}">
-    <script>document.addEventListener('DOMContentLoaded', function(){ CRM.showToast('Duyet bao gia thanh cong!', 'success'); });</script>
+    <script>document.addEventListener('DOMContentLoaded', function(){ CRM.showToast('Duyệt báo giá thành công!', 'success'); });</script>
 </c:if>
 <c:if test="${param.rejected == '1'}">
-    <script>document.addEventListener('DOMContentLoaded', function(){ CRM.showToast('Da tu choi bao gia.', 'info'); });</script>
+    <script>document.addEventListener('DOMContentLoaded', function(){ CRM.showToast('Đã từ chối báo giá.', 'info'); });</script>
 </c:if>
 <c:if test="${param.sent == '1'}">
-    <script>document.addEventListener('DOMContentLoaded', function(){ CRM.showToast('Da gui bao gia thanh cong!', 'success'); });</script>
+    <script>document.addEventListener('DOMContentLoaded', function(){ CRM.showToast('Đã gửi báo giá thành công!', 'success'); });</script>
 </c:if>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h4 class="mb-1 fw-bold">Chi tiet Bao gia</h4>
+        <h4 class="mb-1 fw-bold">Chi tiết Báo giá</h4>
         <p class="text-muted mb-0">${quotation.quotationCode} - ${quotation.title}</p>
     </div>
     <div class="d-flex gap-2">
-        <a href="${pageContext.request.contextPath}/sale/quotation/list" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Quay lai</a>
+        <a href="${pageContext.request.contextPath}/sale/quotation/list" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Quay lại</a>
         <c:if test="${quotation.status == 'Draft'}">
-            <a href="${pageContext.request.contextPath}/sale/quotation/form?id=${quotation.quotationId}" class="btn btn-outline-primary btn-sm"><i class="bi bi-pencil me-1"></i>Chinh sua</a>
-            <button type="button" class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#approveModal"><i class="bi bi-check-circle me-1"></i>Duyet</button>
-            <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#rejectModal"><i class="bi bi-x-circle me-1"></i>Tu choi</button>
+            <a href="${pageContext.request.contextPath}/sale/quotation/form?id=${quotation.quotationId}" class="btn btn-outline-primary btn-sm"><i class="bi bi-pencil me-1"></i>Chỉnh sửa</a>
+            <button type="button" class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#approveModal"><i class="bi bi-check-circle me-1"></i>Duyệt</button>
+            <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#rejectModal"><i class="bi bi-x-circle me-1"></i>Từ chối</button>
         </c:if>
         <c:if test="${quotation.status == 'Approved'}">
             <form method="POST" action="${pageContext.request.contextPath}/sale/quotation/send" style="display:inline;">
                 <input type="hidden" name="quotationId" value="${quotation.quotationId}">
-                <button type="submit" class="btn btn-warning btn-sm"><i class="bi bi-send me-1"></i>Gui bao gia</button>
+                <button type="submit" class="btn btn-warning btn-sm"><i class="bi bi-send me-1"></i>Gửi báo giá</button>
             </form>
         </c:if>
     </div>
@@ -41,11 +41,11 @@
             <div class="card-body">
                 <div class="row g-3">
                     <div class="col-md-6">
-                        <label class="text-muted small">Ma bao gia</label>
+                        <label class="text-muted small">Mã báo giá</label>
                         <div class="fw-medium">${quotation.quotationCode}</div>
                     </div>
                     <div class="col-md-6">
-                        <label class="text-muted small">Phien ban</label>
+                        <label class="text-muted small">Phiên bản</label>
                         <div class="fw-medium">v${quotation.version}</div>
                     </div>
                     <div class="col-md-6">
@@ -62,7 +62,7 @@
                         </div>
                     </div>
                     <div class="col-md-6">
-                        <label class="text-muted small">Khach hang / Lead</label>
+                        <label class="text-muted small">Khách hàng / Lead</label>
                         <div class="fw-medium">
                             <c:if test="${not empty linkedCustomer}">
                                 <i class="bi bi-building text-success me-1"></i>${linkedCustomer.fullName}
@@ -76,7 +76,7 @@
                         </div>
                     </div>
                     <div class="col-md-6">
-                        <label class="text-muted small">Ngay tao</label>
+                        <label class="text-muted small">Ngày tạo</label>
                         <div>
                             <c:choose>
                                 <c:when test="${not empty quotation.createdAt}">${quotation.createdAt.toString().substring(0, 10)}</c:when>
@@ -85,7 +85,7 @@
                         </div>
                     </div>
                     <div class="col-md-6">
-                        <label class="text-muted small">Hieu luc den</label>
+                        <label class="text-muted small">Hiệu lực đến</label>
                         <div>
                             <c:choose>
                                 <c:when test="${not empty quotation.validUntil}">${quotation.validUntil}</c:when>
@@ -95,7 +95,7 @@
                     </div>
                     <c:if test="${not empty creatorName}">
                         <div class="col-md-6">
-                            <label class="text-muted small">Nguoi tao</label>
+                            <label class="text-muted small">Người tạo</label>
                             <div class="fw-medium">${creatorName}</div>
                         </div>
                     </c:if>
@@ -105,17 +105,17 @@
 
         <!-- Items -->
         <div class="card border-0 shadow-sm mb-4">
-            <div class="card-header bg-transparent border-0"><h6 class="mb-0 fw-semibold">Hang muc</h6></div>
+            <div class="card-header bg-transparent border-0"><h6 class="mb-0 fw-semibold">Hạng mục</h6></div>
             <div class="card-body pt-0">
                 <div class="table-responsive">
                     <table class="table align-middle mb-0">
                         <thead class="table-light">
                             <tr>
-                                <th>Khoa hoc / Dich vu</th>
+                                <th>Khóa học / Dịch vụ</th>
                                 <th class="text-center">SL</th>
-                                <th class="text-end">Don gia</th>
-                                <th class="text-end">Giam gia</th>
-                                <th class="text-end">Thanh tien</th>
+                                <th class="text-end">Đơn giá</th>
+                                <th class="text-end">Giảm giá</th>
+                                <th class="text-end">Thành tiền</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -126,13 +126,13 @@
                                             <td>
                                                 ${item.description}
                                                 <c:if test="${item.isOptional == true}">
-                                                    <span class="badge bg-secondary-subtle text-secondary ms-1">Tuy chon</span>
+                                                    <span class="badge bg-secondary-subtle text-secondary ms-1">Tùy chọn</span>
                                                 </c:if>
                                             </td>
                                             <td class="text-center">${item.quantity}</td>
                                             <td class="text-end">
                                                 <c:if test="${not empty item.unitPrice}">
-                                                    <fmt:formatNumber value="${item.unitPrice}" type="number" groupingUsed="true" maxFractionDigits="0"/> d
+                                                    <fmt:formatNumber value="${item.unitPrice}" type="number" groupingUsed="true" maxFractionDigits="0"/> đ
                                                 </c:if>
                                                 <c:if test="${empty item.unitPrice}">-</c:if>
                                             </td>
@@ -144,7 +144,7 @@
                                             </td>
                                             <td class="text-end fw-semibold">
                                                 <c:if test="${not empty item.lineTotal}">
-                                                    <fmt:formatNumber value="${item.lineTotal}" type="number" groupingUsed="true" maxFractionDigits="0"/> d
+                                                    <fmt:formatNumber value="${item.lineTotal}" type="number" groupingUsed="true" maxFractionDigits="0"/> đ
                                                 </c:if>
                                                 <c:if test="${empty item.lineTotal}">-</c:if>
                                             </td>
@@ -152,7 +152,7 @@
                                     </c:forEach>
                                 </c:when>
                                 <c:otherwise>
-                                    <tr><td colspan="5" class="text-center text-muted py-3">Chua co hang muc nao</td></tr>
+                                    <tr><td colspan="5" class="text-center text-muted py-3">Chưa có hạng mục nào</td></tr>
                                 </c:otherwise>
                             </c:choose>
                         </tbody>
@@ -160,26 +160,26 @@
                             <tfoot class="table-light">
                                 <c:if test="${not empty quotation.subtotal && quotation.subtotal > 0}">
                                     <tr>
-                                        <td colspan="4" class="text-end">Tong phu:</td>
-                                        <td class="text-end fw-semibold"><fmt:formatNumber value="${quotation.subtotal}" type="number" groupingUsed="true" maxFractionDigits="0"/> d</td>
+                                        <td colspan="4" class="text-end">Tổng phụ:</td>
+                                        <td class="text-end fw-semibold"><fmt:formatNumber value="${quotation.subtotal}" type="number" groupingUsed="true" maxFractionDigits="0"/> đ</td>
                                     </tr>
                                 </c:if>
                                 <c:if test="${not empty quotation.discountAmount && quotation.discountAmount > 0}">
                                     <tr>
-                                        <td colspan="4" class="text-end">Giam gia<c:if test="${not empty quotation.discountPercent && quotation.discountPercent > 0}"> (${quotation.discountPercent}%)</c:if>:</td>
-                                        <td class="text-end text-danger">-<fmt:formatNumber value="${quotation.discountAmount}" type="number" groupingUsed="true" maxFractionDigits="0"/> d</td>
+                                        <td colspan="4" class="text-end">Giảm giá<c:if test="${not empty quotation.discountPercent && quotation.discountPercent > 0}"> (${quotation.discountPercent}%)</c:if>:</td>
+                                        <td class="text-end text-danger">-<fmt:formatNumber value="${quotation.discountAmount}" type="number" groupingUsed="true" maxFractionDigits="0"/> đ</td>
                                     </tr>
                                 </c:if>
                                 <c:if test="${not empty quotation.taxAmount && quotation.taxAmount > 0}">
                                     <tr>
-                                        <td colspan="4" class="text-end">Thue<c:if test="${not empty quotation.taxPercent && quotation.taxPercent > 0}"> (${quotation.taxPercent}%)</c:if>:</td>
-                                        <td class="text-end"><fmt:formatNumber value="${quotation.taxAmount}" type="number" groupingUsed="true" maxFractionDigits="0"/> d</td>
+                                        <td colspan="4" class="text-end">Thuế<c:if test="${not empty quotation.taxPercent && quotation.taxPercent > 0}"> (${quotation.taxPercent}%)</c:if>:</td>
+                                        <td class="text-end"><fmt:formatNumber value="${quotation.taxAmount}" type="number" groupingUsed="true" maxFractionDigits="0"/> đ</td>
                                     </tr>
                                 </c:if>
                                 <c:if test="${not empty quotation.totalAmount && quotation.totalAmount > 0}">
                                     <tr>
-                                        <td colspan="4" class="text-end fw-bold">Tong cong:</td>
-                                        <td class="text-end fw-bold text-success fs-5"><fmt:formatNumber value="${quotation.totalAmount}" type="number" groupingUsed="true" maxFractionDigits="0"/> d</td>
+                                        <td colspan="4" class="text-end fw-bold">Tổng cộng:</td>
+                                        <td class="text-end fw-bold text-success fs-5"><fmt:formatNumber value="${quotation.totalAmount}" type="number" groupingUsed="true" maxFractionDigits="0"/> đ</td>
                                     </tr>
                                 </c:if>
                             </tfoot>
@@ -192,23 +192,23 @@
         <!-- Terms -->
         <c:if test="${not empty quotation.paymentTerms || not empty quotation.termsConditions || not empty quotation.deliveryTerms}">
             <div class="card border-0 shadow-sm mb-4">
-                <div class="card-header bg-transparent border-0"><h6 class="mb-0 fw-semibold">Dieu khoan</h6></div>
+                <div class="card-header bg-transparent border-0"><h6 class="mb-0 fw-semibold">Điều khoản</h6></div>
                 <div class="card-body">
                     <c:if test="${not empty quotation.paymentTerms}">
                         <div class="mb-3">
-                            <label class="text-muted small fw-semibold">Dieu khoan thanh toan</label>
+                            <label class="text-muted small fw-semibold">Điều khoản thanh toán</label>
                             <p class="mb-0" style="white-space: pre-wrap;">${quotation.paymentTerms}</p>
                         </div>
                     </c:if>
                     <c:if test="${not empty quotation.deliveryTerms}">
                         <div class="mb-3">
-                            <label class="text-muted small fw-semibold">Dieu khoan giao hang</label>
+                            <label class="text-muted small fw-semibold">Điều khoản giao hàng</label>
                             <p class="mb-0" style="white-space: pre-wrap;">${quotation.deliveryTerms}</p>
                         </div>
                     </c:if>
                     <c:if test="${not empty quotation.termsConditions}">
                         <div>
-                            <label class="text-muted small fw-semibold">Dieu kien chung</label>
+                            <label class="text-muted small fw-semibold">Điều kiện chung</label>
                             <p class="mb-0" style="white-space: pre-wrap;">${quotation.termsConditions}</p>
                         </div>
                     </c:if>
@@ -219,17 +219,17 @@
         <!-- Notes -->
         <c:if test="${not empty quotation.notes || not empty quotation.description}">
             <div class="card border-0 shadow-sm mb-4">
-                <div class="card-header bg-transparent border-0"><h6 class="mb-0 fw-semibold">Ghi chu</h6></div>
+                <div class="card-header bg-transparent border-0"><h6 class="mb-0 fw-semibold">Ghi chú</h6></div>
                 <div class="card-body">
                     <c:if test="${not empty quotation.description}">
                         <div class="mb-2">
-                            <label class="text-muted small fw-semibold">Mo ta</label>
+                            <label class="text-muted small fw-semibold">Mô tả</label>
                             <p class="mb-0" style="white-space: pre-wrap;">${quotation.description}</p>
                         </div>
                     </c:if>
                     <c:if test="${not empty quotation.notes}">
                         <div>
-                            <label class="text-muted small fw-semibold">Ghi chu</label>
+                            <label class="text-muted small fw-semibold">Ghi chú</label>
                             <p class="mb-0" style="white-space: pre-wrap;">${quotation.notes}</p>
                         </div>
                     </c:if>
@@ -240,17 +240,17 @@
         <!-- Tracking Logs -->
         <c:if test="${not empty trackingLogs}">
             <div class="card border-0 shadow-sm">
-                <div class="card-header bg-transparent border-0"><h6 class="mb-0 fw-semibold">Nhat ky hoat dong</h6></div>
+                <div class="card-header bg-transparent border-0"><h6 class="mb-0 fw-semibold">Nhật ký hoạt động</h6></div>
                 <div class="card-body pt-0">
                     <div class="table-responsive">
                         <table class="table table-sm align-middle mb-0">
                             <thead class="table-light">
                                 <tr>
-                                    <th>Su kien</th>
-                                    <th>Thoi gian</th>
+                                    <th>Sự kiện</th>
+                                    <th>Thời gian</th>
                                     <th>IP</th>
-                                    <th>Trinh duyet</th>
-                                    <th>Thiet bi</th>
+                                    <th>Trình duyệt</th>
+                                    <th>Thiết bị</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -258,12 +258,12 @@
                                     <tr>
                                         <td>
                                             <c:choose>
-                                                <c:when test="${log.eventType == 'CREATED'}"><span class="badge bg-primary-subtle text-primary">Tao moi</span></c:when>
-                                                <c:when test="${log.eventType == 'UPDATED'}"><span class="badge bg-info-subtle text-info">Cap nhat</span></c:when>
+                                                <c:when test="${log.eventType == 'CREATED'}"><span class="badge bg-primary-subtle text-primary">Tạo mới</span></c:when>
+                                                <c:when test="${log.eventType == 'UPDATED'}"><span class="badge bg-info-subtle text-info">Cập nhật</span></c:when>
                                                 <c:when test="${log.eventType == 'VIEWED'}"><span class="badge bg-secondary-subtle text-secondary">Xem</span></c:when>
-                                                <c:when test="${log.eventType == 'APPROVED'}"><span class="badge bg-success-subtle text-success">Duyet</span></c:when>
-                                                <c:when test="${log.eventType == 'REJECTED'}"><span class="badge bg-danger-subtle text-danger">Tu choi</span></c:when>
-                                                <c:when test="${log.eventType == 'SENT'}"><span class="badge bg-warning-subtle text-warning">Gui</span></c:when>
+                                                <c:when test="${log.eventType == 'APPROVED'}"><span class="badge bg-success-subtle text-success">Duyệt</span></c:when>
+                                                <c:when test="${log.eventType == 'REJECTED'}"><span class="badge bg-danger-subtle text-danger">Từ chối</span></c:when>
+                                                <c:when test="${log.eventType == 'SENT'}"><span class="badge bg-warning-subtle text-warning">Gửi</span></c:when>
                                                 <c:otherwise><span class="badge bg-secondary-subtle text-secondary">${log.eventType}</span></c:otherwise>
                                             </c:choose>
                                         </td>
@@ -287,15 +287,15 @@
     <div class="col-lg-4">
         <!-- Status -->
         <div class="card border-0 shadow-sm mb-4">
-            <div class="card-header bg-transparent border-0"><h6 class="mb-0 fw-semibold">Trang thai</h6></div>
+            <div class="card-header bg-transparent border-0"><h6 class="mb-0 fw-semibold">Trạng thái</h6></div>
             <div class="card-body">
                 <div class="mb-3">
                     <c:choose>
-                        <c:when test="${quotation.status == 'Draft'}"><span class="badge bg-secondary-subtle text-secondary fs-6 px-3 py-2">De xuat (Draft)</span></c:when>
-                        <c:when test="${quotation.status == 'Approved'}"><span class="badge bg-success-subtle text-success fs-6 px-3 py-2">Da duyet</span></c:when>
-                        <c:when test="${quotation.status == 'Sent'}"><span class="badge bg-warning-subtle text-warning fs-6 px-3 py-2">Da gui - Cho phan hoi</span></c:when>
-                        <c:when test="${quotation.status == 'Accepted'}"><span class="badge bg-primary-subtle text-primary fs-6 px-3 py-2">Khach chap nhan</span></c:when>
-                        <c:when test="${quotation.status == 'Rejected'}"><span class="badge bg-danger-subtle text-danger fs-6 px-3 py-2">Tu choi</span></c:when>
+                        <c:when test="${quotation.status == 'Draft'}"><span class="badge bg-secondary-subtle text-secondary fs-6 px-3 py-2">Đề xuất (Draft)</span></c:when>
+                        <c:when test="${quotation.status == 'Approved'}"><span class="badge bg-success-subtle text-success fs-6 px-3 py-2">Đã duyệt</span></c:when>
+                        <c:when test="${quotation.status == 'Sent'}"><span class="badge bg-warning-subtle text-warning fs-6 px-3 py-2">Đã gửi - Chờ phản hồi</span></c:when>
+                        <c:when test="${quotation.status == 'Accepted'}"><span class="badge bg-primary-subtle text-primary fs-6 px-3 py-2">Khách chấp nhận</span></c:when>
+                        <c:when test="${quotation.status == 'Rejected'}"><span class="badge bg-danger-subtle text-danger fs-6 px-3 py-2">Từ chối</span></c:when>
                         <c:otherwise><span class="badge bg-secondary-subtle text-secondary fs-6 px-3 py-2">${quotation.status}</span></c:otherwise>
                     </c:choose>
                 </div>
@@ -303,18 +303,18 @@
                 <!-- Approval info -->
                 <c:if test="${not empty quotation.approvedDate}">
                     <div class="mb-3">
-                        <label class="text-muted small">Duyet ngay</label>
+                        <label class="text-muted small">Duyệt ngày</label>
                         <div>${quotation.approvedDate.toString().substring(0, 16).replace('T', ' ')}</div>
                     </div>
                     <c:if test="${not empty approverName}">
                         <div class="mb-3">
-                            <label class="text-muted small">Nguoi duyet</label>
+                            <label class="text-muted small">Người duyệt</label>
                             <div class="fw-medium">${approverName}</div>
                         </div>
                     </c:if>
                     <c:if test="${not empty quotation.approvalNotes}">
                         <div class="mb-3">
-                            <label class="text-muted small">Ghi chu duyet</label>
+                            <label class="text-muted small">Ghi chú duyệt</label>
                             <div>${quotation.approvalNotes}</div>
                         </div>
                     </c:if>
@@ -323,12 +323,12 @@
                 <!-- Sent info -->
                 <c:if test="${not empty quotation.sentDate}">
                     <div class="mb-3">
-                        <label class="text-muted small">Gui ngay</label>
+                        <label class="text-muted small">Gửi ngày</label>
                         <div>${quotation.sentDate.toString().substring(0, 16).replace('T', ' ')}</div>
                     </div>
                     <c:if test="${not empty senderName}">
                         <div class="mb-3">
-                            <label class="text-muted small">Nguoi gui</label>
+                            <label class="text-muted small">Người gửi</label>
                             <div class="fw-medium">${senderName}</div>
                         </div>
                     </c:if>
@@ -337,14 +337,14 @@
                 <!-- View tracking -->
                 <c:if test="${not empty quotation.lastViewedDate}">
                     <div class="mb-3">
-                        <label class="text-muted small">Lan xem cuoi</label>
+                        <label class="text-muted small">Lần xem cuối</label>
                         <div>${quotation.lastViewedDate.toString().substring(0, 16).replace('T', ' ')}</div>
                     </div>
                 </c:if>
                 <c:if test="${not empty quotation.viewCount && quotation.viewCount > 0}">
                     <div>
-                        <label class="text-muted small">So lan xem</label>
-                        <div class="fw-bold">${quotation.viewCount} lan</div>
+                        <label class="text-muted small">Số lần xem</label>
+                        <div class="fw-bold">${quotation.viewCount} lần</div>
                     </div>
                 </c:if>
 
@@ -352,12 +352,12 @@
                 <c:if test="${not empty quotation.rejectedDate}">
                     <hr>
                     <div class="mb-3">
-                        <label class="text-muted small">Tu choi ngay</label>
+                        <label class="text-muted small">Từ chối ngày</label>
                         <div class="text-danger">${quotation.rejectedDate.toString().substring(0, 16).replace('T', ' ')}</div>
                     </div>
                     <c:if test="${not empty quotation.rejectionReason}">
                         <div>
-                            <label class="text-muted small">Ly do tu choi</label>
+                            <label class="text-muted small">Lý do từ chối</label>
                             <div>${quotation.rejectionReason}</div>
                         </div>
                     </c:if>
@@ -367,12 +367,12 @@
                 <c:if test="${not empty quotation.acceptedDate}">
                     <hr>
                     <div class="mb-3">
-                        <label class="text-muted small">Khach chap nhan ngay</label>
+                        <label class="text-muted small">Khách chấp nhận ngày</label>
                         <div class="text-success fw-medium">${quotation.acceptedDate.toString().substring(0, 16).replace('T', ' ')}</div>
                     </div>
                     <c:if test="${not empty quotation.acceptedByName}">
                         <div class="mb-3">
-                            <label class="text-muted small">Nguoi chap nhan</label>
+                            <label class="text-muted small">Người chấp nhận</label>
                             <div>${quotation.acceptedByName} <c:if test="${not empty quotation.acceptedByEmail}"><small class="text-muted">(${quotation.acceptedByEmail})</small></c:if></div>
                         </div>
                     </c:if>
@@ -382,12 +382,12 @@
                 <c:if test="${not empty quotation.customerRejectedDate}">
                     <hr>
                     <div class="mb-3">
-                        <label class="text-muted small">Khach tu choi ngay</label>
+                        <label class="text-muted small">Khách từ chối ngày</label>
                         <div class="text-danger">${quotation.customerRejectedDate.toString().substring(0, 16).replace('T', ' ')}</div>
                     </div>
                     <c:if test="${not empty quotation.customerRejectionReason}">
                         <div>
-                            <label class="text-muted small">Ly do khach tu choi</label>
+                            <label class="text-muted small">Lý do khách từ chối</label>
                             <div>${quotation.customerRejectionReason}</div>
                         </div>
                     </c:if>
@@ -398,13 +398,13 @@
         <!-- Version History -->
         <c:if test="${not empty versions}">
             <div class="card border-0 shadow-sm">
-                <div class="card-header bg-transparent border-0"><h6 class="mb-0 fw-semibold">Lich su phien ban</h6></div>
+                <div class="card-header bg-transparent border-0"><h6 class="mb-0 fw-semibold">Lịch sử phiên bản</h6></div>
                 <div class="card-body">
                     <div class="d-flex flex-column gap-2">
                         <c:forEach var="ver" items="${versions}" varStatus="loop">
                             <div class="d-flex justify-content-between align-items-center p-2 ${loop.first ? 'bg-primary-subtle' : 'bg-light'} rounded">
                                 <div>
-                                    <div class="fw-medium">v${ver.versionNumber}${loop.first ? ' (Hien tai)' : ''}</div>
+                                    <div class="fw-medium">v${ver.versionNumber}${loop.first ? ' (Hiện tại)' : ''}</div>
                                     <small class="text-muted">
                                         <c:if test="${not empty ver.createdAt}">${ver.createdAt.toString().substring(0, 10)}</c:if>
                                     </small>
@@ -413,7 +413,7 @@
                                     </c:if>
                                 </div>
                                 <c:if test="${not empty ver.totalAmount}">
-                                    <span class="fw-semibold ${loop.first ? '' : 'text-muted'}"><fmt:formatNumber value="${ver.totalAmount}" type="number" groupingUsed="true" maxFractionDigits="0"/> d</span>
+                                    <span class="fw-semibold ${loop.first ? '' : 'text-muted'}"><fmt:formatNumber value="${ver.totalAmount}" type="number" groupingUsed="true" maxFractionDigits="0"/> đ</span>
                                 </c:if>
                             </div>
                         </c:forEach>
@@ -431,19 +431,19 @@
             <form method="POST" action="${pageContext.request.contextPath}/sale/quotation/approve">
                 <input type="hidden" name="quotationId" value="${quotation.quotationId}">
                 <div class="modal-header">
-                    <h5 class="modal-title">Duyet bao gia</h5>
+                    <h5 class="modal-title">Duyệt báo giá</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <p>Ban co chac chan muon duyet bao gia <strong>${quotation.quotationCode}</strong>?</p>
+                    <p>Bạn có chắc chắn muốn duyệt báo giá <strong>${quotation.quotationCode}</strong>?</p>
                     <div class="mb-3">
-                        <label class="form-label">Ghi chu duyet (tuy chon)</label>
-                        <textarea class="form-control" name="approvalNotes" rows="3" placeholder="Nhap ghi chu..."></textarea>
+                        <label class="form-label">Ghi chú duyệt (tùy chọn)</label>
+                        <textarea class="form-control" name="approvalNotes" rows="3" placeholder="Nhập ghi chú..."></textarea>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Huy</button>
-                    <button type="submit" class="btn btn-success btn-sm"><i class="bi bi-check-circle me-1"></i>Duyet</button>
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-success btn-sm"><i class="bi bi-check-circle me-1"></i>Duyệt</button>
                 </div>
             </form>
         </div>
@@ -457,19 +457,19 @@
             <form method="POST" action="${pageContext.request.contextPath}/sale/quotation/reject">
                 <input type="hidden" name="quotationId" value="${quotation.quotationId}">
                 <div class="modal-header">
-                    <h5 class="modal-title">Tu choi bao gia</h5>
+                    <h5 class="modal-title">Từ chối báo giá</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <p>Ban co chac chan muon tu choi bao gia <strong>${quotation.quotationCode}</strong>?</p>
+                    <p>Bạn có chắc chắn muốn từ chối báo giá <strong>${quotation.quotationCode}</strong>?</p>
                     <div class="mb-3">
-                        <label class="form-label">Ly do tu choi <span class="text-danger">*</span></label>
-                        <textarea class="form-control" name="rejectionReason" rows="3" placeholder="Nhap ly do tu choi..." required></textarea>
+                        <label class="form-label">Lý do từ chối <span class="text-danger">*</span></label>
+                        <textarea class="form-control" name="rejectionReason" rows="3" placeholder="Nhập lý do từ chối..." required></textarea>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Huy</button>
-                    <button type="submit" class="btn btn-danger btn-sm"><i class="bi bi-x-circle me-1"></i>Tu choi</button>
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-danger btn-sm"><i class="bi bi-x-circle me-1"></i>Từ chối</button>
                 </div>
             </form>
         </div>
