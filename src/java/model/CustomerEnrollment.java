@@ -57,10 +57,29 @@ public class CustomerEnrollment {
     public LocalDateTime updatedAt;
     public Integer createdBy;
 
+    // Extra field for display
+    private String courseName;
+
+    public String getCourseName() {
+        return courseName;
+    }
+
+    public void setCourseName(String courseName) {
+        this.courseName = courseName;
+    }
+
     public CustomerEnrollment() {
     }
 
-    public CustomerEnrollment(Integer enrollmentId, String enrollmentCode, Integer customerId, Integer courseId, LocalDate enrolledDate, BigDecimal originalPrice, BigDecimal discountAmount, BigDecimal finalAmount, String paymentMethod, String paymentStatus, LocalDate paidDate, String transactionRef, String invoiceNumber, LocalDate startDate, LocalDate expectedCompletionDate, LocalDate actualCompletionDate, String learningStatus, Integer progressPercentage, Integer lessonsCompleted, LocalDateTime lastAccessedDate, Boolean certificateIssued, String certificateNumber, LocalDate certificateIssuedDate, String certificateUrl, Integer rating, String review, LocalDate reviewedDate, Integer sourceId, Integer campaignId, String referralCode, String promoCode, Integer assignedTo, String notes, String internalNotes, LocalDateTime createdAt, LocalDateTime updatedAt, Integer createdBy) {
+    public CustomerEnrollment(Integer enrollmentId, String enrollmentCode, Integer customerId, Integer courseId,
+            LocalDate enrolledDate, BigDecimal originalPrice, BigDecimal discountAmount, BigDecimal finalAmount,
+            String paymentMethod, String paymentStatus, LocalDate paidDate, String transactionRef, String invoiceNumber,
+            LocalDate startDate, LocalDate expectedCompletionDate, LocalDate actualCompletionDate,
+            String learningStatus, Integer progressPercentage, Integer lessonsCompleted, LocalDateTime lastAccessedDate,
+            Boolean certificateIssued, String certificateNumber, LocalDate certificateIssuedDate, String certificateUrl,
+            Integer rating, String review, LocalDate reviewedDate, Integer sourceId, Integer campaignId,
+            String referralCode, String promoCode, Integer assignedTo, String notes, String internalNotes,
+            LocalDateTime createdAt, LocalDateTime updatedAt, Integer createdBy) {
         this.enrollmentId = enrollmentId;
         this.enrollmentCode = enrollmentCode;
         this.customerId = customerId;

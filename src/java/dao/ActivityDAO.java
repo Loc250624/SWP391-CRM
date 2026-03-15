@@ -914,4 +914,26 @@ public class ActivityDAO extends DBContext {
         }
         return list;
     }
+    
+    public List<Activity> getActivitiesByCustomerId(int customerId) {
+        List<Activity> list = new ArrayList<>();
+        // Đảm bảo có điều kiện: AND a.status = 'Completed'
+        String sql = "SELECT a.*, (u.last_name + ' ' + u.first_name) AS full_performer_name "
+                + "FROM activities a "
+                + "LEFT JOIN users u ON a.performed_by = u.user_id "
+                + "WHERE a.related_id = ? AND a.related_type = 'Customer' "
+                + "ORDER BY a.created_at DESC";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setInt(1, customerId);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                Activity a = mapResultSetToActivity(rs);
+                a.setPerformerName(rs.getString("full_performer_name"));
+                list.add(a);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
 }

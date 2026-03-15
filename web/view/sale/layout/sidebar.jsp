@@ -86,14 +86,14 @@
                         <span>Thêm Lead</span>
                     </a>
                 </li>
-                  <li class="nav-item mb-1">
+                <li class="nav-item mb-1">
                     <a href="${pageContext.request.contextPath}/sale/customer/list" 
                        class="nav-link rounded-2 d-flex align-items-center gap-2 py-2 px-3 ${ACTIVE_MENU == 'CUSTOMER_LIST' ? 'active bg-primary text-white' : 'text-body-secondary'}">
                         <i class="bi bi-people"></i>
                         <span>Danh sách Customer</span>
                     </a>
                 </li>
-                 <li class="nav-item mb-1">
+                <li class="nav-item mb-1">
                     <a href="${pageContext.request.contextPath}/sale/customer/form" 
                        class="nav-link rounded-2 d-flex align-items-center gap-2 py-2 px-3 ${ACTIVE_MENU == 'CUSTOMER_FORM' ? 'active bg-primary text-white' : 'text-body-secondary'}">
                         <i class="bi bi-person-plus"></i>
@@ -296,16 +296,18 @@
 
 <!-- Sidebar scroll persistence -->
 <script>
-    (function() {
+    (function () {
         var nav = document.getElementById('sidebarNav');
-        if (!nav) return;
+        if (!nav)
+            return;
 
         // Restore scroll position
         var saved = sessionStorage.getItem('sidebarScroll');
-        if (saved) nav.scrollTop = parseInt(saved, 10);
+        if (saved)
+            nav.scrollTop = parseInt(saved, 10);
 
         // Save scroll position on scroll
-        nav.addEventListener('scroll', function() {
+        nav.addEventListener('scroll', function () {
             sessionStorage.setItem('sidebarScroll', nav.scrollTop);
         });
     })();

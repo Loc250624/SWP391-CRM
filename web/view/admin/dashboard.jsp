@@ -57,12 +57,6 @@
             </div>
         </div>
 
-        <div class="mt-5">
-            <a href="${pageContext.request.contextPath}/admin/customer/list"
-                class="btn btn-lg px-4 py-2 rounded-3 text-white" style="background-color: #4f46e5;">
-                Manage Operations
-            </a>
-        </div>
     </div>
 
     <style>
