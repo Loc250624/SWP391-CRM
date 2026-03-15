@@ -7,9 +7,18 @@
         <h5 class="fw-bold text-dark m-0">
             <i class="bi bi-clock-history me-2 text-primary"></i>Lịch sử phiếu báo cáo
         </h5>
-        <a href="customers" class="btn btn-sm btn-outline-secondary rounded-pill">
-            <i class="bi bi-arrow-left me-1"></i>Quay lại danh sách
-        </a>
+       <c:choose>
+            <c:when test="${param.type eq 'Lead' || type eq 'Lead'}">
+                <a href="leads" class="btn btn-sm btn-outline-secondary rounded-pill">
+                    <i class="bi bi-arrow-left me-1"></i>Quay lại danh sách Lead
+                </a>
+            </c:when>
+            <c:otherwise>
+                <a href="customers" class="btn btn-sm btn-outline-secondary rounded-pill">
+                    <i class="bi bi-arrow-left me-1"></i>Quay lại danh sách Khách hàng
+                </a>
+            </c:otherwise>
+        </c:choose>
     </div>
 
     <div class="card border-0 shadow-sm rounded-3 overflow-hidden">

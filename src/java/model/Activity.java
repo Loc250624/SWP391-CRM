@@ -18,8 +18,11 @@ public class Activity {
     public LocalDateTime createdAt;
     public Integer createdBy;
     
-    // THÊM MỚI: Trạng thái của báo cáo (Pending/Completed)
+    // Trạng thái của báo cáo (Pending/Completed)
     public String status; 
+    
+    // THÊM MỚI: Cờ đánh dấu đã đọc cho thông báo Real-time
+    private boolean isRead;
     
     private String performerName;
     private String customerName;
@@ -28,11 +31,11 @@ public class Activity {
     public Activity() {
     }
 
-    // Cập nhật Constructor có tham số để bao gồm status
+    // Cập nhật Constructor có tham số để bao gồm status và isRead
     public Activity(int activityId, String activityType, String relatedType, int relatedId, 
                     String subject, String description, LocalDateTime activityDate, 
                     Integer durationMinutes, String callDirection, String callResult, 
-                    Integer performedBy, LocalDateTime createdAt, Integer createdBy, String status) {
+                    Integer performedBy, LocalDateTime createdAt, Integer createdBy, String status, boolean isRead) {
         this.activityId = activityId;
         this.activityType = activityType;
         this.relatedType = relatedType;
@@ -46,7 +49,17 @@ public class Activity {
         this.performedBy = performedBy;
         this.createdAt = createdAt;
         this.createdBy = createdBy;
-        this.status = status; //
+        this.status = status; 
+        this.isRead = isRead;
+    }
+
+    // --- GETTER VÀ SETTER MỚI CHO THÔNG BÁO ---
+    public boolean isIsRead() {
+        return isRead;
+    }
+
+    public void setIsRead(boolean isRead) {
+        this.isRead = isRead;
     }
 
     // --- GETTER VÀ SETTER CHO STATUS ---
