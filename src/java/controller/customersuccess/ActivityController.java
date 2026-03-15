@@ -59,12 +59,13 @@ public class ActivityController extends HttpServlet {
         request.getRequestDispatcher("/view/customersuccess/pages/main_layout.jsp").forward(request, response);
     }
 
-    @Override
+   @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
         HttpSession session = request.getSession(false);
-        Users user = (session != null) ? (Users) session.getAttribute("user") : null;
+        // Cần import model.Users nếu báo đỏ
+        model.Users user = (session != null) ? (model.Users) session.getAttribute("user") : null;
 
         if (user == null) {
             response.getWriter().write("session_expired");
@@ -72,37 +73,35 @@ public class ActivityController extends HttpServlet {
         }
 
         try {
-            // 1. Lấy dữ liệu cơ bản từ các Modal
+            // 1. Lấy dữ liệu cơ bản
             int relatedId = Integer.parseInt(request.getParameter("id"));
-            String relatedType = request.getParameter("type"); // Xác định phiếu cho Lead hay Customer
+            String relatedType = request.getParameter("type"); 
             String subject = request.getParameter("subject");
-            String status = request.getParameter("status"); // 'Completed' (Lưu) hoặc 'Pending' (Hàng chờ)
+            String status = request.getParameter("status"); 
 
-            // Lấy nội dung chi tiết (Modal chuyển tiếp có thể gửi null, nên cần bắt lỗi)
             String description = request.getParameter("description");
             if (description == null) description = "";
 
-            // Kiểm tra mặc định nếu thiếu tham số
             if (relatedType == null || relatedType.isEmpty()) relatedType = "Customer";
             if (status == null || status.isEmpty()) status = "Completed";
 
-            // 2. XỬ LÝ CHUYỂN TIẾP: Xác định người sẽ nhận phiếu hỗ trợ này
+            // 2. Bắt lấy mảng khóa học (Upsale) từ Select2 gửi lên
+            String[] courseIds = request.getParameterValues("courseIds");
+
+            // 3. Phân công (Mặc định hoặc Chuyển tiếp)
             String assignToParam = request.getParameter("assignTo");
             int performedBy;
             if (assignToParam != null && !assignToParam.isEmpty()) {
-                // Nếu có tham số assignTo (từ Modal Chuyển tiếp), giao việc cho nhân viên phụ trách đó
                 performedBy = Integer.parseInt(assignToParam); 
             } else {
-                // Nếu không có (từ Modal Tạo phiếu bình thường), tự giao cho chính mình
                 performedBy = user.getUserId(); 
             }
 
-            ActivityDAO dao = new ActivityDAO();
+            // 4. GỌI SIÊU HÀM TRANSACTION XỬ LÝ
+            dao.ActivityDAO dao = new dao.ActivityDAO();
+            boolean success = dao.processUpsaleTransaction(relatedId, relatedType, subject, description, performedBy, status, courseIds);
 
-            // 3. Thực hiện lưu vào DB với biến performedBy linh hoạt
-            boolean success = dao.insertActivity(relatedId, relatedType, subject, description, performedBy, status);
-
-            // 4. Trả về kết quả cho AJAX để hiện thông báo
+            // 5. Trả kết quả về cho AJAX
             response.setContentType("text/plain");
             response.setCharacterEncoding("UTF-8");
             response.getWriter().write(success ? "success" : "error");

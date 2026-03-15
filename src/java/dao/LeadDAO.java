@@ -584,16 +584,16 @@ public class LeadDAO extends DBContext {
     }
     // Lấy danh sách Lead CHỈ do người dùng hiện tại tạo ra
 
-    public List<Lead> getLeadsByCreator(int userId) {
+   public List<Lead> getLeadsByCreator(int userId) {
         List<Lead> list = new ArrayList<>();
-        // SQL: Lọc chính xác theo ID người tạo và sắp xếp mới nhất lên đầu
-        String sql = "SELECT * FROM leads WHERE created_by = ? ORDER BY created_at DESC";
+        
+        // 👉 ĐÃ SỬA DÒNG NÀY: Thêm điều kiện lọc is_converted
+        String sql = "SELECT * FROM leads WHERE created_by = ? AND (is_converted = 0 OR is_converted IS NULL) ORDER BY created_at DESC";
 
         try (PreparedStatement st = connection.prepareStatement(sql)) {
             st.setInt(1, userId);
             try (ResultSet rs = st.executeQuery()) {
                 while (rs.next()) {
-                    // Sử dụng hàm mapResultSetToLead tương tự như bên Customer
                     list.add(mapResultSetToLead(rs));
                 }
             }

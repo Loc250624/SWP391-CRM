@@ -55,20 +55,28 @@ public class QueueController extends HttpServlet {
         request.getRequestDispatcher("/view/customersuccess/pages/main_layout.jsp").forward(request, response);
     }
 
-    @Override
+   @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) 
             throws ServletException, IOException {
         
+        HttpSession session = request.getSession(false);
+        Users user = (session != null) ? (Users) session.getAttribute("user") : null;
+        if (user == null) {
+            response.getWriter().write("error");
+            return;
+        }
+
         try {
-            // 1. Lấy dữ liệu từ Modal xử lý phiếu (AJAX gửi lên)
+            // Lấy dữ liệu từ Form (Bao gồm cả Upsale)
             int id = Integer.parseInt(request.getParameter("id"));
             String subject = request.getParameter("subject"); 
             String desc = request.getParameter("description");
+            String[] courseIds = request.getParameterValues("courseIds");
             
             ActivityDAO dao = new ActivityDAO();
             
-            // 2. CẬP NHẬT: Hoàn thiện phiếu bằng activity_id (dùng chung cho cả Lead/Customer)
-            boolean isUpdated = dao.updateAndCompleteActivity(id, subject, desc);
+            // Gọi "Siêu hàm" Transaction mới
+            boolean isUpdated = dao.completeActivityWithUpsaleTransaction(id, subject, desc, courseIds, user.getUserId());
             
             response.setContentType("text/plain");
             response.setCharacterEncoding("UTF-8");
@@ -77,7 +85,8 @@ public class QueueController extends HttpServlet {
             } else {
                 response.getWriter().write("error");
             }
-        } catch (NumberFormatException e) {
+        } catch (Exception e) {
+            e.printStackTrace();
             response.getWriter().write("error");
         }
     }
