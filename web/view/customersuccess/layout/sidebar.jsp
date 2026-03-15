@@ -71,10 +71,32 @@
                     </a>
                 </li>
                 <li class="nav-item mb-1">
-                    <a href="${pageContext.request.contextPath}/support/receive" 
+                    <a href="${pageContext.request.contextPath}/support/receive"
                        class="nav-link rounded-2 d-flex align-items-center gap-2 py-2 px-3 ${pageTitle == 'Phiếu hỗ trợ được phân công' ? 'active bg-primary text-white' : 'text-body-secondary'}">
                         <i class="bi bi-inbox-fill"></i>
                         <span>Tiếp nhận</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="mb-1 mt-3">
+            <div class="px-3 py-2">
+                <small class="text-uppercase text-muted fw-semibold" style="font-size: 10px; letter-spacing: 0.5px;">Công việc</small>
+            </div>
+            <ul class="nav flex-column px-2">
+                <li class="nav-item mb-1">
+                    <a href="${pageContext.request.contextPath}/support/task/list"
+                       class="nav-link rounded-2 d-flex align-items-center gap-2 py-2 px-3 ${pageTitle == 'Công việc của tôi' ? 'active bg-primary text-white' : 'text-body-secondary'}">
+                        <i class="bi bi-list-task"></i>
+                        <span>Công việc của tôi</span>
+                    </a>
+                </li>
+                <li class="nav-item mb-1">
+                    <a href="${pageContext.request.contextPath}/support/task/calendar"
+                       class="nav-link rounded-2 d-flex align-items-center gap-2 py-2 px-3 ${pageTitle == 'Lịch Công việc' ? 'active bg-primary text-white' : 'text-body-secondary'}">
+                        <i class="bi bi-calendar3"></i>
+                        <span>Lịch công việc</span>
                     </a>
                 </li>
             </ul>

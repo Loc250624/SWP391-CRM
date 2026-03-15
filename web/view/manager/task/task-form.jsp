@@ -684,7 +684,7 @@
 
 <script>
 // ── Global state ────────────────────────────────────────────────────────
-var _currentTaskType = 'LEAD';
+var _currentTaskType = '${not empty linkedCustomer ? "CUSTOMER" : "LEAD"}';
 
 $(document).ready(function () {
 
@@ -897,6 +897,27 @@ $(document).ready(function () {
     document.querySelectorAll('.obj-picker-cb').forEach(function(cb) {
         cb.addEventListener('change', updateObjectPickerCount);
     });
+
+    // ── Init UI based on linked object type ──────────────────────────────
+    if (_currentTaskType === 'CUSTOMER') {
+        // Sync tab active state
+        var tabLead = document.getElementById('tabLead');
+        var tabCustomer = document.getElementById('tabCustomer');
+        var badgeLead = document.getElementById('tabLeadBadge');
+        var badgeCustomer = document.getElementById('tabCustomerBadge');
+        if (tabLead) tabLead.classList.remove('active');
+        if (tabCustomer) tabCustomer.classList.add('active');
+        if (badgeLead) badgeLead.className = 'badge bg-secondary ms-1';
+        if (badgeCustomer) badgeCustomer.className = 'badge bg-success ms-1';
+
+        // Sync assignee role label
+        var roleLabel = document.getElementById('assigneeRoleLabel');
+        if (roleLabel) roleLabel.textContent = 'Nhân viên Support';
+
+        // Sync object picker sidebar title
+        var sidebarTitle = document.getElementById('objectPickerTitle');
+        if (sidebarTitle) sidebarTitle.innerHTML = '<i class="bi bi-link-45deg me-1"></i>Chọn Customer';
+    }
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
