@@ -5,11 +5,11 @@
 <!-- Page Header -->
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h4 class="mb-1 fw-bold">Quan ly Customer</h4>
-        <p class="text-muted mb-0">Danh sach khach hang</p>
+        <h4 class="mb-1 fw-bold">Quản lý Customer</h4>
+        <p class="text-muted mb-0">Danh sách khách hàng</p>
     </div>
     <div class="d-flex gap-2">
-        <a href="${pageContext.request.contextPath}/sale/customer/form" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i>Them Customer</a>
+        <a href="${pageContext.request.contextPath}/sale/customer/form" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i>Thêm Customer</a>
     </div>
 </div>
 
@@ -18,10 +18,10 @@
     <script>document.addEventListener('DOMContentLoaded', function(){ CRM.showToast('${successMessage}', 'success'); });</script>
 </c:if>
 <c:if test="${param.error == 'no_permission'}">
-    <script>document.addEventListener('DOMContentLoaded', function(){ CRM.showToast('Ban khong co quyen truy cap customer nay!', 'error'); });</script>
+    <script>document.addEventListener('DOMContentLoaded', function(){ CRM.showToast('Bạn không có quyền truy cập customer này!', 'error'); });</script>
 </c:if>
 <c:if test="${param.error == 'delete_failed'}">
-    <script>document.addEventListener('DOMContentLoaded', function(){ CRM.showToast('Xoa customer that bai. Vui long thu lai.', 'error'); });</script>
+    <script>document.addEventListener('DOMContentLoaded', function(){ CRM.showToast('Xóa customer thất bại. Vui lòng thử lại.', 'error'); });</script>
 </c:if>
 
 <!-- KPI Cards -->
@@ -32,7 +32,7 @@
                 <div class="d-flex align-items-center mb-3">
                     <div class="bg-primary bg-opacity-10 rounded-3 p-2 me-3"><i class="bi bi-people text-primary fs-4"></i></div>
                     <div class="flex-grow-1">
-                        <small class="text-muted">Tong Customer</small>
+                        <small class="text-muted">Tổng Customer</small>
                         <h4 class="mb-0 fw-bold">${totalCustomers}</h4>
                     </div>
                 </div>
@@ -45,7 +45,7 @@
                 <div class="d-flex align-items-center mb-3">
                     <div class="bg-success bg-opacity-10 rounded-3 p-2 me-3"><i class="bi bi-check-circle text-success fs-4"></i></div>
                     <div class="flex-grow-1">
-                        <small class="text-muted">Dang hoat dong</small>
+                        <small class="text-muted">Đang hoạt động</small>
                         <h4 class="mb-0 fw-bold">${activeCustomers}</h4>
                     </div>
                 </div>
@@ -58,7 +58,7 @@
                 <div class="d-flex align-items-center mb-3">
                     <div class="bg-warning bg-opacity-10 rounded-3 p-2 me-3"><i class="bi bi-star text-warning fs-4"></i></div>
                     <div class="flex-grow-1">
-                        <small class="text-muted">Khach VIP</small>
+                        <small class="text-muted">Khách VIP</small>
                         <h4 class="mb-0 fw-bold">${vipCustomers}</h4>
                     </div>
                 </div>
@@ -71,7 +71,7 @@
                 <div class="d-flex align-items-center mb-3">
                     <div class="bg-info bg-opacity-10 rounded-3 p-2 me-3"><i class="bi bi-person-plus text-info fs-4"></i></div>
                     <div class="flex-grow-1">
-                        <small class="text-muted">Khach moi</small>
+                        <small class="text-muted">Khách mới</small>
                         <h4 class="mb-0 fw-bold">${newCustomers}</h4>
                     </div>
                 </div>
@@ -85,13 +85,13 @@
     <div class="card-body py-3">
         <form method="GET" action="${pageContext.request.contextPath}/sale/customer/list" class="row g-2 align-items-end">
             <div class="col-md-3">
-                <label class="form-label small text-muted mb-1">Tim kiem</label>
-                <input type="text" name="search" class="form-control form-control-sm" placeholder="Ten, email, SDT, ma KH..." value="${searchQuery}">
+                <label class="form-label small text-muted mb-1">Tìm kiếm</label>
+                <input type="text" name="search" class="form-control form-control-sm" placeholder="Tên, email, SĐT, mã KH..." value="${searchQuery}">
             </div>
             <div class="col-md-2">
-                <label class="form-label small text-muted mb-1">Trang thai</label>
+                <label class="form-label small text-muted mb-1">Trạng thái</label>
                 <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
-                    <option value="">Tat ca</option>
+                    <option value="">Tất cả</option>
                     <option value="Active" ${filterStatus == 'Active' ? 'selected' : ''}>Active</option>
                     <option value="Inactive" ${filterStatus == 'Inactive' ? 'selected' : ''}>Inactive</option>
                     <option value="Churned" ${filterStatus == 'Churned' ? 'selected' : ''}>Churned</option>
@@ -99,9 +99,9 @@
                 </select>
             </div>
             <div class="col-md-2">
-                <label class="form-label small text-muted mb-1">Phan khuc</label>
+                <label class="form-label small text-muted mb-1">Phân khúc</label>
                 <select name="segment" class="form-select form-select-sm" onchange="this.form.submit()">
-                    <option value="">Tat ca</option>
+                    <option value="">Tất cả</option>
                     <option value="New" ${filterSegment == 'New' ? 'selected' : ''}>New</option>
                     <option value="Returning" ${filterSegment == 'Returning' ? 'selected' : ''}>Returning</option>
                     <option value="VIP" ${filterSegment == 'VIP' ? 'selected' : ''}>VIP</option>
@@ -110,10 +110,10 @@
                 </select>
             </div>
             <div class="col-md-2">
-                <button type="submit" class="btn btn-outline-primary btn-sm w-100"><i class="bi bi-search me-1"></i>Loc</button>
+                <button type="submit" class="btn btn-outline-primary btn-sm w-100"><i class="bi bi-search me-1"></i>Lọc</button>
             </div>
             <div class="col-md-2">
-                <a href="${pageContext.request.contextPath}/sale/customer/list" class="btn btn-outline-secondary btn-sm w-100"><i class="bi bi-arrow-counterclockwise me-1"></i>Xoa loc</a>
+                <a href="${pageContext.request.contextPath}/sale/customer/list" class="btn btn-outline-secondary btn-sm w-100"><i class="bi bi-arrow-counterclockwise me-1"></i>Xóa lọc</a>
             </div>
         </form>
     </div>
@@ -129,15 +129,15 @@
                         <thead class="bg-light">
                             <tr>
                                 <th class="ps-3" style="width: 40px;"><input type="checkbox" class="form-check-input" id="checkAll"></th>
-                                <th>Khach hang</th>
-                                <th>Lien he</th>
-                                <th>Phan khuc</th>
-                                <th>Nguon</th>
-                                <th class="text-center">Khoa hoc</th>
-                                <th class="text-end">Tong chi</th>
-                                <th class="text-center">Trang thai</th>
-                                <th class="text-center">Ngay tao</th>
-                                <th class="text-center" style="width: 140px;">Thao tac</th>
+                                <th>Khách hàng</th>
+                                <th>Liên hệ</th>
+                                <th>Phân khúc</th>
+                                <th>Nguồn</th>
+                                <th class="text-center">Khóa học</th>
+                                <th class="text-end">Tổng chi</th>
+                                <th class="text-center">Trạng thái</th>
+                                <th class="text-center">Ngày tạo</th>
+                                <th class="text-center" style="width: 140px;">Thao tác</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -207,9 +207,9 @@
                                     </td>
                                     <td class="text-center">
                                         <div class="btn-group btn-group-sm">
-                                            <a href="${pageContext.request.contextPath}/sale/customer/detail?id=${cust.customerId}" class="btn btn-outline-primary btn-sm" title="Xem chi tiet"><i class="bi bi-eye"></i></a>
-                                            <a href="${pageContext.request.contextPath}/sale/customer/form?id=${cust.customerId}" class="btn btn-outline-secondary btn-sm" title="Chinh sua"><i class="bi bi-pencil"></i></a>
-                                            <button onclick="deleteCustomer(${cust.customerId}, '${cust.fullName}')" class="btn btn-outline-danger btn-sm" title="Xoa"><i class="bi bi-trash"></i></button>
+                                            <a href="${pageContext.request.contextPath}/sale/customer/detail?id=${cust.customerId}" class="btn btn-outline-primary btn-sm" title="Xem chi tiết"><i class="bi bi-eye"></i></a>
+                                            <a href="${pageContext.request.contextPath}/sale/customer/form?id=${cust.customerId}" class="btn btn-outline-secondary btn-sm" title="Chỉnh sửa"><i class="bi bi-pencil"></i></a>
+                                            <button onclick="deleteCustomer(${cust.customerId}, '${cust.fullName}')" class="btn btn-outline-danger btn-sm" title="Xóa"><i class="bi bi-trash"></i></button>
                                         </div>
                                     </td>
                                 </tr>
@@ -221,8 +221,8 @@
             <c:otherwise>
                 <div class="text-center py-5">
                     <i class="bi bi-people text-muted" style="font-size: 3rem;"></i>
-                    <p class="text-muted mt-3 mb-2">Chua co customer nao</p>
-                    <a href="${pageContext.request.contextPath}/sale/customer/form" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i>Them Customer</a>
+                    <p class="text-muted mt-3 mb-2">Chưa có customer nào</p>
+                    <a href="${pageContext.request.contextPath}/sale/customer/form" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i>Thêm Customer</a>
                 </div>
             </c:otherwise>
         </c:choose>
@@ -230,7 +230,7 @@
     <!-- Pagination -->
     <c:if test="${totalPages > 1}">
         <div class="card-footer bg-transparent d-flex justify-content-between align-items-center">
-            <small class="text-muted">Hien thi ${(currentPage - 1) * 10 + 1}-${currentPage * 10 > totalItems ? totalItems : currentPage * 10} / ${totalItems} customer</small>
+            <small class="text-muted">Hiển thị ${(currentPage - 1) * 10 + 1}-${currentPage * 10 > totalItems ? totalItems : currentPage * 10} / ${totalItems} customer</small>
             <nav>
                 <ul class="pagination pagination-sm mb-0">
                     <li class="page-item ${currentPage == 1 ? 'disabled' : ''}">
@@ -257,7 +257,7 @@
 
 <script>
     function deleteCustomer(customerId, customerName) {
-        if (confirm('Ban co chac muon xoa customer "' + customerName + '"?\nHanh dong nay khong the hoan tac.')) {
+        if (confirm('Bạn có chắc muốn xóa customer "' + customerName + '"?\nHành động này không thể hoàn tác.')) {
             const form = document.createElement('form');
             form.method = 'POST';
             form.action = '${pageContext.request.contextPath}/sale/customer/list';

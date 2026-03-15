@@ -6,6 +6,7 @@ package controller.sale;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import dao.ActivityDAO;
 import dao.CampaignDAO;
 import dao.LeadDAO;
 import dao.LeadSourceDAO;
@@ -18,9 +19,11 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import util.SessionHelper;
+import model.Activity;
 import model.Campaign;
 import model.Lead;
 import model.LeadSource;
+import java.util.List;
 
 @WebServlet(name = "SaleLeadDetailServlet", urlPatterns = {"/sale/lead/detail"})
 public class SaleLeadDetailServlet extends HttpServlet {
@@ -109,6 +112,11 @@ public class SaleLeadDetailServlet extends HttpServlet {
                 if (lead.getCampaignId() != null) {
                     campaign = campaignDAO.getCampaignById(lead.getCampaignId());
                 }
+
+                // Load activities for this lead
+                ActivityDAO actDAO = new ActivityDAO();
+                List<Activity> leadActivities = actDAO.getActivitiesByRelatedEntity(leadId, "Lead");
+                request.setAttribute("activities", leadActivities);
 
                 request.setAttribute("lead", lead);
                 request.setAttribute("sourceName", source != null ? source.getSourceName() : null);

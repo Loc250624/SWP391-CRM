@@ -163,8 +163,7 @@
             <div class="col-md-3">
                 <select class="form-select form-select-sm" name="relatedType">
                     <option value="">Tất cả đối tượng</option>
-                    <option value="LEAD" ${relatedType == 'LEAD' ? 'selected' : ''}>Lead</option>
-                    <option value="CUSTOMER" ${relatedType == 'CUSTOMER' ? 'selected' : ''}>Customer</option>
+                    <option value="CUSTOMER" ${relatedType == 'CUSTOMER' ? 'selected' : ''}>Khách hàng</option>
                 </select>
             </div>
             <div class="col-md-5">
@@ -218,7 +217,7 @@
                                         <c:set var="relKey" value="${task.relatedType}:${task.relatedId}" />
                                         <c:choose>
                                             <c:when test="${not empty relatedObjectMap[relKey]}">
-                                                &nbsp;· ${task.relatedType == 'LEAD' ? 'Lead' : 'Customer'}: ${relatedObjectMap[relKey]}
+                                                &nbsp;· Khách hàng: ${relatedObjectMap[relKey]}
                                             </c:when>
                                             <c:otherwise>
                                                 &nbsp;· ${task.relatedType}
@@ -276,7 +275,7 @@
                                         <c:set var="relKey" value="${task.relatedType}:${task.relatedId}" />
                                         <c:choose>
                                             <c:when test="${not empty relatedObjectMap[relKey]}">
-                                                &nbsp;· ${task.relatedType == 'LEAD' ? 'Lead' : 'Customer'}: ${relatedObjectMap[relKey]}
+                                                &nbsp;· Khách hàng: ${relatedObjectMap[relKey]}
                                             </c:when>
                                             <c:otherwise>
                                                 &nbsp;· ${task.relatedType}
@@ -331,7 +330,7 @@
                                         <c:set var="relKey" value="${task.relatedType}:${task.relatedId}" />
                                         <c:choose>
                                             <c:when test="${not empty relatedObjectMap[relKey]}">
-                                                &nbsp;· ${task.relatedType == 'LEAD' ? 'Lead' : 'Customer'}: ${relatedObjectMap[relKey]}
+                                                &nbsp;· Khách hàng: ${relatedObjectMap[relKey]}
                                             </c:when>
                                             <c:otherwise>
                                                 &nbsp;· ${task.relatedType}

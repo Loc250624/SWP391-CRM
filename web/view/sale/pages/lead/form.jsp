@@ -7,18 +7,18 @@
     <div>
         <h4 class="mb-1 fw-bold">
             <c:choose>
-                <c:when test="${mode == 'edit'}">Chinh sua Lead</c:when>
-                <c:otherwise>Tao Lead moi</c:otherwise>
+                <c:when test="${mode == 'edit'}">Chỉnh sửa Lead</c:when>
+                <c:otherwise>Tạo Lead mới</c:otherwise>
             </c:choose>
         </h4>
         <p class="text-muted mb-0">
             <c:choose>
-                <c:when test="${mode == 'edit'}">Cap nhat thong tin lead ${lead.leadCode}</c:when>
-                <c:otherwise>Nhap thong tin khach hang tiem nang moi</c:otherwise>
+                <c:when test="${mode == 'edit'}">Cập nhật thông tin lead ${lead.leadCode}</c:when>
+                <c:otherwise>Nhập thông tin khách hàng tiềm năng mới</c:otherwise>
             </c:choose>
         </p>
     </div>
-    <a href="${pageContext.request.contextPath}/sale/lead/list" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Quay lai</a>
+    <a href="${pageContext.request.contextPath}/sale/lead/list" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Quay lại</a>
 </div>
 
 <!-- Toast Messages -->
@@ -34,19 +34,19 @@
     <div class="row g-4">
         <!-- Main Content -->
         <div class="col-lg-8">
-            <!-- Thong tin co ban -->
+            <!-- Thông tin cơ bản -->
             <div class="card border-0 shadow-sm mb-4">
                 <div class="card-header bg-transparent border-0">
-                    <h6 class="mb-0 fw-semibold"><i class="bi bi-person me-2"></i>Thong tin co ban</h6>
+                    <h6 class="mb-0 fw-semibold"><i class="bi bi-person me-2"></i>Thông tin cơ bản</h6>
                 </div>
                 <div class="card-body">
                     <div class="row g-3">
                         <div class="col-md-6">
-                            <label class="form-label fw-medium" for="fullName">Ho ten <span class="text-danger">*</span></label>
+                            <label class="form-label fw-medium" for="fullName">Họ tên <span class="text-danger">*</span></label>
                             <input type="text" class="form-control" id="fullName" name="fullName"
-                                   placeholder="Nhap ho ten" value="${lead.fullName}"
+                                   placeholder="Nhập họ tên" value="${lead.fullName}"
                                    maxlength="150" required>
-                            <div class="form-text">Toi da 150 ky tu</div>
+                            <div class="form-text">Tối đa 150 ký tự</div>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-medium" for="email">Email</label>
@@ -56,48 +56,48 @@
                             <div class="form-text">VD: ten@congty.com</div>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-medium" for="phone">So dien thoai</label>
+                            <label class="form-label fw-medium" for="phone">Số điện thoại</label>
                             <input type="tel" class="form-control" id="phone" name="phone"
                                    placeholder="0xxx xxx xxx" value="${lead.phone}"
                                    maxlength="20">
-                            <div class="form-text">7-20 ky tu, chi gom so va +, -, (, )</div>
+                            <div class="form-text">7-20 ký tự, chỉ gồm số và +, -, (, )</div>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-medium" for="companyName">Cong ty</label>
+                            <label class="form-label fw-medium" for="companyName">Công ty</label>
                             <input type="text" class="form-control" id="companyName" name="companyName"
-                                   placeholder="Ten cong ty" value="${lead.companyName}"
+                                   placeholder="Tên công ty" value="${lead.companyName}"
                                    maxlength="255">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-medium" for="jobTitle">Chuc danh</label>
+                            <label class="form-label fw-medium" for="jobTitle">Chức danh</label>
                             <input type="text" class="form-control" id="jobTitle" name="jobTitle"
-                                   placeholder="Vi tri / Chuc danh" value="${lead.jobTitle}"
+                                   placeholder="Vị trí / Chức danh" value="${lead.jobTitle}"
                                    maxlength="150">
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Thong tin bo sung -->
+            <!-- Thông tin bổ sung -->
             <div class="card border-0 shadow-sm">
                 <div class="card-header bg-transparent border-0">
-                    <h6 class="mb-0 fw-semibold"><i class="bi bi-info-circle me-2"></i>Thong tin bo sung</h6>
+                    <h6 class="mb-0 fw-semibold"><i class="bi bi-info-circle me-2"></i>Thông tin bổ sung</h6>
                 </div>
                 <div class="card-body">
                     <div class="row g-3">
                         <div class="col-12">
-                            <label class="form-label fw-medium" for="interests">So thich / Quan tam</label>
+                            <label class="form-label fw-medium" for="interests">Sở thích / Quan tâm</label>
                             <input type="text" class="form-control" id="interests" name="interests"
                                    placeholder="VD: Digital Marketing, Data Science, Leadership"
                                    value="${lead.interests}" maxlength="500">
-                            <div class="form-text">San pham hoac dich vu lead quan tam, cach nhau boi dau phay (toi da 500 ky tu)</div>
+                            <div class="form-text">Sản phẩm hoặc dịch vụ lead quan tâm, cách nhau bởi dấu phẩy (tối đa 500 ký tự)</div>
                         </div>
                         <div class="col-12">
-                            <label class="form-label fw-medium" for="notes">Ghi chu</label>
+                            <label class="form-label fw-medium" for="notes">Ghi chú</label>
                             <textarea class="form-control" id="notes" name="notes" rows="4"
-                                      placeholder="Ghi chu them ve lead..."
+                                      placeholder="Ghi chú thêm về lead..."
                                       maxlength="2000">${lead.notes}</textarea>
-                            <div class="form-text">Toi da 2000 ky tu</div>
+                            <div class="form-text">Tối đa 2000 ký tự</div>
                         </div>
                     </div>
                 </div>
@@ -106,14 +106,14 @@
 
         <!-- Sidebar -->
         <div class="col-lg-4">
-            <!-- Phan loai -->
+            <!-- Phân loại -->
             <div class="card border-0 shadow-sm mb-4">
                 <div class="card-header bg-transparent border-0">
-                    <h6 class="mb-0 fw-semibold"><i class="bi bi-tag me-2"></i>Phan loai</h6>
+                    <h6 class="mb-0 fw-semibold"><i class="bi bi-tag me-2"></i>Phân loại</h6>
                 </div>
                 <div class="card-body">
                     <div class="mb-3">
-                        <label class="form-label fw-medium">Trang thai</label>
+                        <label class="form-label fw-medium">Trạng thái</label>
                         <c:choose>
                             <c:when test="${mode == 'edit'}">
                                 <!-- Edit mode: status is read-only, displayed as badge -->
@@ -127,20 +127,20 @@
                                         <c:otherwise><span class="badge bg-secondary">${lead.status}</span></c:otherwise>
                                     </c:choose>
                                 </div>
-                                <div class="form-text">Trang thai khong the thay doi truc tiep</div>
+                                <div class="form-text">Trạng thái không thể thay đổi trực tiếp</div>
                             </c:when>
                             <c:otherwise>
                                 <!-- Create mode: default Assigned, hidden -->
                                 <input type="hidden" name="status" value="Assigned">
-                                <div class="form-control bg-light"><span class="badge bg-primary">Assigned</span> (Mac dinh)</div>
-                                <div class="form-text">Lead moi se tu dong o trang thai Assigned</div>
+                                <div class="form-control bg-light"><span class="badge bg-primary">Assigned</span> (Mặc định)</div>
+                                <div class="form-text">Lead mới sẽ tự động ở trạng thái Assigned</div>
                             </c:otherwise>
                         </c:choose>
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-medium" for="rating">Rating</label>
                         <select class="form-select" id="rating" name="rating">
-                            <option value="">-- Chon rating --</option>
+                            <option value="">-- Chọn rating --</option>
                             <c:forEach var="ratingEnum" items="${leadRatings}">
                                 <option value="${ratingEnum}" <c:if test="${lead.rating == ratingEnum.toString()}">selected</c:if>>${ratingEnum}</option>
                             </c:forEach>
@@ -150,43 +150,43 @@
                                 <option value="Cold">Cold</option>
                             </c:if>
                         </select>
-                        <div class="form-text">Muc do tiem nang cua lead</div>
+                        <div class="form-text">Mức độ tiềm năng của lead</div>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-medium" for="leadScore">Diem (Score)</label>
+                        <label class="form-label fw-medium" for="leadScore">Điểm (Score)</label>
                         <input type="number" class="form-control" id="leadScore" name="leadScore"
                                placeholder="0" value="${lead.leadScore != null ? lead.leadScore : 0}"
                                min="0" max="100">
-                        <div class="form-text">Diem danh gia lead (0 - 100)</div>
+                        <div class="form-text">Điểm đánh giá lead (0 - 100)</div>
                     </div>
                 </div>
             </div>
 
-            <!-- Nguon -->
+            <!-- Nguồn -->
             <div class="card border-0 shadow-sm mb-4">
                 <div class="card-header bg-transparent border-0">
-                    <h6 class="mb-0 fw-semibold"><i class="bi bi-diagram-3 me-2"></i>Nguon & Chien dich</h6>
+                    <h6 class="mb-0 fw-semibold"><i class="bi bi-diagram-3 me-2"></i>Nguồn & Chiến dịch</h6>
                 </div>
                 <div class="card-body">
                     <div class="mb-3">
-                        <label class="form-label fw-medium" for="sourceId">Nguon Lead</label>
+                        <label class="form-label fw-medium" for="sourceId">Nguồn Lead</label>
                         <select class="form-select" id="sourceId" name="sourceId">
-                            <option value="">-- Chon nguon --</option>
+                            <option value="">-- Chọn nguồn --</option>
                             <c:forEach var="source" items="${leadSources}">
                                 <option value="${source.sourceId}" <c:if test="${lead.sourceId == source.sourceId}">selected</c:if>>${source.sourceName}</option>
                             </c:forEach>
                         </select>
-                        <div class="form-text">Lead den tu dau?</div>
+                        <div class="form-text">Lead đến từ đâu?</div>
                     </div>
                     <div>
-                        <label class="form-label fw-medium" for="campaignId">Chien dich</label>
+                        <label class="form-label fw-medium" for="campaignId">Chiến dịch</label>
                         <select class="form-select" id="campaignId" name="campaignId">
-                            <option value="">-- Chon chien dich --</option>
+                            <option value="">-- Chọn chiến dịch --</option>
                             <c:forEach var="campaign" items="${campaigns}">
                                 <option value="${campaign.campaignId}" <c:if test="${lead.campaignId == campaign.campaignId}">selected</c:if>>${campaign.campaignName}</option>
                             </c:forEach>
                         </select>
-                        <div class="form-text">Chien dich marketing lien quan</div>
+                        <div class="form-text">Chiến dịch marketing liên quan</div>
                     </div>
                 </div>
             </div>
@@ -195,16 +195,16 @@
             <div class="d-grid gap-2">
                 <button type="submit" class="btn btn-primary" id="submitBtn"><i class="bi bi-check-lg me-1"></i>
                     <c:choose>
-                        <c:when test="${mode == 'edit'}">Cap nhat Lead</c:when>
-                        <c:otherwise>Tao Lead</c:otherwise>
+                        <c:when test="${mode == 'edit'}">Cập nhật Lead</c:when>
+                        <c:otherwise>Tạo Lead</c:otherwise>
                     </c:choose>
                 </button>
                 <c:if test="${mode == 'edit' && lead.status != 'Inactive'}">
                     <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#inactiveModal">
-                        <i class="bi bi-x-circle me-1"></i>Vo hieu hoa Lead
+                        <i class="bi bi-x-circle me-1"></i>Vô hiệu hóa Lead
                     </button>
                 </c:if>
-                <a href="${pageContext.request.contextPath}/sale/lead/list" class="btn btn-outline-secondary">Huy</a>
+                <a href="${pageContext.request.contextPath}/sale/lead/list" class="btn btn-outline-secondary">Hủy</a>
             </div>
         </div>
     </div>
@@ -216,33 +216,33 @@
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header bg-danger text-white">
-                    <h5 class="modal-title" id="inactiveModalLabel"><i class="bi bi-exclamation-triangle me-2"></i>Xac nhan vo hieu hoa Lead</h5>
+                    <h5 class="modal-title" id="inactiveModalLabel"><i class="bi bi-exclamation-triangle me-2"></i>Xác nhận vô hiệu hóa Lead</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <div class="alert alert-warning d-flex align-items-start mb-3">
                         <i class="bi bi-exclamation-triangle-fill me-2 mt-1"></i>
                         <div>
-                            <strong>Canh bao:</strong> Vo hieu hoa lead <strong>"${lead.fullName}"</strong> (${lead.leadCode}) se:
+                            <strong>Cảnh báo:</strong> Vô hiệu hóa lead <strong>"${lead.fullName}"</strong> (${lead.leadCode}) sẽ:
                             <ul class="mb-0 mt-1">
-                                <li>Chuyen lead sang trang thai <strong>Inactive</strong></li>
-                                <li>Dong (Cancelled) <strong>tat ca Opportunity</strong> lien quan</li>
-                                <li>Cac Opportunity bi dong se <strong>chi co the xem</strong>, khong the chinh sua</li>
+                                <li>Chuyển lead sang trạng thái <strong>Inactive</strong></li>
+                                <li>Đóng (Cancelled) <strong>tất cả Opportunity</strong> liên quan</li>
+                                <li>Các Opportunity bị đóng sẽ <strong>chỉ có thể xem</strong>, không thể chỉnh sửa</li>
                             </ul>
                         </div>
                     </div>
 
                     <c:choose>
                         <c:when test="${not empty leadOpportunities}">
-                            <h6 class="fw-semibold mb-2">Cac Opportunity se bi dong:</h6>
+                            <h6 class="fw-semibold mb-2">Các Opportunity sẽ bị đóng:</h6>
                             <div class="table-responsive">
                                 <table class="table table-sm table-bordered mb-0">
                                     <thead class="table-light">
                                         <tr>
-                                            <th>Ma OPP</th>
-                                            <th>Ten Opportunity</th>
-                                            <th>Trang thai</th>
-                                            <th>Gia tri</th>
+                                            <th>Mã OPP</th>
+                                            <th>Tên Opportunity</th>
+                                            <th>Trạng thái</th>
+                                            <th>Giá trị</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -276,16 +276,16 @@
                             </div>
                         </c:when>
                         <c:otherwise>
-                            <p class="text-muted mb-0"><i class="bi bi-info-circle me-1"></i>Lead nay khong co Opportunity nao.</p>
+                            <p class="text-muted mb-0"><i class="bi bi-info-circle me-1"></i>Lead này không có Opportunity nào.</p>
                         </c:otherwise>
                     </c:choose>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Huy</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
                     <form method="POST" action="${pageContext.request.contextPath}/sale/lead/form" class="d-inline">
                         <input type="hidden" name="action" value="inactive">
                         <input type="hidden" name="leadId" value="${lead.leadId}">
-                        <button type="submit" class="btn btn-danger"><i class="bi bi-x-circle me-1"></i>Xac nhan vo hieu hoa</button>
+                        <button type="submit" class="btn btn-danger"><i class="bi bi-x-circle me-1"></i>Xác nhận vô hiệu hóa</button>
                     </form>
                 </div>
             </div>
@@ -305,43 +305,43 @@
         var notes = document.getElementById('notes').value.trim();
 
         if (!fullName) {
-            errors.push('Ho ten la bat buoc!');
+            errors.push('Họ tên là bắt buộc!');
         } else if (fullName.length > 150) {
-            errors.push('Ho ten khong duoc vuot qua 150 ky tu!');
+            errors.push('Họ tên không được vượt quá 150 ký tự!');
         }
 
         if (email) {
             var emailRegex = /^[\w.%+-]+@[\w.-]+\.[a-zA-Z]{2,}$/;
             if (!emailRegex.test(email)) {
-                errors.push('Email khong hop le!');
+                errors.push('Email không hợp lệ!');
             } else if (email.length > 255) {
-                errors.push('Email khong duoc vuot qua 255 ky tu!');
+                errors.push('Email không được vượt quá 255 ký tự!');
             }
         }
 
         if (phone) {
             var phoneRegex = /^[0-9+\-() ]{7,20}$/;
             if (!phoneRegex.test(phone)) {
-                errors.push('So dien thoai khong hop le (7-20 ky tu, chi gom so va +, -, (, ))!');
+                errors.push('Số điện thoại không hợp lệ (7-20 ký tự, chỉ gồm số và +, -, (, ))!');
             }
         }
 
         if (companyName && companyName.length > 255) {
-            errors.push('Ten cong ty khong duoc vuot qua 255 ky tu!');
+            errors.push('Tên công ty không được vượt quá 255 ký tự!');
         }
         if (jobTitle && jobTitle.length > 150) {
-            errors.push('Chuc danh khong duoc vuot qua 150 ky tu!');
+            errors.push('Chức danh không được vượt quá 150 ký tự!');
         }
         if (interests && interests.length > 500) {
-            errors.push('So thich khong duoc vuot qua 500 ky tu!');
+            errors.push('Sở thích không được vượt quá 500 ký tự!');
         }
         if (notes && notes.length > 2000) {
-            errors.push('Ghi chu khong duoc vuot qua 2000 ky tu!');
+            errors.push('Ghi chú không được vượt quá 2000 ký tự!');
         }
 
         var leadScore = parseInt(document.getElementById('leadScore').value) || 0;
         if (leadScore < 0 || leadScore > 100) {
-            errors.push('Diem (Score) phai tu 0 den 100!');
+            errors.push('Điểm (Score) phải từ 0 đến 100!');
         }
 
         if (errors.length > 0) {
@@ -352,6 +352,6 @@
 
         var btn = document.getElementById('submitBtn');
         btn.disabled = true;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Dang luu...';
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Đang lưu...';
     });
 </script>

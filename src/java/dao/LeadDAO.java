@@ -84,19 +84,17 @@ public class LeadDAO extends DBContext {
 
     // Generate unique lead code (LD-000001, LD-000002, ...)
     public String generateLeadCode() {
-        String sql = "SELECT TOP 1 lead_code FROM leads ORDER BY lead_id DESC";
+        String sql = "SELECT MAX(CAST(SUBSTRING(lead_code, 4, LEN(lead_code) - 3) AS INT)) "
+                + "FROM leads WHERE lead_code LIKE 'LD-[0-9][0-9][0-9][0-9][0-9][0-9]'";
 
         try {
             PreparedStatement st = connection.prepareStatement(sql);
             ResultSet rs = st.executeQuery();
 
             if (rs.next()) {
-                String lastCode = rs.getString("lead_code");
-                // Extract number from LD-000001
-                int number = Integer.parseInt(lastCode.substring(3));
-                return String.format("LD-%06d", number + 1);
+                int maxNumber = rs.getInt(1);
+                return String.format("LD-%06d", maxNumber + 1);
             } else {
-                // First lead
                 return "LD-000001";
             }
         } catch (SQLException e) {
@@ -964,5 +962,65 @@ public class LeadDAO extends DBContext {
             e.printStackTrace();
         }
         return list;
+    }
+    
+      public util.PagedResult<Lead> search(String phoneQuery, String status, int page, int pageSize) {
+        List<Lead> list = new ArrayList<>();
+        int totalItems = 0;
+
+        StringBuilder sql = new StringBuilder("SELECT * FROM leads WHERE status != 'Inactive' ");
+        StringBuilder countSql = new StringBuilder("SELECT COUNT(*) FROM leads WHERE status != 'Inactive' ");
+        List<Object> params = new ArrayList<>();
+
+        if (phoneQuery != null && !phoneQuery.trim().isEmpty()) {
+            String cond = "AND phone LIKE ? ";
+            sql.append(cond);
+            countSql.append(cond);
+            params.add("%" + phoneQuery.trim() + "%");
+        }
+
+        if (status != null && !status.trim().isEmpty()) {
+            String cond = "AND status = ? ";
+            sql.append(cond);
+            countSql.append(cond);
+            params.add(status.trim());
+        }
+
+        // Count Query
+        try (PreparedStatement st = connection.prepareStatement(countSql.toString())) {
+            for (int i = 0; i < params.size(); i++) {
+                st.setObject(i + 1, params.get(i));
+            }
+            try (ResultSet rs = st.executeQuery()) {
+                if (rs.next()) {
+                    totalItems = rs.getInt(1);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        // Items Query
+        sql.append("ORDER BY created_at DESC ");
+        sql.append("OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
+
+        try (PreparedStatement st = connection.prepareStatement(sql.toString())) {
+            int pIdx = 1;
+            for (Object p : params) {
+                st.setObject(pIdx++, p);
+            }
+            st.setInt(pIdx++, (page - 1) * pageSize);
+            st.setInt(pIdx++, pageSize);
+
+            try (ResultSet rs = st.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapResultSetToLead(rs));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return new util.PagedResult<>(list, totalItems, page, pageSize);
     }
 }

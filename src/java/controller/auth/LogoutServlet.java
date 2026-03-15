@@ -10,7 +10,7 @@ import jakarta.servlet.http.HttpSession;
 import model.Users;
 import util.AuditUtil;
 
-@WebServlet(name = "LogoutServlet", urlPatterns = {"/logout"})
+@WebServlet(name = "LogoutServlet", urlPatterns = { "/logout", "/auth/logout" })
 public class LogoutServlet extends HttpServlet {
 
     protected void doGet(HttpServletRequest request, HttpServletResponse response)

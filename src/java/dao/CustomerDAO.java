@@ -78,19 +78,17 @@ public class CustomerDAO extends DBContext {
 
     // Generate unique customer code (CUS-000001, CUS-000002, ...)
     public String generateCustomerCode() {
-        String sql = "SELECT TOP 1 customer_code FROM customers ORDER BY customer_id DESC";
+        String sql = "SELECT MAX(CAST(SUBSTRING(customer_code, 5, LEN(customer_code) - 4) AS INT)) "
+                + "FROM customers WHERE customer_code LIKE 'CUS-[0-9][0-9][0-9][0-9][0-9][0-9]'";
         try (PreparedStatement st = connection.prepareStatement(sql); ResultSet rs = st.executeQuery()) {
             if (rs.next()) {
-                String lastCode = rs.getString("customer_code");
-                int number = Integer.parseInt(lastCode.substring(4));
-                return String.format("CUS-%06d", number + 1);
-            } else {
-                return "CUS-000001";
+                int maxNumber = rs.getInt(1);
+                return String.format("CUS-%06d", maxNumber + 1);
             }
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        return "CUS-" + System.currentTimeMillis();
+        return "CUS-000001";
     }
 
     // Insert new customer
@@ -98,8 +96,10 @@ public class CustomerDAO extends DBContext {
         String sql = "INSERT INTO customers (customer_code, full_name, email, phone, date_of_birth, gender, "
                 + "address, city, source_id, converted_lead_id, customer_segment, status, owner_id, "
                 + "total_courses, total_spent, health_score, satisfaction_score, "
-                + "email_opt_out, sms_opt_out, notes, created_at, updated_at, created_by) "
-                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                + "email_opt_out, sms_opt_out, notes, "
+                + "first_purchase_date, last_purchase_date, purchased_courses, "
+                + "created_at, updated_at, created_by) "
+                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (PreparedStatement st = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             if (c.getCustomerCode() == null || c.getCustomerCode().isEmpty()) {
                 c.setCustomerCode(generateCustomerCode());
@@ -148,13 +148,24 @@ public class CustomerDAO extends DBContext {
             st.setBoolean(18, c.isEmailOptOut());
             st.setBoolean(19, c.isSmsOptOut());
             st.setString(20, c.getNotes());
-            java.time.LocalDateTime now = java.time.LocalDateTime.now();
-            st.setObject(21, now);
-            st.setObject(22, now);
-            if (c.getCreatedBy() != null) {
-                st.setInt(23, c.getCreatedBy());
+            if (c.getFirstPurchaseDate() != null) {
+                st.setObject(21, c.getFirstPurchaseDate());
             } else {
-                st.setNull(23, java.sql.Types.INTEGER);
+                st.setNull(21, java.sql.Types.DATE);
+            }
+            if (c.getLastPurchaseDate() != null) {
+                st.setObject(22, c.getLastPurchaseDate());
+            } else {
+                st.setNull(22, java.sql.Types.DATE);
+            }
+            st.setString(23, c.getPurchasedCourses());
+            java.time.LocalDateTime now = java.time.LocalDateTime.now();
+            st.setObject(24, now);
+            st.setObject(25, now);
+            if (c.getCreatedBy() != null) {
+                st.setInt(26, c.getCreatedBy());
+            } else {
+                st.setNull(26, java.sql.Types.INTEGER);
             }
             int rowsAffected = st.executeUpdate();
             if (rowsAffected > 0) {

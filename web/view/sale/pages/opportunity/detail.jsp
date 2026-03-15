@@ -5,12 +5,12 @@
 <!-- Page Header -->
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h4 class="mb-1 fw-bold">Chi tiet Opportunity</h4>
+        <h4 class="mb-1 fw-bold">Chi tiết Opportunity</h4>
         <p class="text-muted mb-0">${opportunity.opportunityCode} - ${opportunity.opportunityName}</p>
     </div>
     <div class="d-flex gap-2">
-        <a href="${pageContext.request.contextPath}/sale/opportunity/form?id=${opportunity.opportunityId}" class="btn btn-outline-primary btn-sm"><i class="bi bi-pencil me-1"></i>Chinh sua</a>
-        <a href="${pageContext.request.contextPath}/sale/opportunity/list" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Quay lai</a>
+        <a href="${pageContext.request.contextPath}/sale/opportunity/form?id=${opportunity.opportunityId}" class="btn btn-outline-primary btn-sm"><i class="bi bi-pencil me-1"></i>Chỉnh sửa</a>
+        <a href="${pageContext.request.contextPath}/sale/opportunity/list" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Quay lại</a>
     </div>
 </div>
 
@@ -40,19 +40,19 @@
 <div class="row g-4">
     <!-- Main Content -->
     <div class="col-lg-8">
-        <!-- Thong tin co hoi -->
+        <!-- Thông tin cơ hội -->
         <div class="card border-0 shadow-sm mb-4">
             <div class="card-header bg-transparent border-0">
-                <h6 class="mb-0 fw-semibold"><i class="bi bi-briefcase me-2"></i>Thong tin co hoi</h6>
+                <h6 class="mb-0 fw-semibold"><i class="bi bi-briefcase me-2"></i>Thông tin cơ hội</h6>
             </div>
             <div class="card-body">
                 <div class="row g-3">
                     <div class="col-md-6">
-                        <label class="text-muted small">Ten Opportunity</label>
+                        <label class="text-muted small">Tên Opportunity</label>
                         <div class="fw-medium">${opportunity.opportunityName}</div>
                     </div>
                     <div class="col-md-6">
-                        <label class="text-muted small">Ma</label>
+                        <label class="text-muted small">Mã</label>
                         <div class="fw-medium text-primary">${opportunity.opportunityCode}</div>
                     </div>
                     <div class="col-md-6">
@@ -65,7 +65,7 @@
                         </div>
                     </div>
                     <div class="col-md-6">
-                        <label class="text-muted small">Stage hien tai</label>
+                        <label class="text-muted small">Stage hiện tại</label>
                         <div>
                             <c:choose>
                                 <c:when test="${not empty currentStage}"><span class="badge bg-primary-subtle text-primary">${currentStage.stageName}</span></c:when>
@@ -74,7 +74,7 @@
                         </div>
                     </div>
                     <div class="col-md-6">
-                        <label class="text-muted small">Nguon</label>
+                        <label class="text-muted small">Nguồn</label>
                         <div>
                             <c:choose>
                                 <c:when test="${not empty sourceName}"><span class="badge bg-info-subtle text-info">${sourceName}</span></c:when>
@@ -83,7 +83,7 @@
                         </div>
                     </div>
                     <div class="col-md-6">
-                        <label class="text-muted small">Chien dich</label>
+                        <label class="text-muted small">Chiến dịch</label>
                         <div>
                             <c:choose>
                                 <c:when test="${not empty campaignName}">${campaignName}</c:when>
@@ -95,10 +95,10 @@
             </div>
         </div>
 
-        <!-- Gia tri & Xac suat -->
+        <!-- Giá trị & Xác suất -->
         <div class="card border-0 shadow-sm mb-4">
             <div class="card-header bg-transparent border-0">
-                <h6 class="mb-0 fw-semibold"><i class="bi bi-graph-up me-2"></i>Gia tri & Du bao</h6>
+                <h6 class="mb-0 fw-semibold"><i class="bi bi-graph-up me-2"></i>Giá trị & Dự báo</h6>
             </div>
             <div class="card-body">
                 <div class="row g-3">
@@ -107,18 +107,18 @@
                             <div class="fs-4 fw-bold text-success">
                                 <c:choose>
                                     <c:when test="${not empty opportunity.estimatedValue and opportunity.estimatedValue > 0}">
-                                        <fmt:formatNumber value="${opportunity.estimatedValue}" type="number" groupingUsed="true" maxFractionDigits="0"/>d
+                                        <fmt:formatNumber value="${opportunity.estimatedValue}" type="number" groupingUsed="true" maxFractionDigits="0"/>đ
                                     </c:when>
                                     <c:otherwise>0</c:otherwise>
                                 </c:choose>
                             </div>
-                            <small class="text-muted">Gia tri uoc tinh</small>
+                            <small class="text-muted">Giá trị ước tính</small>
                         </div>
                     </div>
                     <div class="col-md-4">
                         <div class="text-center p-3 bg-primary bg-opacity-10 rounded-3">
                             <div class="fs-4 fw-bold text-primary">${opportunity.probability}%</div>
-                            <small class="text-muted">Xac suat</small>
+                            <small class="text-muted">Xác suất</small>
                         </div>
                     </div>
                     <div class="col-md-4">
@@ -126,16 +126,16 @@
                             <div class="fs-4 fw-bold text-warning">
                                 <c:choose>
                                     <c:when test="${not empty opportunity.estimatedValue and opportunity.estimatedValue > 0}">
-                                        <fmt:formatNumber value="${opportunity.estimatedValue * opportunity.probability / 100}" type="number" groupingUsed="true" maxFractionDigits="0"/>d
+                                        <fmt:formatNumber value="${opportunity.estimatedValue * opportunity.probability / 100}" type="number" groupingUsed="true" maxFractionDigits="0"/>đ
                                     </c:when>
                                     <c:otherwise>0</c:otherwise>
                                 </c:choose>
                             </div>
-                            <small class="text-muted">Gia tri du bao</small>
+                            <small class="text-muted">Giá trị dự báo</small>
                         </div>
                     </div>
                     <div class="col-md-6">
-                        <label class="text-muted small">Ngay dong du kien</label>
+                        <label class="text-muted small">Ngày đóng dự kiến</label>
                         <div class="fw-medium">
                             <c:choose>
                                 <c:when test="${not empty opportunity.expectedCloseDate}">${opportunity.expectedCloseDate}</c:when>
@@ -144,7 +144,7 @@
                         </div>
                     </div>
                     <div class="col-md-6">
-                        <label class="text-muted small">Ngay dong thuc te</label>
+                        <label class="text-muted small">Ngày đóng thực tế</label>
                         <div class="fw-medium">
                             <c:choose>
                                 <c:when test="${not empty opportunity.actualCloseDate}">${opportunity.actualCloseDate}</c:when>
@@ -156,11 +156,11 @@
             </div>
         </div>
 
-        <!-- Lien ket Lead / Customer -->
+        <!-- Liên kết Lead / Customer -->
         <c:if test="${not empty lead or not empty customer}">
             <div class="card border-0 shadow-sm mb-4">
                 <div class="card-header bg-transparent border-0">
-                    <h6 class="mb-0 fw-semibold"><i class="bi bi-people me-2"></i>Lien ket</h6>
+                    <h6 class="mb-0 fw-semibold"><i class="bi bi-people me-2"></i>Liên kết</h6>
                 </div>
                 <div class="card-body">
                     <div class="row g-3">
@@ -191,11 +191,11 @@
             </div>
         </c:if>
 
-        <!-- Bao gia lien quan -->
+        <!-- Báo giá liên quan -->
         <div class="card border-0 shadow-sm mb-4">
             <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
-                <h6 class="mb-0 fw-semibold"><i class="bi bi-file-earmark-text me-2"></i>Bao gia lien quan</h6>
-                <a href="${pageContext.request.contextPath}/sale/quotation/form?oppId=${opportunity.opportunityId}" class="btn btn-sm btn-outline-primary"><i class="bi bi-plus-lg me-1"></i>Tao bao gia</a>
+                <h6 class="mb-0 fw-semibold"><i class="bi bi-file-earmark-text me-2"></i>Báo giá liên quan</h6>
+                <a href="${pageContext.request.contextPath}/sale/quotation/form?oppId=${opportunity.opportunityId}" class="btn btn-sm btn-outline-primary"><i class="bi bi-plus-lg me-1"></i>Tạo báo giá</a>
             </div>
             <div class="card-body">
                 <c:choose>
@@ -204,11 +204,11 @@
                             <table class="table table-hover align-middle mb-0">
                                 <thead class="table-light">
                                     <tr>
-                                        <th>Ma</th>
-                                        <th>Tieu de</th>
-                                        <th>Trang thai</th>
-                                        <th class="text-end">Gia tri</th>
-                                        <th>Ngay tao</th>
+                                        <th>Mã</th>
+                                        <th>Tiêu đề</th>
+                                        <th>Trạng thái</th>
+                                        <th class="text-end">Giá trị</th>
+                                        <th>Ngày tạo</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -218,11 +218,11 @@
                                             <td>${q.title}</td>
                                             <td>
                                                 <c:choose>
-                                                    <c:when test="${q.status == 'Draft'}"><span class="badge bg-secondary-subtle text-secondary">De xuat</span></c:when>
-                                                    <c:when test="${q.status == 'Approved'}"><span class="badge bg-success-subtle text-success">Da duyet</span></c:when>
-                                                    <c:when test="${q.status == 'Sent'}"><span class="badge bg-warning-subtle text-warning">Bao gia</span></c:when>
-                                                    <c:when test="${q.status == 'Accepted'}"><span class="badge bg-primary-subtle text-primary">Chap nhan</span></c:when>
-                                                    <c:when test="${q.status == 'Rejected'}"><span class="badge bg-danger-subtle text-danger">Tu choi</span></c:when>
+                                                    <c:when test="${q.status == 'Draft'}"><span class="badge bg-secondary-subtle text-secondary">Đề xuất</span></c:when>
+                                                    <c:when test="${q.status == 'Approved'}"><span class="badge bg-success-subtle text-success">Đã duyệt</span></c:when>
+                                                    <c:when test="${q.status == 'Sent'}"><span class="badge bg-warning-subtle text-warning">Báo giá</span></c:when>
+                                                    <c:when test="${q.status == 'Accepted'}"><span class="badge bg-primary-subtle text-primary">Chấp nhận</span></c:when>
+                                                    <c:when test="${q.status == 'Rejected'}"><span class="badge bg-danger-subtle text-danger">Từ chối</span></c:when>
                                                     <c:otherwise><span class="badge bg-secondary">${q.status}</span></c:otherwise>
                                                 </c:choose>
                                             </td>
@@ -241,36 +241,87 @@
                     </c:when>
                     <c:otherwise>
                         <div class="text-center text-muted py-3">
-                            <i class="bi bi-inbox me-1"></i>Chua co bao gia nao cho opportunity nay
+                            <i class="bi bi-inbox me-1"></i>Chưa có báo giá nào cho opportunity này
                         </div>
                     </c:otherwise>
                 </c:choose>
             </div>
         </div>
 
-        <!-- Ghi chu -->
+        <!-- Ghi chú -->
         <c:if test="${not empty opportunity.notes}">
-            <div class="card border-0 shadow-sm">
+            <div class="card border-0 shadow-sm mb-4">
                 <div class="card-header bg-transparent border-0">
-                    <h6 class="mb-0 fw-semibold"><i class="bi bi-journal-text me-2"></i>Ghi chu</h6>
+                    <h6 class="mb-0 fw-semibold"><i class="bi bi-journal-text me-2"></i>Ghi chú</h6>
                 </div>
                 <div class="card-body">
                     <p class="mb-0" style="white-space: pre-wrap;">${opportunity.notes}</p>
                 </div>
             </div>
         </c:if>
+
+        <!-- Lịch sử hoạt động -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 fw-semibold"><i class="bi bi-clock-history me-2"></i>Lịch sử hoạt động</h6>
+                <div class="d-flex gap-1">
+                    <button class="btn btn-sm btn-outline-success" onclick="openQuickLog('Call')"><i class="bi bi-telephone me-1"></i>Gọi điện</button>
+                    <button class="btn btn-sm btn-outline-warning" onclick="openQuickLog('Note')"><i class="bi bi-sticky me-1"></i>Ghi chú</button>
+                    <button class="btn btn-sm btn-outline-primary" onclick="openQuickLog('Meeting')"><i class="bi bi-people me-1"></i>Lịch hẹn</button>
+                </div>
+            </div>
+            <div class="card-body" id="activityTimeline">
+                <c:choose>
+                    <c:when test="${not empty activities}">
+                        <c:forEach var="act" items="${activities}">
+                            <div class="d-flex gap-3 mb-3 pb-3 border-bottom">
+                                <div>
+                                    <c:choose>
+                                        <c:when test="${act.activityType == 'Call'}"><span class="badge bg-success-subtle text-success border border-success-subtle p-2"><i class="bi bi-telephone"></i></span></c:when>
+                                        <c:when test="${act.activityType == 'Email'}"><span class="badge bg-info-subtle text-info border border-info-subtle p-2"><i class="bi bi-envelope"></i></span></c:when>
+                                        <c:when test="${act.activityType == 'Meeting'}"><span class="badge bg-primary-subtle text-primary border border-primary-subtle p-2"><i class="bi bi-people"></i></span></c:when>
+                                        <c:when test="${act.activityType == 'Note'}"><span class="badge bg-warning-subtle text-warning border border-warning-subtle p-2"><i class="bi bi-sticky"></i></span></c:when>
+                                        <c:otherwise><span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle p-2"><i class="bi bi-activity"></i></span></c:otherwise>
+                                    </c:choose>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div class="d-flex justify-content-between">
+                                        <div class="fw-semibold">${act.subject}</div>
+                                        <div>
+                                            <c:choose>
+                                                <c:when test="${act.status == 'Completed'}"><span class="badge bg-success-subtle text-success border border-success-subtle">Hoàn thành</span></c:when>
+                                                <c:when test="${act.status == 'Pending'}"><span class="badge bg-warning-subtle text-warning border border-warning-subtle">Đang chờ</span></c:when>
+                                                <c:otherwise><span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle">${act.status}</span></c:otherwise>
+                                            </c:choose>
+                                        </div>
+                                    </div>
+                                    <c:if test="${not empty act.description}"><div class="text-muted small text-truncate" style="max-width:500px;">${act.description}</div></c:if>
+                                    <small class="text-muted">
+                                        <c:if test="${not empty act.performerName}">${act.performerName} &middot; </c:if>
+                                        <c:if test="${not empty act.activityDate}">${act.activityDate.toString().substring(0, 16).replace('T', ' ')}</c:if>
+                                    </small>
+                                </div>
+                            </div>
+                        </c:forEach>
+                    </c:when>
+                    <c:otherwise>
+                        <div class="text-center text-muted py-3">Chưa có hoạt động nào</div>
+                    </c:otherwise>
+                </c:choose>
+            </div>
+        </div>
     </div>
 
     <!-- Sidebar -->
     <div class="col-lg-4">
-        <!-- Trang thai -->
+        <!-- Trạng thái -->
         <div class="card border-0 shadow-sm mb-4">
             <div class="card-header bg-transparent border-0">
-                <h6 class="mb-0 fw-semibold">Trang thai</h6>
+                <h6 class="mb-0 fw-semibold">Trạng thái</h6>
             </div>
             <div class="card-body">
                 <div class="mb-3">
-                    <label class="text-muted small">Trang thai</label>
+                    <label class="text-muted small">Trạng thái</label>
                     <div class="mt-1">
                         <c:choose>
                             <c:when test="${opportunity.status == 'Open'}"><span class="badge bg-info-subtle text-info">Open</span></c:when>
@@ -285,13 +336,13 @@
                 </div>
                 <c:if test="${not empty opportunity.wonLostReason}">
                     <div class="mb-3">
-                        <label class="text-muted small">Ly do Won/Lost</label>
+                        <label class="text-muted small">Lý do Won/Lost</label>
                         <div class="mt-1 fw-medium">${opportunity.wonLostReason}</div>
                     </div>
                 </c:if>
                 <hr>
                 <div class="mb-2">
-                    <label class="text-muted small">Ngay tao</label>
+                    <label class="text-muted small">Ngày tạo</label>
                     <div class="mt-1"><small>
                         <c:choose>
                             <c:when test="${not empty opportunity.createdAt}">${opportunity.createdAt.toString().substring(0, 19).replace('T', ' ')}</c:when>
@@ -300,7 +351,7 @@
                     </small></div>
                 </div>
                 <div>
-                    <label class="text-muted small">Cap nhat</label>
+                    <label class="text-muted small">Cập nhật</label>
                     <div class="mt-1"><small>
                         <c:choose>
                             <c:when test="${not empty opportunity.updatedAt}">${opportunity.updatedAt.toString().substring(0, 19).replace('T', ' ')}</c:when>
@@ -311,26 +362,89 @@
             </div>
         </div>
 
-        <!-- Hanh dong nhanh -->
+        <!-- Hành động nhanh -->
         <div class="card border-0 shadow-sm">
             <div class="card-header bg-transparent border-0">
-                <h6 class="mb-0 fw-semibold"><i class="bi bi-lightning me-2"></i>Hanh dong nhanh</h6>
+                <h6 class="mb-0 fw-semibold"><i class="bi bi-lightning me-2"></i>Hành động nhanh</h6>
             </div>
             <div class="card-body">
                 <div class="d-grid gap-2">
-                    <a href="${pageContext.request.contextPath}/sale/opportunity/form?id=${opportunity.opportunityId}" class="btn btn-outline-primary btn-sm text-start"><i class="bi bi-pencil me-2"></i>Chinh sua</a>
-                    <a href="${pageContext.request.contextPath}/sale/opportunity/kanban?pipeline=${opportunity.pipelineId}" class="btn btn-outline-info btn-sm text-start"><i class="bi bi-kanban me-2"></i>Xem tren Kanban</a>
-                    <a href="${pageContext.request.contextPath}/sale/opportunity/history?oppId=${opportunity.opportunityId}" class="btn btn-outline-secondary btn-sm text-start"><i class="bi bi-clock-history me-2"></i>Lich su thay doi</a>
-                    <button onclick="deleteOpp(${opportunity.opportunityId}, '${opportunity.opportunityName}')" class="btn btn-outline-danger btn-sm text-start"><i class="bi bi-trash me-2"></i>Xoa opportunity</button>
+                    <a href="${pageContext.request.contextPath}/sale/opportunity/form?id=${opportunity.opportunityId}" class="btn btn-outline-primary btn-sm text-start"><i class="bi bi-pencil me-2"></i>Chỉnh sửa</a>
+                    <a href="${pageContext.request.contextPath}/sale/opportunity/kanban?pipeline=${opportunity.pipelineId}" class="btn btn-outline-info btn-sm text-start"><i class="bi bi-kanban me-2"></i>Xem trên Kanban</a>
+                    <a href="${pageContext.request.contextPath}/sale/opportunity/history?oppId=${opportunity.opportunityId}" class="btn btn-outline-secondary btn-sm text-start"><i class="bi bi-clock-history me-2"></i>Lịch sử thay đổi</a>
+                    <button onclick="deleteOpp(${opportunity.opportunityId}, '${opportunity.opportunityName}')" class="btn btn-outline-danger btn-sm text-start"><i class="bi bi-trash me-2"></i>Xóa opportunity</button>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
+<!-- Quick Log Modal -->
+<div class="modal fade" id="quickLogModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-bold"><i class="bi bi-lightning me-2"></i>Ghi nhận nhanh</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="qlActivityType">
+                <div class="mb-3">
+                    <label class="form-label">Tiêu đề <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="qlSubject" placeholder="VD: Gọi tư vấn khóa học...">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Mô tả</label>
+                    <textarea class="form-control" id="qlDescription" rows="3" placeholder="Nội dung chi tiết..."></textarea>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Trạng thái</label>
+                    <select class="form-select" id="qlStatus">
+                        <option value="Completed">Hoàn thành</option>
+                        <option value="Pending">Đang chờ (lịch hẹn)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-primary btn-sm" onclick="submitQuickLog()"><i class="bi bi-check-lg me-1"></i>Lưu</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
+function openQuickLog(type) {
+    document.getElementById('qlActivityType').value = type;
+    document.getElementById('qlSubject').value = '';
+    document.getElementById('qlDescription').value = '';
+    document.getElementById('qlStatus').value = 'Completed';
+    var typeName = type === 'Call' ? 'Cuộc gọi' : type === 'Note' ? 'Ghi chú' : 'Cuộc họp';
+    document.querySelector('#quickLogModal .modal-title').innerHTML = '<i class="bi bi-lightning me-2"></i>Ghi nhận ' + typeName;
+    new bootstrap.Modal(document.getElementById('quickLogModal')).show();
+}
+function submitQuickLog() {
+    var subject = document.getElementById('qlSubject').value.trim();
+    if (!subject) { alert('Vui lòng nhập tiêu đề'); return; }
+    var data = new URLSearchParams();
+    data.append('activityType', document.getElementById('qlActivityType').value);
+    data.append('relatedType', 'Opportunity');
+    data.append('relatedId', '${opportunity.opportunityId}');
+    data.append('subject', subject);
+    data.append('description', document.getElementById('qlDescription').value);
+    data.append('status', document.getElementById('qlStatus').value);
+    fetch('${pageContext.request.contextPath}/sale/activity/quicklog', { method: 'POST', body: data })
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+            if (d.success) {
+                bootstrap.Modal.getInstance(document.getElementById('quickLogModal')).hide();
+                location.reload();
+            } else { alert(d.message); }
+        })
+        .catch(function() { alert('Lỗi khi lưu hoạt động'); });
+}
 function deleteOpp(oppId, oppName) {
-    if (confirm('Ban co chac muon xoa opportunity "' + oppName + '"?\nHanh dong nay khong the hoan tac.')) {
+    if (confirm('Bạn có chắc muốn xóa opportunity "' + oppName + '"?\nHành động này không thể hoàn tác.')) {
         const form = document.createElement('form');
         form.method = 'POST';
         form.action = '${pageContext.request.contextPath}/sale/opportunity/list';

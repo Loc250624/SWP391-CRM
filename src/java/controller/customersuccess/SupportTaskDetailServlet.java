@@ -1,8 +1,6 @@
 package controller.customersuccess;
 
 import dao.CustomerDAO;
-import dao.LeadDAO;
-import dao.OpportunityDAO;
 import dao.TaskCommentDAO;
 import dao.TaskDAO;
 import dao.UserDAO;
@@ -16,8 +14,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import model.Comment;
 import model.Customer;
-import model.Lead;
-import model.Opportunity;
 import model.Task;
 import model.Users;
 
@@ -73,27 +69,15 @@ public class SupportTaskDetailServlet extends HttpServlet {
                 creator = userDAO.getUserById(task.getCreatedBy());
             }
 
-            // Get related object info
+            // Get related object info (CS only links to Customer)
             String relatedObjectName = null;
-            Lead relatedLead = null;
             Customer relatedCustomer = null;
             if (task.getRelatedType() != null && task.getRelatedId() != null) {
                 String rt = task.getRelatedType().toUpperCase();
-                if ("LEAD".equals(rt)) {
-                    relatedLead = new LeadDAO().getLeadById(task.getRelatedId());
-                    if (relatedLead != null) {
-                        relatedObjectName = relatedLead.getFullName() + " (" + relatedLead.getLeadCode() + ")";
-                    }
-                } else if ("CUSTOMER".equals(rt)) {
+                if ("CUSTOMER".equals(rt)) {
                     relatedCustomer = new CustomerDAO().getCustomerById(task.getRelatedId());
                     if (relatedCustomer != null) {
                         relatedObjectName = relatedCustomer.getFullName() + " (" + relatedCustomer.getCustomerCode() + ")";
-                    }
-                } else if ("OPPORTUNITY".equals(rt)) {
-                    OpportunityDAO opportunityDAO = new OpportunityDAO();
-                    Opportunity opportunity = opportunityDAO.getOpportunityById(task.getRelatedId());
-                    if (opportunity != null) {
-                        relatedObjectName = opportunity.getOpportunityName() + " (" + opportunity.getOpportunityCode() + ")";
                     }
                 }
             }
@@ -105,7 +89,6 @@ public class SupportTaskDetailServlet extends HttpServlet {
             request.setAttribute("task", task);
             request.setAttribute("creator", creator);
             request.setAttribute("relatedObjectName", relatedObjectName);
-            request.setAttribute("relatedLead", relatedLead);
             request.setAttribute("relatedCustomer", relatedCustomer);
             request.setAttribute("comments", comments);
             request.setAttribute("allUsers", allUsers);

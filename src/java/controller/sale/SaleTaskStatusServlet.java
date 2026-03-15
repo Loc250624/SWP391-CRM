@@ -1,5 +1,6 @@
 package controller.sale;
 
+import dao.LeadDAO;
 import dao.TaskAssigneeDAO;
 import dao.TaskDAO;
 import dao.UserDAO;
@@ -13,6 +14,7 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
+import model.Lead;
 import model.Task;
 import model.Users;
 
@@ -65,7 +67,21 @@ public class SaleTaskStatusServlet extends HttpServlet {
                 return;
             }
 
+            // Check if task is related to an unconverted lead → warn on UI
+            boolean leadNotConverted = false;
+            String relatedLeadName = null;
+            if ("LEAD".equals(task.getRelatedType()) && task.getRelatedId() != null) {
+                LeadDAO leadDAO = new LeadDAO();
+                Lead relatedLead = leadDAO.getLeadById(task.getRelatedId());
+                if (relatedLead != null && !relatedLead.isIsConverted()) {
+                    leadNotConverted = true;
+                    relatedLeadName = relatedLead.getFullName();
+                }
+            }
+
             request.setAttribute("task",             task);
+            request.setAttribute("leadNotConverted", leadNotConverted);
+            request.setAttribute("relatedLeadName",  relatedLeadName);
             request.setAttribute("taskStatusValues", TaskStatus.values());
             request.setAttribute("ACTIVE_MENU",  "TASK_LIST");
             request.setAttribute("pageTitle",    "Cập nhật Trạng thái");
@@ -156,6 +172,20 @@ public class SaleTaskStatusServlet extends HttpServlet {
                         + " → " + getVietnameseStatus(newStatus));
                 response.sendRedirect(redirectBack);
                 return;
+            }
+
+            // Block COMPLETED if task is related to a Lead that hasn't been converted to Customer
+            if ("COMPLETED".equals(newStatus) && "LEAD".equals(task.getRelatedType()) && task.getRelatedId() != null) {
+                LeadDAO leadDAO = new LeadDAO();
+                Lead relatedLead = leadDAO.getLeadById(task.getRelatedId());
+                if (relatedLead != null && !relatedLead.isIsConverted()) {
+                    session.setAttribute("errorMessage",
+                            "Không thể hoàn thành công việc này. Lead \""
+                            + relatedLead.getFullName()
+                            + "\" chưa được chuyển đổi thành Customer. Vui lòng chuyển đổi Lead trước.");
+                    response.sendRedirect(redirectBack);
+                    return;
+                }
             }
 
             task.setStatus(TaskStatus.valueOf(newStatus).ordinal());

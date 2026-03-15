@@ -10,19 +10,19 @@
                 <c:when test="${not empty quotation}">
                     <strong>${quotation.quotationCode}</strong> -
                     <c:choose>
-                        <c:when test="${quotation.status == 'Draft'}"><span class="badge bg-secondary">De xuat (Draft)</span> - Can Manager duyet</c:when>
-                        <c:when test="${quotation.status == 'Approved'}"><span class="badge bg-success">Da duyet</span> - San sang gui cho khach</c:when>
-                        <c:when test="${quotation.status == 'Sent'}"><span class="badge bg-warning text-dark">Bao gia (Da gui)</span></c:when>
-                        <c:when test="${quotation.status == 'Accepted'}"><span class="badge bg-primary">Khach chap nhan</span></c:when>
-                        <c:when test="${quotation.status == 'Rejected'}"><span class="badge bg-danger">Bi tu choi</span></c:when>
+                        <c:when test="${quotation.status == 'Draft'}"><span class="badge bg-secondary">Đề xuất (Draft)</span> - Cần Manager duyệt</c:when>
+                        <c:when test="${quotation.status == 'Approved'}"><span class="badge bg-success">Đã duyệt</span> - Sẵn sàng gửi cho khách</c:when>
+                        <c:when test="${quotation.status == 'Sent'}"><span class="badge bg-warning text-dark">Báo giá (Đã gửi)</span></c:when>
+                        <c:when test="${quotation.status == 'Accepted'}"><span class="badge bg-primary">Khách chấp nhận</span></c:when>
+                        <c:when test="${quotation.status == 'Rejected'}"><span class="badge bg-danger">Bị từ chối</span></c:when>
                         <c:otherwise><span class="badge bg-secondary">${quotation.status}</span></c:otherwise>
                     </c:choose>
                 </c:when>
-                <c:otherwise>De xuat se o trang thai Draft. Can Manager duyet truoc khi gui cho khach hang.</c:otherwise>
+                <c:otherwise>Đề xuất sẽ ở trạng thái Draft. Cần Manager duyệt trước khi gửi cho khách hàng.</c:otherwise>
             </c:choose>
         </p>
     </div>
-    <a href="${pageContext.request.contextPath}/sale/quotation/list" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Quay lai</a>
+    <a href="${pageContext.request.contextPath}/sale/quotation/list" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Quay lại</a>
 </div>
 
 <c:if test="${not empty error}">
@@ -42,7 +42,7 @@
             <!-- Opportunity & Lead/Customer -->
             <div class="card border-0 shadow-sm mb-4">
                 <div class="card-header bg-transparent border-0">
-                    <h6 class="mb-0 fw-semibold"><i class="bi bi-briefcase me-2"></i>Opportunity & Lien he</h6>
+                    <h6 class="mb-0 fw-semibold"><i class="bi bi-briefcase me-2"></i>Opportunity & Liên hệ</h6>
                 </div>
                 <div class="card-body">
                     <c:choose>
@@ -54,7 +54,7 @@
                                     <div class="form-control form-control-sm bg-light">
                                         <i class="bi bi-briefcase me-1 text-primary"></i>${selectedOpp.opportunityCode} - ${selectedOpp.opportunityName}
                                         <c:if test="${not empty selectedOpp.estimatedValue}">
-                                            <span class="text-success ms-2">(<fmt:formatNumber value="${selectedOpp.estimatedValue}" type="number" groupingUsed="true" maxFractionDigits="0"/> d)</span>
+                                            <span class="text-success ms-2">(<fmt:formatNumber value="${selectedOpp.estimatedValue}" type="number" groupingUsed="true" maxFractionDigits="0"/> đ)</span>
                                         </c:if>
                                     </div>
                                 </div>
@@ -93,7 +93,7 @@
                                         <c:when test="${not empty linkedLead}">
                                             <div class="form-control form-control-sm bg-light"><i class="bi bi-person me-1 text-primary"></i>${linkedLead.fullName} <small class="text-muted">(${linkedLead.leadCode})</small></div>
                                         </c:when>
-                                        <c:otherwise><div class="form-control form-control-sm bg-light text-muted">-- Khong co --</div></c:otherwise>
+                                        <c:otherwise><div class="form-control form-control-sm bg-light text-muted">-- Không có --</div></c:otherwise>
                                     </c:choose>
                                 </div>
                                 <div class="col-md-6">
@@ -102,7 +102,7 @@
                                         <c:when test="${not empty linkedCustomer}">
                                             <div class="form-control form-control-sm bg-light"><i class="bi bi-building me-1 text-success"></i>${linkedCustomer.fullName}</div>
                                         </c:when>
-                                        <c:otherwise><div class="form-control form-control-sm bg-light text-muted">-- Khong co --</div></c:otherwise>
+                                        <c:otherwise><div class="form-control form-control-sm bg-light text-muted">-- Không có --</div></c:otherwise>
                                     </c:choose>
                                 </div>
                             </div>
@@ -120,13 +120,13 @@
                                                 <div class="fw-semibold" id="oppPreviewName"></div>
                                                 <small class="text-muted" id="oppPreviewContact"></small>
                                             </div>
-                                            <button type="button" class="btn btn-outline-danger btn-sm" onclick="clearOppSelection()" title="Bo chon"><i class="bi bi-x-lg"></i></button>
+                                            <button type="button" class="btn btn-outline-danger btn-sm" onclick="clearOppSelection()" title="Bỏ chọn"><i class="bi bi-x-lg"></i></button>
                                         </div>
                                     </div>
                                     <button type="button" class="btn btn-outline-primary btn-sm w-100" id="oppPickerOpenBtn" onclick="openOppPicker()">
-                                        <i class="bi bi-briefcase me-1"></i>Chon Opportunity <span class="text-danger">*</span>
+                                        <i class="bi bi-briefcase me-1"></i>Chọn Opportunity <span class="text-danger">*</span>
                                     </button>
-                                    <small class="text-muted">Lead/Customer se tu dong lay tu Opportunity</small>
+                                    <small class="text-muted">Lead/Customer sẽ tự động lấy từ Opportunity</small>
                                 </div>
                             </div>
                         </c:otherwise>
@@ -136,32 +136,32 @@
 
             <!-- Basic Info -->
             <div class="card border-0 shadow-sm mb-4">
-                <div class="card-header bg-transparent border-0"><h6 class="mb-0 fw-semibold"><i class="bi bi-info-circle me-2"></i>Thong tin co ban</h6></div>
+                <div class="card-header bg-transparent border-0"><h6 class="mb-0 fw-semibold"><i class="bi bi-info-circle me-2"></i>Thông tin cơ bản</h6></div>
                 <div class="card-body">
                     <div class="row g-3">
                         <div class="col-md-6">
-                            <label class="form-label">Tieu de <span class="text-danger">*</span></label>
+                            <label class="form-label">Tiêu đề <span class="text-danger">*</span></label>
                             <input type="text" class="form-control" name="title" required
-                                   placeholder="VD: De xuat goi dao tao..."
+                                   placeholder="VD: Đề xuất gói đào tạo..."
                                    value="${not empty quotation ? quotation.title : ''}"
                                    ${readonly ? 'readonly' : ''}>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Hieu luc den <span class="text-danger">*</span></label>
+                            <label class="form-label">Hiệu lực đến <span class="text-danger">*</span></label>
                             <input type="date" class="form-control" name="validUntil" required
                                    value="${not empty quotation ? quotation.validUntil : ''}"
                                    ${readonly ? 'readonly' : ''}>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">So ngay het han</label>
+                            <label class="form-label">Số ngày hết hạn</label>
                             <input type="number" class="form-control" name="expiryDays" min="1"
                                    value="${not empty quotation ? quotation.expiryDays : 30}"
                                    ${readonly ? 'readonly' : ''}>
                         </div>
                         <div class="col-12">
-                            <label class="form-label">Mo ta</label>
+                            <label class="form-label">Mô tả</label>
                             <textarea class="form-control" rows="3" name="description"
-                                      placeholder="Mo ta chi tiet de xuat..."
+                                      placeholder="Mô tả chi tiết đề xuất..."
                                       ${readonly ? 'readonly' : ''}>${not empty quotation ? quotation.description : ''}</textarea>
                         </div>
                     </div>
@@ -172,11 +172,11 @@
             <c:choose>
                 <c:when test="${isCustomerOpp && not empty enrolledCourses}">
                     <c:set var="courseList" value="${enrolledCourses}" />
-                    <c:set var="courseListLabel" value="Khoa hoc da dang ky" />
+                    <c:set var="courseListLabel" value="Khóa học đã đăng ký" />
                 </c:when>
                 <c:otherwise>
                     <c:set var="courseList" value="${courses}" />
-                    <c:set var="courseListLabel" value="Tat ca khoa hoc" />
+                    <c:set var="courseListLabel" value="Tất cả khóa học" />
                 </c:otherwise>
             </c:choose>
 
@@ -184,15 +184,15 @@
             <div class="card border-0 shadow-sm mb-4">
                 <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
                     <div>
-                        <h6 class="mb-0 fw-semibold"><i class="bi bi-list-check me-2"></i>Hang muc</h6>
+                        <h6 class="mb-0 fw-semibold"><i class="bi bi-list-check me-2"></i>Hạng mục</h6>
                         <c:if test="${isCustomerOpp && not empty enrolledCourses}">
-                            <small class="text-muted">Khoa hoc da dang ky cua customer</small>
+                            <small class="text-muted">Khóa học đã đăng ký của customer</small>
                         </c:if>
                     </div>
                     <c:if test="${isDraft}">
                         <div class="d-flex gap-2">
-                            <button type="button" class="btn btn-sm btn-primary" onclick="openCoursePicker()"><i class="bi bi-mortarboard me-1"></i>Chon khoa hoc</button>
-                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="addManualItem()"><i class="bi bi-plus me-1"></i>Them dich vu khac</button>
+                            <button type="button" class="btn btn-sm btn-primary" onclick="openCoursePicker()"><i class="bi bi-mortarboard me-1"></i>Chọn khóa học</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="addManualItem()"><i class="bi bi-plus me-1"></i>Thêm dịch vụ khác</button>
                         </div>
                     </c:if>
                 </div>
@@ -201,12 +201,12 @@
                         <table class="table align-middle mb-0" id="itemsTable">
                             <thead class="table-light">
                                 <tr>
-                                    <th>Loai</th>
-                                    <th>Mo ta</th>
+                                    <th>Loại</th>
+                                    <th>Mô tả</th>
                                     <th style="width:70px;">SL</th>
-                                    <th style="width:140px;">Don gia</th>
-                                    <th style="width:90px;">Giam (%)</th>
-                                    <th style="width:140px;" class="text-end">Thanh tien</th>
+                                    <th style="width:140px;">Đơn giá</th>
+                                    <th style="width:90px;">Giảm (%)</th>
+                                    <th style="width:140px;" class="text-end">Thành tiền</th>
                                     <c:if test="${isDraft}"><th style="width:40px;"></th></c:if>
                                 </tr>
                             </thead>
@@ -218,9 +218,9 @@
                                                 <input type="hidden" name="itemCourseId" value="${item.courseId}">
                                                 <input type="hidden" name="itemType" value="${item.itemType}">
                                                 <c:choose>
-                                                    <c:when test="${item.itemType == 'Course'}"><span class="badge bg-primary-subtle text-primary"><i class="bi bi-mortarboard me-1"></i>Khoa hoc</span></c:when>
-                                                    <c:when test="${item.itemType == 'Service'}"><span class="badge bg-info-subtle text-info"><i class="bi bi-gear me-1"></i>Dich vu</span></c:when>
-                                                    <c:otherwise><span class="badge bg-secondary-subtle text-secondary">Khac</span></c:otherwise>
+                                                    <c:when test="${item.itemType == 'Course'}"><span class="badge bg-primary-subtle text-primary"><i class="bi bi-mortarboard me-1"></i>Khóa học</span></c:when>
+                                                    <c:when test="${item.itemType == 'Service'}"><span class="badge bg-info-subtle text-info"><i class="bi bi-gear me-1"></i>Dịch vụ</span></c:when>
+                                                    <c:otherwise><span class="badge bg-secondary-subtle text-secondary">Khác</span></c:otherwise>
                                                 </c:choose>
                                             </td>
                                             <td><input type="text" class="form-control form-control-sm" name="itemDescription"
@@ -231,7 +231,7 @@
                                                        value="${item.unitPrice}" onchange="calcLine(this)" ${readonly ? 'readonly' : ''}></td>
                                             <td><input type="text" class="form-control form-control-sm item-disc" name="itemDiscount"
                                                        value="${item.discountPercent}" onchange="calcLine(this)" ${readonly ? 'readonly' : ''}></td>
-                                            <td class="text-end fw-semibold item-total"><fmt:formatNumber value="${item.lineTotal}" type="number" groupingUsed="true" maxFractionDigits="0"/> d</td>
+                                            <td class="text-end fw-semibold item-total"><fmt:formatNumber value="${item.lineTotal}" type="number" groupingUsed="true" maxFractionDigits="0"/> đ</td>
                                             <c:if test="${isDraft}">
                                                 <td><button type="button" class="btn btn-sm btn-outline-danger" onclick="removeItem(this)"><i class="bi bi-trash"></i></button></td>
                                             </c:if>
@@ -241,8 +241,8 @@
                             </tbody>
                             <tfoot>
                                 <tr class="table-light">
-                                    <td colspan="${isDraft ? 5 : 4}" class="text-end fw-bold">Tong hang muc:</td>
-                                    <td class="text-end fw-bold" id="subtotalDisplay">0 d</td>
+                                    <td colspan="${isDraft ? 5 : 4}" class="text-end fw-bold">Tổng hạng mục:</td>
+                                    <td class="text-end fw-bold" id="subtotalDisplay">0 đ</td>
                                     <c:if test="${isDraft}"><td></td></c:if>
                                 </tr>
                             </tfoot>
@@ -252,9 +252,9 @@
                     <%-- Empty state --%>
                     <div id="itemsEmpty" class="text-center text-muted py-4" style="display:none;">
                         <i class="bi bi-inbox" style="font-size:2rem;"></i>
-                        <p class="mb-2 mt-2">Chua co hang muc nao</p>
+                        <p class="mb-2 mt-2">Chưa có hạng mục nào</p>
                         <c:if test="${isDraft}">
-                            <button type="button" class="btn btn-sm btn-primary" onclick="openCoursePicker()"><i class="bi bi-mortarboard me-1"></i>Chon khoa hoc</button>
+                            <button type="button" class="btn btn-sm btn-primary" onclick="openCoursePicker()"><i class="bi bi-mortarboard me-1"></i>Chọn khóa học</button>
                         </c:if>
                     </div>
                 </div>
@@ -262,24 +262,24 @@
 
             <!-- Discount & Tax -->
             <div class="card border-0 shadow-sm mb-4">
-                <div class="card-header bg-transparent border-0"><h6 class="mb-0 fw-semibold"><i class="bi bi-percent me-2"></i>Giam gia & Thue</h6></div>
+                <div class="card-header bg-transparent border-0"><h6 class="mb-0 fw-semibold"><i class="bi bi-percent me-2"></i>Giảm giá & Thuế</h6></div>
                 <div class="card-body">
                     <div class="row g-3">
                         <div class="col-md-4">
-                            <label class="form-label">Loai giam gia</label>
+                            <label class="form-label">Loại giảm giá</label>
                             <select class="form-select" name="discountType" ${readonly ? 'disabled' : ''}>
-                                <option value="Percentage" ${not empty quotation && quotation.discountType == 'Percentage' ? 'selected' : ''}>Phan tram (%)</option>
-                                <option value="Fixed" ${not empty quotation && quotation.discountType == 'Fixed' ? 'selected' : ''}>Co dinh (VND)</option>
+                                <option value="Percentage" ${not empty quotation && quotation.discountType == 'Percentage' ? 'selected' : ''}>Phần trăm (%)</option>
+                                <option value="Fixed" ${not empty quotation && quotation.discountType == 'Fixed' ? 'selected' : ''}>Cố định (VND)</option>
                             </select>
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label">Giam gia (%)</label>
+                            <label class="form-label">Giảm giá (%)</label>
                             <input type="number" class="form-control" name="discountPercent" min="0" max="100"
                                    value="${not empty quotation ? quotation.discountPercent : 0}"
                                    ${readonly ? 'readonly' : ''} onchange="calcOverall()">
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label">Thue (%)</label>
+                            <label class="form-label">Thuế (%)</label>
                             <input type="number" class="form-control" name="taxPercent" min="0" max="100"
                                    value="${not empty quotation ? quotation.taxPercent : 0}"
                                    ${readonly ? 'readonly' : ''} onchange="calcOverall()">
@@ -287,17 +287,17 @@
                     </div>
                     <c:if test="${not empty quotation}">
                         <div class="row g-3 mt-2">
-                            <div class="col-md-4"><small class="text-muted">Subtotal:</small><div class="fw-semibold"><fmt:formatNumber value="${quotation.subtotal}" type="number" groupingUsed="true" maxFractionDigits="0"/> d</div></div>
-                            <div class="col-md-4"><small class="text-muted">Giam gia:</small><div class="fw-semibold text-danger">-<fmt:formatNumber value="${quotation.discountAmount}" type="number" groupingUsed="true" maxFractionDigits="0"/> d</div></div>
-                            <div class="col-md-4"><small class="text-muted">Thue:</small><div class="fw-semibold">+<fmt:formatNumber value="${quotation.taxAmount}" type="number" groupingUsed="true" maxFractionDigits="0"/> d</div></div>
+                            <div class="col-md-4"><small class="text-muted">Subtotal:</small><div class="fw-semibold"><fmt:formatNumber value="${quotation.subtotal}" type="number" groupingUsed="true" maxFractionDigits="0"/> đ</div></div>
+                            <div class="col-md-4"><small class="text-muted">Giảm giá:</small><div class="fw-semibold text-danger">-<fmt:formatNumber value="${quotation.discountAmount}" type="number" groupingUsed="true" maxFractionDigits="0"/> đ</div></div>
+                            <div class="col-md-4"><small class="text-muted">Thuế:</small><div class="fw-semibold">+<fmt:formatNumber value="${quotation.taxAmount}" type="number" groupingUsed="true" maxFractionDigits="0"/> đ</div></div>
                         </div>
                     </c:if>
                     <div class="mt-3 p-3 bg-light rounded text-end">
-                        <span class="text-muted me-2">Tong cong:</span>
+                        <span class="text-muted me-2">Tổng cộng:</span>
                         <span class="fs-4 fw-bold text-success" id="grandTotal">
                             <c:choose>
-                                <c:when test="${not empty quotation}"><fmt:formatNumber value="${quotation.totalAmount}" type="number" groupingUsed="true" maxFractionDigits="0"/> d</c:when>
-                                <c:otherwise>0 d</c:otherwise>
+                                <c:when test="${not empty quotation}"><fmt:formatNumber value="${quotation.totalAmount}" type="number" groupingUsed="true" maxFractionDigits="0"/> đ</c:when>
+                                <c:otherwise>0 đ</c:otherwise>
                             </c:choose>
                         </span>
                     </div>
@@ -306,28 +306,28 @@
 
             <!-- Terms -->
             <div class="card border-0 shadow-sm mb-4">
-                <div class="card-header bg-transparent border-0"><h6 class="mb-0 fw-semibold"><i class="bi bi-file-text me-2"></i>Dieu khoan & Ghi chu</h6></div>
+                <div class="card-header bg-transparent border-0"><h6 class="mb-0 fw-semibold"><i class="bi bi-file-text me-2"></i>Điều khoản & Ghi chú</h6></div>
                 <div class="card-body">
                     <div class="row g-3">
                         <div class="col-md-6">
-                            <label class="form-label">Dieu khoan thanh toan</label>
-                            <textarea class="form-control" rows="2" name="paymentTerms" placeholder="VD: Thanh toan 50% khi ky hop dong..." ${readonly ? 'readonly' : ''}>${not empty quotation ? quotation.paymentTerms : ''}</textarea>
+                            <label class="form-label">Điều khoản thanh toán</label>
+                            <textarea class="form-control" rows="2" name="paymentTerms" placeholder="VD: Thanh toán 50% khi ký hợp đồng..." ${readonly ? 'readonly' : ''}>${not empty quotation ? quotation.paymentTerms : ''}</textarea>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Dieu khoan giao hang</label>
-                            <textarea class="form-control" rows="2" name="deliveryTerms" placeholder="VD: Bat dau sau 2 tuan..." ${readonly ? 'readonly' : ''}>${not empty quotation ? quotation.deliveryTerms : ''}</textarea>
+                            <label class="form-label">Điều khoản giao hàng</label>
+                            <textarea class="form-control" rows="2" name="deliveryTerms" placeholder="VD: Bắt đầu sau 2 tuần..." ${readonly ? 'readonly' : ''}>${not empty quotation ? quotation.deliveryTerms : ''}</textarea>
                         </div>
                         <div class="col-12">
-                            <label class="form-label">Dieu khoan & Dieu kien</label>
-                            <textarea class="form-control" rows="3" name="termsConditions" placeholder="Cac dieu khoan chung..." ${readonly ? 'readonly' : ''}>${not empty quotation ? quotation.termsConditions : ''}</textarea>
+                            <label class="form-label">Điều khoản & Điều kiện</label>
+                            <textarea class="form-control" rows="3" name="termsConditions" placeholder="Các điều khoản chung..." ${readonly ? 'readonly' : ''}>${not empty quotation ? quotation.termsConditions : ''}</textarea>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Ghi chu (hien thi cho khach)</label>
+                            <label class="form-label">Ghi chú (hiển thị cho khách)</label>
                             <textarea class="form-control" rows="2" name="notes" ${readonly ? 'readonly' : ''}>${not empty quotation ? quotation.notes : ''}</textarea>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Ghi chu noi bo</label>
-                            <textarea class="form-control" rows="2" name="internalNotes" placeholder="Chi hien thi noi bo..." ${readonly ? 'readonly' : ''}>${not empty quotation ? quotation.internalNotes : ''}</textarea>
+                            <label class="form-label">Ghi chú nội bộ</label>
+                            <textarea class="form-control" rows="2" name="internalNotes" placeholder="Chỉ hiển thị nội bộ..." ${readonly ? 'readonly' : ''}>${not empty quotation ? quotation.internalNotes : ''}</textarea>
                         </div>
                     </div>
                 </div>
@@ -336,16 +336,16 @@
             <!-- Version History -->
             <c:if test="${not empty quotationVersions}">
                 <div class="card border-0 shadow-sm mb-4">
-                    <div class="card-header bg-transparent border-0"><h6 class="mb-0 fw-semibold"><i class="bi bi-clock-history me-2"></i>Lich su phien ban</h6></div>
+                    <div class="card-header bg-transparent border-0"><h6 class="mb-0 fw-semibold"><i class="bi bi-clock-history me-2"></i>Lịch sử phiên bản</h6></div>
                     <div class="card-body pt-0">
                         <div class="table-responsive">
                             <table class="table table-sm table-hover mb-0">
-                                <thead class="table-light"><tr><th>Phien ban</th><th>Gia tri</th><th>Ly do thay doi</th><th>Tom tat</th><th>Ngay</th></tr></thead>
+                                <thead class="table-light"><tr><th>Phiên bản</th><th>Giá trị</th><th>Lý do thay đổi</th><th>Tóm tắt</th><th>Ngày</th></tr></thead>
                                 <tbody>
                                     <c:forEach var="ver" items="${quotationVersions}">
                                         <tr>
                                             <td><span class="badge bg-secondary">v${ver.versionNumber}</span></td>
-                                            <td><fmt:formatNumber value="${ver.totalAmount}" type="number" groupingUsed="true" maxFractionDigits="0"/> d</td>
+                                            <td><fmt:formatNumber value="${ver.totalAmount}" type="number" groupingUsed="true" maxFractionDigits="0"/> đ</td>
                                             <td><small>${ver.changeReason}</small></td>
                                             <td><small>${ver.changeSummary}</small></td>
                                             <td><small class="text-muted">${ver.createdAt}</small></td>
@@ -365,7 +365,7 @@
                     <div class="card-body pt-0">
                         <div class="table-responsive">
                             <table class="table table-sm table-hover mb-0">
-                                <thead class="table-light"><tr><th>Su kien</th><th>Ngay</th><th>IP</th><th>Thiet bi</th><th>Trinh duyet</th><th>Thoi gian (s)</th></tr></thead>
+                                <thead class="table-light"><tr><th>Sự kiện</th><th>Ngày</th><th>IP</th><th>Thiết bị</th><th>Trình duyệt</th><th>Thời gian (s)</th></tr></thead>
                                 <tbody>
                                     <c:forEach var="log" items="${trackingLogs}">
                                         <tr>
@@ -389,16 +389,16 @@
         <div class="col-lg-4">
             <c:if test="${not empty quotation && !isDraft}">
                 <div class="card border-0 shadow-sm mb-4">
-                    <div class="card-header bg-transparent border-0"><h6 class="mb-0 fw-semibold"><i class="bi bi-shield-check me-2"></i>Thong tin duyet</h6></div>
+                    <div class="card-header bg-transparent border-0"><h6 class="mb-0 fw-semibold"><i class="bi bi-shield-check me-2"></i>Thông tin duyệt</h6></div>
                     <div class="card-body">
                         <c:if test="${not empty quotation.approvedBy}">
-                            <div class="mb-2"><small class="text-muted">Nguoi duyet:</small> <strong>Manager #${quotation.approvedBy}</strong></div>
-                            <div class="mb-2"><small class="text-muted">Ngay duyet:</small> <strong>${quotation.approvedDate}</strong></div>
-                            <c:if test="${not empty quotation.approvalNotes}"><div class="mb-2"><small class="text-muted">Ghi chu:</small><br>${quotation.approvalNotes}</div></c:if>
+                            <div class="mb-2"><small class="text-muted">Người duyệt:</small> <strong>Manager #${quotation.approvedBy}</strong></div>
+                            <div class="mb-2"><small class="text-muted">Ngày duyệt:</small> <strong>${quotation.approvedDate}</strong></div>
+                            <c:if test="${not empty quotation.approvalNotes}"><div class="mb-2"><small class="text-muted">Ghi chú:</small><br>${quotation.approvalNotes}</div></c:if>
                         </c:if>
                         <c:if test="${not empty quotation.rejectedBy}">
-                            <div class="mb-2"><small class="text-muted">Nguoi tu choi:</small> <strong>Manager #${quotation.rejectedBy}</strong></div>
-                            <div class="mb-2"><small class="text-muted">Ly do:</small><br><span class="text-danger">${quotation.rejectionReason}</span></div>
+                            <div class="mb-2"><small class="text-muted">Người từ chối:</small> <strong>Manager #${quotation.rejectedBy}</strong></div>
+                            <div class="mb-2"><small class="text-muted">Lý do:</small><br><span class="text-danger">${quotation.rejectionReason}</span></div>
                         </c:if>
                     </div>
                 </div>
@@ -408,10 +408,10 @@
                 <div class="card border-0 shadow-sm mb-4">
                     <div class="card-header bg-transparent border-0"><h6 class="mb-0 fw-semibold"><i class="bi bi-briefcase me-2"></i>Opportunity</h6></div>
                     <div class="card-body">
-                        <div class="mb-2"><small class="text-muted">Ma:</small> <strong>${linkedOpp.opportunityCode}</strong></div>
-                        <div class="mb-2"><small class="text-muted">Ten:</small> <strong>${linkedOpp.opportunityName}</strong></div>
+                        <div class="mb-2"><small class="text-muted">Mã:</small> <strong>${linkedOpp.opportunityCode}</strong></div>
+                        <div class="mb-2"><small class="text-muted">Tên:</small> <strong>${linkedOpp.opportunityName}</strong></div>
                         <c:if test="${not empty linkedOpp.estimatedValue}">
-                            <div class="mb-2"><small class="text-muted">Gia tri:</small> <strong><fmt:formatNumber value="${linkedOpp.estimatedValue}" type="number" groupingUsed="true" maxFractionDigits="0"/> d</strong></div>
+                            <div class="mb-2"><small class="text-muted">Giá trị:</small> <strong><fmt:formatNumber value="${linkedOpp.estimatedValue}" type="number" groupingUsed="true" maxFractionDigits="0"/> đ</strong></div>
                         </c:if>
                     </div>
                 </div>
@@ -422,38 +422,38 @@
                     <div class="d-grid gap-2">
                         <c:choose>
                             <c:when test="${isDraft}">
-                                <button type="submit" class="btn btn-primary"><i class="bi bi-save me-1"></i>Luu de xuat</button>
-                                <small class="text-muted text-center">Sau khi luu, Manager se duyet de xuat nay</small>
+                                <button type="submit" class="btn btn-primary"><i class="bi bi-save me-1"></i>Lưu đề xuất</button>
+                                <small class="text-muted text-center">Sau khi lưu, Manager sẽ duyệt đề xuất này</small>
                             </c:when>
-                            <c:when test="${quotation.status == 'Approved'}"><div class="alert alert-success py-2 mb-2 small"><i class="bi bi-check-circle me-1"></i>De xuat da duoc duyet.</div></c:when>
-                            <c:when test="${quotation.status == 'Sent'}"><div class="alert alert-info py-2 mb-2 small"><i class="bi bi-send me-1"></i>Bao gia da gui cho khach hang.</div></c:when>
-                            <c:when test="${quotation.status == 'Accepted'}"><div class="alert alert-primary py-2 mb-2 small"><i class="bi bi-hand-thumbs-up me-1"></i>Khach hang da chap nhan bao gia.</div></c:when>
-                            <c:when test="${quotation.status == 'Rejected'}"><div class="alert alert-danger py-2 mb-2 small"><i class="bi bi-x-circle me-1"></i>Bao gia bi tu choi.</div></c:when>
+                            <c:when test="${quotation.status == 'Approved'}"><div class="alert alert-success py-2 mb-2 small"><i class="bi bi-check-circle me-1"></i>Đề xuất đã được duyệt.</div></c:when>
+                            <c:when test="${quotation.status == 'Sent'}"><div class="alert alert-info py-2 mb-2 small"><i class="bi bi-send me-1"></i>Báo giá đã gửi cho khách hàng.</div></c:when>
+                            <c:when test="${quotation.status == 'Accepted'}"><div class="alert alert-primary py-2 mb-2 small"><i class="bi bi-hand-thumbs-up me-1"></i>Khách hàng đã chấp nhận báo giá.</div></c:when>
+                            <c:when test="${quotation.status == 'Rejected'}"><div class="alert alert-danger py-2 mb-2 small"><i class="bi bi-x-circle me-1"></i>Báo giá bị từ chối.</div></c:when>
                         </c:choose>
-                        <a href="${pageContext.request.contextPath}/sale/quotation/list" class="btn btn-outline-secondary">Quay lai danh sach</a>
+                        <a href="${pageContext.request.contextPath}/sale/quotation/list" class="btn btn-outline-secondary">Quay lại danh sách</a>
                     </div>
                 </div>
             </div>
 
             <div class="card border-0 shadow-sm">
-                <div class="card-header bg-transparent border-0"><h6 class="mb-0 fw-semibold"><i class="bi bi-diagram-3 me-2"></i>Quy trinh</h6></div>
+                <div class="card-header bg-transparent border-0"><h6 class="mb-0 fw-semibold"><i class="bi bi-diagram-3 me-2"></i>Quy trình</h6></div>
                 <div class="card-body">
                     <div class="d-flex flex-column gap-2">
                         <div class="d-flex align-items-center gap-2">
                             <span class="badge ${quotation.status == 'Draft' || empty quotation ? 'bg-secondary' : 'bg-light text-muted'} rounded-circle p-1" style="width:24px;height:24px;display:flex;align-items:center;justify-content:center;">1</span>
-                            <small><strong>Draft</strong> - Sale tao de xuat</small>
+                            <small><strong>Draft</strong> - Sale tạo đề xuất</small>
                         </div>
                         <div class="d-flex align-items-center gap-2">
                             <span class="badge ${quotation.status == 'Approved' ? 'bg-success' : 'bg-light text-muted'} rounded-circle p-1" style="width:24px;height:24px;display:flex;align-items:center;justify-content:center;">2</span>
-                            <small><strong>Approved</strong> - Manager duyet</small>
+                            <small><strong>Approved</strong> - Manager duyệt</small>
                         </div>
                         <div class="d-flex align-items-center gap-2">
                             <span class="badge ${quotation.status == 'Sent' ? 'bg-warning text-dark' : 'bg-light text-muted'} rounded-circle p-1" style="width:24px;height:24px;display:flex;align-items:center;justify-content:center;">3</span>
-                            <small><strong>Sent</strong> - Gui bao gia cho khach</small>
+                            <small><strong>Sent</strong> - Gửi báo giá cho khách</small>
                         </div>
                         <div class="d-flex align-items-center gap-2">
                             <span class="badge ${quotation.status == 'Accepted' || quotation.status == 'Rejected' ? 'bg-primary' : 'bg-light text-muted'} rounded-circle p-1" style="width:24px;height:24px;display:flex;align-items:center;justify-content:center;">4</span>
-                            <small><strong>Accepted/Rejected</strong> - Khach phan hoi</small>
+                            <small><strong>Accepted/Rejected</strong> - Khách phản hồi</small>
                         </div>
                     </div>
                 </div>
@@ -468,8 +468,8 @@
         <div class="modal-content border-0 shadow">
             <div class="modal-header py-2" style="border-bottom: 3px solid #0d6efd;">
                 <div>
-                    <h6 class="modal-title fw-bold mb-0"><i class="bi bi-briefcase me-2"></i>Chon Opportunity</h6>
-                    <small class="text-muted">Chon opportunity de tao bao gia</small>
+                    <h6 class="modal-title fw-bold mb-0"><i class="bi bi-briefcase me-2"></i>Chọn Opportunity</h6>
+                    <small class="text-muted">Chọn opportunity để tạo báo giá</small>
                 </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
@@ -477,13 +477,13 @@
                 <div class="p-3 border-bottom bg-light">
                     <div class="input-group input-group-sm">
                         <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
-                        <input type="text" class="form-control" id="oppSearchInput" placeholder="Tim theo ma, ten opportunity..." oninput="filterOppRows()">
+                        <input type="text" class="form-control" id="oppSearchInput" placeholder="Tìm theo mã, tên opportunity..." oninput="filterOppRows()">
                     </div>
                 </div>
                 <div class="table-responsive" style="max-height: 400px;">
                     <table class="table table-hover align-middle mb-0">
                         <thead class="table-light sticky-top">
-                            <tr><th>Ma</th><th>Ten</th><th>Lead/Customer</th><th class="text-end">Gia tri</th></tr>
+                            <tr><th>Mã</th><th>Tên</th><th>Lead/Customer</th><th class="text-end">Giá trị</th></tr>
                         </thead>
                         <tbody id="oppPickerBody">
                             <c:forEach var="opp" items="${allowedOpps}">
@@ -507,7 +507,7 @@
                                     </td>
                                     <td class="text-end fw-semibold text-success">
                                         <c:if test="${not empty opp.estimatedValue}">
-                                            <fmt:formatNumber value="${opp.estimatedValue}" type="number" groupingUsed="true" maxFractionDigits="0"/> d
+                                            <fmt:formatNumber value="${opp.estimatedValue}" type="number" groupingUsed="true" maxFractionDigits="0"/> đ
                                         </c:if>
                                     </td>
                                 </tr>
@@ -515,7 +515,7 @@
                         </tbody>
                     </table>
                 </div>
-                <div id="oppPickerEmpty" class="text-center text-muted py-4" style="display:none;"><i class="bi bi-inbox me-1"></i>Khong tim thay opportunity nao</div>
+                <div id="oppPickerEmpty" class="text-center text-muted py-4" style="display:none;"><i class="bi bi-inbox me-1"></i>Không tìm thấy opportunity nào</div>
             </div>
         </div>
     </div>
@@ -528,7 +528,7 @@
             <div class="modal-header py-2" style="border-bottom: 3px solid #0d6efd;">
                 <div>
                     <h6 class="modal-title fw-bold mb-0"><i class="bi bi-mortarboard me-2"></i>${courseListLabel}</h6>
-                    <small class="text-muted">Tick chon cac khoa hoc muon them vao bao gia</small>
+                    <small class="text-muted">Tick chọn các khóa học muốn thêm vào báo giá</small>
                 </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
@@ -537,13 +537,13 @@
                 <div class="p-3 border-bottom bg-light">
                     <div class="input-group input-group-sm">
                         <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
-                        <input type="text" class="form-control" id="courseSearchInput" placeholder="Tim kiem khoa hoc..." oninput="filterCourses()">
+                        <input type="text" class="form-control" id="courseSearchInput" placeholder="Tìm kiếm khóa học..." oninput="filterCourses()">
                     </div>
                     <div class="d-flex justify-content-between align-items-center mt-2">
-                        <small class="text-muted"><span id="courseSelectedCount">0</span> khoa hoc da chon</small>
+                        <small class="text-muted"><span id="courseSelectedCount">0</span> khóa học đã chọn</small>
                         <div class="d-flex gap-2">
-                            <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-2" style="font-size:.75rem;" onclick="toggleAllCourses(true)">Chon tat ca</button>
-                            <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-2" style="font-size:.75rem;" onclick="toggleAllCourses(false)">Bo chon</button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-2" style="font-size:.75rem;" onclick="toggleAllCourses(true)">Chọn tất cả</button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-2" style="font-size:.75rem;" onclick="toggleAllCourses(false)">Bỏ chọn</button>
                         </div>
                     </div>
                 </div>
@@ -553,10 +553,10 @@
                         <thead class="table-light sticky-top">
                             <tr>
                                 <th style="width:40px;" class="text-center"><input type="checkbox" class="form-check-input" id="courseCheckAll" onchange="toggleAllCourses(this.checked)"></th>
-                                <th>Ma</th>
-                                <th>Ten khoa hoc</th>
-                                <th class="text-end">Gia</th>
-                                <c:if test="${isCustomerOpp}"><th>Trang thai</th></c:if>
+                                <th>Mã</th>
+                                <th>Tên khóa học</th>
+                                <th class="text-end">Giá</th>
+                                <c:if test="${isCustomerOpp}"><th>Trạng thái</th></c:if>
                             </tr>
                         </thead>
                         <tbody id="coursePickerBody">
@@ -573,14 +573,14 @@
                                     <td><small class="text-muted">${course.courseCode}</small></td>
                                     <td class="fw-medium">${course.courseName}</td>
                                     <td class="text-end fw-semibold text-success">
-                                        <fmt:formatNumber value="${course.price}" type="number" groupingUsed="true" maxFractionDigits="0"/> d
+                                        <fmt:formatNumber value="${course.price}" type="number" groupingUsed="true" maxFractionDigits="0"/> đ
                                     </td>
                                     <c:if test="${isCustomerOpp}">
                                         <td>
                                             <c:choose>
-                                                <c:when test="${course.learningStatus == 'Completed'}"><span class="badge bg-success-subtle text-success">Hoan thanh</span></c:when>
-                                                <c:when test="${course.learningStatus == 'InProgress'}"><span class="badge bg-primary-subtle text-primary">Dang hoc</span></c:when>
-                                                <c:when test="${course.learningStatus == 'NotStarted'}"><span class="badge bg-secondary-subtle text-secondary">Chua bat dau</span></c:when>
+                                                <c:when test="${course.learningStatus == 'Completed'}"><span class="badge bg-success-subtle text-success">Hoàn thành</span></c:when>
+                                                <c:when test="${course.learningStatus == 'InProgress'}"><span class="badge bg-primary-subtle text-primary">Đang học</span></c:when>
+                                                <c:when test="${course.learningStatus == 'NotStarted'}"><span class="badge bg-secondary-subtle text-secondary">Chưa bắt đầu</span></c:when>
                                                 <c:otherwise><span class="badge bg-secondary-subtle text-secondary">${course.learningStatus}</span></c:otherwise>
                                             </c:choose>
                                         </td>
@@ -591,13 +591,13 @@
                     </table>
                 </div>
                 <div id="coursePickerEmpty" class="text-center text-muted py-4" style="display:none;">
-                    <i class="bi bi-search"></i> Khong tim thay khoa hoc nao
+                    <i class="bi bi-search"></i> Không tìm thấy khóa học nào
                 </div>
             </div>
             <div class="modal-footer py-2">
-                <button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal">Huy</button>
+                <button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal">Hủy</button>
                 <button type="button" class="btn btn-primary btn-sm" onclick="confirmCourseSelection()">
-                    <i class="bi bi-check-lg me-1"></i>Them <span id="confirmCount">0</span> khoa hoc
+                    <i class="bi bi-check-lg me-1"></i>Thêm <span id="confirmCount">0</span> khóa học
                 </button>
             </div>
         </div>
@@ -650,7 +650,7 @@
         if (leadName) contactParts.push('Lead: ' + leadName);
         if (custName) contactParts.push('Customer: ' + custName);
         var previewContact = document.getElementById('oppPreviewContact');
-        if (previewContact) previewContact.textContent = contactParts.join(' | ') || 'Khong co lead/customer';
+        if (previewContact) previewContact.textContent = contactParts.join(' | ') || 'Không có lead/customer';
 
         var preview = document.getElementById('oppSelectedPreview');
         var btn = document.getElementById('oppPickerOpenBtn');
@@ -772,13 +772,13 @@
                 '<td>' +
                     '<input type="hidden" name="itemCourseId" value="' + cb.value + '">' +
                     '<input type="hidden" name="itemType" value="Course">' +
-                    '<span class="badge bg-primary-subtle text-primary"><i class="bi bi-mortarboard me-1"></i>Khoa hoc</span>' +
+                    '<span class="badge bg-primary-subtle text-primary"><i class="bi bi-mortarboard me-1"></i>Khóa học</span>' +
                 '</td>' +
                 '<td><input type="text" class="form-control form-control-sm" name="itemDescription" value="' + escapeHtml(name) + '"></td>' +
                 '<td><input type="number" class="form-control form-control-sm item-qty" name="itemQuantity" value="1" min="1" onchange="calcLine(this)"></td>' +
                 '<td><input type="text" class="form-control form-control-sm item-price" name="itemUnitPrice" value="' + price + '" onchange="calcLine(this)"></td>' +
                 '<td><input type="text" class="form-control form-control-sm item-disc" name="itemDiscount" value="0" onchange="calcLine(this)"></td>' +
-                '<td class="text-end fw-semibold item-total">' + formatNumber(Math.round(parseFloat(price))) + ' d</td>' +
+                '<td class="text-end fw-semibold item-total">' + formatNumber(Math.round(parseFloat(price))) + ' đ</td>' +
                 '<td><button type="button" class="btn btn-sm btn-outline-danger" onclick="removeItem(this)"><i class="bi bi-trash"></i></button></td>';
             tbody.appendChild(tr);
         });
@@ -797,13 +797,13 @@
             '<td>' +
                 '<input type="hidden" name="itemCourseId" value="">' +
                 '<input type="hidden" name="itemType" value="Service">' +
-                '<span class="badge bg-info-subtle text-info"><i class="bi bi-gear me-1"></i>Dich vu</span>' +
+                '<span class="badge bg-info-subtle text-info"><i class="bi bi-gear me-1"></i>Dịch vụ</span>' +
             '</td>' +
-            '<td><input type="text" class="form-control form-control-sm" name="itemDescription" placeholder="Mo ta dich vu..."></td>' +
+            '<td><input type="text" class="form-control form-control-sm" name="itemDescription" placeholder="Mô tả dịch vụ..."></td>' +
             '<td><input type="number" class="form-control form-control-sm item-qty" name="itemQuantity" value="1" min="1" onchange="calcLine(this)"></td>' +
             '<td><input type="text" class="form-control form-control-sm item-price" name="itemUnitPrice" value="0" onchange="calcLine(this)"></td>' +
             '<td><input type="text" class="form-control form-control-sm item-disc" name="itemDiscount" value="0" onchange="calcLine(this)"></td>' +
-            '<td class="text-end fw-semibold item-total">0 d</td>' +
+            '<td class="text-end fw-semibold item-total">0 đ</td>' +
             '<td><button type="button" class="btn btn-sm btn-outline-danger" onclick="removeItem(this)"><i class="bi bi-trash"></i></button></td>';
         tbody.appendChild(tr);
         toggleEmptyState();
@@ -836,7 +836,7 @@
         var disc = parseInt(row.querySelector('.item-disc').value.replace('%', '')) || 0;
         var total = qty * price;
         if (disc > 0) total = total - (total * disc / 100);
-        row.querySelector('.item-total').textContent = formatNumber(Math.round(total)) + ' d';
+        row.querySelector('.item-total').textContent = formatNumber(Math.round(total)) + ' đ';
         calcGrandTotal();
     }
 
@@ -848,7 +848,7 @@
             subtotal += parseInt(text) || 0;
         });
         var el = document.getElementById('subtotalDisplay');
-        if (el) el.textContent = formatNumber(subtotal) + ' d';
+        if (el) el.textContent = formatNumber(subtotal) + ' đ';
         calcOverall();
     }
 
@@ -868,7 +868,7 @@
         var taxAmt = afterDisc * taxPct / 100;
         var total = afterDisc + taxAmt;
         var gt = document.getElementById('grandTotal');
-        if (gt) gt.textContent = formatNumber(Math.round(total)) + ' d';
+        if (gt) gt.textContent = formatNumber(Math.round(total)) + ' đ';
     }
 
     function formatNumber(num) {

@@ -3,7 +3,7 @@
 <%@taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt"%>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <div><h4 class="mb-1 fw-bold">Bao cao Performance</h4><p class="text-muted mb-0">Hieu suat ban hang cua ban</p></div>
+    <div><h4 class="mb-1 fw-bold">Báo cáo Performance</h4><p class="text-muted mb-0">Hiệu suất bán hàng của bạn</p></div>
 </div>
 
 <!-- KPI Cards -->
@@ -36,7 +36,7 @@
         <div class="card border-0 shadow-sm"><div class="card-body">
             <div class="d-flex align-items-center">
                 <div class="bg-info bg-opacity-10 rounded-3 p-2 me-3"><i class="bi bi-activity text-info fs-4"></i></div>
-                <div><small class="text-muted">Tong hoat dong</small><h3 class="mb-0 fw-bold">${totalActivities}</h3></div>
+                <div><small class="text-muted">Tổng hoạt động</small><h3 class="mb-0 fw-bold">${totalActivities}</h3></div>
             </div>
         </div></div>
     </div>
@@ -44,15 +44,15 @@
 
 <!-- Activity Breakdown -->
 <div class="card border-0 shadow-sm mb-4">
-    <div class="card-header bg-transparent border-0"><h6 class="mb-0 fw-semibold">Chi so chi tiet</h6></div>
+    <div class="card-header bg-transparent border-0"><h6 class="mb-0 fw-semibold">Chỉ số chi tiết</h6></div>
     <div class="card-body pt-0">
         <div class="table-responsive"><table class="table table-hover align-middle mb-0">
             <thead class="table-light">
-                <tr><th>Chi so</th><th class="text-center">So luong</th><th style="width:40%;">Bieu do</th></tr>
+                <tr><th>Chỉ số</th><th class="text-center">Số lượng</th><th style="width:40%;">Biểu đồ</th></tr>
             </thead>
             <tbody>
                 <tr>
-                    <td><i class="bi bi-telephone text-success me-2"></i>Cuoc goi</td>
+                    <td><i class="bi bi-telephone text-success me-2"></i>Cuộc gọi</td>
                     <td class="text-center fw-bold">${calls}</td>
                     <td>
                         <div class="progress" style="height:10px;">
@@ -70,7 +70,7 @@
                     </td>
                 </tr>
                 <tr>
-                    <td><i class="bi bi-people text-warning me-2"></i>Cuoc hop</td>
+                    <td><i class="bi bi-people text-warning me-2"></i>Cuộc họp</td>
                     <td class="text-center fw-bold">${meetings}</td>
                     <td>
                         <div class="progress" style="height:10px;">
@@ -79,7 +79,7 @@
                     </td>
                 </tr>
                 <tr>
-                    <td><i class="bi bi-file-earmark-text text-info me-2"></i>Bao gia gui</td>
+                    <td><i class="bi bi-file-earmark-text text-info me-2"></i>Báo giá gửi</td>
                     <td class="text-center fw-bold">${quotSent}</td>
                     <td></td>
                 </tr>
@@ -95,7 +95,7 @@
 
 <!-- Activity Chart -->
 <div class="card border-0 shadow-sm">
-    <div class="card-header bg-transparent border-0"><h6 class="mb-0 fw-semibold">Hoat dong ban hang</h6></div>
+    <div class="card-header bg-transparent border-0"><h6 class="mb-0 fw-semibold">Hoạt động bán hàng</h6></div>
     <div class="card-body"><canvas id="actChart" height="80"></canvas></div>
 </div>
 
@@ -105,9 +105,9 @@ document.addEventListener('DOMContentLoaded', function() {
     new Chart(document.getElementById('actChart'), {
         type: 'bar',
         data: {
-            labels: ['Cuoc goi', 'Email', 'Cuoc hop'],
+            labels: ['Cuộc gọi', 'Email', 'Cuộc họp'],
             datasets: [{
-                label: 'So luong',
+                label: 'Số lượng',
                 data: [${calls}, ${emails}, ${meetings}],
                 backgroundColor: ['#10b981', '#3b82f6', '#f59e0b'],
                 borderRadius: 6

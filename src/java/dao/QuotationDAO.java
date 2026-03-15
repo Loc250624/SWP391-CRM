@@ -470,7 +470,7 @@ public class QuotationDAO extends DBContext {
 
     public boolean sendQuotation(int quotationId, int sentBy) {
         String sql = "UPDATE quotations SET status='Sent', sent_by=?, sent_date=GETDATE() "
-                + "WHERE quotation_id=? AND status='Approved'";
+                + "WHERE quotation_id=? AND status IN ('Draft','Approved','Sent')";
         try {
             PreparedStatement stmt = connection.prepareStatement(sql);
             stmt.setInt(1, sentBy);
@@ -719,6 +719,21 @@ public class QuotationDAO extends DBContext {
             e.printStackTrace();
         }
         return list;
+    }
+
+    public boolean updateQuotationsCustomerByOpportunity(int opportunityId, int customerId) {
+        String sql = "UPDATE quotations SET customer_id = ?, updated_at = GETDATE() "
+                + "WHERE opportunity_id = ? AND (customer_id IS NULL OR customer_id != ?)";
+        try {
+            PreparedStatement stmt = connection.prepareStatement(sql);
+            stmt.setInt(1, customerId);
+            stmt.setInt(2, opportunityId);
+            stmt.setInt(3, customerId);
+            return stmt.executeUpdate() >= 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 
     // ==================== HELPERS ====================
