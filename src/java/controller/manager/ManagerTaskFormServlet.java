@@ -2,7 +2,6 @@ package controller.manager;
 
 import dao.CustomerDAO;
 import dao.LeadDAO;
-import dao.NotificationDAO;
 import dao.OpportunityDAO;
 import dao.TaskAssigneeDAO;
 import dao.TaskDAO;
@@ -27,6 +26,7 @@ import model.Task;
 import model.TaskAssignee;
 import model.TaskRelation;
 import model.Users;
+import util.AuditUtil;
 
 @WebServlet(name = "ManagerTaskFormServlet", urlPatterns = {"/manager/task/form"})
 public class ManagerTaskFormServlet extends HttpServlet {
@@ -326,6 +326,10 @@ public class ManagerTaskFormServlet extends HttpServlet {
                 success = taskDAO.insertTask(createdTask);
 
                 if (success && createdTask.getTaskId() != null) {
+                    AuditUtil.logCreate(request, currentUser.getUserId(), "Task", createdTask.getTaskId(),
+                            "title=" + title.trim() + ", priority=" + priorityStr + ", assignedTo=" + mainIds.get(0)
+                            + ", relatedType=" + relatedType + ", relatedId=" + relatedId);
+
                     // Fix: insertTask() hardcodes first assignee taskStatus=0 (PENDING)
                     // Update to IN_PROGRESS to match the task status
                     TaskAssigneeDAO taDao = new TaskAssigneeDAO();
@@ -430,35 +434,12 @@ public class ManagerTaskFormServlet extends HttpServlet {
                 }
 
                 // ── Gui thong bao cho tat ca assignees ──────────────────────
-                try {
-                    NotificationDAO notifDAO = new NotificationDAO();
-                    String taskUrl = "/manager/task/detail?id=" + createdTask.getTaskId();
-                    String notifSummary = createdTask.getTaskCode() != null
-                            ? createdTask.getTaskCode() + ": " + title.trim()
-                            : title.trim();
-
-                    List<Integer> allAssignees = new ArrayList<>();
-                    allAssignees.addAll(mainIds);
-                    allAssignees.addAll(supportIds);
-
-                    for (int assigneeId : allAssignees) {
-                        notifDAO.createAndSend(
-                                "Bạn được giao công việc mới",
-                                notifSummary,
-                                "TASK_ASSIGNED",
-                                "SYSTEM",
-                                "HIGH".equals(priorityStr) ? "HIGH" : "NORMAL",
-                                "TASK",
-                                createdTask.getTaskId(),
-                                taskUrl,
-                                currentUser.getUserId(),
-                                false,
-                                assigneeId
-                        );
-                    }
-                } catch (Exception notifEx) {
-                    notifEx.printStackTrace();
-                }
+                List<Integer> allAssignees = new ArrayList<>();
+                allAssignees.addAll(mainIds);
+                allAssignees.addAll(supportIds);
+                util.NotificationUtil.notifyTaskAssigned(
+                        createdTask.getTaskId(), createdTask.getTaskCode(), title.trim(),
+                        priorityStr, allAssignees, currentUser.getUserId());
 
                 String who = (mainIds.size() + supportIds.size()) > 1
                         ? (mainIds.size() + supportIds.size()) + " nhân viên" : "1 nhân viên";
@@ -537,6 +518,10 @@ public class ManagerTaskFormServlet extends HttpServlet {
                 task.setReminderAt(dueDate.minusHours(24));
 
                 if (taskDAO.updateTask(task)) {
+                    AuditUtil.logUpdate(request, currentUser.getUserId(), "Task", taskId,
+                            null,
+                            "title=" + title.trim() + ", priority=" + priorityStr
+                            + ", status=" + request.getParameter("status") + ", assignedTo=" + assignedTo);
                     session.setAttribute("successMessage", "Cập nhật công việc thành công");
                     response.sendRedirect(request.getContextPath() + "/manager/task/detail?id=" + taskId);
                 } else {

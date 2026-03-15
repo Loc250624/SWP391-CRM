@@ -11,6 +11,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import model.Task;
 import model.Users;
+import util.AuditUtil;
 
 /**
  * FIX: Delete must only be triggered via POST to prevent CSRF / accidental GET-based deletion.
@@ -78,6 +79,8 @@ public class ManagerTaskDeleteServlet extends HttpServlet {
 
             boolean success = taskDAO.deleteTask(taskId, currentUser.getUserId());
             if (success) {
+                AuditUtil.logDelete(request, currentUser.getUserId(), "Task", taskId,
+                        "title=" + task.getTitle() + ", taskCode=" + task.getTaskCode());
                 session.setAttribute("successMessage", "Xóa công việc thành công");
             } else {
                 session.setAttribute("errorMessage", "Xóa công việc thất bại");

@@ -1,9 +1,11 @@
 package controller.manager;
 
+import dao.TaskAssigneeDAO;
 import dao.TaskDAO;
 import dao.UserDAO;
 import enums.TaskStatus;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -160,6 +162,19 @@ public class ManagerTaskStatusServlet extends HttpServlet {
                         taskDAO.insertNextRecurringInstance(task);
                     }
                 }
+
+                // Thong bao cho assignees + creator
+                List<Integer> notifyIds = new ArrayList<>();
+                for (model.TaskAssignee ta : new TaskAssigneeDAO().getByTaskId(taskId)) {
+                    if (!notifyIds.contains(ta.getUserId())) notifyIds.add(ta.getUserId());
+                }
+                if (task.getCreatedBy() != null && !notifyIds.contains(task.getCreatedBy())) {
+                    notifyIds.add(task.getCreatedBy());
+                }
+                util.NotificationUtil.notifyTaskStatusChanged(
+                        taskId, task.getTaskCode(), task.getTitle(),
+                        newStatus, currentUser.getUserId(), notifyIds);
+
                 session.setAttribute("successMessage", "Cập nhật trạng thái thành công");
                 response.sendRedirect(request.getContextPath() + "/manager/task/detail?id=" + taskId);
             } else {
