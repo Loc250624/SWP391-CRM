@@ -4,11 +4,99 @@ import dbConnection.DBContext;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import model.CustomerEnrollment;
 
 public class EnrollmentDAO extends DBContext {
+
+    // Generate unique enrollment code (ENR-000001, ENR-000002, ...)
+    public String generateEnrollmentCode() {
+        String sql = "SELECT TOP 1 enrollment_code FROM customer_enrollments ORDER BY enrollment_id DESC";
+        try (PreparedStatement st = connection.prepareStatement(sql);
+             ResultSet rs = st.executeQuery()) {
+            if (rs.next()) {
+                String lastCode = rs.getString("enrollment_code");
+                if (lastCode != null && lastCode.startsWith("ENR-")) {
+                    int number = Integer.parseInt(lastCode.substring(4));
+                    return String.format("ENR-%06d", number + 1);
+                }
+            }
+            return "ENR-000001";
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return "ENR-" + System.currentTimeMillis();
+    }
+
+    // Insert a new enrollment record; sets enrollmentId on success
+    public boolean insertEnrollment(CustomerEnrollment en) {
+        String sql = "INSERT INTO customer_enrollments ("
+                + "enrollment_code, customer_id, course_id, enrolled_date, "
+                + "original_price, discount_amount, final_amount, "
+                + "payment_status, learning_status, progress_percentage, lessons_completed, "
+                + "source_id, campaign_id, assigned_to, notes, "
+                + "created_at, updated_at, created_by"
+                + ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        try (PreparedStatement st = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            if (en.getEnrollmentCode() == null || en.getEnrollmentCode().isEmpty()) {
+                en.setEnrollmentCode(generateEnrollmentCode());
+            }
+            st.setString(1, en.getEnrollmentCode());
+            st.setInt(2, en.getCustomerId());
+            st.setInt(3, en.getCourseId());
+            st.setObject(4, en.getEnrolledDate() != null ? en.getEnrolledDate() : java.time.LocalDate.now());
+
+            st.setBigDecimal(5, en.getOriginalPrice() != null ? en.getOriginalPrice() : java.math.BigDecimal.ZERO);
+            st.setBigDecimal(6, en.getDiscountAmount() != null ? en.getDiscountAmount() : java.math.BigDecimal.ZERO);
+            st.setBigDecimal(7, en.getFinalAmount() != null ? en.getFinalAmount() : java.math.BigDecimal.ZERO);
+
+            st.setString(8, en.getPaymentStatus() != null ? en.getPaymentStatus() : "Pending");
+            st.setString(9, en.getLearningStatus() != null ? en.getLearningStatus() : "Not Started");
+            st.setInt(10, en.getProgressPercentage() != null ? en.getProgressPercentage() : 0);
+            st.setInt(11, en.getLessonsCompleted() != null ? en.getLessonsCompleted() : 0);
+
+            if (en.getSourceId() != null) {
+                st.setInt(12, en.getSourceId());
+            } else {
+                st.setNull(12, java.sql.Types.INTEGER);
+            }
+            if (en.getCampaignId() != null) {
+                st.setInt(13, en.getCampaignId());
+            } else {
+                st.setNull(13, java.sql.Types.INTEGER);
+            }
+            if (en.getAssignedTo() != null) {
+                st.setInt(14, en.getAssignedTo());
+            } else {
+                st.setNull(14, java.sql.Types.INTEGER);
+            }
+            st.setString(15, en.getNotes());
+
+            java.time.LocalDateTime now = java.time.LocalDateTime.now();
+            st.setObject(16, now);
+            st.setObject(17, now);
+            if (en.getCreatedBy() != null) {
+                st.setInt(18, en.getCreatedBy());
+            } else {
+                st.setNull(18, java.sql.Types.INTEGER);
+            }
+
+            int rows = st.executeUpdate();
+            if (rows > 0) {
+                try (ResultSet keys = st.getGeneratedKeys()) {
+                    if (keys.next()) {
+                        en.setEnrollmentId(keys.getInt(1));
+                    }
+                }
+                return true;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
 
     public List<CustomerEnrollment> getEnrollmentsByCustomerId(int customerId) {
         List<CustomerEnrollment> list = new ArrayList<>();

@@ -1474,4 +1474,37 @@ public class TaskDAO extends DBContext {
         }
         return false;
     }
+
+    // ── Get active (PENDING/IN_PROGRESS) tasks related to a specific lead ──
+    public List<Task> getActiveTasksByRelatedLead(int leadId) {
+        List<Task> tasks = new ArrayList<>();
+        String sql = BASE_SELECT +
+            "INNER JOIN task_relations tr2 ON tr2.task_id = t.task_id " +
+            "WHERE tr2.related_type = 'LEAD' AND tr2.related_id = ? " +
+            "AND t.status IN (0, 1) AND " + NOT_DELETED + " ORDER BY t.created_at DESC";
+        try (PreparedStatement st = connection.prepareStatement(sql)) {
+            st.setInt(1, leadId);
+            try (ResultSet rs = st.executeQuery()) {
+                while (rs.next()) tasks.add(mapResultSetToTask(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return tasks;
+    }
+
+    // ── Auto-complete all active tasks related to a lead ──
+    public int completeTasksByRelatedLead(int leadId) {
+        String sql = "UPDATE t SET t.status = 2, t.completed_at = GETDATE(), t.updated_at = GETDATE() " +
+            "FROM tasks t INNER JOIN task_relations tr ON tr.task_id = t.task_id " +
+            "WHERE tr.related_type = 'LEAD' AND tr.related_id = ? " +
+            "AND t.status IN (0, 1) AND " + NOT_DELETED;
+        try (PreparedStatement st = connection.prepareStatement(sql)) {
+            st.setInt(1, leadId);
+            return st.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
 }

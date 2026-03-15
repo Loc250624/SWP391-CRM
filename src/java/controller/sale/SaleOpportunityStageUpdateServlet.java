@@ -1,16 +1,19 @@
 package controller.sale;
 
 import dao.CustomerDAO;
+import dao.EnrollmentDAO;
 import dao.LeadDAO;
 import dao.OpportunityDAO;
 import dao.OpportunityHistoryDAO;
 import dao.PipelineDAO;
 import dao.PipelineStageDAO;
 import dao.QuotationDAO;
+import dao.TaskDAO;
 import enums.LeadStatus;
 import enums.OpportunityStatus;
 import enums.QuotationStatus;
 import model.Customer;
+import model.CustomerEnrollment;
 import model.Lead;
 import model.Opportunity;
 import model.Pipeline;
@@ -164,19 +167,38 @@ public class SaleOpportunityStageUpdateServlet extends HttpServlet {
                         newCustomer.setOwnerId(currentUserId);
                         newCustomer.setCreatedBy(currentUserId);
 
+                        // Build notes: preserve lead notes + add conversion info
+                        StringBuilder notesBuilder = new StringBuilder();
+                        if (lead.getNotes() != null && !lead.getNotes().trim().isEmpty()) {
+                            notesBuilder.append(lead.getNotes().trim());
+                        }
+                        if (lead.getCompanyName() != null && !lead.getCompanyName().trim().isEmpty()) {
+                            if (notesBuilder.length() > 0) notesBuilder.append(" | ");
+                            notesBuilder.append("Công ty: ").append(lead.getCompanyName().trim());
+                        }
+                        if (lead.getJobTitle() != null && !lead.getJobTitle().trim().isEmpty()) {
+                            if (notesBuilder.length() > 0) notesBuilder.append(" | ");
+                            notesBuilder.append("Chức vụ: ").append(lead.getJobTitle().trim());
+                        }
+                        if (lead.getInterests() != null && !lead.getInterests().trim().isEmpty()) {
+                            if (notesBuilder.length() > 0) notesBuilder.append(" | ");
+                            notesBuilder.append("Quan tâm: ").append(lead.getInterests().trim());
+                        }
+
                         // Enrich customer from best quotation
                         Quotation bestQuotation = getBestQuotation(opp.getOpportunityId());
+                        List<Map<String, Object>> quotationItems = null;
                         if (bestQuotation != null) {
                             newCustomer.setTotalSpent(
                                     bestQuotation.getTotalAmount() != null ? bestQuotation.getTotalAmount()
                                             : BigDecimal.ZERO);
 
                             // Get quotation items to extract course info
-                            List<Map<String, Object>> items = quotationDAO
+                            quotationItems = quotationDAO
                                     .getItemsByQuotationId(bestQuotation.getQuotationId());
                             int totalCourses = 0;
                             StringBuilder courseNames = new StringBuilder();
-                            for (Map<String, Object> item : items) {
+                            for (Map<String, Object> item : quotationItems) {
                                 Integer courseId = (Integer) item.get("courseId");
                                 if (courseId != null) {
                                     Integer qty = (Integer) item.get("quantity");
@@ -193,13 +215,17 @@ public class SaleOpportunityStageUpdateServlet extends HttpServlet {
                             newCustomer.setPurchasedCourses(courseNames.length() > 0 ? courseNames.toString() : null);
                             newCustomer.setFirstPurchaseDate(LocalDate.now());
                             newCustomer.setLastPurchaseDate(LocalDate.now());
-                            newCustomer.setNotes("Chuyen doi tu Lead: " + lead.getLeadCode() + " | Bao gia: "
-                                    + bestQuotation.getQuotationCode());
+
+                            if (notesBuilder.length() > 0) notesBuilder.append(" | ");
+                            notesBuilder.append("Chuyển đổi từ Lead: ").append(lead.getLeadCode())
+                                    .append(" | Báo giá: ").append(bestQuotation.getQuotationCode());
                         } else {
                             newCustomer.setTotalCourses(0);
                             newCustomer.setTotalSpent(BigDecimal.ZERO);
-                            newCustomer.setNotes("Tu dong chuyen doi tu Lead: " + lead.getLeadCode());
+                            if (notesBuilder.length() > 0) notesBuilder.append(" | ");
+                            notesBuilder.append("Tự động chuyển đổi từ Lead: ").append(lead.getLeadCode());
                         }
+                        newCustomer.setNotes(notesBuilder.toString());
 
                         boolean customerCreated = customerDAO.insertCustomer(newCustomer);
                         if (customerCreated && newCustomer.getCustomerId() > 0) {
@@ -207,6 +233,49 @@ public class SaleOpportunityStageUpdateServlet extends HttpServlet {
                             opp.setCustomerId(newCustomer.getCustomerId());
                             opportunityDAO.updateOpportunity(opp);
                             leadConverted = true;
+
+                            // Auto-create customer_enrollments from quotation items
+                            if (quotationItems != null && !quotationItems.isEmpty()) {
+                                EnrollmentDAO enrollmentDAO = new EnrollmentDAO();
+                                for (Map<String, Object> item : quotationItems) {
+                                    Integer courseId = (Integer) item.get("courseId");
+                                    if (courseId != null) {
+                                        CustomerEnrollment enrollment = new CustomerEnrollment();
+                                        enrollment.setCustomerId(newCustomer.getCustomerId());
+                                        enrollment.setCourseId(courseId);
+                                        enrollment.setEnrolledDate(LocalDate.now());
+
+                                        // Pricing from quotation item
+                                        BigDecimal unitPrice = (BigDecimal) item.get("unitPrice");
+                                        BigDecimal discAmt = (BigDecimal) item.get("discountAmount");
+                                        BigDecimal lineTotal = (BigDecimal) item.get("lineTotal");
+                                        enrollment.setOriginalPrice(unitPrice != null ? unitPrice : BigDecimal.ZERO);
+                                        enrollment.setDiscountAmount(discAmt != null ? discAmt : BigDecimal.ZERO);
+                                        enrollment.setFinalAmount(lineTotal != null ? lineTotal : BigDecimal.ZERO);
+
+                                        enrollment.setPaymentStatus("Pending");
+                                        enrollment.setLearningStatus("Not Started");
+                                        enrollment.setProgressPercentage(0);
+                                        enrollment.setLessonsCompleted(0);
+
+                                        // Source & campaign from lead
+                                        enrollment.setSourceId(lead.getSourceId());
+                                        enrollment.setCampaignId(lead.getCampaignId());
+                                        enrollment.setAssignedTo(currentUserId);
+                                        enrollment.setCreatedBy(currentUserId);
+
+                                        String courseName = (String) item.get("courseName");
+                                        enrollment.setNotes("Từ báo giá: " + (bestQuotation != null ? bestQuotation.getQuotationCode() : "N/A")
+                                                + (courseName != null ? " - " + courseName : ""));
+
+                                        enrollmentDAO.insertEnrollment(enrollment);
+                                    }
+                                }
+                            }
+
+                            // Auto-complete all active tasks related to this lead
+                            TaskDAO taskDAO = new TaskDAO();
+                            taskDAO.completeTasksByRelatedLead(lead.getLeadId());
                         }
                     }
                 }
@@ -252,8 +321,8 @@ public class SaleOpportunityStageUpdateServlet extends HttpServlet {
                 }
 
                 String msg = leadConverted
-                        ? "Stage updated. Lead da duoc chuyen doi thanh Customer!"
-                        : "Stage updated";
+                        ? "Cập nhật thành công. Lead đã được chuyển đổi thành Customer!"
+                        : "Cập nhật stage thành công";
                 out.print("{\"success\":true,\"message\":\"" + escapeJson(msg) + "\",\"newStatus\":\"" + opp.getStatus()
                         + "\",\"leadConverted\":" + leadConverted + "}");
             } else {
@@ -317,7 +386,7 @@ public class SaleOpportunityStageUpdateServlet extends HttpServlet {
             case "WON":
                 // Must have at least one Approved or Sent quotation
                 if (!hasApprovedOrSentQuotation(opp.getOpportunityId())) {
-                    return "Phai co it nhat mot bao gia da duoc Approved hoac Sent de chuyen sang Won.";
+                    return "Phải có ít nhất một báo giá đã được Approved hoặc Sent để chuyển sang Won.";
                 }
                 break;
 

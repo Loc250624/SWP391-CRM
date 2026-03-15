@@ -72,14 +72,25 @@
                         <input type="hidden" name="taskId" value="${task.taskId}">
                         <input type="hidden" name="status" value="COMPLETED">
 
-                        <div class="alert alert-info mb-4">
-                            <i class="bi bi-info-circle me-2"></i>
-                            Bạn chỉ có thể cập nhật trạng thái sang <strong>Hoàn thành</strong>.
-                            Liên hệ quản lý nếu cần thay đổi khác.
-                        </div>
+                        <c:choose>
+                            <c:when test="${leadNotConverted}">
+                                <div class="alert alert-warning mb-4">
+                                    <i class="bi bi-exclamation-triangle me-2"></i>
+                                    <strong>Không thể hoàn thành:</strong> Lead "<strong>${relatedLeadName}</strong>" chưa được chuyển đổi thành Customer.
+                                    Vui lòng chuyển đổi Lead trước khi đánh dấu hoàn thành công việc này.
+                                </div>
+                            </c:when>
+                            <c:otherwise>
+                                <div class="alert alert-info mb-4">
+                                    <i class="bi bi-info-circle me-2"></i>
+                                    Bạn chỉ có thể cập nhật trạng thái sang <strong>Hoàn thành</strong>.
+                                    Liên hệ quản lý nếu cần thay đổi khác.
+                                </div>
+                            </c:otherwise>
+                        </c:choose>
 
                         <div class="d-flex gap-2">
-                            <button type="submit" class="btn btn-success btn-lg">
+                            <button type="submit" class="btn btn-success btn-lg" ${leadNotConverted ? 'disabled' : ''}>
                                 <i class="bi bi-check2-circle me-2"></i>Đánh dấu Hoàn thành
                             </button>
                             <a href="${pageContext.request.contextPath}/sale/task/detail?id=${task.taskId}"
