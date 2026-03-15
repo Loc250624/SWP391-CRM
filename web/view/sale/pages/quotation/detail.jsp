@@ -3,12 +3,6 @@
 <%@taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt"%>
 
 <!-- Toast messages -->
-<c:if test="${param.approved == '1'}">
-    <script>document.addEventListener('DOMContentLoaded', function(){ CRM.showToast('Duyệt báo giá thành công!', 'success'); });</script>
-</c:if>
-<c:if test="${param.rejected == '1'}">
-    <script>document.addEventListener('DOMContentLoaded', function(){ CRM.showToast('Đã từ chối báo giá.', 'info'); });</script>
-</c:if>
 <c:if test="${param.sent == '1'}">
     <script>document.addEventListener('DOMContentLoaded', function(){ CRM.showToast('Đã gửi báo giá thành công!', 'success'); });</script>
 </c:if>
@@ -20,15 +14,10 @@
     </div>
     <div class="d-flex gap-2">
         <a href="${pageContext.request.contextPath}/sale/quotation/list" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Quay lại</a>
-        <c:if test="${quotation.status == 'Draft'}">
-            <a href="${pageContext.request.contextPath}/sale/quotation/form?id=${quotation.quotationId}" class="btn btn-outline-primary btn-sm"><i class="bi bi-pencil me-1"></i>Chỉnh sửa</a>
-            <button type="button" class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#approveModal"><i class="bi bi-check-circle me-1"></i>Duyệt</button>
-            <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#rejectModal"><i class="bi bi-x-circle me-1"></i>Từ chối</button>
-        </c:if>
-        <c:if test="${quotation.status == 'Approved'}">
+        <c:if test="${quotation.status == 'Sent'}">
             <form method="POST" action="${pageContext.request.contextPath}/sale/quotation/send" style="display:inline;">
                 <input type="hidden" name="quotationId" value="${quotation.quotationId}">
-                <button type="submit" class="btn btn-warning btn-sm"><i class="bi bi-send me-1"></i>Gửi báo giá</button>
+                <button type="submit" class="btn btn-warning btn-sm"><i class="bi bi-send me-1"></i>Gửi lại</button>
             </form>
         </c:if>
     </div>
@@ -291,34 +280,14 @@
             <div class="card-body">
                 <div class="mb-3">
                     <c:choose>
-                        <c:when test="${quotation.status == 'Draft'}"><span class="badge bg-secondary-subtle text-secondary fs-6 px-3 py-2">Đề xuất (Draft)</span></c:when>
-                        <c:when test="${quotation.status == 'Approved'}"><span class="badge bg-success-subtle text-success fs-6 px-3 py-2">Đã duyệt</span></c:when>
+                        <c:when test="${quotation.status == 'Draft'}"><span class="badge bg-info-subtle text-info fs-6 px-3 py-2">Nháp</span></c:when>
+                        <c:when test="${quotation.status == 'Approved'}"><span class="badge bg-success-subtle text-success fs-6 px-3 py-2">Đã xử lý</span></c:when>
                         <c:when test="${quotation.status == 'Sent'}"><span class="badge bg-warning-subtle text-warning fs-6 px-3 py-2">Đã gửi - Chờ phản hồi</span></c:when>
                         <c:when test="${quotation.status == 'Accepted'}"><span class="badge bg-primary-subtle text-primary fs-6 px-3 py-2">Khách chấp nhận</span></c:when>
                         <c:when test="${quotation.status == 'Rejected'}"><span class="badge bg-danger-subtle text-danger fs-6 px-3 py-2">Từ chối</span></c:when>
                         <c:otherwise><span class="badge bg-secondary-subtle text-secondary fs-6 px-3 py-2">${quotation.status}</span></c:otherwise>
                     </c:choose>
                 </div>
-
-                <!-- Approval info -->
-                <c:if test="${not empty quotation.approvedDate}">
-                    <div class="mb-3">
-                        <label class="text-muted small">Duyệt ngày</label>
-                        <div>${quotation.approvedDate.toString().substring(0, 16).replace('T', ' ')}</div>
-                    </div>
-                    <c:if test="${not empty approverName}">
-                        <div class="mb-3">
-                            <label class="text-muted small">Người duyệt</label>
-                            <div class="fw-medium">${approverName}</div>
-                        </div>
-                    </c:if>
-                    <c:if test="${not empty quotation.approvalNotes}">
-                        <div class="mb-3">
-                            <label class="text-muted small">Ghi chú duyệt</label>
-                            <div>${quotation.approvalNotes}</div>
-                        </div>
-                    </c:if>
-                </c:if>
 
                 <!-- Sent info -->
                 <c:if test="${not empty quotation.sentDate}">
@@ -424,54 +393,3 @@
     </div>
 </div>
 
-<!-- Approve Modal -->
-<div class="modal fade" id="approveModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <form method="POST" action="${pageContext.request.contextPath}/sale/quotation/approve">
-                <input type="hidden" name="quotationId" value="${quotation.quotationId}">
-                <div class="modal-header">
-                    <h5 class="modal-title">Duyệt báo giá</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <p>Bạn có chắc chắn muốn duyệt báo giá <strong>${quotation.quotationCode}</strong>?</p>
-                    <div class="mb-3">
-                        <label class="form-label">Ghi chú duyệt (tùy chọn)</label>
-                        <textarea class="form-control" name="approvalNotes" rows="3" placeholder="Nhập ghi chú..."></textarea>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Hủy</button>
-                    <button type="submit" class="btn btn-success btn-sm"><i class="bi bi-check-circle me-1"></i>Duyệt</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<!-- Reject Modal -->
-<div class="modal fade" id="rejectModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <form method="POST" action="${pageContext.request.contextPath}/sale/quotation/reject">
-                <input type="hidden" name="quotationId" value="${quotation.quotationId}">
-                <div class="modal-header">
-                    <h5 class="modal-title">Từ chối báo giá</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <p>Bạn có chắc chắn muốn từ chối báo giá <strong>${quotation.quotationCode}</strong>?</p>
-                    <div class="mb-3">
-                        <label class="form-label">Lý do từ chối <span class="text-danger">*</span></label>
-                        <textarea class="form-control" name="rejectionReason" rows="3" placeholder="Nhập lý do từ chối..." required></textarea>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Hủy</button>
-                    <button type="submit" class="btn btn-danger btn-sm"><i class="bi bi-x-circle me-1"></i>Từ chối</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>

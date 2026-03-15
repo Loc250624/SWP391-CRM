@@ -678,11 +678,11 @@
                     if (!data.success) {
                         CRM.showToast('Lỗi: ' + data.message, 'error');
                         setTimeout(function(){ location.reload(); }, 2000);
-                    } else if (data.newStatus === 'Won' || data.newStatus === 'Lost') {
-                        if (data.leadConverted) {
-                            CRM.showToast('Lead đã được tự động chuyển đổi thành Customer!', 'success');
+                    } else {
+                        CRM.showToast(data.message, data.leadConverted ? 'success' : 'info');
+                        if (data.newStatus === 'Won' || data.newStatus === 'Lost') {
+                            setTimeout(function(){ location.reload(); }, 2000);
                         }
-                        setTimeout(function(){ location.reload(); }, 2000);
                     }
                 })
                 .catch(function () {

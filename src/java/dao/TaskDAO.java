@@ -86,20 +86,18 @@ public class TaskDAO extends DBContext {
 
     // ── Generate unique task code ──
     public String generateTaskCode() {
-        String sql = "SELECT TOP 1 task_code FROM tasks ORDER BY task_id DESC";
+        String sql = "SELECT MAX(CAST(SUBSTRING(task_code, 5, LEN(task_code) - 4) AS INT)) "
+                + "FROM tasks WHERE task_code LIKE 'TSK-[0-9][0-9][0-9][0-9][0-9][0-9]'";
         try (PreparedStatement st = connection.prepareStatement(sql);
              ResultSet rs = st.executeQuery()) {
             if (rs.next()) {
-                String lastCode = rs.getString("task_code");
-                if (lastCode != null && lastCode.startsWith("TSK-")) {
-                    int number = Integer.parseInt(lastCode.substring(4));
-                    return String.format("TSK-%06d", number + 1);
-                }
+                int maxNumber = rs.getInt(1);
+                return String.format("TSK-%06d", maxNumber + 1);
             }
             return "TSK-000001";
         } catch (SQLException e) {
             e.printStackTrace();
-            return "TSK-" + System.currentTimeMillis();
+            return "TSK-000001";
         }
     }
 

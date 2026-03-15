@@ -84,19 +84,17 @@ public class LeadDAO extends DBContext {
 
     // Generate unique lead code (LD-000001, LD-000002, ...)
     public String generateLeadCode() {
-        String sql = "SELECT TOP 1 lead_code FROM leads ORDER BY lead_id DESC";
+        String sql = "SELECT MAX(CAST(SUBSTRING(lead_code, 4, LEN(lead_code) - 3) AS INT)) "
+                + "FROM leads WHERE lead_code LIKE 'LD-[0-9][0-9][0-9][0-9][0-9][0-9]'";
 
         try {
             PreparedStatement st = connection.prepareStatement(sql);
             ResultSet rs = st.executeQuery();
 
             if (rs.next()) {
-                String lastCode = rs.getString("lead_code");
-                // Extract number from LD-000001
-                int number = Integer.parseInt(lastCode.substring(3));
-                return String.format("LD-%06d", number + 1);
+                int maxNumber = rs.getInt(1);
+                return String.format("LD-%06d", maxNumber + 1);
             } else {
-                // First lead
                 return "LD-000001";
             }
         } catch (SQLException e) {

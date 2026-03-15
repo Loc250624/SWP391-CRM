@@ -13,21 +13,18 @@ public class EnrollmentDAO extends DBContext {
 
     // Generate unique enrollment code (ENR-000001, ENR-000002, ...)
     public String generateEnrollmentCode() {
-        String sql = "SELECT TOP 1 enrollment_code FROM customer_enrollments ORDER BY enrollment_id DESC";
+        String sql = "SELECT MAX(CAST(SUBSTRING(enrollment_code, 5, LEN(enrollment_code) - 4) AS INT)) "
+                + "FROM customer_enrollments WHERE enrollment_code LIKE 'ENR-[0-9][0-9][0-9][0-9][0-9][0-9]'";
         try (PreparedStatement st = connection.prepareStatement(sql);
              ResultSet rs = st.executeQuery()) {
             if (rs.next()) {
-                String lastCode = rs.getString("enrollment_code");
-                if (lastCode != null && lastCode.startsWith("ENR-")) {
-                    int number = Integer.parseInt(lastCode.substring(4));
-                    return String.format("ENR-%06d", number + 1);
-                }
+                int maxNumber = rs.getInt(1);
+                return String.format("ENR-%06d", maxNumber + 1);
             }
-            return "ENR-000001";
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        return "ENR-" + System.currentTimeMillis();
+        return "ENR-000001";
     }
 
     // Insert a new enrollment record; sets enrollmentId on success
