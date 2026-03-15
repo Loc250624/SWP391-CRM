@@ -2,9 +2,9 @@ package controller.customersuccess;
 
 import dao.TaskDAO;
 import dao.UserDAO;
-import enums.Priority;
-import enums.TaskStatus;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -37,54 +37,59 @@ public class SupportTaskListServlet extends HttpServlet {
             return;
         }
 
-        // Pagination params
-        int page = 1;
-        int pageSize = 20;
-        try {
-            String pageParam = request.getParameter("page");
-            if (pageParam != null && !pageParam.isEmpty()) {
-                page = Integer.parseInt(pageParam);
-                if (page < 1) page = 1;
-            }
-        } catch (NumberFormatException e) {
-            page = 1;
-        }
-
-        String statusFilter = request.getParameter("status");
-        String priorityFilter = request.getParameter("priority");
         String keyword = request.getParameter("keyword");
-        String sortBy = request.getParameter("sortBy");
-        String sortOrder = request.getParameter("sortOrder");
-
-        int offset = (page - 1) * pageSize;
+        String relatedType = request.getParameter("relatedType");
 
         TaskDAO taskDAO = new TaskDAO();
+        List<Integer> memberIds = Collections.singletonList(currentUser.getUserId());
 
-        // Support: only personal assigned tasks
-        List<Task> taskList = taskDAO.getTasksWithFilter(
-                currentUser.getUserId(), statusFilter, priorityFilter,
-                keyword, sortBy, sortOrder, offset, pageSize);
-        int totalTasks = taskDAO.countTasksWithFilter(
-                currentUser.getUserId(), statusFilter, priorityFilter, keyword);
+        // Fetch tasks grouped by status for Kanban view (same pattern as SaleTaskListServlet)
+        List<Task> pendingTasks = taskDAO.getTasksWithFilterForTeam(
+                memberIds, currentUser.getUserId(), "PENDING", null,
+                keyword, false, "priority", "DESC", 0, 500);
+        List<Task> inProgressTasks = taskDAO.getTasksWithFilterForTeam(
+                memberIds, currentUser.getUserId(), "IN_PROGRESS", null,
+                keyword, false, "priority", "DESC", 0, 500);
+        List<Task> completedTasks = taskDAO.getTasksWithFilterForTeam(
+                memberIds, currentUser.getUserId(), "COMPLETED", null,
+                keyword, false, "created_at", "DESC", 0, 200);
+        List<Task> cancelledTasks = taskDAO.getTasksWithFilterForTeam(
+                memberIds, currentUser.getUserId(), "CANCELLED", null,
+                keyword, false, "created_at", "DESC", 0, 200);
 
-        int totalPages = (totalTasks == 0) ? 1 : (int) Math.ceil((double) totalTasks / pageSize);
+        // Merge PENDING into IN_PROGRESS column for 3-column Kanban
+        if (pendingTasks != null && !pendingTasks.isEmpty()) {
+            inProgressTasks.addAll(pendingTasks);
+        }
 
-        request.setAttribute("taskList", taskList);
-        request.setAttribute("totalTasks", totalTasks);
-        request.setAttribute("totalPages", totalPages);
-        request.setAttribute("currentPage", page);
-        request.setAttribute("pageSize", pageSize);
-        request.setAttribute("statusFilter", statusFilter);
-        request.setAttribute("priorityFilter", priorityFilter);
+        // Filter by related type if provided
+        if (relatedType != null && !relatedType.trim().isEmpty()) {
+            String rt = relatedType.trim().toUpperCase();
+            inProgressTasks = filterByRelatedType(inProgressTasks, rt);
+            completedTasks = filterByRelatedType(completedTasks, rt);
+            cancelledTasks = filterByRelatedType(cancelledTasks, rt);
+        }
+
+        request.setAttribute("inProgressTasks", inProgressTasks);
+        request.setAttribute("completedTasks", completedTasks);
+        request.setAttribute("cancelledTasks", cancelledTasks);
         request.setAttribute("keyword", keyword);
-        request.setAttribute("sortBy", sortBy);
-        request.setAttribute("sortOrder", sortOrder);
-        request.setAttribute("taskStatusValues", TaskStatus.values());
-        request.setAttribute("priorityValues", Priority.values());
+        request.setAttribute("relatedType", relatedType);
         request.setAttribute("currentUser", currentUser);
 
         request.setAttribute("pageTitle", "Công việc của tôi");
-        request.setAttribute("contentPage", "/view/support/task/task-list.jsp");
-        request.getRequestDispatcher("/view/customersuccess/main_layout.jsp").forward(request, response);
+        request.setAttribute("contentPage", "/view/customersuccess/pages/task/task-list.jsp");
+        request.getRequestDispatcher("/view/customersuccess/pages/main_layout.jsp").forward(request, response);
+    }
+
+    private List<Task> filterByRelatedType(List<Task> tasks, String relatedType) {
+        if (tasks == null || tasks.isEmpty()) return tasks;
+        List<Task> filtered = new ArrayList<>();
+        for (Task t : tasks) {
+            if (t.getRelatedType() != null && t.getRelatedType().equalsIgnoreCase(relatedType)) {
+                filtered.add(t);
+            }
+        }
+        return filtered;
     }
 }

@@ -90,7 +90,7 @@ public class SupportTaskCalendarServlet extends HttpServlet {
         request.setAttribute("nextMonth", nextMonth.getMonthValue());
 
         request.setAttribute("pageTitle", "Lịch Công việc");
-        request.setAttribute("contentPage", "/view/support/task/task-calendar.jsp");
-        request.getRequestDispatcher("/view/customersuccess/main_layout.jsp").forward(request, response);
+        request.setAttribute("contentPage", "/view/customersuccess/pages/task/task-calendar.jsp");
+        request.getRequestDispatcher("/view/customersuccess/pages/main_layout.jsp").forward(request, response);
     }
 }

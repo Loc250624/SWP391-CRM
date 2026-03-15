@@ -108,8 +108,8 @@ public class SupportTaskDetailServlet extends HttpServlet {
             request.setAttribute("allUsers", allUsers);
 
             request.setAttribute("pageTitle", "Chi tiết Công việc");
-            request.setAttribute("contentPage", "/view/support/task/task-detail.jsp");
-            request.getRequestDispatcher("/view/customersuccess/main_layout.jsp").forward(request, response);
+            request.setAttribute("contentPage", "/view/customersuccess/pages/task/task-detail.jsp");
+            request.getRequestDispatcher("/view/customersuccess/pages/main_layout.jsp").forward(request, response);
 
         } catch (NumberFormatException e) {
             response.sendRedirect(request.getContextPath() + "/support/task/list");
