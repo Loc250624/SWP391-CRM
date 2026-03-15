@@ -35,10 +35,14 @@
         <h3 class="mb-0"><i class="bi bi-file-earmark-text me-2"></i>Chi tiết Công việc</h3>
         <div class="d-flex gap-2">
             <c:if test="${task.statusName != 'COMPLETED' && task.statusName != 'CANCELLED'}">
-                <a href="${pageContext.request.contextPath}/sale/task/status?id=${task.taskId}"
-                   class="btn btn-success btn-sm">
-                    <i class="bi bi-check2-circle me-1"></i>Đánh dấu Hoàn thành
-                </a>
+                <form method="post" action="${pageContext.request.contextPath}/sale/task/status" class="d-inline"
+                      onsubmit="return confirm('Bạn có chắc chắn muốn đánh dấu công việc này là Hoàn thành?');">
+                    <input type="hidden" name="taskId" value="${task.taskId}">
+                    <input type="hidden" name="status" value="COMPLETED">
+                    <button type="submit" class="btn btn-success btn-sm">
+                        <i class="bi bi-check2-circle me-1"></i>Đánh dấu Hoàn thành
+                    </button>
+                </form>
             </c:if>
             <c:if test="${task.statusName == 'COMPLETED'}">
                 <span class="badge bg-success fs-6 py-2 px-3">

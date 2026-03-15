@@ -29,7 +29,7 @@ public class TaskDAO extends DBContext {
         "tr_p.related_type, tr_p.related_id " +
         "FROM tasks t " +
         "OUTER APPLY (SELECT TOP 1 user_id FROM task_assignees WHERE task_id = t.task_id ORDER BY id ASC) ta_p " +
-        "OUTER APPLY (SELECT TOP 1 related_type, related_id FROM task_relations WHERE task_id = t.task_id ORDER BY id ASC) tr_p ";
+        "OUTER APPLY (SELECT TOP 1 related_type, related_id FROM task_relations WHERE task_id = t.task_id AND related_type != 'SUBTASK' ORDER BY id ASC) tr_p ";
 
     // ── Map ResultSet → Task ──
     private Task mapResultSetToTask(ResultSet rs) throws SQLException {
@@ -495,7 +495,7 @@ public class TaskDAO extends DBContext {
             "tr_p.related_type, tr_p.related_id " +
             "FROM tasks t " +
             "INNER JOIN task_assignees ta ON ta.task_id = t.task_id " +
-            "OUTER APPLY (SELECT TOP 1 related_type, related_id FROM task_relations WHERE task_id = t.task_id ORDER BY id ASC) tr_p " +
+            "OUTER APPLY (SELECT TOP 1 related_type, related_id FROM task_relations WHERE task_id = t.task_id AND related_type != 'SUBTASK' ORDER BY id ASC) tr_p " +
             "WHERE ta.user_id IN (" + buildInClause(teamMemberIds.size()) + ") " +
             "AND " + NOT_DELETED + " ORDER BY ta.user_id, t.due_date ASC"
         );
