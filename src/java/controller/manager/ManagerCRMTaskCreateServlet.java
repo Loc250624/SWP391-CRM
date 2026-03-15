@@ -80,8 +80,16 @@ public class ManagerCRMTaskCreateServlet extends HttpServlet {
             response.sendRedirect(redirectTo); return;
         }
 
-        // Lấy danh sách nhân viên SALES để validate assignee
-        List<Users> teamMembers = userDAO.getUsersByRoleCode("SALES");
+        // Lấy danh sách nhân viên SALES + SUPPORT để validate assignee
+        List<Users> teamMembers = new ArrayList<>();
+        teamMembers.addAll(userDAO.getUsersByRoleCode("SALES"));
+        for (Users su : userDAO.getUsersByRoleCode("SUPPORT")) {
+            boolean exists = false;
+            for (Users u : teamMembers) {
+                if (u.getUserId() == su.getUserId()) { exists = true; break; }
+            }
+            if (!exists) teamMembers.add(su);
+        }
 
         // ── Validate Lead/Customer: exists, in scope, not already assigned ─
         LeadDAO     leadDAO     = new LeadDAO();
@@ -155,7 +163,7 @@ public class ManagerCRMTaskCreateServlet extends HttpServlet {
             try {
                 int aId = Integer.parseInt(assignedToStr.trim());
                 if (!isValidAssignee(aId, currentUser.getUserId(), teamMembers)) {
-                    session.setAttribute("errorMessage", "Nhân viên không có role SALES");
+                    session.setAttribute("errorMessage", "Nhân viên không thuộc đội ngũ SALES/SUPPORT");
                     response.sendRedirect(redirectTo); return;
                 }
                 assigneeIds.add(aId);

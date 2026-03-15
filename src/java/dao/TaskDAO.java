@@ -647,6 +647,57 @@ public class TaskDAO extends DBContext {
         return tasks;
     }
 
+    // ── Get ALL tasks created by a user (no assignee-count restriction) ──
+    public List<Task> getAllTasksByCreator(int creatorId, String status, String priority,
+                                          String keyword, String sortBy, String sortOrder) {
+        List<Task> tasks = new ArrayList<>();
+        StringBuilder sql = new StringBuilder(
+            BASE_SELECT + "WHERE t.created_by = ? AND " + NOT_DELETED
+        );
+
+        if (status != null && !status.isEmpty()) sql.append(" AND t.status = ?");
+        if (priority != null && !priority.isEmpty()) sql.append(" AND t.priority = ?");
+        if (keyword != null && !keyword.isEmpty()) sql.append(" AND (t.title LIKE ? OR t.description LIKE ?)");
+
+        if (sortBy != null && !sortBy.isEmpty()) {
+            sql.append(" ORDER BY t.").append(sortBy);
+            if ("DESC".equalsIgnoreCase(sortOrder)) sql.append(" DESC"); else sql.append(" ASC");
+        } else {
+            sql.append(" ORDER BY t.created_at DESC");
+        }
+
+        try (PreparedStatement st = connection.prepareStatement(sql.toString())) {
+            int idx = 1;
+            st.setInt(idx++, creatorId);
+            if (status != null && !status.isEmpty()) st.setInt(idx++, TaskStatus.valueOf(status).ordinal());
+            if (priority != null && !priority.isEmpty()) st.setInt(idx++, Priority.valueOf(priority).ordinal());
+            if (keyword != null && !keyword.isEmpty()) {
+                String pat = "%" + keyword + "%";
+                st.setString(idx++, pat); st.setString(idx++, pat);
+            }
+            try (ResultSet rs = st.executeQuery()) {
+                while (rs.next()) tasks.add(mapResultSetToTask(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return tasks;
+    }
+
+    // ── Count assignees for a task ──
+    public int countAssignees(int taskId) {
+        String sql = "SELECT COUNT(*) AS cnt FROM task_assignees WHERE task_id = ?";
+        try (PreparedStatement st = connection.prepareStatement(sql)) {
+            st.setInt(1, taskId);
+            try (ResultSet rs = st.executeQuery()) {
+                if (rs.next()) return rs.getInt("cnt");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
     // ── Count tasks by manager ──
     public int countTasksByManager(int managerId, String status, String priority, String keyword) {
         StringBuilder sql = new StringBuilder(

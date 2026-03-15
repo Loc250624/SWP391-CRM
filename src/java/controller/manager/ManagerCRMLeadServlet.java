@@ -107,9 +107,17 @@ public class ManagerCRMLeadServlet extends HttpServlet {
         int totalPages = (int) Math.ceil((double) totalLeads / pageSize);
         if (totalPages < 1) totalPages = 1;
 
-        // Team members for the assign-task modal — lấy theo role SALES
+        // Team members for the assign-task modal — lấy theo role SALES + SUPPORT
         List<Users> salesUsers = userDAO.getUsersByRoleCode("SALES");
+        List<Users> supportUsers = userDAO.getUsersByRoleCode("SUPPORT");
         List<Users> salesForAssign = new ArrayList<>(salesUsers);
+        for (Users su : supportUsers) {
+            boolean exists = false;
+            for (Users u : salesForAssign) {
+                if (u.getUserId() == su.getUserId()) { exists = true; break; }
+            }
+            if (!exists) salesForAssign.add(su);
+        }
 
         // Build set of sales user IDs for JSP logic
         Set<Integer> salesUserIds = new HashSet<>();
