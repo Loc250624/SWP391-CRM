@@ -965,4 +965,64 @@ public class LeadDAO extends DBContext {
         }
         return list;
     }
+    
+      public util.PagedResult<Lead> search(String phoneQuery, String status, int page, int pageSize) {
+        List<Lead> list = new ArrayList<>();
+        int totalItems = 0;
+
+        StringBuilder sql = new StringBuilder("SELECT * FROM leads WHERE status != 'Inactive' ");
+        StringBuilder countSql = new StringBuilder("SELECT COUNT(*) FROM leads WHERE status != 'Inactive' ");
+        List<Object> params = new ArrayList<>();
+
+        if (phoneQuery != null && !phoneQuery.trim().isEmpty()) {
+            String cond = "AND phone LIKE ? ";
+            sql.append(cond);
+            countSql.append(cond);
+            params.add("%" + phoneQuery.trim() + "%");
+        }
+
+        if (status != null && !status.trim().isEmpty()) {
+            String cond = "AND status = ? ";
+            sql.append(cond);
+            countSql.append(cond);
+            params.add(status.trim());
+        }
+
+        // Count Query
+        try (PreparedStatement st = connection.prepareStatement(countSql.toString())) {
+            for (int i = 0; i < params.size(); i++) {
+                st.setObject(i + 1, params.get(i));
+            }
+            try (ResultSet rs = st.executeQuery()) {
+                if (rs.next()) {
+                    totalItems = rs.getInt(1);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        // Items Query
+        sql.append("ORDER BY created_at DESC ");
+        sql.append("OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
+
+        try (PreparedStatement st = connection.prepareStatement(sql.toString())) {
+            int pIdx = 1;
+            for (Object p : params) {
+                st.setObject(pIdx++, p);
+            }
+            st.setInt(pIdx++, (page - 1) * pageSize);
+            st.setInt(pIdx++, pageSize);
+
+            try (ResultSet rs = st.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapResultSetToLead(rs));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return new util.PagedResult<>(list, totalItems, page, pageSize);
+    }
 }

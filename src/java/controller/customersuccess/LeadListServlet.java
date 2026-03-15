@@ -8,7 +8,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
 
-@WebServlet(name = "LeadListServlet", urlPatterns = {"/support/leads"})
+@WebServlet(name = "LeadListServlet", urlPatterns = { "/support/leads" })
 public class LeadListServlet extends HttpServlet {
 
     @Override
@@ -31,7 +31,7 @@ public class LeadListServlet extends HttpServlet {
         LeadDAO dao = new LeadDAO();
         List<Lead> list;
 
-        // 3. Sử dụng 2 hàm mới bạn vừa thêm vào DAO
+        // 3. Xử lý tìm kiếm hoặc hiển thị toàn bộ danh sách của người tạo
         if (phoneQuery != null && !phoneQuery.trim().isEmpty()) {
             // Nếu có nhập SĐT -> Tìm kiếm trong danh sách của tôi
             list = dao.searchLeadsByPhoneAndCreator(phoneQuery.trim(), currentUserId);
