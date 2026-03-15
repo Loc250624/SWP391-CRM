@@ -19,6 +19,7 @@ import model.Campaign;
 import model.Lead;
 import model.LeadSource;
 import model.Users;
+import util.AuditUtil;
 
 @WebServlet(name = "ManagerLeadFormServlet", urlPatterns = {"/manager/crm/lead-form"})
 public class ManagerLeadFormServlet extends HttpServlet {
@@ -248,6 +249,10 @@ public class ManagerLeadFormServlet extends HttpServlet {
         boolean success = leadDAO.insertLead(lead);
 
         if (success) {
+            AuditUtil.logCreate(request, currentUserId, "Lead", lead.getLeadId(),
+                    "fullName=" + lead.getFullName() + ", email=" + lead.getEmail()
+                    + ", phone=" + lead.getPhone() + ", company=" + lead.getCompanyName()
+                    + ", rating=" + lead.getRating() + ", score=" + lead.getLeadScore());
             session.setAttribute("successMessage", "Tao lead thanh cong!");
             response.sendRedirect(request.getContextPath() + "/manager/crm/leads?tab=unassigned");
         } else {

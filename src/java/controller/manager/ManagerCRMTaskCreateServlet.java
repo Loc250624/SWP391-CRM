@@ -2,7 +2,6 @@ package controller.manager;
 
 import dao.CustomerDAO;
 import dao.LeadDAO;
-import dao.NotificationDAO;
 import dao.TaskAssigneeDAO;
 import dao.TaskDAO;
 import dao.UserDAO;
@@ -215,36 +214,22 @@ public class ManagerCRMTaskCreateServlet extends HttpServlet {
         if ("LEAD".equals(relatedType)) {
             leadDAO.updateLeadAssignedTo(relatedId, primaryAssignee);
             leadDAO.updateLeadStatus(relatedId, "Assigned");
+
+            // Notify lead assigned
+            model.Lead assignedLead = leadDAO.getLeadById(relatedId);
+            if (assignedLead != null) {
+                util.NotificationUtil.notifyLeadAssigned(
+                        relatedId, assignedLead.getLeadCode(), assignedLead.getFullName(),
+                        primaryAssignee, currentUser.getUserId());
+            }
         } else {
             customerDAO.updateCustomerOwnerId(relatedId, primaryAssignee);
         }
 
         // ── Gui thong bao cho tat ca assignees ──────────────────────
-        try {
-            NotificationDAO notifDAO = new NotificationDAO();
-            String taskUrl = "/manager/task/detail?id=" + task.getTaskId();
-            String notifSummary = task.getTaskCode() != null
-                    ? task.getTaskCode() + ": " + title.trim()
-                    : title.trim();
-
-            for (int assigneeId : assigneeIds) {
-                notifDAO.createAndSend(
-                        "Bạn được giao công việc mới",
-                        notifSummary,
-                        "TASK_ASSIGNED",
-                        "SYSTEM",
-                        "HIGH".equals(priorityStr) ? "HIGH" : "NORMAL",
-                        "TASK",
-                        task.getTaskId(),
-                        taskUrl,
-                        currentUser.getUserId(),
-                        false,
-                        assigneeId
-                );
-            }
-        } catch (Exception notifEx) {
-            notifEx.printStackTrace();
-        }
+        util.NotificationUtil.notifyTaskAssigned(
+                task.getTaskId(), task.getTaskCode(), title.trim(),
+                priorityStr, assigneeIds, currentUser.getUserId());
 
         // Build success message
         String who = "GROUP".equals(assignType) && assigneeIds.size() > 1
