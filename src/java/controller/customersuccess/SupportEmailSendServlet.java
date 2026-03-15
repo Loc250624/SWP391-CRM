@@ -1,8 +1,16 @@
 package controller.customersuccess;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import dao.CustomerDAO;
 import dao.EmailTemplateDAO;
+import dao.LeadDAO;
 import dao.UserDAO;
+import model.Customer;
 import model.EmailTemplate;
+import model.Lead;
 import model.Users;
 import util.EmailSendUtil;
 import java.io.IOException;
@@ -49,6 +57,8 @@ public class SupportEmailSendServlet extends HttpServlet {
             }
 
             out.write("{\"id\":" + t.getTemplateId()
+                    + ",\"code\":" + jsonStr(t.getTemplateCode())
+                    + ",\"category\":" + jsonStr(t.getCategory())
                     + ",\"subject\":" + jsonStr(t.getSubject())
                     + ",\"bodyHtml\":" + jsonStr(t.getBodyHtml())
                     + ",\"variables\":" + jsonStr(t.getAvailableVariables())
@@ -60,6 +70,12 @@ public class SupportEmailSendServlet extends HttpServlet {
         List<EmailTemplate> templates = new EmailTemplateDAO().getActiveByRole("SUPPORT");
         request.setAttribute("templates", templates);
         request.setAttribute("smtpConfigured", EmailSendUtil.isConfigured());
+
+        // Load recipients
+        List<Customer> customers = new CustomerDAO().getAllCustomers();
+        List<Lead> leads = new LeadDAO().getAllLeads();
+        request.setAttribute("customers", customers);
+        request.setAttribute("leads", leads);
 
         request.setAttribute("pageTitle", "Gửi Email");
         request.setAttribute("contentPage", "/view/customersuccess/pages/email/email-send.jsp");
@@ -79,15 +95,70 @@ public class SupportEmailSendServlet extends HttpServlet {
         }
 
         Users currentUser = (Users) session.getAttribute("user");
-
-        String toEmail = request.getParameter("toEmail");
-        String toName = request.getParameter("toName");
-        String ccEmails = request.getParameter("ccEmails");
-        String bccEmails = request.getParameter("bccEmails");
-        String subject = request.getParameter("subject");
-        String bodyHtml = request.getParameter("bodyHtml");
         String fromEmail = request.getParameter("fromEmail");
         String fromName = request.getParameter("fromName");
+        String recipientsJson = request.getParameter("recipientsJson");
+
+        // Multi-recipient send
+        if (recipientsJson != null && !recipientsJson.trim().isEmpty()) {
+            try {
+                JsonArray arr = new JsonParser().parse(recipientsJson).getAsJsonArray();
+                int success = 0, failed = 0;
+                StringBuilder errors = new StringBuilder();
+
+                for (int i = 0; i < arr.size(); i++) {
+                    JsonObject obj = arr.get(i).getAsJsonObject();
+                    String email = getJsonStr(obj, "email");
+                    String name = getJsonStr(obj, "name");
+                    String subject = getJsonStr(obj, "subject");
+                    String bodyHtml = getJsonStr(obj, "bodyHtml");
+                    String type = getJsonStr(obj, "type");
+                    String id = getJsonStr(obj, "id");
+
+                    EmailSendUtil.EmailRequest req = new EmailSendUtil.EmailRequest();
+                    req.setTo(email);
+                    req.setToName(name.isEmpty() ? null : name);
+                    req.setSubject(subject);
+                    req.setHtmlBody(bodyHtml);
+                    req.setSentByUserId(currentUser.getUserId());
+                    req.setRelatedType(type.isEmpty() ? "MANUAL" : type);
+                    if (!id.isEmpty()) {
+                        try { req.setRelatedId(Integer.parseInt(id)); } catch (NumberFormatException ignored) {}
+                    }
+
+                    EmailSendUtil.EmailResult result = EmailSendUtil.send(req,
+                            fromEmail != null && !fromEmail.isEmpty() ? fromEmail : null,
+                            fromName != null && !fromName.isEmpty() ? fromName : null);
+
+                    if (result.isSuccess()) {
+                        success++;
+                    } else {
+                        failed++;
+                        if (errors.length() > 0) errors.append("; ");
+                        errors.append(email).append(": ").append(result.getMessage());
+                    }
+                }
+
+                if (failed == 0) {
+                    session.setAttribute("successMessage", "Đã gửi thành công " + success + " email");
+                } else {
+                    session.setAttribute("errorMessage",
+                            "Gửi thành công " + success + "/" + (success + failed)
+                                    + " email. Lỗi: " + errors.toString());
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                session.setAttribute("errorMessage", "Lỗi xử lý dữ liệu: " + e.getMessage());
+            }
+            response.sendRedirect(request.getContextPath() + "/support/email/send");
+            return;
+        }
+
+        // Fallback: legacy single send
+        String toEmail = request.getParameter("toEmail");
+        String toName = request.getParameter("toName");
+        String subject = request.getParameter("subject");
+        String bodyHtml = request.getParameter("bodyHtml");
 
         if (toEmail == null || toEmail.trim().isEmpty()) {
             session.setAttribute("errorMessage", "Email người nhận không được để trống");
@@ -108,13 +179,6 @@ public class SupportEmailSendServlet extends HttpServlet {
         emailReq.setSentByUserId(currentUser.getUserId());
         emailReq.setRelatedType("MANUAL");
 
-        if (ccEmails != null && !ccEmails.trim().isEmpty()) {
-            emailReq.setCc(java.util.Arrays.asList(ccEmails.split(",")));
-        }
-        if (bccEmails != null && !bccEmails.trim().isEmpty()) {
-            emailReq.setBcc(java.util.Arrays.asList(bccEmails.split(",")));
-        }
-
         EmailSendUtil.EmailResult result = EmailSendUtil.send(emailReq,
                 fromEmail != null && !fromEmail.isEmpty() ? fromEmail : null,
                 fromName != null && !fromName.isEmpty() ? fromName : null);
@@ -126,6 +190,11 @@ public class SupportEmailSendServlet extends HttpServlet {
         }
 
         response.sendRedirect(request.getContextPath() + "/support/email/send");
+    }
+
+    private String getJsonStr(JsonObject obj, String key) {
+        JsonElement el = obj.get(key);
+        return (el != null && !el.isJsonNull()) ? el.getAsString() : "";
     }
 
     private String jsonStr(String val) {

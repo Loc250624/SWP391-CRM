@@ -1,6 +1,6 @@
 <%@ page contentType="text/html;charset=UTF-8" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
-<c:set var="formAction" value="${pageContext.request.contextPath}/support/email/send"/>
-<c:set var="backUrl" value="${pageContext.request.contextPath}/support/dashboard"/>
-<c:set var="templateApiUrl" value="${pageContext.request.contextPath}/support/email/send?action=templateDetail"/>
+<c:set var="formAction" value="${pageContext.request.contextPath}/support/email/send" scope="request"/>
+<c:set var="backUrl" value="${pageContext.request.contextPath}/support/dashboard" scope="request"/>
+<c:set var="templateApiUrl" value="${pageContext.request.contextPath}/support/email/send?action=templateDetail" scope="request"/>
 <jsp:include page="/view/common/email-send-form.jsp"/>

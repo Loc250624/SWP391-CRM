@@ -1,8 +1,16 @@
 package controller.sale;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import dao.ActivityDAO;
+import dao.CustomerDAO;
 import dao.EmailTemplateDAO;
+import dao.LeadDAO;
+import model.Customer;
 import model.EmailTemplate;
+import model.Lead;
 import util.EmailSendUtil;
 import util.SessionHelper;
 import java.io.IOException;
@@ -42,7 +50,6 @@ public class SaleEmailSendServlet extends HttpServlet {
             EmailTemplate t = new EmailTemplateDAO().getById(id);
             if (t == null) { out.write("{\"error\":\"not found\"}"); return; }
 
-            // Check role access
             if (t.getAllowedRoles() != null && !t.getAllowedRoles().isEmpty()
                     && !t.getAllowedRoles().contains("SALES")) {
                 out.write("{\"error\":\"Bạn không có quyền sử dụng mẫu này\"}");
@@ -50,6 +57,8 @@ public class SaleEmailSendServlet extends HttpServlet {
             }
 
             out.write("{\"id\":" + t.getTemplateId()
+                    + ",\"code\":" + jsonStr(t.getTemplateCode())
+                    + ",\"category\":" + jsonStr(t.getCategory())
                     + ",\"subject\":" + jsonStr(t.getSubject())
                     + ",\"bodyHtml\":" + jsonStr(t.getBodyHtml())
                     + ",\"variables\":" + jsonStr(t.getAvailableVariables())
@@ -61,6 +70,19 @@ public class SaleEmailSendServlet extends HttpServlet {
         List<EmailTemplate> templates = new EmailTemplateDAO().getActiveByRole("SALES");
         request.setAttribute("templates", templates);
         request.setAttribute("smtpConfigured", EmailSendUtil.isConfigured());
+
+        // Load recipients (only this user's customers/leads)
+        List<Customer> customers = new CustomerDAO().getCustomersBySalesUser(currentUserId);
+        List<Lead> leads = new LeadDAO().getLeadsBySalesUser(currentUserId);
+        request.setAttribute("customers", customers);
+        request.setAttribute("leads", leads);
+
+        // Load staff users
+        dao.UserDAO userDAO = new dao.UserDAO();
+        List<model.Users> saleUsers = userDAO.getUsersByRoleCode("SALES");
+        List<model.Users> supportUsers = userDAO.getUsersByRoleCode("SUPPORT");
+        request.setAttribute("saleUsers", saleUsers);
+        request.setAttribute("supportUsers", supportUsers);
 
         request.setAttribute("ACTIVE_MENU", "EMAIL_SEND");
         request.setAttribute("pageTitle", "Gửi Email");
@@ -81,15 +103,85 @@ public class SaleEmailSendServlet extends HttpServlet {
         }
 
         HttpSession session = request.getSession();
-
-        String toEmail = request.getParameter("toEmail");
-        String toName = request.getParameter("toName");
-        String ccEmails = request.getParameter("ccEmails");
-        String bccEmails = request.getParameter("bccEmails");
-        String subject = request.getParameter("subject");
-        String bodyHtml = request.getParameter("bodyHtml");
         String fromEmail = request.getParameter("fromEmail");
         String fromName = request.getParameter("fromName");
+        String recipientsJson = request.getParameter("recipientsJson");
+
+        // Multi-recipient send
+        if (recipientsJson != null && !recipientsJson.trim().isEmpty()) {
+            try {
+                JsonArray arr = new JsonParser().parse(recipientsJson).getAsJsonArray();
+                int success = 0, failed = 0;
+                StringBuilder errors = new StringBuilder();
+
+                for (int i = 0; i < arr.size(); i++) {
+                    JsonObject obj = arr.get(i).getAsJsonObject();
+                    String email = getJsonStr(obj, "email");
+                    String name = getJsonStr(obj, "name");
+                    String subject = getJsonStr(obj, "subject");
+                    String bodyHtml = getJsonStr(obj, "bodyHtml");
+                    String type = getJsonStr(obj, "type");
+                    String id = getJsonStr(obj, "id");
+
+                    EmailSendUtil.EmailRequest req = new EmailSendUtil.EmailRequest();
+                    req.setTo(email);
+                    req.setToName(name.isEmpty() ? null : name);
+                    req.setSubject(subject);
+                    req.setHtmlBody(bodyHtml);
+                    req.setSentByUserId(currentUserId);
+                    req.setRelatedType(type.isEmpty() ? "MANUAL" : type);
+                    Integer relatedId = null;
+                    if (!id.isEmpty()) {
+                        try { relatedId = Integer.parseInt(id); req.setRelatedId(relatedId); } catch (NumberFormatException ignored) {}
+                    }
+
+                    EmailSendUtil.EmailResult result = EmailSendUtil.send(req,
+                            fromEmail != null && !fromEmail.isEmpty() ? fromEmail : null,
+                            fromName != null && !fromName.isEmpty() ? fromName : null);
+
+                    if (result.isSuccess()) {
+                        success++;
+                        // Log activity
+                        String recipient = (name != null && !name.isEmpty())
+                                ? name + " (" + email + ")" : email;
+                        String actDesc = "Đã gửi email đến " + recipient + "\nChủ đề: " + subject;
+                        new ActivityDAO().insertSaleActivity(
+                                "Email",
+                                type != null && !type.isEmpty() ? type : "Customer",
+                                relatedId != null ? relatedId : 0,
+                                "Gửi email: " + subject,
+                                actDesc,
+                                new Timestamp(System.currentTimeMillis()),
+                                null, null, null,
+                                currentUserId,
+                                "Completed");
+                    } else {
+                        failed++;
+                        if (errors.length() > 0) errors.append("; ");
+                        errors.append(email).append(": ").append(result.getMessage());
+                    }
+                }
+
+                if (failed == 0) {
+                    session.setAttribute("successMessage", "Đã gửi thành công " + success + " email");
+                } else {
+                    session.setAttribute("errorMessage",
+                            "Gửi thành công " + success + "/" + (success + failed)
+                                    + " email. Lỗi: " + errors.toString());
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                session.setAttribute("errorMessage", "Lỗi xử lý dữ liệu: " + e.getMessage());
+            }
+            response.sendRedirect(request.getContextPath() + "/sale/email/send");
+            return;
+        }
+
+        // Fallback: legacy single send
+        String toEmail = request.getParameter("toEmail");
+        String toName = request.getParameter("toName");
+        String subject = request.getParameter("subject");
+        String bodyHtml = request.getParameter("bodyHtml");
 
         if (toEmail == null || toEmail.trim().isEmpty()) {
             session.setAttribute("errorMessage", "Email người nhận không được để trống");
@@ -110,48 +202,22 @@ public class SaleEmailSendServlet extends HttpServlet {
         emailReq.setSentByUserId(currentUserId);
         emailReq.setRelatedType("MANUAL");
 
-        if (ccEmails != null && !ccEmails.trim().isEmpty()) {
-            emailReq.setCc(java.util.Arrays.asList(ccEmails.split(",")));
-        }
-        if (bccEmails != null && !bccEmails.trim().isEmpty()) {
-            emailReq.setBcc(java.util.Arrays.asList(bccEmails.split(",")));
-        }
-
         EmailSendUtil.EmailResult result = EmailSendUtil.send(emailReq,
                 fromEmail != null && !fromEmail.isEmpty() ? fromEmail : null,
                 fromName != null && !fromName.isEmpty() ? fromName : null);
 
         if (result.isSuccess()) {
             session.setAttribute("successMessage", "Email đã gửi thành công đến " + toEmail);
-
-            // Log activity
-            String relatedType = request.getParameter("relatedType");
-            String relatedIdStr = request.getParameter("relatedId");
-            Integer relatedId = null;
-            if (relatedIdStr != null && !relatedIdStr.isEmpty()) {
-                try { relatedId = Integer.parseInt(relatedIdStr); } catch (NumberFormatException ignored) {}
-            }
-
-            String recipient = (toName != null && !toName.trim().isEmpty())
-                    ? toName.trim() + " (" + toEmail.trim() + ")"
-                    : toEmail.trim();
-            String actDesc = "Đã gửi email đến " + recipient + "\nChủ đề: " + subject.trim();
-
-            new ActivityDAO().insertSaleActivity(
-                    "Email",
-                    relatedType != null && !relatedType.isEmpty() ? relatedType : "Customer",
-                    relatedId != null ? relatedId : 0,
-                    "Gửi email: " + subject.trim(),
-                    actDesc,
-                    new Timestamp(System.currentTimeMillis()),
-                    null, null, null,
-                    currentUserId,
-                    "Completed");
         } else {
             session.setAttribute("errorMessage", result.getMessage());
         }
 
         response.sendRedirect(request.getContextPath() + "/sale/email/send");
+    }
+
+    private String getJsonStr(JsonObject obj, String key) {
+        JsonElement el = obj.get(key);
+        return (el != null && !el.isJsonNull()) ? el.getAsString() : "";
     }
 
     private String jsonStr(String val) {
