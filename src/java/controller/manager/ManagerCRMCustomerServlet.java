@@ -4,6 +4,7 @@ import dao.CustomerDAO;
 import dao.LeadSourceDAO;
 import dao.UserDAO;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -80,9 +81,18 @@ public class ManagerCRMCustomerServlet extends HttpServlet {
         int totalPages = (int) Math.ceil((double) totalCustomers / pageSize);
         if (totalPages < 1) totalPages = 1;
 
-        // Sales users for owner name display
+        // Sales + Support users for owner name display and assign
         List<Users> salesUsers = userDAO.getUsersByRoleCode("SALES");
-        request.setAttribute("salesUsers", salesUsers);
+        List<Users> supportUsers = userDAO.getUsersByRoleCode("SUPPORT");
+        List<Users> allStaff = new ArrayList<>(salesUsers);
+        for (Users su : supportUsers) {
+            boolean exists = false;
+            for (Users u : allStaff) {
+                if (u.getUserId() == su.getUserId()) { exists = true; break; }
+            }
+            if (!exists) allStaff.add(su);
+        }
+        request.setAttribute("salesUsers", allStaff);
 
         // ── Pre-load detail data for popup modals ─────────────────────────
         LeadSourceDAO sourceDAO = new LeadSourceDAO();

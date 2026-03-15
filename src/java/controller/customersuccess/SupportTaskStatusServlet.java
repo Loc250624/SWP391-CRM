@@ -65,8 +65,8 @@ public class SupportTaskStatusServlet extends HttpServlet {
             request.setAttribute("task",             task);
             request.setAttribute("taskStatusValues", TaskStatus.values());
             request.setAttribute("pageTitle",    "Cập nhật Trạng thái");
-            request.setAttribute("contentPage",  "/view/support/task/task-status.jsp");
-            request.getRequestDispatcher("/view/customersuccess/main_layout.jsp").forward(request, response);
+            request.setAttribute("contentPage",  "/view/customersuccess/pages/task/task-status.jsp");
+            request.getRequestDispatcher("/view/customersuccess/pages/main_layout.jsp").forward(request, response);
 
         } catch (NumberFormatException e) {
             response.sendRedirect(request.getContextPath() + "/support/task/list");
