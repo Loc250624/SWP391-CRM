@@ -5,11 +5,11 @@
 <!-- Page Header -->
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h4 class="mb-1 fw-bold">Quan ly Lead</h4>
-        <p class="text-muted mb-0">Danh sach khach hang tiem nang</p>
+        <h4 class="mb-1 fw-bold">Quản lý Lead</h4>
+        <p class="text-muted mb-0">Danh sách khách hàng tiềm năng</p>
     </div>
     <div class="d-flex gap-2">
-        <a href="${pageContext.request.contextPath}/sale/lead/form" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i>Them Lead</a>
+        <a href="${pageContext.request.contextPath}/sale/lead/form" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i>Thêm Lead</a>
     </div>
 </div>
 
@@ -18,22 +18,22 @@
     <script>document.addEventListener('DOMContentLoaded', function(){ CRM.showToast('${successMessage}', 'success'); });</script>
 </c:if>
 <c:if test="${param.error == 'no_permission'}">
-    <script>document.addEventListener('DOMContentLoaded', function(){ CRM.showToast('Ban khong co quyen truy cap lead nay!', 'error'); });</script>
+    <script>document.addEventListener('DOMContentLoaded', function(){ CRM.showToast('Bạn không có quyền truy cập lead này!', 'error'); });</script>
 </c:if>
 <c:if test="${param.error == 'delete_failed'}">
-    <script>document.addEventListener('DOMContentLoaded', function(){ CRM.showToast('Xoa lead that bai. Vui long thu lai.', 'error'); });</script>
+    <script>document.addEventListener('DOMContentLoaded', function(){ CRM.showToast('Xóa lead thất bại. Vui lòng thử lại.', 'error'); });</script>
 </c:if>
 <c:if test="${param.error == 'not_found'}">
-    <script>document.addEventListener('DOMContentLoaded', function(){ CRM.showToast('Khong tim thay lead.', 'warning'); });</script>
+    <script>document.addEventListener('DOMContentLoaded', function(){ CRM.showToast('Không tìm thấy lead.', 'warning'); });</script>
 </c:if>
 
 <!-- Tabs -->
 <ul class="nav nav-tabs mb-4">
     <li class="nav-item">
-        <a class="nav-link ${activeTab == 'assigned' ? 'active' : ''}" href="${pageContext.request.contextPath}/sale/lead/list?tab=assigned">Lead duoc giao</a>
+        <a class="nav-link ${activeTab == 'assigned' ? 'active' : ''}" href="${pageContext.request.contextPath}/sale/lead/list?tab=assigned">Lead được giao</a>
     </li>
     <li class="nav-item">
-        <a class="nav-link ${activeTab == 'created' ? 'active' : ''}" href="${pageContext.request.contextPath}/sale/lead/list?tab=created">Lead toi tao</a>
+        <a class="nav-link ${activeTab == 'created' ? 'active' : ''}" href="${pageContext.request.contextPath}/sale/lead/list?tab=created">Lead tôi tạo</a>
     </li>
 </ul>
 
@@ -45,7 +45,7 @@
                 <div class="d-flex align-items-center mb-3">
                     <div class="bg-primary bg-opacity-10 rounded-3 p-2 me-3"><i class="bi bi-people text-primary fs-4"></i></div>
                     <div class="flex-grow-1">
-                        <small class="text-muted">Tong Lead</small>
+                        <small class="text-muted">Tổng Lead</small>
                         <h3 class="mb-0 fw-bold">${totalLeads}</h3>
                     </div>
                 </div>
@@ -84,7 +84,7 @@
                 <div class="d-flex align-items-center mb-3">
                     <div class="bg-success bg-opacity-10 rounded-3 p-2 me-3"><i class="bi bi-check-circle text-success fs-4"></i></div>
                     <div class="flex-grow-1">
-                        <small class="text-muted">Da chuyen doi</small>
+                        <small class="text-muted">Đã chuyển đổi</small>
                         <h3 class="mb-0 fw-bold">${convertedLeads}</h3>
                     </div>
                 </div>
@@ -98,9 +98,9 @@
     <div class="card-body py-2">
         <form method="GET" action="${pageContext.request.contextPath}/sale/lead/list" class="d-flex gap-2 align-items-center flex-wrap" id="filterForm">
             <input type="hidden" name="tab" value="${activeTab}">
-            <span class="text-muted small me-1"><i class="bi bi-funnel me-1"></i>Loc:</span>
+            <span class="text-muted small me-1"><i class="bi bi-funnel me-1"></i>Lọc:</span>
             <select class="form-select form-select-sm" style="width:auto;" name="status" onchange="this.form.submit()">
-                <option value="">Tat ca trang thai</option>
+                <option value="">Tất cả trạng thái</option>
                 <option value="Assigned" ${filterStatus == 'Assigned' ? 'selected' : ''}>Assigned</option>
                 <option value="Working" ${filterStatus == 'Working' ? 'selected' : ''}>Working</option>
                 <option value="Unqualified" ${filterStatus == 'Unqualified' ? 'selected' : ''}>Unqualified</option>
@@ -110,18 +110,18 @@
 
             </select>
             <select class="form-select form-select-sm" style="width:auto;" name="rating" onchange="this.form.submit()">
-                <option value="">Tat ca rating</option>
+                <option value="">Tất cả rating</option>
                 <option value="Hot" ${filterRating == 'Hot' ? 'selected' : ''}>Hot</option>
                 <option value="Warm" ${filterRating == 'Warm' ? 'selected' : ''}>Warm</option>
                 <option value="Cold" ${filterRating == 'Cold' ? 'selected' : ''}>Cold</option>
             </select>
             <div class="input-group input-group-sm" style="width: 240px;">
                 <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
-                <input type="text" class="form-control" placeholder="Tim kiem lead..." name="search" value="${searchQuery}">
+                <input type="text" class="form-control" placeholder="Tìm kiếm lead..." name="search" value="${searchQuery}">
                 <button type="submit" class="btn btn-outline-secondary"><i class="bi bi-search"></i></button>
             </div>
             <c:if test="${not empty filterStatus || not empty filterRating || not empty searchQuery}">
-                <a href="${pageContext.request.contextPath}/sale/lead/list?tab=${activeTab}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-x-lg me-1"></i>Xoa loc</a>
+                <a href="${pageContext.request.contextPath}/sale/lead/list?tab=${activeTab}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-x-lg me-1"></i>Xóa lọc</a>
             </c:if>
         </form>
     </div>
@@ -134,19 +134,19 @@
             <c:when test="${empty leadList}">
                 <div class="text-center py-5">
                     <div class="mb-3"><i class="bi bi-people text-muted" style="font-size: 3rem;"></i></div>
-                    <h5 class="fw-semibold text-muted">Chua co lead nao</h5>
+                    <h5 class="fw-semibold text-muted">Chưa có lead nào</h5>
                     <p class="text-muted mb-3">
                         <c:choose>
-                            <c:when test="${not empty filterStatus || not empty filterRating || not empty searchQuery}">Khong tim thay lead phu hop voi bo loc</c:when>
-                            <c:otherwise>Bat dau bang cach tao lead dau tien</c:otherwise>
+                            <c:when test="${not empty filterStatus || not empty filterRating || not empty searchQuery}">Không tìm thấy lead phù hợp với bộ lọc</c:when>
+                            <c:otherwise>Bắt đầu bằng cách tạo lead đầu tiên</c:otherwise>
                         </c:choose>
                     </p>
                     <c:choose>
                         <c:when test="${not empty filterStatus || not empty filterRating || not empty searchQuery}">
-                            <a href="${pageContext.request.contextPath}/sale/lead/list?tab=${activeTab}" class="btn btn-outline-primary btn-sm"><i class="bi bi-x-lg me-1"></i>Xoa bo loc</a>
+                            <a href="${pageContext.request.contextPath}/sale/lead/list?tab=${activeTab}" class="btn btn-outline-primary btn-sm"><i class="bi bi-x-lg me-1"></i>Xóa bộ lọc</a>
                         </c:when>
                         <c:otherwise>
-                            <a href="${pageContext.request.contextPath}/sale/lead/form" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i>Tao Lead</a>
+                            <a href="${pageContext.request.contextPath}/sale/lead/form" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i>Tạo Lead</a>
                         </c:otherwise>
                     </c:choose>
                 </div>
@@ -157,16 +157,16 @@
                         <thead class="table-light">
                             <tr>
                                 <th style="width:40px;"><input type="checkbox" class="form-check-input" id="checkAll"></th>
-                                <th>Ma Lead</th>
-                                <th>Ho ten</th>
-                                <th>Lien he</th>
-                                <th>Cong ty</th>
-                                <th>Trang thai</th>
+                                <th>Mã Lead</th>
+                                <th>Họ tên</th>
+                                <th>Liên hệ</th>
+                                <th>Công ty</th>
+                                <th>Trạng thái</th>
                                 <th>Rating</th>
-                                <th>Nguon</th>
-                                <th>Diem</th>
-                                <th>Ngay tao</th>
-                                <th class="text-center" style="width:130px;">Thao tac</th>
+                                <th>Nguồn</th>
+                                <th>Điểm</th>
+                                <th>Ngày tạo</th>
+                                <th class="text-center" style="width:130px;">Thao tác</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -248,10 +248,10 @@
                                         </td>
                                         <td class="text-center">
                                             <div class="btn-group btn-group-sm">
-                                                <a href="${pageContext.request.contextPath}/sale/lead/detail?id=${lead.leadId}" class="btn btn-outline-primary btn-sm" title="Xem chi tiet"><i class="bi bi-eye"></i></a>
-                                            <a href="${pageContext.request.contextPath}/sale/lead/form?id=${lead.leadId}" class="btn btn-outline-secondary btn-sm" title="Chinh sua"><i class="bi bi-pencil"></i></a>
+                                                <a href="${pageContext.request.contextPath}/sale/lead/detail?id=${lead.leadId}" class="btn btn-outline-primary btn-sm" title="Xem chi tiết"><i class="bi bi-eye"></i></a>
+                                            <a href="${pageContext.request.contextPath}/sale/lead/form?id=${lead.leadId}" class="btn btn-outline-secondary btn-sm" title="Chỉnh sửa"><i class="bi bi-pencil"></i></a>
                                                 <c:if test="${lead.status != 'Inactive'}">
-                                                <button onclick="showInactiveModal(${lead.leadId}, '${lead.fullName}', '${lead.leadCode}')" class="btn btn-outline-danger btn-sm" title="Vo hieu hoa"><i class="bi bi-x-circle"></i></button>
+                                                <button onclick="showInactiveModal(${lead.leadId}, '${lead.fullName}', '${lead.leadCode}')" class="btn btn-outline-danger btn-sm" title="Vô hiệu hóa"><i class="bi bi-x-circle"></i></button>
                                                 </c:if>
                                         </div>
                                     </td>
@@ -266,7 +266,7 @@
     <!-- Pagination -->
     <c:if test="${totalPages > 1}">
         <div class="card-footer bg-transparent d-flex justify-content-between align-items-center">
-            <small class="text-muted">Hien thi ${(currentPage - 1) * 10 + 1}-${currentPage * 10 > totalItems ? totalItems : currentPage * 10} / ${totalItems} lead</small>
+            <small class="text-muted">Hiển thị ${(currentPage - 1) * 10 + 1}-${currentPage * 10 > totalItems ? totalItems : currentPage * 10} / ${totalItems} lead</small>
             <nav>
                 <ul class="pagination pagination-sm mb-0">
                     <li class="page-item ${currentPage == 1 ? 'disabled' : ''}">
@@ -296,33 +296,33 @@
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header bg-danger text-white">
-                <h5 class="modal-title" id="inactiveListModalLabel"><i class="bi bi-exclamation-triangle me-2"></i>Xac nhan vo hieu hoa Lead</h5>
+                <h5 class="modal-title" id="inactiveListModalLabel"><i class="bi bi-exclamation-triangle me-2"></i>Xác nhận vô hiệu hóa Lead</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <div class="alert alert-warning d-flex align-items-start mb-3">
                     <i class="bi bi-exclamation-triangle-fill me-2 mt-1"></i>
                     <div>
-                        <strong>Canh bao:</strong> Vo hieu hoa lead <strong id="inactiveLeadName"></strong> (<span id="inactiveLeadCode"></span>) se:
+                        <strong>Cảnh báo:</strong> Vô hiệu hóa lead <strong id="inactiveLeadName"></strong> (<span id="inactiveLeadCode"></span>) sẽ:
                         <ul class="mb-0 mt-1">
-                            <li>Chuyen lead sang trang thai <strong>Inactive</strong></li>
-                            <li>Dong (Cancelled) <strong>tat ca Opportunity</strong> lien quan</li>
-                            <li>Cac Opportunity bi dong se <strong>chi co the xem</strong>, khong the chinh sua</li>
+                            <li>Chuyển lead sang trạng thái <strong>Inactive</strong></li>
+                            <li>Đóng (Cancelled) <strong>tất cả Opportunity</strong> liên quan</li>
+                            <li>Các Opportunity bị đóng sẽ <strong>chỉ có thể xem</strong>, không thể chỉnh sửa</li>
                         </ul>
                     </div>
                 </div>
                 <div id="inactiveOppList">
                     <div class="text-center py-3">
-                        <span class="spinner-border spinner-border-sm me-1"></span>Dang tai danh sach Opportunity...
+                        <span class="spinner-border spinner-border-sm me-1"></span>Đang tải danh sách Opportunity...
                     </div>
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Huy</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
                 <form method="POST" action="${pageContext.request.contextPath}/sale/lead/form" class="d-inline" id="inactiveForm">
                     <input type="hidden" name="action" value="inactive">
                     <input type="hidden" name="leadId" id="inactiveLeadId" value="">
-                    <button type="submit" class="btn btn-danger"><i class="bi bi-x-circle me-1"></i>Xac nhan vo hieu hoa</button>
+                    <button type="submit" class="btn btn-danger"><i class="bi bi-x-circle me-1"></i>Xác nhận vô hiệu hóa</button>
                 </form>
             </div>
         </div>
@@ -337,7 +337,7 @@
 
         // Fetch opportunities for this lead
         var oppListDiv = document.getElementById('inactiveOppList');
-        oppListDiv.innerHTML = '<div class="text-center py-3"><span class="spinner-border spinner-border-sm me-1"></span>Dang tai danh sach Opportunity...</div>';
+        oppListDiv.innerHTML = '<div class="text-center py-3"><span class="spinner-border spinner-border-sm me-1"></span>Đang tải danh sách Opportunity...</div>';
 
         fetch('${pageContext.request.contextPath}/sale/lead/opportunities?leadId=' + leadId)
                 .then(function (resp) {
@@ -345,11 +345,11 @@
                 })
                 .then(function (opps) {
                     if (opps.length === 0) {
-                        oppListDiv.innerHTML = '<p class="text-muted mb-0"><i class="bi bi-info-circle me-1"></i>Lead nay khong co Opportunity nao.</p>';
+                        oppListDiv.innerHTML = '<p class="text-muted mb-0"><i class="bi bi-info-circle me-1"></i>Lead này không có Opportunity nào.</p>';
                     } else {
-                        var html = '<h6 class="fw-semibold mb-2">Cac Opportunity se bi dong:</h6>';
+                        var html = '<h6 class="fw-semibold mb-2">Các Opportunity sẽ bị đóng:</h6>';
                         html += '<div class="table-responsive"><table class="table table-sm table-bordered mb-0">';
-                        html += '<thead class="table-light"><tr><th>Ma OPP</th><th>Ten Opportunity</th><th>Trang thai</th><th>Gia tri</th></tr></thead><tbody>';
+                        html += '<thead class="table-light"><tr><th>Mã OPP</th><th>Tên Opportunity</th><th>Trạng thái</th><th>Giá trị</th></tr></thead><tbody>';
                         opps.forEach(function (opp) {
                             var statusBadge = '<span class="badge bg-secondary">' + opp.status + '</span>';
                             if (opp.status === 'Open')
@@ -376,7 +376,7 @@
                     }
                 })
                 .catch(function () {
-                    oppListDiv.innerHTML = '<p class="text-muted mb-0"><i class="bi bi-info-circle me-1"></i>Khong the tai danh sach Opportunity.</p>';
+                    oppListDiv.innerHTML = '<p class="text-muted mb-0"><i class="bi bi-info-circle me-1"></i>Không thể tải danh sách Opportunity.</p>';
                 });
 
         var modal = new bootstrap.Modal(document.getElementById('inactiveListModal'));

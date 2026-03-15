@@ -1,15 +1,20 @@
 package controller.sale;
 
+import dao.LeadDAO;
+import dao.TaskAssigneeDAO;
 import dao.TaskDAO;
 import dao.UserDAO;
 import enums.TaskStatus;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
+import model.Lead;
 import model.Task;
 import model.Users;
 
@@ -62,7 +67,21 @@ public class SaleTaskStatusServlet extends HttpServlet {
                 return;
             }
 
+            // Check if task is related to an unconverted lead → warn on UI
+            boolean leadNotConverted = false;
+            String relatedLeadName = null;
+            if ("LEAD".equals(task.getRelatedType()) && task.getRelatedId() != null) {
+                LeadDAO leadDAO = new LeadDAO();
+                Lead relatedLead = leadDAO.getLeadById(task.getRelatedId());
+                if (relatedLead != null && !relatedLead.isIsConverted()) {
+                    leadNotConverted = true;
+                    relatedLeadName = relatedLead.getFullName();
+                }
+            }
+
             request.setAttribute("task",             task);
+            request.setAttribute("leadNotConverted", leadNotConverted);
+            request.setAttribute("relatedLeadName",  relatedLeadName);
             request.setAttribute("taskStatusValues", TaskStatus.values());
             request.setAttribute("ACTIVE_MENU",  "TASK_LIST");
             request.setAttribute("pageTitle",    "Cập nhật Trạng thái");
@@ -113,9 +132,9 @@ public class SaleTaskStatusServlet extends HttpServlet {
             return;
         }
 
-        // SALE users cannot set CANCELLED status
-        if ("CANCELLED".equals(newStatus)) {
-            session.setAttribute("errorMessage", "Bạn không có quyền hủy công việc");
+        // SALE users can only set COMPLETED
+        if (!"COMPLETED".equals(newStatus)) {
+            session.setAttribute("errorMessage", "Bạn chỉ có thể cập nhật trạng thái sang Hoàn thành");
             response.sendRedirect(redirectBack);
             return;
         }
@@ -155,10 +174,36 @@ public class SaleTaskStatusServlet extends HttpServlet {
                 return;
             }
 
+            // Block COMPLETED if task is related to a Lead that hasn't been converted to Customer
+            if ("COMPLETED".equals(newStatus) && "LEAD".equals(task.getRelatedType()) && task.getRelatedId() != null) {
+                LeadDAO leadDAO = new LeadDAO();
+                Lead relatedLead = leadDAO.getLeadById(task.getRelatedId());
+                if (relatedLead != null && !relatedLead.isIsConverted()) {
+                    session.setAttribute("errorMessage",
+                            "Không thể hoàn thành công việc này. Lead \""
+                            + relatedLead.getFullName()
+                            + "\" chưa được chuyển đổi thành Customer. Vui lòng chuyển đổi Lead trước.");
+                    response.sendRedirect(redirectBack);
+                    return;
+                }
+            }
+
             task.setStatus(TaskStatus.valueOf(newStatus).ordinal());
             boolean success = taskDAO.updateTask(task);
 
             if (success) {
+                // Thong bao cho assignees + creator (tru nguoi thay doi)
+                List<Integer> notifyIds = new ArrayList<>();
+                for (model.TaskAssignee ta : new TaskAssigneeDAO().getByTaskId(taskId)) {
+                    if (!notifyIds.contains(ta.getUserId())) notifyIds.add(ta.getUserId());
+                }
+                if (task.getCreatedBy() != null && !notifyIds.contains(task.getCreatedBy())) {
+                    notifyIds.add(task.getCreatedBy());
+                }
+                util.NotificationUtil.notifyTaskStatusChanged(
+                        taskId, task.getTaskCode(), task.getTitle(),
+                        newStatus, currentUser.getUserId(), notifyIds);
+
                 session.setAttribute("successMessage", "Cập nhật trạng thái thành công");
                 response.sendRedirect(request.getContextPath() + "/sale/task/detail?id=" + taskId);
             } else {

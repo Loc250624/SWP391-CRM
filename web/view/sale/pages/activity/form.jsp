@@ -3,8 +3,8 @@
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h4 class="mb-1 fw-bold">${not empty activity ? 'Chinh sua Hoat dong' : 'Ghi nhan Hoat dong'}</h4>
-        <p class="text-muted mb-0">Ghi nhan cuoc goi, email, cuoc hop hoac ghi chu</p>
+        <h4 class="mb-1 fw-bold">${not empty activity ? 'Chỉnh sửa hoạt động' : 'Ghi nhận hoạt động'}</h4>
+        <p class="text-muted mb-0">Ghi nhận cuộc gọi, email, cuộc họp hoặc ghi chú</p>
     </div>
 </div>
 
@@ -22,68 +22,75 @@
     <div class="row g-4">
         <div class="col-lg-8">
             <div class="card border-0 shadow-sm">
-                <div class="card-header bg-transparent border-0"><h6 class="mb-0 fw-semibold"><i class="bi bi-activity me-2"></i>Thong tin hoat dong</h6></div>
+                <div class="card-header bg-transparent border-0"><h6 class="mb-0 fw-semibold"><i class="bi bi-activity me-2"></i>Thông tin hoạt động</h6></div>
                 <div class="card-body">
                     <div class="row g-3">
                         <div class="col-md-6">
-                            <label class="form-label">Loai hoat dong <span class="text-danger">*</span></label>
+                            <label class="form-label">Loại hoạt động <span class="text-danger">*</span></label>
                             <select class="form-select" name="activityType" required id="activityTypeSelect">
-                                <option value="" disabled ${empty activity ? 'selected' : ''}>Chon loai...</option>
-                                <option value="Call" ${activity.activityType == 'Call' ? 'selected' : ''}>Cuoc goi</option>
+                                <option value="" disabled ${empty activity ? 'selected' : ''}>Chọn loại...</option>
+                                <option value="Call" ${activity.activityType == 'Call' ? 'selected' : ''}>Cuộc gọi</option>
                                 <option value="Email" ${activity.activityType == 'Email' ? 'selected' : ''}>Email</option>
-                                <option value="Meeting" ${activity.activityType == 'Meeting' ? 'selected' : ''}>Cuoc hop</option>
-                                <option value="Note" ${activity.activityType == 'Note' ? 'selected' : ''}>Ghi chu</option>
+                                <option value="Meeting" ${activity.activityType == 'Meeting' ? 'selected' : ''}>Cuộc họp</option>
+                                <option value="Note" ${activity.activityType == 'Note' ? 'selected' : ''}>Ghi chú</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Trạng thái</label>
+                            <select class="form-select" name="status">
+                                <option value="Completed" ${activity.status == 'Completed' || empty activity.status ? 'selected' : ''}>Hoàn thành</option>
+                                <option value="Pending" ${activity.status == 'Pending' ? 'selected' : ''}>Đang chờ</option>
                             </select>
                         </div>
                         <div class="col-md-3">
-                            <label class="form-label">Doi tuong</label>
+                            <label class="form-label">Đối tượng</label>
                             <select class="form-select" name="relatedType" id="relatedTypeSelect">
-                                <option value="" ${empty activity.relatedType ? 'selected' : ''}>Khong</option>
+                                <option value="" ${empty activity.relatedType ? 'selected' : ''}>Không</option>
                                 <option value="Opportunity" ${activity.relatedType == 'Opportunity' ? 'selected' : ''}>Opportunity</option>
                                 <option value="Lead" ${activity.relatedType == 'Lead' ? 'selected' : ''}>Lead</option>
                                 <option value="Customer" ${activity.relatedType == 'Customer' ? 'selected' : ''}>Customer</option>
                             </select>
                         </div>
                         <div class="col-md-3">
-                            <label class="form-label">Chon</label>
+                            <label class="form-label">Chọn</label>
                             <select class="form-select" name="relatedId" id="relatedIdSelect">
-                                <option value="">-- Chon --</option>
+                                <option value="">-- Chọn --</option>
                             </select>
                         </div>
-                        <div class="col-md-12">
-                            <label class="form-label">Tieu de <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" name="subject" placeholder="VD: Goi tu van khoa hoc..." value="${activity.subject}" required>
+                        <div class="col-md-6">
+                            <label class="form-label">Tiêu đề <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="subject" placeholder="VD: Gọi tư vấn khóa học..." value="${activity.subject}" required>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Ngay gio <span class="text-danger">*</span></label>
+                            <label class="form-label">Ngày giờ <span class="text-danger">*</span></label>
                             <input type="datetime-local" class="form-control" name="activityDate"
                                    value="${not empty activity.activityDate ? activity.activityDate.toString().substring(0, 16) : ''}" required>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Thoi luong (phut)</label>
+                            <label class="form-label">Thời lượng (phút)</label>
                             <input type="number" class="form-control" name="durationMinutes" placeholder="30" value="${activity.durationMinutes}">
                         </div>
                         <div class="col-md-6" id="callDirectionGroup" style="display:none;">
-                            <label class="form-label">Huong cuoc goi</label>
+                            <label class="form-label">Hướng cuộc gọi</label>
                             <select class="form-select" name="callDirection">
-                                <option value="">-- Chon --</option>
-                                <option value="Outbound" ${activity.callDirection == 'Outbound' ? 'selected' : ''}>Goi di (Outbound)</option>
-                                <option value="Inbound" ${activity.callDirection == 'Inbound' ? 'selected' : ''}>Goi den (Inbound)</option>
+                                <option value="">-- Chọn --</option>
+                                <option value="Outbound" ${activity.callDirection == 'Outbound' ? 'selected' : ''}>Gọi đi (Outbound)</option>
+                                <option value="Inbound" ${activity.callDirection == 'Inbound' ? 'selected' : ''}>Gọi đến (Inbound)</option>
                             </select>
                         </div>
                         <div class="col-md-6" id="callResultGroup" style="display:none;">
-                            <label class="form-label">Ket qua</label>
+                            <label class="form-label">Kết quả</label>
                             <select class="form-select" name="callResult">
-                                <option value="" ${empty activity.callResult ? 'selected' : ''}>Chon ket qua...</option>
-                                <option value="Success" ${activity.callResult == 'Success' ? 'selected' : ''}>Thanh cong</option>
-                                <option value="NoAnswer" ${activity.callResult == 'NoAnswer' ? 'selected' : ''}>Khong tra loi</option>
-                                <option value="Busy" ${activity.callResult == 'Busy' ? 'selected' : ''}>Ban</option>
-                                <option value="Callback" ${activity.callResult == 'Callback' ? 'selected' : ''}>Hen lai</option>
+                                <option value="" ${empty activity.callResult ? 'selected' : ''}>Chọn kết quả...</option>
+                                <option value="Success" ${activity.callResult == 'Success' ? 'selected' : ''}>Thành công</option>
+                                <option value="NoAnswer" ${activity.callResult == 'NoAnswer' ? 'selected' : ''}>Không trả lời</option>
+                                <option value="Busy" ${activity.callResult == 'Busy' ? 'selected' : ''}>Bận</option>
+                                <option value="Callback" ${activity.callResult == 'Callback' ? 'selected' : ''}>Hẹn lại</option>
                             </select>
                         </div>
                         <div class="col-12">
-                            <label class="form-label">Mo ta chi tiet</label>
-                            <textarea class="form-control" name="description" rows="4" placeholder="Noi dung chi tiet cuoc goi / email / cuoc hop...">${activity.description}</textarea>
+                            <label class="form-label">Mô tả chi tiết</label>
+                            <textarea class="form-control" name="description" rows="4" placeholder="Nội dung chi tiết cuộc gọi / email / cuộc họp...">${activity.description}</textarea>
                         </div>
                     </div>
                 </div>
@@ -92,8 +99,8 @@
         <div class="col-lg-4">
             <div class="card border-0 shadow-sm"><div class="card-body">
                 <div class="d-grid gap-2">
-                    <button type="submit" class="btn btn-primary"><i class="bi bi-save me-1"></i>Luu hoat dong</button>
-                    <a href="${pageContext.request.contextPath}/sale/activity/list" class="btn btn-outline-secondary">Huy</a>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-save me-1"></i>Lưu hoạt động</button>
+                    <a href="${pageContext.request.contextPath}/sale/activity/list" class="btn btn-outline-secondary">Hủy</a>
                 </div>
             </div></div>
         </div>
@@ -139,7 +146,7 @@
         function populateRelated() {
             var type = relTypeSelect.value;
             var data = type === 'Opportunity' ? oppData : type === 'Lead' ? leadData : type === 'Customer' ? custData : [];
-            relIdSelect.innerHTML = '<option value="">-- Chon --</option>';
+            relIdSelect.innerHTML = '<option value="">-- Chọn --</option>';
             data.forEach(function(item) {
                 var opt = document.createElement('option');
                 opt.value = item.id;

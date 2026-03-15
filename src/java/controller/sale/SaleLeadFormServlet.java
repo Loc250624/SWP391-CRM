@@ -20,6 +20,7 @@ import model.Campaign;
 import model.Lead;
 import model.LeadSource;
 import model.Opportunity;
+import util.AuditUtil;
 
 @WebServlet(name = "SaleLeadFormServlet", urlPatterns = {"/sale/lead/form"})
 public class SaleLeadFormServlet extends HttpServlet {
@@ -246,10 +247,11 @@ public class SaleLeadFormServlet extends HttpServlet {
         lead.setSourceId(formLead.getSourceId());
         lead.setCampaignId(formLead.getCampaignId());
 
+        Lead existing = null;
         if (isEdit) {
             lead.setLeadId(formLead.getLeadId());
 
-            Lead existing = leadDAO.getLeadById(lead.getLeadId());
+            existing = leadDAO.getLeadById(lead.getLeadId());
             if (existing == null) {
                 request.setAttribute("error", "Lead khong ton tai!");
                 request.setAttribute("lead", formLead);
@@ -280,6 +282,25 @@ public class SaleLeadFormServlet extends HttpServlet {
         }
 
         if (success) {
+            // Audit log
+            String newVals = "fullName=" + lead.getFullName()
+                    + ", email=" + lead.getEmail()
+                    + ", phone=" + lead.getPhone()
+                    + ", company=" + lead.getCompanyName()
+                    + ", rating=" + lead.getRating()
+                    + ", score=" + lead.getLeadScore();
+            if (isEdit) {
+                String oldVals = "fullName=" + (existing != null ? existing.getFullName() : "")
+                        + ", email=" + (existing != null ? existing.getEmail() : "")
+                        + ", phone=" + (existing != null ? existing.getPhone() : "")
+                        + ", company=" + (existing != null ? existing.getCompanyName() : "")
+                        + ", rating=" + (existing != null ? existing.getRating() : "")
+                        + ", score=" + (existing != null ? existing.getLeadScore() : "");
+                AuditUtil.logUpdate(request, currentUserId, "Lead", lead.getLeadId(), oldVals, newVals);
+            } else {
+                AuditUtil.logCreate(request, currentUserId, "Lead", lead.getLeadId(), newVals);
+            }
+
             response.sendRedirect(request.getContextPath() + "/sale/lead/list?success="
                     + (isEdit ? "updated" : "created"));
         } else {
@@ -319,6 +340,8 @@ public class SaleLeadFormServlet extends HttpServlet {
             // Set lead Inactive and cancel all related opportunities
             boolean success = leadDAO.deleteLead(leadId);
             if (success) {
+                AuditUtil.logDelete(request, currentUserId, "Lead", leadId,
+                        "fullName=" + lead.getFullName() + ", email=" + lead.getEmail() + ", status=" + lead.getStatus());
                 response.sendRedirect(request.getContextPath() + "/sale/lead/list?success=deleted");
             } else {
                 response.sendRedirect(request.getContextPath() + "/sale/lead/list?error=delete_failed");

@@ -5,12 +5,12 @@
 <!-- Page Header -->
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h4 class="mb-1 fw-bold">Quan ly Opportunity</h4>
-        <p class="text-muted mb-0">Danh sach co hoi kinh doanh</p>
+        <h4 class="mb-1 fw-bold">Quản lý Opportunity</h4>
+        <p class="text-muted mb-0">Danh sách cơ hội kinh doanh</p>
     </div>
     <div class="d-flex gap-2">
         <a href="${pageContext.request.contextPath}/sale/opportunity/kanban" class="btn btn-outline-primary btn-sm"><i class="bi bi-kanban me-1"></i>Kanban</a>
-        <a href="${pageContext.request.contextPath}/sale/opportunity/form" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i>Them Opportunity</a>
+        <a href="${pageContext.request.contextPath}/sale/opportunity/form" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i>Thêm Opportunity</a>
     </div>
 </div>
 
@@ -19,7 +19,7 @@
     <script>document.addEventListener('DOMContentLoaded', function(){ CRM.showToast('${successMessage}', 'success'); });</script>
 </c:if>
 <c:if test="${param.error == 'no_permission'}">
-    <script>document.addEventListener('DOMContentLoaded', function(){ CRM.showToast('Ban khong co quyen truy cap opportunity nay!', 'error'); });</script>
+    <script>document.addEventListener('DOMContentLoaded', function(){ CRM.showToast('Bạn không có quyền truy cập opportunity này!', 'error'); });</script>
 </c:if>
 
 <!-- KPI Cards -->
@@ -30,7 +30,7 @@
                 <div class="d-flex align-items-center mb-3">
                     <div class="bg-primary bg-opacity-10 rounded-3 p-2 me-3"><i class="bi bi-briefcase text-primary fs-4"></i></div>
                     <div class="flex-grow-1">
-                        <small class="text-muted">Tong Opportunity</small>
+                        <small class="text-muted">Tổng Opportunity</small>
                         <h4 class="mb-0 fw-bold">${totalOpportunities}</h4>
                     </div>
                 </div>
@@ -43,7 +43,7 @@
                 <div class="d-flex align-items-center mb-3">
                     <div class="bg-success bg-opacity-10 rounded-3 p-2 me-3"><i class="bi bi-cash-stack text-success fs-4"></i></div>
                     <div class="flex-grow-1">
-                        <small class="text-muted">Tong gia tri</small>
+                        <small class="text-muted">Tổng giá trị</small>
                         <h4 class="mb-0 fw-bold"><fmt:formatNumber value="${totalValue}" type="number" groupingUsed="true" maxFractionDigits="0"/>d</h4>
                     </div>
                 </div>
@@ -56,7 +56,7 @@
                 <div class="d-flex align-items-center mb-3">
                     <div class="bg-info bg-opacity-10 rounded-3 p-2 me-3"><i class="bi bi-hourglass-split text-info fs-4"></i></div>
                     <div class="flex-grow-1">
-                        <small class="text-muted">Dang mo</small>
+                        <small class="text-muted">Đang mở</small>
                         <h4 class="mb-0 fw-bold">${openCount}</h4>
                     </div>
                 </div>
@@ -83,22 +83,22 @@
     <div class="card-body py-3">
         <form method="GET" action="${pageContext.request.contextPath}/sale/opportunity/list" class="row g-2 align-items-end">
             <div class="col-md-3">
-                <label class="form-label small text-muted mb-1">Tim kiem</label>
-                <input type="text" name="search" class="form-control form-control-sm" placeholder="Ten, ma opportunity..." value="${searchQuery}">
+                <label class="form-label small text-muted mb-1">Tìm kiếm</label>
+                <input type="text" name="search" class="form-control form-control-sm" placeholder="Tên, mã opportunity..." value="${searchQuery}">
             </div>
             <div class="col-md-2">
                 <label class="form-label small text-muted mb-1">Pipeline</label>
                 <select name="pipeline" class="form-select form-select-sm" onchange="this.form.submit()">
-                    <option value="">Tat ca</option>
+                    <option value="">Tất cả</option>
                     <c:forEach var="p" items="${pipelines}">
                         <option value="${p.pipelineId}" ${selectedPipelineId == p.pipelineId ? 'selected' : ''}>${p.pipelineName}</option>
                     </c:forEach>
                 </select>
             </div>
             <div class="col-md-2">
-                <label class="form-label small text-muted mb-1">Trang thai</label>
+                <label class="form-label small text-muted mb-1">Trạng thái</label>
                 <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
-                    <option value="">Tat ca</option>
+                    <option value="">Tất cả</option>
                     <option value="Open" ${filterStatus == 'Open' ? 'selected' : ''}>Open</option>
                     <option value="InProgress" ${filterStatus == 'InProgress' ? 'selected' : ''}>In Progress</option>
                     <option value="Won" ${filterStatus == 'Won' ? 'selected' : ''}>Won</option>
@@ -108,10 +108,10 @@
                 </select>
             </div>
             <div class="col-md-2">
-                <button type="submit" class="btn btn-outline-primary btn-sm w-100"><i class="bi bi-search me-1"></i>Loc</button>
+                <button type="submit" class="btn btn-outline-primary btn-sm w-100"><i class="bi bi-search me-1"></i>Lọc</button>
             </div>
             <div class="col-md-2">
-                <a href="${pageContext.request.contextPath}/sale/opportunity/list" class="btn btn-outline-secondary btn-sm w-100"><i class="bi bi-arrow-counterclockwise me-1"></i>Xoa loc</a>
+                <a href="${pageContext.request.contextPath}/sale/opportunity/list" class="btn btn-outline-secondary btn-sm w-100"><i class="bi bi-arrow-counterclockwise me-1"></i>Xóa lọc</a>
             </div>
         </form>
     </div>
@@ -128,11 +128,11 @@
                             <tr>
                                 <th class="ps-3">Opportunity</th>
                                 <th>Pipeline / Stage</th>
-                                <th class="text-end">Gia tri</th>
-                                <th class="text-center">Xac suat</th>
-                                <th class="text-center">Trang thai</th>
-                                <th class="text-center">Ngay dong du kien</th>
-                                <th class="text-center" style="width: 140px;">Thao tac</th>
+                                <th class="text-end">Giá trị</th>
+                                <th class="text-center">Xác suất</th>
+                                <th class="text-center">Trạng thái</th>
+                                <th class="text-center">Ngày đóng dự kiến</th>
+                                <th class="text-center" style="width: 140px;">Thao tác</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -190,8 +190,8 @@
                                         <div class="btn-group btn-group-sm">
                                             <a href="${pageContext.request.contextPath}/sale/opportunity/detail?id=${opp.opportunityId}" class="btn btn-outline-primary btn-sm" title="Xem"><i class="bi bi-eye"></i></a>
                                             <c:if test="${opp.status != 'Cancelled' && opp.status != 'Won' && opp.status != 'Lost'}">
-                                                <a href="${pageContext.request.contextPath}/sale/opportunity/form?id=${opp.opportunityId}" class="btn btn-outline-secondary btn-sm" title="Sua"><i class="bi bi-pencil"></i></a>
-                                                <button onclick="cancelOpp(${opp.opportunityId}, '${opp.opportunityName}')" class="btn btn-outline-danger btn-sm" title="Huy"><i class="bi bi-trash"></i></button>
+                                                <a href="${pageContext.request.contextPath}/sale/opportunity/form?id=${opp.opportunityId}" class="btn btn-outline-secondary btn-sm" title="Sửa"><i class="bi bi-pencil"></i></a>
+                                                <button onclick="cancelOpp(${opp.opportunityId}, '${opp.opportunityName}')" class="btn btn-outline-danger btn-sm" title="Hủy"><i class="bi bi-trash"></i></button>
                                             </c:if>
                                         </div>
                                     </td>
@@ -204,8 +204,8 @@
             <c:otherwise>
                 <div class="text-center py-5">
                     <i class="bi bi-briefcase text-muted" style="font-size: 3rem;"></i>
-                    <p class="text-muted mt-3 mb-2">Chua co opportunity nao</p>
-                    <a href="${pageContext.request.contextPath}/sale/opportunity/form" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i>Them Opportunity</a>
+                    <p class="text-muted mt-3 mb-2">Chưa có opportunity nào</p>
+                    <a href="${pageContext.request.contextPath}/sale/opportunity/form" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i>Thêm Opportunity</a>
                 </div>
             </c:otherwise>
         </c:choose>
@@ -213,7 +213,7 @@
     <!-- Pagination -->
     <c:if test="${totalPages > 1}">
         <div class="card-footer bg-transparent d-flex justify-content-between align-items-center">
-            <small class="text-muted">Hien thi ${(currentPage - 1) * 10 + 1}-${currentPage * 10 > totalItems ? totalItems : currentPage * 10} / ${totalItems} opportunity</small>
+            <small class="text-muted">Hiển thị ${(currentPage - 1) * 10 + 1}-${currentPage * 10 > totalItems ? totalItems : currentPage * 10} / ${totalItems} opportunity</small>
             <nav>
                 <ul class="pagination pagination-sm mb-0">
                     <li class="page-item ${currentPage == 1 ? 'disabled' : ''}">
@@ -240,7 +240,7 @@
 
 <script>
     function cancelOpp(oppId, oppName) {
-        if (confirm('Ban co chac muon huy opportunity "' + oppName + '"?\nOpportunity se chuyen sang trang thai Cancelled.')) {
+        if (confirm('Bạn có chắc muốn hủy opportunity "' + oppName + '"?\nOpportunity sẽ chuyển sang trạng thái Cancelled.')) {
             const form = document.createElement('form');
             form.method = 'POST';
             form.action = '${pageContext.request.contextPath}/sale/opportunity/list';

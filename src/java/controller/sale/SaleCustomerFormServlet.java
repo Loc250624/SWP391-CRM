@@ -19,6 +19,7 @@ import util.SessionHelper;
 import model.Customer;
 import model.CustomerTag;
 import model.LeadSource;
+import util.AuditUtil;
 
 @WebServlet(name = "SaleCustomerFormServlet", urlPatterns = {"/sale/customer/form"})
 public class SaleCustomerFormServlet extends HttpServlet {
@@ -230,6 +231,12 @@ public class SaleCustomerFormServlet extends HttpServlet {
             customer.setOwnerId(currentUserId);
         }
 
+        // Capture old values for update audit
+        Customer oldCustomer = null;
+        if (isEdit) {
+            oldCustomer = customerDAO.getCustomerById(customer.getCustomerId());
+        }
+
         boolean success;
         if (isEdit) {
             success = customerDAO.updateCustomer(customer);
@@ -238,6 +245,24 @@ public class SaleCustomerFormServlet extends HttpServlet {
         }
 
         if (success) {
+            // Audit log
+            String newVals = "fullName=" + customer.getFullName()
+                    + ", email=" + customer.getEmail()
+                    + ", phone=" + customer.getPhone()
+                    + ", status=" + customer.getStatus()
+                    + ", segment=" + customer.getCustomerSegment();
+            if (isEdit) {
+                String oldVals = oldCustomer != null
+                        ? "fullName=" + oldCustomer.getFullName()
+                        + ", email=" + oldCustomer.getEmail()
+                        + ", phone=" + oldCustomer.getPhone()
+                        + ", status=" + oldCustomer.getStatus()
+                        + ", segment=" + oldCustomer.getCustomerSegment()
+                        : null;
+                AuditUtil.logUpdate(request, currentUserId, "Customer", customer.getCustomerId(), oldVals, newVals);
+            } else {
+                AuditUtil.logCreate(request, currentUserId, "Customer", customer.getCustomerId(), newVals);
+            }
             // Save tag assignments
             List<Integer> tagIds = new ArrayList<>();
             if (tagIdParams != null) {
@@ -249,6 +274,35 @@ public class SaleCustomerFormServlet extends HttpServlet {
                 }
             }
             customerTagDAO.assignTags(customer.getCustomerId(), tagIds, currentUserId);
+
+            // Notify customer created (only for new)
+            if (!isEdit) {
+                java.util.List<Integer> notifyIds = new java.util.ArrayList<>();
+                dao.UserDAO userDAO = new dao.UserDAO();
+                for (model.Users u : userDAO.getAllUsers()) {
+                    String rc = userDAO.getRoleCodeByUserId(u.getUserId());
+                    if ("MANAGER".equals(rc) && u.getUserId() != currentUserId) {
+                        notifyIds.add(u.getUserId());
+                    }
+                }
+                if (!notifyIds.isEmpty()) {
+                    util.NotificationUtil.notifyCustomerCreated(
+                            customer.getCustomerId(),
+                            customer.getCustomerCode(),
+                            customer.getFullName(),
+                            currentUserId, notifyIds);
+                }
+
+                // Auto-send welcome email to new customer
+                if (util.EmailSendUtil.isConfigured()
+                        && customer.getEmail() != null && !customer.getEmail().isEmpty()) {
+                    java.util.Map<String, String> vars = new java.util.HashMap<>();
+                    vars.put("customer_name", customer.getFullName());
+                    vars.put("customer_code", customer.getCustomerCode() != null ? customer.getCustomerCode() : "");
+                    util.EmailSendUtil.sendWithTemplateAsync("CUSTOMER_WELCOME", vars,
+                            customer.getEmail(), customer.getFullName(), currentUserId);
+                }
+            }
 
             response.sendRedirect(request.getContextPath() + "/sale/customer/list?success=" +
                     (isEdit ? "updated" : "created"));

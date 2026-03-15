@@ -1,8 +1,13 @@
 package controller.sale;
 
+import dao.CustomerDAO;
 import dao.QuotationDAO;
+import model.Customer;
 import model.Quotation;
+import util.EmailSendUtil;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -33,7 +38,8 @@ public class SaleQuotationSendServlet extends HttpServlet {
         QuotationDAO quotDAO = new QuotationDAO();
         Quotation q = quotDAO.getQuotationById(quotationId);
 
-        if (q == null || !"Approved".equals(q.getStatus())) {
+        // Allow sending/re-sending from Draft, Approved, or Sent
+        if (q == null || (!"Draft".equals(q.getStatus()) && !"Approved".equals(q.getStatus()) && !"Sent".equals(q.getStatus()))) {
             response.sendRedirect(request.getContextPath() + "/sale/quotation/detail?id=" + quotationId + "&error=invalid_status");
             return;
         }
@@ -45,6 +51,51 @@ public class SaleQuotationSendServlet extends HttpServlet {
             String deviceType = parseDeviceType(ua);
             String browser = parseBrowser(ua);
             quotDAO.insertTrackingLog(quotationId, "SENT", ip, ua, deviceType, browser);
+
+            // Notify quotation sent
+            java.util.List<Integer> notifyIds = new java.util.ArrayList<>();
+            if (q.getCreatedBy() != null && q.getCreatedBy() != currentUserId) {
+                notifyIds.add(q.getCreatedBy());
+            }
+            if (!notifyIds.isEmpty()) {
+                util.NotificationUtil.notifyQuotationSent(
+                        quotationId, q.getQuotationCode(),
+                        q.getOpportunityId() != null ? q.getOpportunityId() : 0,
+                        currentUserId, notifyIds);
+            }
+
+            // Auto-send quotation email to customer or lead
+            if (EmailSendUtil.isConfigured()) {
+                String recipientEmail = null;
+                String recipientName = null;
+
+                if (q.getCustomerId() != null) {
+                    Customer cust = new CustomerDAO().getCustomerById(q.getCustomerId());
+                    if (cust != null && cust.getEmail() != null && !cust.getEmail().isEmpty()) {
+                        recipientEmail = cust.getEmail();
+                        recipientName = cust.getFullName();
+                    }
+                }
+                if (recipientEmail == null && q.getLeadId() != null) {
+                    dao.LeadDAO leadDAO = new dao.LeadDAO();
+                    model.Lead ld = leadDAO.getLeadById(q.getLeadId());
+                    if (ld != null && ld.getEmail() != null && !ld.getEmail().isEmpty()) {
+                        recipientEmail = ld.getEmail();
+                        recipientName = ld.getFullName();
+                    }
+                }
+
+                if (recipientEmail != null) {
+                    Map<String, String> vars = new HashMap<>();
+                    vars.put("customer_name", recipientName != null ? recipientName : "");
+                    vars.put("quotation_code", q.getQuotationCode());
+                    vars.put("total_amount", q.getTotalAmount() != null ? q.getTotalAmount().toPlainString() : "0");
+                    vars.put("valid_until", q.getValidUntil() != null ? q.getValidUntil().toString() : "");
+                    vars.put("currency", q.getCurrency() != null ? q.getCurrency() : "VND");
+                    EmailSendUtil.sendWithTemplateAsync("QUOT_SEND", vars,
+                            recipientEmail, recipientName, currentUserId);
+                }
+            }
         }
 
         response.sendRedirect(request.getContextPath() + "/sale/quotation/detail?id=" + quotationId + "&sent=1");

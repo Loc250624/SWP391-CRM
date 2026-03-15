@@ -36,21 +36,19 @@ public class ManagerTaskKanbanServlet extends HttpServlet {
             return;
         }
 
-        // Build all dept member IDs (include manager)
+        // Build all user IDs (manager can view whole system)
         List<Users> allUsers = userDAO.getAllUsers();
-        List<Users> deptMembersList = new ArrayList<>();
+        List<Users> deptMembersList = new ArrayList<>(allUsers);
         List<Integer> allMemberIds  = new ArrayList<>();
-
         for (Users user : allUsers) {
-            if (user.getDepartmentId() == currentUser.getDepartmentId()) {
-                deptMembersList.add(user);
-                allMemberIds.add(user.getUserId());
-            }
+            allMemberIds.add(user.getUserId());
         }
 
-        // Optional employee filter
+        // Optional filters
         String employeeFilter = request.getParameter("employee");
         String keyword        = request.getParameter("keyword");
+        String viewType       = request.getParameter("view");        // personal | group
+        String relatedType    = request.getParameter("relatedType"); // LEAD | CUSTOMER
         Integer selectedEmployee = null;
         if (employeeFilter != null && !employeeFilter.trim().isEmpty()) {
             try {
@@ -63,24 +61,60 @@ public class ManagerTaskKanbanServlet extends HttpServlet {
         List<Task> pendingTasks    = new ArrayList<>();
         List<Task> inProgressTasks = new ArrayList<>();
         List<Task> completedTasks  = new ArrayList<>();
+        List<Task> cancelledTasks  = new ArrayList<>();
 
         if (!allMemberIds.isEmpty()) {
-            pendingTasks    = taskDAO.getTasksWithFilterForTeam(allMemberIds, selectedEmployee, "PENDING",     null, keyword, false, "priority", "DESC", 0, 500);
-            inProgressTasks = taskDAO.getTasksWithFilterForTeam(allMemberIds, selectedEmployee, "IN_PROGRESS", null, keyword, false, "priority", "DESC", 0, 500);
-            completedTasks  = taskDAO.getTasksWithFilterForTeam(allMemberIds, selectedEmployee, "COMPLETED",   null, keyword, false, "created_at", "DESC", 0, 100);
+            boolean isGroupView = "group".equalsIgnoreCase(viewType);
+            if (isGroupView) {
+                pendingTasks    = taskDAO.getGroupTaskSummaries(allMemberIds, selectedEmployee, "PENDING",     null, keyword, "priority", "DESC", 0, 500);
+                inProgressTasks = taskDAO.getGroupTaskSummaries(allMemberIds, selectedEmployee, "IN_PROGRESS", null, keyword, "priority", "DESC", 0, 500);
+                completedTasks  = taskDAO.getGroupTaskSummaries(allMemberIds, selectedEmployee, "COMPLETED",   null, keyword, "created_at", "DESC", 0, 100);
+                cancelledTasks  = taskDAO.getGroupTaskSummaries(allMemberIds, selectedEmployee, "CANCELLED",   null, keyword, "created_at", "DESC", 0, 100);
+            } else {
+                pendingTasks    = taskDAO.getTasksWithFilterForTeam(allMemberIds, selectedEmployee, "PENDING",     null, keyword, false, "priority", "DESC", 0, 500);
+                inProgressTasks = taskDAO.getTasksWithFilterForTeam(allMemberIds, selectedEmployee, "IN_PROGRESS", null, keyword, false, "priority", "DESC", 0, 500);
+                completedTasks  = taskDAO.getTasksWithFilterForTeam(allMemberIds, selectedEmployee, "COMPLETED",   null, keyword, false, "created_at", "DESC", 0, 100);
+                cancelledTasks  = taskDAO.getTasksWithFilterForTeam(allMemberIds, selectedEmployee, "CANCELLED",   null, keyword, false, "created_at", "DESC", 0, 100);
+            }
         }
 
-        request.setAttribute("pendingTasks",     pendingTasks);
+        // Merge PENDING into IN_PROGRESS column for 3-status Kanban
+        if (pendingTasks != null && !pendingTasks.isEmpty()) {
+            inProgressTasks.addAll(pendingTasks);
+        }
+
+        // Filter by related type if provided
+        if (relatedType != null && !relatedType.trim().isEmpty()) {
+            String rt = relatedType.trim().toUpperCase();
+            inProgressTasks = filterByRelatedType(inProgressTasks, rt);
+            completedTasks  = filterByRelatedType(completedTasks, rt);
+            cancelledTasks  = filterByRelatedType(cancelledTasks, rt);
+        }
+
         request.setAttribute("inProgressTasks",  inProgressTasks);
         request.setAttribute("completedTasks",   completedTasks);
+        request.setAttribute("cancelledTasks",   cancelledTasks);
         request.setAttribute("allUsers",         allUsers);
         request.setAttribute("deptMembers",      deptMembersList);
         request.setAttribute("employeeFilter",   employeeFilter);
         request.setAttribute("keyword",          keyword);
+        request.setAttribute("viewType",         viewType);
+        request.setAttribute("relatedType",      relatedType);
 
         request.setAttribute("ACTIVE_MENU",  "TASK_KANBAN");
         request.setAttribute("pageTitle",    "Kanban Board");
         request.setAttribute("CONTENT_PAGE", "/view/manager/task/task-kanban.jsp");
         request.getRequestDispatcher("/view/manager/layout/layout-manager.jsp").forward(request, response);
+    }
+
+    private List<Task> filterByRelatedType(List<Task> tasks, String relatedType) {
+        if (tasks == null || tasks.isEmpty()) return tasks;
+        List<Task> filtered = new ArrayList<>();
+        for (Task t : tasks) {
+            if (t.getRelatedType() != null && t.getRelatedType().equalsIgnoreCase(relatedType)) {
+                filtered.add(t);
+            }
+        }
+        return filtered;
     }
 }

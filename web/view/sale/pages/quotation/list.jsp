@@ -4,50 +4,44 @@
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h4 class="mb-1 fw-bold">De xuat & Bao gia</h4>
-        <p class="text-muted mb-0">Draft = De xuat (cho duyet) | Approved = Da duyet | Sent = Bao gia (da gui khach)</p>
+        <h4 class="mb-1 fw-bold">Đề xuất & Báo giá</h4>
+        <p class="text-muted mb-0">Nháp = Chờ gửi | Đã gửi = Báo giá đã gửi khách</p>
     </div>
     <div class="d-flex gap-2">
-        <a href="${pageContext.request.contextPath}/sale/quotation/form" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i>Tao de xuat</a>
+        <a href="${pageContext.request.contextPath}/sale/quotation/form" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i>Tạo đề xuất</a>
     </div>
 </div>
 
 <c:if test="${param.success == '1'}">
-    <script>document.addEventListener('DOMContentLoaded', function(){ CRM.showToast('Luu de xuat thanh cong!', 'success'); });</script>
+    <script>document.addEventListener('DOMContentLoaded', function(){ CRM.showToast('Lưu đề xuất thành công!', 'success'); });</script>
 </c:if>
 <c:if test="${param.error == 'readonly'}">
-    <script>document.addEventListener('DOMContentLoaded', function(){ CRM.showToast('Khong the chinh sua de xuat nay (chi cho phep sua khi o trang thai Draft).', 'warning'); });</script>
-</c:if>
-<c:if test="${param.approved == '1'}">
-    <script>document.addEventListener('DOMContentLoaded', function(){ CRM.showToast('Duyet bao gia thanh cong!', 'success'); });</script>
-</c:if>
-<c:if test="${param.rejected == '1'}">
-    <script>document.addEventListener('DOMContentLoaded', function(){ CRM.showToast('Da tu choi bao gia.', 'info'); });</script>
+    <script>document.addEventListener('DOMContentLoaded', function(){ CRM.showToast('Không thể chỉnh sửa đề xuất này (chỉ cho phép sửa khi ở trạng thái Draft).', 'warning'); });</script>
 </c:if>
 <c:if test="${param.sent == '1'}">
-    <script>document.addEventListener('DOMContentLoaded', function(){ CRM.showToast('Da gui bao gia thanh cong!', 'success'); });</script>
+    <script>document.addEventListener('DOMContentLoaded', function(){ CRM.showToast('Đã gửi báo giá thành công!', 'success'); });</script>
 </c:if>
 
 <!-- Stats -->
 <div class="row g-3 mb-4">
     <div class="col-md-3">
         <div class="card border-0 shadow-sm"><div class="card-body py-3 text-center">
-            <div class="fs-3 fw-bold text-primary">${totalCount}</div><small class="text-muted">Tong</small>
+            <div class="fs-3 fw-bold text-primary">${totalCount}</div><small class="text-muted">Tổng</small>
         </div></div>
     </div>
     <div class="col-md-3">
         <div class="card border-0 shadow-sm"><div class="card-body py-3 text-center">
-            <div class="fs-3 fw-bold text-secondary">${statusCounts['Draft'] != null ? statusCounts['Draft'] : 0}</div><small class="text-muted">De xuat (cho duyet)</small>
+            <div class="fs-3 fw-bold text-info">${statusCounts['Draft'] != null ? statusCounts['Draft'] : 0}</div><small class="text-muted">Nháp (chờ gửi)</small>
         </div></div>
     </div>
     <div class="col-md-3">
         <div class="card border-0 shadow-sm"><div class="card-body py-3 text-center">
-            <div class="fs-3 fw-bold text-success">${statusCounts['Approved'] != null ? statusCounts['Approved'] : 0}</div><small class="text-muted">Da duyet</small>
+            <div class="fs-3 fw-bold text-warning">${(statusCounts['Sent'] != null ? statusCounts['Sent'] : 0) + (statusCounts['Approved'] != null ? statusCounts['Approved'] : 0)}</div><small class="text-muted">Đã gửi</small>
         </div></div>
     </div>
     <div class="col-md-3">
         <div class="card border-0 shadow-sm"><div class="card-body py-3 text-center">
-            <div class="fs-3 fw-bold text-warning">${statusCounts['Sent'] != null ? statusCounts['Sent'] : 0}</div><small class="text-muted">Bao gia (da gui)</small>
+            <div class="fs-3 fw-bold text-success">${statusCounts['Accepted'] != null ? statusCounts['Accepted'] : 0}</div><small class="text-muted">Khách chấp nhận</small>
         </div></div>
     </div>
 </div>
@@ -58,17 +52,16 @@
         <form method="GET" action="${pageContext.request.contextPath}/sale/quotation/list" class="d-flex gap-3 flex-wrap align-items-center">
             <div class="input-group" style="width: 300px;">
                 <span class="input-group-text bg-light border-end-0"><i class="bi bi-search text-muted"></i></span>
-                <input type="text" class="form-control bg-light border-start-0" name="keyword" placeholder="Tim kiem..." value="${keyword}">
+                <input type="text" class="form-control bg-light border-start-0" name="keyword" placeholder="Tìm kiếm..." value="${keyword}">
             </div>
             <select class="form-select form-select-sm" name="status" style="width: auto;">
-                <option value="" ${empty statusFilter ? 'selected' : ''}>Tat ca trang thai</option>
-                <option value="Draft" ${statusFilter == 'Draft' ? 'selected' : ''}>De xuat (Draft)</option>
-                <option value="Approved" ${statusFilter == 'Approved' ? 'selected' : ''}>Da duyet (Approved)</option>
-                <option value="Sent" ${statusFilter == 'Sent' ? 'selected' : ''}>Bao gia (Sent)</option>
-                <option value="Accepted" ${statusFilter == 'Accepted' ? 'selected' : ''}>Khach chap nhan</option>
-                <option value="Rejected" ${statusFilter == 'Rejected' ? 'selected' : ''}>Tu choi</option>
+                <option value="" ${empty statusFilter ? 'selected' : ''}>Tất cả trạng thái</option>
+                <option value="Draft" ${statusFilter == 'Draft' ? 'selected' : ''}>Nháp (chờ gửi)</option>
+                <option value="Sent" ${statusFilter == 'Sent' ? 'selected' : ''}>Đã gửi</option>
+                <option value="Accepted" ${statusFilter == 'Accepted' ? 'selected' : ''}>Khách chấp nhận</option>
+                <option value="Rejected" ${statusFilter == 'Rejected' ? 'selected' : ''}>Từ chối</option>
             </select>
-            <button type="submit" class="btn btn-sm btn-primary"><i class="bi bi-funnel me-1"></i>Loc</button>
+            <button type="submit" class="btn btn-sm btn-primary"><i class="bi bi-funnel me-1"></i>Lọc</button>
         </form>
     </div>
 </div>
@@ -80,14 +73,14 @@
             <table class="table table-hover align-middle mb-0">
                 <thead class="table-light">
                     <tr>
-                        <th>Ma</th>
-                        <th>Tieu de</th>
+                        <th>Mã</th>
+                        <th>Tiêu đề</th>
                         <th>Lead / Customer</th>
                         <th>Opportunity</th>
-                        <th class="text-end">Gia tri</th>
-                        <th>Trang thai</th>
-                        <th>Hieu luc</th>
-                        <th>Ngay tao</th>
+                        <th class="text-end">Giá trị</th>
+                        <th>Trạng thái</th>
+                        <th>Hiệu lực</th>
+                        <th>Ngày tạo</th>
                         <th></th>
                     </tr>
                 </thead>
@@ -112,17 +105,17 @@
                                     <td><small class="text-muted">${oppNameMap[q.opportunityId]}</small></td>
                                     <td class="text-end fw-semibold">
                                         <c:if test="${not empty q.totalAmount && q.totalAmount > 0}">
-                                            <fmt:formatNumber value="${q.totalAmount}" type="number" groupingUsed="true" maxFractionDigits="0"/> d
+                                            <fmt:formatNumber value="${q.totalAmount}" type="number" groupingUsed="true" maxFractionDigits="0"/> đ
                                         </c:if>
                                         <c:if test="${empty q.totalAmount || q.totalAmount == 0}">-</c:if>
                                     </td>
                                     <td>
                                         <c:choose>
-                                            <c:when test="${q.status == 'Draft'}"><span class="badge bg-secondary-subtle text-secondary">De xuat</span></c:when>
-                                            <c:when test="${q.status == 'Approved'}"><span class="badge bg-success-subtle text-success">Da duyet</span></c:when>
-                                            <c:when test="${q.status == 'Sent'}"><span class="badge bg-warning-subtle text-warning">Bao gia</span></c:when>
-                                            <c:when test="${q.status == 'Accepted'}"><span class="badge bg-primary-subtle text-primary">Chap nhan</span></c:when>
-                                            <c:when test="${q.status == 'Rejected'}"><span class="badge bg-danger-subtle text-danger">Tu choi</span></c:when>
+                                            <c:when test="${q.status == 'Draft'}"><span class="badge bg-info-subtle text-info">Nháp</span></c:when>
+                                            <c:when test="${q.status == 'Approved'}"><span class="badge bg-info-subtle text-info">Sẵn sàng gửi</span></c:when>
+                                            <c:when test="${q.status == 'Sent'}"><span class="badge bg-warning-subtle text-warning">Đã gửi</span></c:when>
+                                            <c:when test="${q.status == 'Accepted'}"><span class="badge bg-primary-subtle text-primary">Chấp nhận</span></c:when>
+                                            <c:when test="${q.status == 'Rejected'}"><span class="badge bg-danger-subtle text-danger">Từ chối</span></c:when>
                                             <c:otherwise><span class="badge bg-secondary-subtle text-secondary">${q.status}</span></c:otherwise>
                                         </c:choose>
                                     </td>
@@ -132,15 +125,12 @@
                                         <div class="dropdown">
                                             <button class="btn btn-sm btn-light" data-bs-toggle="dropdown"><i class="bi bi-three-dots-vertical"></i></button>
                                             <ul class="dropdown-menu dropdown-menu-end">
-                                                <li><a class="dropdown-item" href="${pageContext.request.contextPath}/sale/quotation/detail?id=${q.quotationId}"><i class="bi bi-eye me-2"></i>Xem chi tiet</a></li>
-                                                <c:if test="${q.status == 'Draft'}">
-                                                    <li><a class="dropdown-item" href="${pageContext.request.contextPath}/sale/quotation/form?id=${q.quotationId}"><i class="bi bi-pencil me-2"></i>Sua</a></li>
-                                                </c:if>
-                                                <c:if test="${q.status == 'Approved'}">
+                                                <li><a class="dropdown-item" href="${pageContext.request.contextPath}/sale/quotation/detail?id=${q.quotationId}"><i class="bi bi-eye me-2"></i>Xem chi tiết</a></li>
+                                                <c:if test="${q.status == 'Sent'}">
                                                     <li>
                                                         <form method="POST" action="${pageContext.request.contextPath}/sale/quotation/send" style="display:inline; width:100%;">
                                                             <input type="hidden" name="quotationId" value="${q.quotationId}">
-                                                            <button type="submit" class="dropdown-item"><i class="bi bi-send me-2"></i>Gui bao gia</button>
+                                                            <button type="submit" class="dropdown-item"><i class="bi bi-send me-2"></i>Gửi lại</button>
                                                         </form>
                                                     </li>
                                                 </c:if>
@@ -151,7 +141,7 @@
                             </c:forEach>
                         </c:when>
                         <c:otherwise>
-                            <tr><td colspan="9" class="text-center text-muted py-4"><i class="bi bi-inbox me-1"></i>Chua co de xuat nao</td></tr>
+                            <tr><td colspan="9" class="text-center text-muted py-4"><i class="bi bi-inbox me-1"></i>Chưa có đề xuất nào</td></tr>
                         </c:otherwise>
                     </c:choose>
                 </tbody>

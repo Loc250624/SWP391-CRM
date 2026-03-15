@@ -29,7 +29,7 @@ public class TaskDAO extends DBContext {
         "tr_p.related_type, tr_p.related_id " +
         "FROM tasks t " +
         "OUTER APPLY (SELECT TOP 1 user_id FROM task_assignees WHERE task_id = t.task_id ORDER BY id ASC) ta_p " +
-        "OUTER APPLY (SELECT TOP 1 related_type, related_id FROM task_relations WHERE task_id = t.task_id ORDER BY id ASC) tr_p ";
+        "OUTER APPLY (SELECT TOP 1 related_type, related_id FROM task_relations WHERE task_id = t.task_id AND related_type != 'SUBTASK' ORDER BY id ASC) tr_p ";
 
     // ── Map ResultSet → Task ──
     private Task mapResultSetToTask(ResultSet rs) throws SQLException {
@@ -86,20 +86,18 @@ public class TaskDAO extends DBContext {
 
     // ── Generate unique task code ──
     public String generateTaskCode() {
-        String sql = "SELECT TOP 1 task_code FROM tasks ORDER BY task_id DESC";
+        String sql = "SELECT MAX(CAST(SUBSTRING(task_code, 5, LEN(task_code) - 4) AS INT)) "
+                + "FROM tasks WHERE task_code LIKE 'TSK-[0-9][0-9][0-9][0-9][0-9][0-9]'";
         try (PreparedStatement st = connection.prepareStatement(sql);
              ResultSet rs = st.executeQuery()) {
             if (rs.next()) {
-                String lastCode = rs.getString("task_code");
-                if (lastCode != null && lastCode.startsWith("TSK-")) {
-                    int number = Integer.parseInt(lastCode.substring(4));
-                    return String.format("TSK-%06d", number + 1);
-                }
+                int maxNumber = rs.getInt(1);
+                return String.format("TSK-%06d", maxNumber + 1);
             }
             return "TSK-000001";
         } catch (SQLException e) {
             e.printStackTrace();
-            return "TSK-" + System.currentTimeMillis();
+            return "TSK-000001";
         }
     }
 
@@ -495,7 +493,7 @@ public class TaskDAO extends DBContext {
             "tr_p.related_type, tr_p.related_id " +
             "FROM tasks t " +
             "INNER JOIN task_assignees ta ON ta.task_id = t.task_id " +
-            "OUTER APPLY (SELECT TOP 1 related_type, related_id FROM task_relations WHERE task_id = t.task_id ORDER BY id ASC) tr_p " +
+            "OUTER APPLY (SELECT TOP 1 related_type, related_id FROM task_relations WHERE task_id = t.task_id AND related_type != 'SUBTASK' ORDER BY id ASC) tr_p " +
             "WHERE ta.user_id IN (" + buildInClause(teamMemberIds.size()) + ") " +
             "AND " + NOT_DELETED + " ORDER BY ta.user_id, t.due_date ASC"
         );
@@ -645,6 +643,57 @@ public class TaskDAO extends DBContext {
             e.printStackTrace();
         }
         return tasks;
+    }
+
+    // ── Get ALL tasks created by a user (no assignee-count restriction) ──
+    public List<Task> getAllTasksByCreator(int creatorId, String status, String priority,
+                                          String keyword, String sortBy, String sortOrder) {
+        List<Task> tasks = new ArrayList<>();
+        StringBuilder sql = new StringBuilder(
+            BASE_SELECT + "WHERE t.created_by = ? AND " + NOT_DELETED
+        );
+
+        if (status != null && !status.isEmpty()) sql.append(" AND t.status = ?");
+        if (priority != null && !priority.isEmpty()) sql.append(" AND t.priority = ?");
+        if (keyword != null && !keyword.isEmpty()) sql.append(" AND (t.title LIKE ? OR t.description LIKE ?)");
+
+        if (sortBy != null && !sortBy.isEmpty()) {
+            sql.append(" ORDER BY t.").append(sortBy);
+            if ("DESC".equalsIgnoreCase(sortOrder)) sql.append(" DESC"); else sql.append(" ASC");
+        } else {
+            sql.append(" ORDER BY t.created_at DESC");
+        }
+
+        try (PreparedStatement st = connection.prepareStatement(sql.toString())) {
+            int idx = 1;
+            st.setInt(idx++, creatorId);
+            if (status != null && !status.isEmpty()) st.setInt(idx++, TaskStatus.valueOf(status).ordinal());
+            if (priority != null && !priority.isEmpty()) st.setInt(idx++, Priority.valueOf(priority).ordinal());
+            if (keyword != null && !keyword.isEmpty()) {
+                String pat = "%" + keyword + "%";
+                st.setString(idx++, pat); st.setString(idx++, pat);
+            }
+            try (ResultSet rs = st.executeQuery()) {
+                while (rs.next()) tasks.add(mapResultSetToTask(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return tasks;
+    }
+
+    // ── Count assignees for a task ──
+    public int countAssignees(int taskId) {
+        String sql = "SELECT COUNT(*) AS cnt FROM task_assignees WHERE task_id = ?";
+        try (PreparedStatement st = connection.prepareStatement(sql)) {
+            st.setInt(1, taskId);
+            try (ResultSet rs = st.executeQuery()) {
+                if (rs.next()) return rs.getInt("cnt");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
     }
 
     // ── Count tasks by manager ──
@@ -1324,6 +1373,39 @@ public class TaskDAO extends DBContext {
         return taDao.insert(primary);
     }
 
+    // ── Get ALL overdue tasks (for scheduler - no user filter) ──
+    public List<Task> getAllOverdueTasks() {
+        List<Task> tasks = new ArrayList<>();
+        String sql = BASE_SELECT + "WHERE t.due_date < GETDATE() AND t.status != 2 AND t.status != 3 AND " + NOT_DELETED
+                + " ORDER BY t.due_date ASC";
+        try (PreparedStatement st = connection.prepareStatement(sql)) {
+            try (ResultSet rs = st.executeQuery()) {
+                while (rs.next()) tasks.add(mapResultSetToTask(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return tasks;
+    }
+
+    // ── Get ALL upcoming tasks with due within N hours (for scheduler) ──
+    public List<Task> getAllUpcomingTasks(int hoursAhead) {
+        List<Task> tasks = new ArrayList<>();
+        String sql = BASE_SELECT
+                + "WHERE t.status != 2 AND t.status != 3 "
+                + "AND t.due_date BETWEEN GETDATE() AND DATEADD(HOUR, ?, GETDATE()) "
+                + "AND " + NOT_DELETED + " ORDER BY t.due_date ASC";
+        try (PreparedStatement st = connection.prepareStatement(sql)) {
+            st.setInt(1, hoursAhead);
+            try (ResultSet rs = st.executeQuery()) {
+                while (rs.next()) tasks.add(mapResultSetToTask(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return tasks;
+    }
+
     // ── Get overdue tasks ──
     public List<Task> getOverdueTasks(Integer userId, List<Integer> teamMemberIds) {
         List<Task> tasks = new ArrayList<>();
@@ -1389,5 +1471,38 @@ public class TaskDAO extends DBContext {
             e.printStackTrace();
         }
         return false;
+    }
+
+    // ── Get active (PENDING/IN_PROGRESS) tasks related to a specific lead ──
+    public List<Task> getActiveTasksByRelatedLead(int leadId) {
+        List<Task> tasks = new ArrayList<>();
+        String sql = BASE_SELECT +
+            "INNER JOIN task_relations tr2 ON tr2.task_id = t.task_id " +
+            "WHERE tr2.related_type = 'LEAD' AND tr2.related_id = ? " +
+            "AND t.status IN (0, 1) AND " + NOT_DELETED + " ORDER BY t.created_at DESC";
+        try (PreparedStatement st = connection.prepareStatement(sql)) {
+            st.setInt(1, leadId);
+            try (ResultSet rs = st.executeQuery()) {
+                while (rs.next()) tasks.add(mapResultSetToTask(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return tasks;
+    }
+
+    // ── Auto-complete all active tasks related to a lead ──
+    public int completeTasksByRelatedLead(int leadId) {
+        String sql = "UPDATE t SET t.status = 2, t.completed_at = GETDATE(), t.updated_at = GETDATE() " +
+            "FROM tasks t INNER JOIN task_relations tr ON tr.task_id = t.task_id " +
+            "WHERE tr.related_type = 'LEAD' AND tr.related_id = ? " +
+            "AND t.status IN (0, 1) AND " + NOT_DELETED;
+        try (PreparedStatement st = connection.prepareStatement(sql)) {
+            st.setInt(1, leadId);
+            return st.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
     }
 }

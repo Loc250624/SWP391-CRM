@@ -24,6 +24,8 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import util.AuditUtil;
+import util.EmailSendUtil;
 import util.SessionHelper;
 
 @WebServlet(name = "SaleQuotationFormServlet", urlPatterns = {"/sale/quotation/form"})
@@ -292,7 +294,7 @@ public class SaleQuotationFormServlet extends HttpServlet {
             q.setQuoteDate(LocalDate.now());
             q.setValidUntil(LocalDate.parse(validUntilStr));
             q.setStatus("Draft");
-            q.setRequiresApproval(true);
+            q.setRequiresApproval(false);
             q.setCurrency("VND");
             q.setSubtotal(BigDecimal.ZERO);
             q.setDiscountType(discountTypeStr);
@@ -390,6 +392,19 @@ public class SaleQuotationFormServlet extends HttpServlet {
             }
         }
 
+        // Audit log
+        if (quotationId > 0) {
+            Quotation auditQ = quotDAO.getQuotationById(quotationId);
+            String qVals = auditQ != null
+                    ? "title=" + auditQ.getTitle() + ", total=" + auditQ.getTotalAmount() + ", validUntil=" + auditQ.getValidUntil()
+                    : "id=" + quotationId;
+            if (idParam != null && !idParam.trim().isEmpty()) {
+                AuditUtil.logUpdate(request, currentUserId, "Quotation", quotationId, null, qVals);
+            } else {
+                AuditUtil.logCreate(request, currentUserId, "Quotation", quotationId, qVals);
+            }
+        }
+
         // Insert tracking log and version
         if (quotationId > 0) {
             String ip = request.getRemoteAddr();
@@ -400,16 +415,57 @@ public class SaleQuotationFormServlet extends HttpServlet {
             Quotation saved2 = quotDAO.getQuotationById(quotationId);
             BigDecimal totalAmt = saved2 != null && saved2.getTotalAmount() != null ? saved2.getTotalAmount() : BigDecimal.ZERO;
 
+            // Build snapshot JSON from quotation data
+            String snapshotData = buildSnapshotJson(saved2, quotDAO.getItemsByQuotationId(quotationId));
+
             if (idParam != null && !idParam.trim().isEmpty()) {
                 // Edit: tracking + new version
                 quotDAO.insertTrackingLog(quotationId, "UPDATED", ip, ua, deviceType, browser);
                 int currentVer = saved2 != null && saved2.getVersion() != null ? saved2.getVersion() : 1;
                 int newVer = currentVer + 1;
-                quotDAO.insertVersion(quotationId, newVer, null, totalAmt, "Cap nhat", "Cap nhat bao gia", currentUserId);
+                quotDAO.insertVersion(quotationId, newVer, snapshotData, totalAmt, "Cập nhật", "Cập nhật báo giá", currentUserId);
             } else {
                 // Create: tracking + version 1
                 quotDAO.insertTrackingLog(quotationId, "CREATED", ip, ua, deviceType, browser);
-                quotDAO.insertVersion(quotationId, 1, null, totalAmt, "Tao moi", "Phien ban dau tien", currentUserId);
+                quotDAO.insertVersion(quotationId, 1, snapshotData, totalAmt, "Tạo mới", "Phiên bản đầu tiên", currentUserId);
+            }
+
+            // Auto-send: mark as Sent immediately
+            quotDAO.sendQuotation(quotationId, currentUserId);
+            quotDAO.insertTrackingLog(quotationId, "SENT", ip, ua, deviceType, browser);
+
+            // Auto-send email to lead or customer
+            Quotation sentQ = quotDAO.getQuotationById(quotationId);
+            if (sentQ != null && EmailSendUtil.isConfigured()) {
+                String recipientEmail = null;
+                String recipientName = null;
+
+                // Try customer first, then lead
+                if (sentQ.getCustomerId() != null) {
+                    Customer cust = new CustomerDAO().getCustomerById(sentQ.getCustomerId());
+                    if (cust != null && cust.getEmail() != null && !cust.getEmail().isEmpty()) {
+                        recipientEmail = cust.getEmail();
+                        recipientName = cust.getFullName();
+                    }
+                }
+                if (recipientEmail == null && sentQ.getLeadId() != null) {
+                    Lead ld = new LeadDAO().getLeadById(sentQ.getLeadId());
+                    if (ld != null && ld.getEmail() != null && !ld.getEmail().isEmpty()) {
+                        recipientEmail = ld.getEmail();
+                        recipientName = ld.getFullName();
+                    }
+                }
+
+                if (recipientEmail != null) {
+                    java.util.HashMap<String, String> vars = new java.util.HashMap<>();
+                    vars.put("customer_name", recipientName != null ? recipientName : "");
+                    vars.put("quotation_code", sentQ.getQuotationCode());
+                    vars.put("total_amount", sentQ.getTotalAmount() != null ? sentQ.getTotalAmount().toPlainString() : "0");
+                    vars.put("valid_until", sentQ.getValidUntil() != null ? sentQ.getValidUntil().toString() : "");
+                    vars.put("currency", sentQ.getCurrency() != null ? sentQ.getCurrency() : "VND");
+                    EmailSendUtil.sendWithTemplateAsync("QUOT_SEND", vars,
+                            recipientEmail, recipientName, currentUserId);
+                }
             }
         }
 
@@ -431,5 +487,51 @@ public class SaleQuotationFormServlet extends HttpServlet {
         if (ua.contains("Firefox/")) return "Firefox";
         if (ua.contains("Safari/") && !ua.contains("Chrome")) return "Safari";
         return "Other";
+    }
+
+    private String buildSnapshotJson(Quotation q, List<Map<String, Object>> items) {
+        if (q == null) return "{}";
+        StringBuilder sb = new StringBuilder();
+        sb.append("{");
+        sb.append("\"quotationCode\":\"").append(escapeJsonVal(q.getQuotationCode())).append("\",");
+        sb.append("\"title\":\"").append(escapeJsonVal(q.getTitle())).append("\",");
+        sb.append("\"status\":\"").append(escapeJsonVal(q.getStatus())).append("\",");
+        sb.append("\"currency\":\"").append(escapeJsonVal(q.getCurrency())).append("\",");
+        sb.append("\"subtotal\":").append(q.getSubtotal() != null ? q.getSubtotal().toPlainString() : "0").append(",");
+        sb.append("\"discountType\":\"").append(escapeJsonVal(q.getDiscountType())).append("\",");
+        sb.append("\"discountPercent\":").append(q.getDiscountPercent() != null ? q.getDiscountPercent() : 0).append(",");
+        sb.append("\"discountAmount\":").append(q.getDiscountAmount() != null ? q.getDiscountAmount().toPlainString() : "0").append(",");
+        sb.append("\"taxPercent\":").append(q.getTaxPercent() != null ? q.getTaxPercent() : 0).append(",");
+        sb.append("\"taxAmount\":").append(q.getTaxAmount() != null ? q.getTaxAmount().toPlainString() : "0").append(",");
+        sb.append("\"totalAmount\":").append(q.getTotalAmount() != null ? q.getTotalAmount().toPlainString() : "0").append(",");
+        sb.append("\"validUntil\":\"").append(q.getValidUntil() != null ? q.getValidUntil().toString() : "").append("\",");
+        sb.append("\"termsConditions\":\"").append(escapeJsonVal(q.getTermsConditions())).append("\",");
+        sb.append("\"paymentTerms\":\"").append(escapeJsonVal(q.getPaymentTerms())).append("\",");
+        sb.append("\"deliveryTerms\":\"").append(escapeJsonVal(q.getDeliveryTerms())).append("\",");
+        sb.append("\"items\":[");
+        if (items != null) {
+            for (int i = 0; i < items.size(); i++) {
+                Map<String, Object> item = items.get(i);
+                if (i > 0) sb.append(",");
+                sb.append("{");
+                sb.append("\"courseId\":").append(item.get("courseId") != null ? item.get("courseId") : "null").append(",");
+                sb.append("\"courseName\":\"").append(escapeJsonVal((String) item.get("courseName"))).append("\",");
+                sb.append("\"description\":\"").append(escapeJsonVal((String) item.get("description"))).append("\",");
+                sb.append("\"quantity\":").append(item.get("quantity") != null ? item.get("quantity") : 0).append(",");
+                sb.append("\"unitPrice\":").append(item.get("unitPrice") != null ? item.get("unitPrice") : 0).append(",");
+                sb.append("\"discountPercent\":").append(item.get("discountPercent") != null ? item.get("discountPercent") : 0).append(",");
+                sb.append("\"discountAmount\":").append(item.get("discountAmount") != null ? item.get("discountAmount") : 0).append(",");
+                sb.append("\"lineTotal\":").append(item.get("lineTotal") != null ? item.get("lineTotal") : 0);
+                sb.append("}");
+            }
+        }
+        sb.append("]}");
+        return sb.toString();
+    }
+
+    private String escapeJsonVal(String val) {
+        if (val == null) return "";
+        return val.replace("\\", "\\\\").replace("\"", "\\\"")
+                  .replace("\n", "\\n").replace("\r", "\\r").replace("\t", "\\t");
     }
 }

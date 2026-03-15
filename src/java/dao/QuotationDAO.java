@@ -470,7 +470,7 @@ public class QuotationDAO extends DBContext {
 
     public boolean sendQuotation(int quotationId, int sentBy) {
         String sql = "UPDATE quotations SET status='Sent', sent_by=?, sent_date=GETDATE() "
-                + "WHERE quotation_id=? AND status='Approved'";
+                + "WHERE quotation_id=? AND status IN ('Draft','Approved','Sent')";
         try {
             PreparedStatement stmt = connection.prepareStatement(sql);
             stmt.setInt(1, sentBy);
@@ -702,6 +702,38 @@ public class QuotationDAO extends DBContext {
         q.setUpdatedBy(getNullableInt(rs, "updated_by"));
 
         return q;
+    }
+
+    // ── Get quotations expiring within N days (status = Sent, valid_until approaching) ──
+    public List<Quotation> getExpiringQuotations(int daysAhead) {
+        List<Quotation> list = new ArrayList<>();
+        String sql = "SELECT * FROM quotations WHERE status = 'Sent' "
+                + "AND valid_until IS NOT NULL "
+                + "AND valid_until BETWEEN GETDATE() AND DATEADD(day, ?, GETDATE())";
+        try (PreparedStatement st = connection.prepareStatement(sql)) {
+            st.setInt(1, daysAhead);
+            try (ResultSet rs = st.executeQuery()) {
+                while (rs.next()) list.add(extractFromResultSet(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    public boolean updateQuotationsCustomerByOpportunity(int opportunityId, int customerId) {
+        String sql = "UPDATE quotations SET customer_id = ?, updated_at = GETDATE() "
+                + "WHERE opportunity_id = ? AND (customer_id IS NULL OR customer_id != ?)";
+        try {
+            PreparedStatement stmt = connection.prepareStatement(sql);
+            stmt.setInt(1, customerId);
+            stmt.setInt(2, opportunityId);
+            stmt.setInt(3, customerId);
+            return stmt.executeUpdate() >= 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 
     // ==================== HELPERS ====================

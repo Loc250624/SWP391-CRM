@@ -6,18 +6,18 @@
     <div>
         <h4 class="mb-1 fw-bold">
             <c:choose>
-                <c:when test="${mode == 'edit'}">Chinh sua Customer</c:when>
-                <c:otherwise>Them Customer moi</c:otherwise>
+                <c:when test="${mode == 'edit'}">Chỉnh sửa Customer</c:when>
+                <c:otherwise>Thêm Customer mới</c:otherwise>
             </c:choose>
         </h4>
         <p class="text-muted mb-0">
             <c:choose>
                 <c:when test="${mode == 'edit'}">${customer.customerCode} - ${customer.fullName}</c:when>
-                <c:otherwise>Nhap thong tin khach hang</c:otherwise>
+                <c:otherwise>Nhập thông tin khách hàng</c:otherwise>
             </c:choose>
         </p>
     </div>
-    <a href="${pageContext.request.contextPath}/sale/customer/list" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Quay lai</a>
+    <a href="${pageContext.request.contextPath}/sale/customer/list" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Quay lại</a>
 </div>
 
 <!-- Toast Messages -->
@@ -33,17 +33,17 @@
     <div class="row g-4">
         <!-- Main Content -->
         <div class="col-lg-8">
-            <!-- Thong tin ca nhan -->
+            <!-- Thông tin cá nhân -->
             <div class="card border-0 shadow-sm mb-4">
                 <div class="card-header bg-transparent border-0">
-                    <h6 class="mb-0 fw-semibold"><i class="bi bi-person me-2"></i>Thong tin ca nhan</h6>
+                    <h6 class="mb-0 fw-semibold"><i class="bi bi-person me-2"></i>Thông tin cá nhân</h6>
                 </div>
                 <div class="card-body">
                     <div class="row g-3">
                         <div class="col-md-6">
-                            <label class="form-label small">Ho ten <span class="text-danger">*</span></label>
+                            <label class="form-label small">Họ tên <span class="text-danger">*</span></label>
                             <input type="text" name="fullName" class="form-control form-control-sm" required
-                                   value="${customer.fullName}" placeholder="Nhap ho ten">
+                                   value="${customer.fullName}" placeholder="Nhập họ tên">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label small">Email</label>
@@ -51,60 +51,60 @@
                                    value="${customer.email}" placeholder="example@email.com">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label small">So dien thoai</label>
+                            <label class="form-label small">Số điện thoại</label>
                             <input type="text" name="phone" class="form-control form-control-sm"
                                    value="${customer.phone}" placeholder="0xxx xxx xxx">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label small">Ngay sinh</label>
+                            <label class="form-label small">Ngày sinh</label>
                             <input type="date" name="dateOfBirth" class="form-control form-control-sm"
                                    value="${customer.dateOfBirth}">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label small">Gioi tinh</label>
+                            <label class="form-label small">Giới tính</label>
                             <select name="gender" class="form-select form-select-sm">
-                                <option value="">-- Chon --</option>
+                                <option value="">-- Chọn --</option>
                                 <option value="Male" ${customer.gender == 'Male' ? 'selected' : ''}>Nam</option>
-                                <option value="Female" ${customer.gender == 'Female' ? 'selected' : ''}>Nu</option>
-                                <option value="Other" ${customer.gender == 'Other' ? 'selected' : ''}>Khac</option>
+                                <option value="Female" ${customer.gender == 'Female' ? 'selected' : ''}>Nữ</option>
+                                <option value="Other" ${customer.gender == 'Other' ? 'selected' : ''}>Khác</option>
                             </select>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label small">Thanh pho</label>
+                            <label class="form-label small">Thành phố</label>
                             <input type="text" name="city" class="form-control form-control-sm"
-                                   value="${customer.city}" placeholder="Thanh pho">
+                                   value="${customer.city}" placeholder="Thành phố">
                         </div>
                         <div class="col-12">
-                            <label class="form-label small">Dia chi</label>
+                            <label class="form-label small">Địa chỉ</label>
                             <input type="text" name="address" class="form-control form-control-sm"
-                                   value="${customer.address}" placeholder="Dia chi cu the">
+                                   value="${customer.address}" placeholder="Địa chỉ cụ thể">
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Ghi chu -->
+            <!-- Ghi chú -->
             <div class="card border-0 shadow-sm">
                 <div class="card-header bg-transparent border-0">
-                    <h6 class="mb-0 fw-semibold"><i class="bi bi-journal-text me-2"></i>Ghi chu</h6>
+                    <h6 class="mb-0 fw-semibold"><i class="bi bi-journal-text me-2"></i>Ghi chú</h6>
                 </div>
                 <div class="card-body">
                     <textarea name="notes" class="form-control form-control-sm" rows="4"
-                              placeholder="Ghi chu ve khach hang...">${customer.notes}</textarea>
+                              placeholder="Ghi chú về khách hàng...">${customer.notes}</textarea>
                 </div>
             </div>
         </div>
 
         <!-- Sidebar -->
         <div class="col-lg-4">
-            <!-- Phan loai -->
+            <!-- Phân loại -->
             <div class="card border-0 shadow-sm mb-4">
                 <div class="card-header bg-transparent border-0">
-                    <h6 class="mb-0 fw-semibold"><i class="bi bi-tags me-2"></i>Phan loai</h6>
+                    <h6 class="mb-0 fw-semibold"><i class="bi bi-tags me-2"></i>Phân loại</h6>
                 </div>
                 <div class="card-body">
                     <div class="mb-3">
-                        <label class="form-label small">Trang thai</label>
+                        <label class="form-label small">Trạng thái</label>
                         <select name="status" class="form-select form-select-sm">
                             <c:forEach var="s" items="${customerStatuses}">
                                 <option value="${s}" ${customer.status == s.toString() ? 'selected' : ''}>${s}</option>
@@ -118,7 +118,7 @@
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label small">Phan khuc</label>
+                        <label class="form-label small">Phân khúc</label>
                         <select name="customerSegment" class="form-select form-select-sm">
                             <c:forEach var="seg" items="${customerSegments}">
                                 <option value="${seg}" ${customer.customerSegment == seg.toString() ? 'selected' : ''}>${seg}</option>
@@ -135,16 +135,16 @@
                 </div>
             </div>
 
-            <!-- Nguon -->
+            <!-- Nguồn -->
             <div class="card border-0 shadow-sm mb-4">
                 <div class="card-header bg-transparent border-0">
-                    <h6 class="mb-0 fw-semibold"><i class="bi bi-diagram-3 me-2"></i>Nguon khach hang</h6>
+                    <h6 class="mb-0 fw-semibold"><i class="bi bi-diagram-3 me-2"></i>Nguồn khách hàng</h6>
                 </div>
                 <div class="card-body">
                     <div class="mb-3">
-                        <label class="form-label small">Nguon</label>
+                        <label class="form-label small">Nguồn</label>
                         <select name="sourceId" class="form-select form-select-sm">
-                            <option value="">-- Chon nguon --</option>
+                            <option value="">-- Chọn nguồn --</option>
                             <c:forEach var="src" items="${leadSources}">
                                 <option value="${src.sourceId}" ${customer.sourceId == src.sourceId ? 'selected' : ''}>${src.sourceName}</option>
                             </c:forEach>
@@ -153,21 +153,21 @@
                 </div>
             </div>
 
-            <!-- Tuy chon lien lac -->
+            <!-- Tùy chọn liên lạc -->
             <div class="card border-0 shadow-sm mb-4">
                 <div class="card-header bg-transparent border-0">
-                    <h6 class="mb-0 fw-semibold"><i class="bi bi-bell me-2"></i>Tuy chon lien lac</h6>
+                    <h6 class="mb-0 fw-semibold"><i class="bi bi-bell me-2"></i>Tùy chọn liên lạc</h6>
                 </div>
                 <div class="card-body">
                     <div class="form-check form-switch mb-2">
                         <input class="form-check-input" type="checkbox" name="emailOptOut" id="emailOptOut"
                                ${customer.emailOptOut ? 'checked' : ''}>
-                        <label class="form-check-label small" for="emailOptOut">Tu choi nhan email</label>
+                        <label class="form-check-label small" for="emailOptOut">Từ chối nhận email</label>
                     </div>
                     <div class="form-check form-switch">
                         <input class="form-check-input" type="checkbox" name="smsOptOut" id="smsOptOut"
                                ${customer.smsOptOut ? 'checked' : ''}>
-                        <label class="form-check-label small" for="smsOptOut">Tu choi nhan SMS</label>
+                        <label class="form-check-label small" for="smsOptOut">Từ chối nhận SMS</label>
                     </div>
                 </div>
             </div>
@@ -198,7 +198,7 @@
                         </div>
                     </c:if>
                     <c:if test="${empty allTags}">
-                        <p class="text-muted small mb-0">Chua co tag nao.</p>
+                        <p class="text-muted small mb-0">Chưa có tag nào.</p>
                     </c:if>
                 </div>
             </div>
@@ -210,12 +210,12 @@
                         <button type="submit" class="btn btn-primary btn-sm" id="submitBtn">
                             <i class="bi bi-check-lg me-1"></i>
                             <c:choose>
-                                <c:when test="${mode == 'edit'}">Cap nhat</c:when>
-                                <c:otherwise>Tao Customer</c:otherwise>
+                                <c:when test="${mode == 'edit'}">Cập nhật</c:when>
+                                <c:otherwise>Tạo Customer</c:otherwise>
                             </c:choose>
                         </button>
                         <a href="${pageContext.request.contextPath}/sale/customer/list" class="btn btn-outline-secondary btn-sm">
-                            <i class="bi bi-x-lg me-1"></i>Huy
+                            <i class="bi bi-x-lg me-1"></i>Hủy
                         </a>
                     </div>
                 </div>
@@ -228,7 +228,7 @@
     document.getElementById('customerForm').addEventListener('submit', function () {
         var btn = document.getElementById('submitBtn');
         btn.disabled = true;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Dang luu...';
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Đang lưu...';
     });
 
     // Tag checkbox toggle styling

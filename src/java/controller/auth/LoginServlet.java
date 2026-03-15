@@ -9,8 +9,9 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import model.Users;
+import util.AuditUtil;
 
-@WebServlet(name = "LoginServlet", urlPatterns = {"/login"})
+@WebServlet(name = "LoginServlet", urlPatterns = { "/login", "/auth/login" })
 public class LoginServlet extends HttpServlet {
 
     @Override
@@ -34,13 +35,15 @@ public class LoginServlet extends HttpServlet {
         Users user = userDAO.login(email, password);
 
         if (user != null) {
-        
+
             String roleCode = userDAO.getRoleCodeByUserId(user.getUserId());
-            
+
             // 2. Lưu thông tin vào Session để quản lý đăng nhập
             HttpSession session = request.getSession();
             session.setAttribute("user", user);
             session.setAttribute("role", roleCode != null ? roleCode.toUpperCase() : null);
+
+            AuditUtil.logLogin(request, user.getUserId());
 
             // 3. Điều hướng dựa trên danh sách Role
             if (roleCode == null) {
@@ -68,7 +71,7 @@ public class LoginServlet extends HttpServlet {
                 }
             }
         } else {
-         
+
             request.setAttribute("error", "Email hoặc mật khẩu không đúng.");
             request.getRequestDispatcher("view/auth/login.jsp").forward(request, response);
         }

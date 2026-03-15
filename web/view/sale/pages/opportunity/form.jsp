@@ -27,19 +27,19 @@
     <div>
         <h4 class="mb-1 fw-bold">
             <c:choose>
-                <c:when test="${mode == 'edit'}">Chinh sua Opportunity</c:when>
-                <c:otherwise>Tao Opportunity moi</c:otherwise>
+                <c:when test="${mode == 'edit'}">Chỉnh sửa Opportunity</c:when>
+                <c:otherwise>Tạo Opportunity mới</c:otherwise>
             </c:choose>
         </h4>
         <p class="text-muted mb-0">
             <c:choose>
                 <c:when test="${mode == 'edit'}">${opportunity.opportunityCode} - ${opportunity.opportunityName}</c:when>
-                <c:when test="${convertFromLead}">Chuyen doi tu Lead: ${lead.leadCode} - ${lead.fullName}</c:when>
-                <c:otherwise>Nhap thong tin co hoi kinh doanh</c:otherwise>
+                <c:when test="${convertFromLead}">Chuyển đổi từ Lead: ${lead.leadCode} - ${lead.fullName}</c:when>
+                <c:otherwise>Nhập thông tin cơ hội kinh doanh</c:otherwise>
             </c:choose>
         </p>
     </div>
-    <a href="${pageContext.request.contextPath}/sale/opportunity/list" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Quay lai</a>
+    <a href="${pageContext.request.contextPath}/sale/opportunity/list" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Quay lại</a>
 </div>
 
 <!-- Toast Messages -->
@@ -47,7 +47,7 @@
     <script>document.addEventListener('DOMContentLoaded', function(){ CRM.showToast('${error}', 'error'); });</script>
 </c:if>
 <c:if test="${convertFromLead}">
-    <script>document.addEventListener('DOMContentLoaded', function(){ CRM.showToast('Dang tao opportunity tu Lead ${lead.leadCode} - ${lead.fullName}', 'info'); });</script>
+    <script>document.addEventListener('DOMContentLoaded', function(){ CRM.showToast('Đang tạo opportunity từ Lead ${lead.leadCode} - ${lead.fullName}', 'info'); });</script>
 </c:if>
 
 <form method="POST" action="${pageContext.request.contextPath}/sale/opportunity/form" id="oppForm">
@@ -84,7 +84,7 @@
                                             </div>
                                         </c:when>
                                         <c:otherwise>
-                                            <div class="form-control form-control-sm bg-light text-muted">-- Khong co --</div>
+                                            <div class="form-control form-control-sm bg-light text-muted">-- Không có --</div>
                                         </c:otherwise>
                                     </c:choose>
                                 </div>
@@ -97,12 +97,12 @@
                                             </div>
                                         </c:when>
                                         <c:otherwise>
-                                            <div class="form-control form-control-sm bg-light text-muted">-- Khong co --</div>
+                                            <div class="form-control form-control-sm bg-light text-muted">-- Không có --</div>
                                         </c:otherwise>
                                     </c:choose>
                                 </div>
                             </div>
-                            <small class="text-muted mt-2 d-block"><i class="bi bi-info-circle me-1"></i>Khong the thay doi Lead/Customer sau khi tao. Chi co the cap nhat Customer khi convert tu Lead.</small>
+                            <small class="text-muted mt-2 d-block"><i class="bi bi-info-circle me-1"></i>Không thể thay đổi Lead/Customer sau khi tạo. Chỉ có thể cập nhật Customer khi convert từ Lead.</small>
                         </c:when>
                         <c:otherwise>
                             <!-- Create mode: popup modal selection -->
@@ -116,9 +116,9 @@
                                             <c:set var="custChecked" value="checked"/>
                                         </c:if>
                                         <input type="radio" class="btn-check" name="contactType" id="typeFromLead" value="lead" autocomplete="off" ${leadChecked}>
-                                        <label class="btn btn-outline-primary" for="typeFromLead"><i class="bi bi-person me-1"></i>Tu Lead</label>
+                                        <label class="btn btn-outline-primary" for="typeFromLead"><i class="bi bi-person me-1"></i>Từ Lead</label>
                                         <input type="radio" class="btn-check" name="contactType" id="typeFromCustomer" value="customer" autocomplete="off" ${custChecked}>
-                                        <label class="btn btn-outline-success" for="typeFromCustomer"><i class="bi bi-building me-1"></i>Tu Customer</label>
+                                        <label class="btn btn-outline-success" for="typeFromCustomer"><i class="bi bi-building me-1"></i>Từ Customer</label>
                                     </div>
                                 </div>
 
@@ -130,7 +130,7 @@
                                             <div class="name" id="previewName"></div>
                                             <div class="meta" id="previewMeta"></div>
                                         </div>
-                                        <button type="button" class="btn btn-outline-danger btn-sm" onclick="clearSelection()" title="Bo chon">
+                                        <button type="button" class="btn btn-outline-danger btn-sm" onclick="clearSelection()" title="Bỏ chọn">
                                             <i class="bi bi-x-lg"></i>
                                         </button>
                                     </div>
@@ -139,12 +139,12 @@
                                 <!-- Buttons to open modals -->
                                 <div class="col-12" id="leadPickerBtn">
                                     <button type="button" class="btn btn-outline-primary btn-sm w-100" onclick="openLeadPicker()">
-                                        <i class="bi bi-person-plus me-1"></i>Chon Lead <span class="text-danger">*</span>
+                                        <i class="bi bi-person-plus me-1"></i>Chọn Lead <span class="text-danger">*</span>
                                     </button>
                                 </div>
                                 <div class="col-12" id="customerPickerBtn" style="display:none;">
                                     <button type="button" class="btn btn-outline-success btn-sm w-100" onclick="openCustomerPicker()">
-                                        <i class="bi bi-building-add me-1"></i>Chon Customer <span class="text-danger">*</span>
+                                        <i class="bi bi-building-add me-1"></i>Chọn Customer <span class="text-danger">*</span>
                                     </button>
                                 </div>
                             </div>
@@ -153,17 +153,17 @@
                 </div>
             </div>
 
-            <!-- Thong tin co ban -->
+            <!-- Thông tin cơ bản -->
             <div class="card border-0 shadow-sm mb-4">
                 <div class="card-header bg-transparent border-0">
-                    <h6 class="mb-0 fw-semibold"><i class="bi bi-briefcase me-2"></i>Thong tin co ban</h6>
+                    <h6 class="mb-0 fw-semibold"><i class="bi bi-briefcase me-2"></i>Thông tin cơ bản</h6>
                 </div>
                 <div class="card-body">
                     <div class="row g-3">
                         <div class="col-12">
-                            <label class="form-label small">Ten Opportunity <span class="text-danger">*</span></label>
+                            <label class="form-label small">Tên Opportunity <span class="text-danger">*</span></label>
                             <input type="text" name="opportunityName" class="form-control form-control-sm" required
-                                   value="${empty opportunity ? '' : opportunity.opportunityName}" placeholder="VD: Goi khoa hoc Enterprise - Cong ty ABC">
+                                   value="${empty opportunity ? '' : opportunity.opportunityName}" placeholder="VD: Gói khóa học Enterprise - Công ty ABC">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label small">Pipeline <span class="text-danger">*</span></label>
@@ -177,11 +177,11 @@
                                             </c:if>
                                         </c:forEach>
                                     </select>
-                                    <small class="text-muted"><i class="bi bi-info-circle me-1"></i>Khong the thay doi Pipeline sau khi tao.</small>
+                                    <small class="text-muted"><i class="bi bi-info-circle me-1"></i>Không thể thay đổi Pipeline sau khi tạo.</small>
                                 </c:when>
                                 <c:otherwise>
                                     <select name="pipelineId" class="form-select form-select-sm" id="pipelineSelect" required onchange="loadStages(this.value)">
-                                        <option value="">-- Chon pipeline --</option>
+                                        <option value="">-- Chọn pipeline --</option>
                                         <c:forEach var="p" items="${pipelines}">
                                             <c:set var="pSel" value=""/>
                                             <c:if test="${preSelectedPipelineId == p.pipelineId}"><c:set var="pSel" value="selected"/></c:if>
@@ -202,44 +202,44 @@
                                             </c:if>
                                         </c:forEach>
                                     </select>
-                                    <small class="text-muted"><i class="bi bi-info-circle me-1"></i>Stage chi thay doi qua Kanban board.</small>
+                                    <small class="text-muted"><i class="bi bi-info-circle me-1"></i>Stage chỉ thay đổi qua Kanban board.</small>
                                 </c:when>
                                 <c:otherwise>
                                     <select class="form-select form-select-sm" id="stageSelect" disabled>
-                                        <option value="">-- Tu dong chon stage dau --</option>
+                                        <option value="">-- Tự động chọn stage đầu --</option>
                                     </select>
-                                    <small class="text-muted"><i class="bi bi-info-circle me-1"></i>Stage mac dinh la stage dau tien cua pipeline.</small>
+                                    <small class="text-muted"><i class="bi bi-info-circle me-1"></i>Stage mặc định là stage đầu tiên của pipeline.</small>
                                 </c:otherwise>
                             </c:choose>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label small">Gia tri uoc tinh (VND)</label>
+                            <label class="form-label small">Giá trị ước tính (VND)</label>
                             <c:set var="estVal" value="${empty opportunity ? '' : opportunity.estimatedValue}"/>
                             <input type="number" name="estimatedValue" class="form-control form-control-sm" min="0" step="100000"
                                    value="${estVal}" placeholder="0">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label small">Xac suat thanh cong (%)</label>
+                            <label class="form-label small">Xác suất thành công (%)</label>
                             <c:set var="probVal" value="${empty opportunity ? '' : opportunity.probability}"/>
                             <input type="number" name="probability" class="form-control form-control-sm" min="0" max="100"
                                    value="${probVal}" placeholder="0">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label small">Ngay dong du kien</label>
+                            <label class="form-label small">Ngày đóng dự kiến</label>
                             <c:set var="closeDateVal" value="${empty opportunity ? '' : opportunity.expectedCloseDate}"/>
                             <input type="date" name="expectedCloseDate" class="form-control form-control-sm"
                                    value="${closeDateVal}">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label small">Trang thai</label>
+                            <label class="form-label small">Trạng thái</label>
                             <c:choose>
                                 <c:when test="${mode == 'edit'}">
                                     <input type="text" class="form-control form-control-sm bg-light" value="${opportunity.status}" disabled>
-                                    <small class="text-muted"><i class="bi bi-info-circle me-1"></i>Trang thai tu dong thay doi theo Stage.</small>
+                                    <small class="text-muted"><i class="bi bi-info-circle me-1"></i>Trạng thái tự động thay đổi theo Stage.</small>
                                 </c:when>
                                 <c:otherwise>
                                     <input type="text" class="form-control form-control-sm bg-light" value="Open" disabled>
-                                    <small class="text-muted"><i class="bi bi-info-circle me-1"></i>Trang thai mac dinh la Open.</small>
+                                    <small class="text-muted"><i class="bi bi-info-circle me-1"></i>Trạng thái mặc định là Open.</small>
                                 </c:otherwise>
                             </c:choose>
                         </div>
@@ -247,30 +247,30 @@
                 </div>
             </div>
 
-            <!-- Ghi chu -->
+            <!-- Ghi chú -->
             <div class="card border-0 shadow-sm">
                 <div class="card-header bg-transparent border-0">
-                    <h6 class="mb-0 fw-semibold"><i class="bi bi-journal-text me-2"></i>Ghi chu</h6>
+                    <h6 class="mb-0 fw-semibold"><i class="bi bi-journal-text me-2"></i>Ghi chú</h6>
                 </div>
                 <div class="card-body">
                     <textarea name="notes" class="form-control form-control-sm" rows="4"
-                              placeholder="Ghi chu ve co hoi kinh doanh...">${empty opportunity ? '' : opportunity.notes}</textarea>
+                              placeholder="Ghi chú về cơ hội kinh doanh...">${empty opportunity ? '' : opportunity.notes}</textarea>
                 </div>
             </div>
         </div>
 
         <!-- Sidebar -->
         <div class="col-lg-4">
-            <!-- Nguon -->
+            <!-- Nguồn -->
             <div class="card border-0 shadow-sm mb-4">
                 <div class="card-header bg-transparent border-0">
-                    <h6 class="mb-0 fw-semibold"><i class="bi bi-diagram-3 me-2"></i>Nguon & Chien dich</h6>
+                    <h6 class="mb-0 fw-semibold"><i class="bi bi-diagram-3 me-2"></i>Nguồn & Chiến dịch</h6>
                 </div>
                 <div class="card-body">
                     <div class="mb-3">
-                        <label class="form-label small">Nguon</label>
+                        <label class="form-label small">Nguồn</label>
                         <select name="sourceId" class="form-select form-select-sm">
-                            <option value="">-- Chon nguon --</option>
+                            <option value="">-- Chọn nguồn --</option>
                             <c:forEach var="src" items="${sources}">
                                 <c:set var="srcSel" value=""/>
                                 <c:if test="${not empty opportunity && opportunity.sourceId == src.sourceId}"><c:set var="srcSel" value="selected"/></c:if>
@@ -279,9 +279,9 @@
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label small">Chien dich</label>
+                        <label class="form-label small">Chiến dịch</label>
                         <select name="campaignId" class="form-select form-select-sm">
-                            <option value="">-- Chon chien dich --</option>
+                            <option value="">-- Chọn chiến dịch --</option>
                             <c:forEach var="camp" items="${campaigns}">
                                 <c:set var="campSel" value=""/>
                                 <c:if test="${not empty opportunity && opportunity.campaignId == camp.campaignId}"><c:set var="campSel" value="selected"/></c:if>
@@ -299,12 +299,12 @@
                         <button type="submit" class="btn btn-primary btn-sm" id="submitBtn">
                             <i class="bi bi-check-lg me-1"></i>
                             <c:choose>
-                                <c:when test="${mode == 'edit'}">Cap nhat</c:when>
-                                <c:otherwise>Tao Opportunity</c:otherwise>
+                                <c:when test="${mode == 'edit'}">Cập nhật</c:when>
+                                <c:otherwise>Tạo Opportunity</c:otherwise>
                             </c:choose>
                         </button>
                         <a href="${pageContext.request.contextPath}/sale/opportunity/list" class="btn btn-outline-secondary btn-sm">
-                            <i class="bi bi-x-lg me-1"></i>Huy
+                            <i class="bi bi-x-lg me-1"></i>Hủy
                         </a>
                     </div>
                 </div>
@@ -319,8 +319,8 @@
         <div class="modal-content border-0 shadow">
             <div class="modal-header py-2" style="border-bottom: 3px solid #0d6efd;">
                 <div>
-                    <h6 class="modal-title fw-bold mb-0"><i class="bi bi-person me-2"></i>Chon Lead</h6>
-                    <small class="text-muted">Chon mot lead de tao opportunity</small>
+                    <h6 class="modal-title fw-bold mb-0"><i class="bi bi-person me-2"></i>Chọn Lead</h6>
+                    <small class="text-muted">Chọn một lead để tạo opportunity</small>
                 </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
@@ -328,14 +328,14 @@
                 <div class="p-3 border-bottom bg-light">
                     <div class="input-group input-group-sm">
                         <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
-                        <input type="text" class="form-control" id="leadSearchInput" placeholder="Tim theo ten, email, SDT, cong ty, ma lead..." oninput="filterRows('leadSearchInput','lead-row','leadPickerEmpty')">
+                        <input type="text" class="form-control" id="leadSearchInput" placeholder="Tìm theo tên, email, SĐT, công ty, mã lead..." oninput="filterRows('leadSearchInput','lead-row','leadPickerEmpty')">
                     </div>
-                    <small class="text-muted mt-1 d-block"><span id="leadCountText">${leads != null ? leads.size() : 0}</span> ban ghi</small>
+                    <small class="text-muted mt-1 d-block"><span id="leadCountText">${leads != null ? leads.size() : 0}</span> bản ghi</small>
                 </div>
                 <div class="table-responsive" style="max-height: 400px;">
                     <table class="table table-hover align-middle mb-0">
                         <thead class="table-light sticky-top">
-                            <tr><th>Ho ten</th><th>Lien he</th><th>Cong ty</th><th>Trang thai</th></tr>
+                            <tr><th>Họ tên</th><th>Liên hệ</th><th>Công ty</th><th>Trạng thái</th></tr>
                         </thead>
                         <tbody id="leadPickerBody">
                             <c:forEach var="ld" items="${leads}">
@@ -366,7 +366,7 @@
                         </tbody>
                     </table>
                 </div>
-                <div id="leadPickerEmpty" class="text-center text-muted py-4" style="display:none;"><i class="bi bi-inbox me-1"></i>Khong tim thay lead nao</div>
+                <div id="leadPickerEmpty" class="text-center text-muted py-4" style="display:none;"><i class="bi bi-inbox me-1"></i>Không tìm thấy lead nào</div>
             </div>
         </div>
     </div>
@@ -378,8 +378,8 @@
         <div class="modal-content border-0 shadow">
             <div class="modal-header py-2" style="border-bottom: 3px solid #198754;">
                 <div>
-                    <h6 class="modal-title fw-bold mb-0"><i class="bi bi-building me-2"></i>Chon Customer</h6>
-                    <small class="text-muted">Chon mot customer de tao opportunity</small>
+                    <h6 class="modal-title fw-bold mb-0"><i class="bi bi-building me-2"></i>Chọn Customer</h6>
+                    <small class="text-muted">Chọn một customer để tạo opportunity</small>
                 </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
@@ -387,14 +387,14 @@
                 <div class="p-3 border-bottom bg-light">
                     <div class="input-group input-group-sm">
                         <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
-                        <input type="text" class="form-control" id="customerSearchInput" placeholder="Tim theo ten, email, SDT, ma customer..." oninput="filterRows('customerSearchInput','customer-row','customerPickerEmpty')">
+                        <input type="text" class="form-control" id="customerSearchInput" placeholder="Tìm theo tên, email, SĐT, mã customer..." oninput="filterRows('customerSearchInput','customer-row','customerPickerEmpty')">
                     </div>
-                    <small class="text-muted mt-1 d-block"><span id="customerCountText">${customers != null ? customers.size() : 0}</span> ban ghi</small>
+                    <small class="text-muted mt-1 d-block"><span id="customerCountText">${customers != null ? customers.size() : 0}</span> bản ghi</small>
                 </div>
                 <div class="table-responsive" style="max-height: 400px;">
                     <table class="table table-hover align-middle mb-0">
                         <thead class="table-light sticky-top">
-                            <tr><th>Ho ten</th><th>Lien he</th><th>Phan khuc</th><th>Trang thai</th></tr>
+                            <tr><th>Họ tên</th><th>Liên hệ</th><th>Phân khúc</th><th>Trạng thái</th></tr>
                         </thead>
                         <tbody id="customerPickerBody">
                             <c:forEach var="cust" items="${customers}">
@@ -422,7 +422,7 @@
                         </tbody>
                     </table>
                 </div>
-                <div id="customerPickerEmpty" class="text-center text-muted py-4" style="display:none;"><i class="bi bi-inbox me-1"></i>Khong tim thay customer nao</div>
+                <div id="customerPickerEmpty" class="text-center text-muted py-4" style="display:none;"><i class="bi bi-inbox me-1"></i>Không tìm thấy customer nào</div>
             </div>
         </div>
     </div>
@@ -432,15 +432,15 @@
     // ===== Load stages dynamically =====
     function loadStages(pipelineId) {
         var stageSelect = document.getElementById('stageSelect');
-        stageSelect.innerHTML = '<option value="">-- Dang tai... --</option>';
+        stageSelect.innerHTML = '<option value="">-- Đang tải... --</option>';
         if (!pipelineId) {
-            stageSelect.innerHTML = '<option value="">-- Chon pipeline truoc --</option>';
+            stageSelect.innerHTML = '<option value="">-- Chọn pipeline trước --</option>';
             return;
         }
-        fetch('${pageContext.request.contextPath}/sale/api/stages?pipelineId=' + pipelineId)
+        fetch('${pageContext.request.contextPath}/sale/stages?pipelineId=' + pipelineId)
             .then(function(res) { return res.json(); })
             .then(function(stages) {
-                stageSelect.innerHTML = '<option value="">-- Tu dong chon stage dau --</option>';
+                stageSelect.innerHTML = '<option value="">-- Tự động chọn stage đầu --</option>';
                 stages.forEach(function(s) {
                     var opt = document.createElement('option');
                     opt.value = s.stageId;
@@ -449,7 +449,7 @@
                 });
             })
             .catch(function() {
-                stageSelect.innerHTML = '<option value="">-- Loi tai stages --</option>';
+                stageSelect.innerHTML = '<option value="">-- Lỗi tải stages --</option>';
             });
     }
 
@@ -602,12 +602,12 @@
             var custId = hiddenCustomerId ? hiddenCustomerId.value : '';
             if (!leadId && !custId) {
                 e.preventDefault();
-                CRM.showToast('Vui long chon mot Lead hoac Customer!', 'warning');
+                CRM.showToast('Vui lòng chọn một Lead hoặc Customer!', 'warning');
                 return;
             }
         }
         var btn = document.getElementById('submitBtn');
         btn.disabled = true;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Dang luu...';
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Đang lưu...';
     });
 </script>

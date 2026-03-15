@@ -1,10 +1,12 @@
 package controller.sale;
 
+import dao.ActivityDAO;
 import dao.CustomerDAO;
 import dao.LeadDAO;
 import dao.OpportunityDAO;
 import dao.PipelineDAO;
 import dao.PipelineStageDAO;
+import model.Activity;
 import model.Customer;
 import model.Lead;
 import model.Opportunity;
@@ -189,6 +191,14 @@ public class SaleDashboardServlet extends HttpServlet {
                 pipelineNameMap.put(p.getPipelineId(), p.getPipelineName());
             }
         }
+
+        // === ACTIVITY STATS ===
+        ActivityDAO actDAO = new ActivityDAO();
+        Map<String, Integer> activityStats = actDAO.getActivityStats(currentUserId);
+        List<Activity> recentActivities = actDAO.getRecentActivitiesByUser(currentUserId, 5);
+
+        request.setAttribute("activityStats", activityStats);
+        request.setAttribute("recentActivities", recentActivities);
 
         // === SET ATTRIBUTES ===
         // Lead stats

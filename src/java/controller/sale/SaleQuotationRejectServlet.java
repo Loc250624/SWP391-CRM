@@ -48,6 +48,17 @@ public class SaleQuotationRejectServlet extends HttpServlet {
             String deviceType = parseDeviceType(ua);
             String browser = parseBrowser(ua);
             quotDAO.insertTrackingLog(quotationId, "REJECTED", ip, ua, deviceType, browser);
+
+            // Notify quotation rejected
+            java.util.List<Integer> notifyIds = new java.util.ArrayList<>();
+            if (q.getCreatedBy() != null && q.getCreatedBy() != currentUserId) {
+                notifyIds.add(q.getCreatedBy());
+            }
+            if (!notifyIds.isEmpty()) {
+                util.NotificationUtil.notifyQuotationRejected(
+                        quotationId, q.getQuotationCode(), reason,
+                        currentUserId, notifyIds);
+            }
         }
 
         response.sendRedirect(request.getContextPath() + "/sale/quotation/detail?id=" + quotationId + "&rejected=1");

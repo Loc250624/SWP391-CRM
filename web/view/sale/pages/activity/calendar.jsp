@@ -2,9 +2,9 @@
 <%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <div><h4 class="mb-1 fw-bold">Lich hen</h4><p class="text-muted mb-0">Quan ly lich hen va cuoc hop</p></div>
+    <div><h4 class="mb-1 fw-bold">Lịch hẹn</h4><p class="text-muted mb-0">Quản lý lịch hẹn và cuộc họp</p></div>
     <div class="d-flex gap-2">
-        <a href="${pageContext.request.contextPath}/sale/activity/form" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i>Them lich hen</a>
+        <a href="${pageContext.request.contextPath}/sale/activity/form" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i>Thêm lịch hẹn</a>
     </div>
 </div>
 
@@ -18,7 +18,7 @@
             </h6>
             <a href="${pageContext.request.contextPath}/sale/activity/calendar?weekOffset=${weekOffset + 1}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-chevron-right"></i></a>
         </div>
-        <a href="${pageContext.request.contextPath}/sale/activity/calendar" class="btn btn-sm btn-outline-primary">Hom nay</a>
+        <a href="${pageContext.request.contextPath}/sale/activity/calendar" class="btn btn-sm btn-outline-primary">Hôm nay</a>
     </div>
     <div class="card-body pt-0">
         <div class="table-responsive">
@@ -89,7 +89,7 @@
 
 <!-- Upcoming -->
 <div class="card border-0 shadow-sm">
-    <div class="card-header bg-transparent border-0"><h6 class="mb-0 fw-semibold">Sap toi (7 ngay)</h6></div>
+    <div class="card-header bg-transparent border-0"><h6 class="mb-0 fw-semibold">Sắp tới (7 ngày)</h6></div>
     <div class="card-body">
         <c:choose>
             <c:when test="${not empty upcoming}">
@@ -122,7 +122,7 @@
                 </div>
             </c:when>
             <c:otherwise>
-                <p class="text-muted text-center mb-0">Khong co hoat dong sap toi</p>
+                <p class="text-muted text-center mb-0">Không có hoạt động sắp tới</p>
             </c:otherwise>
         </c:choose>
     </div>

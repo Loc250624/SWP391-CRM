@@ -76,21 +76,17 @@
                     <h5 class="mb-0"><i class="bi bi-toggle-on me-2"></i>Chọn trạng thái mới</h5>
                 </div>
                 <div class="card-body">
-                    <form action="${pageContext.request.contextPath}/manager/task/status" method="post">
+                    <form action="${pageContext.request.contextPath}/manager/task/status" method="post"
+                          onsubmit="return confirm('Bạn có chắc chắn muốn HỦY công việc này? Hành động này không thể hoàn tác.');">
                         <input type="hidden" name="taskId" value="${task.taskId}">
+                        <input type="hidden" name="status" value="CANCELLED">
 
                         <!-- Current Status -->
                         <div class="alert alert-info">
                             <strong>Trạng thái hiện tại:</strong>
                             <c:choose>
-                                <c:when test="${task.statusName == 'COMPLETED'}">
-                                    <span class="badge bg-success ms-2">Hoàn thành</span>
-                                </c:when>
                                 <c:when test="${task.statusName == 'IN_PROGRESS'}">
                                     <span class="badge bg-info ms-2">Đang thực hiện</span>
-                                </c:when>
-                                <c:when test="${task.statusName == 'CANCELLED'}">
-                                    <span class="badge bg-dark ms-2">Đã hủy</span>
                                 </c:when>
                                 <c:otherwise>
                                     <span class="badge bg-secondary ms-2">Chờ xử lý</span>
@@ -98,101 +94,20 @@
                             </c:choose>
                         </div>
 
-                        <!-- Status Selection -->
-                        <div class="mb-4">
-                            <label class="form-label fw-bold">Chọn trạng thái mới <span class="text-danger">*</span></label>
-                            <div class="row g-3">
-                                <c:forEach var="s" items="${taskStatusValues}">
-                                    <div class="col-md-6">
-                                        <div class="form-check card-check">
-                                            <input class="form-check-input" type="radio"
-                                                   name="status" id="status_${s.name()}"
-                                                   value="${s.name()}"
-                                                   ${task.statusName == s.name() ? 'checked' : ''}
-                                                   required>
-                                            <label class="form-check-label card p-3 w-100 cursor-pointer" for="status_${s.name()}">
-                                                <div class="d-flex align-items-center justify-content-between">
-                                                    <div>
-                                                        <h6 class="mb-1">
-                                                            <c:choose>
-                                                                <c:when test="${s.name() == 'COMPLETED'}">
-                                                                    <i class="bi bi-check-circle text-success me-2"></i>
-                                                                </c:when>
-                                                                <c:when test="${s.name() == 'IN_PROGRESS'}">
-                                                                    <i class="bi bi-hourglass-split text-info me-2"></i>
-                                                                </c:when>
-                                                                <c:when test="${s.name() == 'CANCELLED'}">
-                                                                    <i class="bi bi-x-circle text-dark me-2"></i>
-                                                                </c:when>
-                                                                <c:otherwise>
-                                                                    <i class="bi bi-clock-history text-secondary me-2"></i>
-                                                                </c:otherwise>
-                                                            </c:choose>
-                                                            ${s.vietnamese}
-                                                        </h6>
-                                                        <small class="text-muted">
-                                                            <c:choose>
-                                                                <c:when test="${s.name() == 'PENDING'}">
-                                                                    Công việc đang chờ bắt đầu thực hiện
-                                                                </c:when>
-                                                                <c:when test="${s.name() == 'IN_PROGRESS'}">
-                                                                    Công việc đang được thực hiện
-                                                                </c:when>
-                                                                <c:when test="${s.name() == 'COMPLETED'}">
-                                                                    Công việc đã hoàn thành xong
-                                                                </c:when>
-                                                                <c:when test="${s.name() == 'CANCELLED'}">
-                                                                    Công việc đã bị hủy bỏ
-                                                                </c:when>
-                                                            </c:choose>
-                                                        </small>
-                                                    </div>
-                                                    <div>
-                                                        <c:choose>
-                                                            <c:when test="${s.name() == 'COMPLETED'}">
-                                                                <span class="badge bg-success">✓</span>
-                                                            </c:when>
-                                                            <c:when test="${s.name() == 'IN_PROGRESS'}">
-                                                                <span class="badge bg-info">●</span>
-                                                            </c:when>
-                                                            <c:when test="${s.name() == 'CANCELLED'}">
-                                                                <span class="badge bg-dark">×</span>
-                                                            </c:when>
-                                                            <c:otherwise>
-                                                                <span class="badge bg-secondary">○</span>
-                                                            </c:otherwise>
-                                                        </c:choose>
-                                                    </div>
-                                                </div>
-                                            </label>
-                                        </div>
-                                    </div>
-                                </c:forEach>
-                            </div>
-                        </div>
-
-                        <!-- Note -->
-                        <div class="mb-4">
-                            <label for="statusNote" class="form-label">Ghi chú về thay đổi (tùy chọn)</label>
-                            <textarea class="form-control" id="statusNote" name="statusNote" rows="3"
-                                      placeholder="Thêm ghi chú về lý do thay đổi trạng thái..."></textarea>
-                        </div>
-
-                        <!-- Warning for completion -->
-                        <div id="completionWarning" class="alert alert-warning" style="display: none;">
+                        <div class="alert alert-warning mb-4">
                             <i class="bi bi-exclamation-triangle me-2"></i>
-                            <strong>Lưu ý:</strong> Khi đánh dấu công việc là "Hoàn thành", hệ thống sẽ tự động ghi nhận thời gian hoàn thành.
+                            <strong>Lưu ý:</strong> Quản lý chỉ có thể <strong>hủy</strong> công việc.
+                            Việc cập nhật hoàn thành do nhân viên thực hiện.
                         </div>
 
                         <!-- Action Buttons -->
                         <div class="d-flex gap-2">
-                            <button type="submit" class="btn btn-primary btn-lg">
-                                <i class="bi bi-check-circle me-2"></i>
-                                Cập nhật trạng thái
+                            <button type="submit" class="btn btn-danger btn-lg">
+                                <i class="bi bi-x-circle me-2"></i>Hủy công việc
                             </button>
                             <a href="${pageContext.request.contextPath}/manager/task/detail?id=${task.taskId}"
                                class="btn btn-secondary btn-lg">
-                                <i class="bi bi-x-circle me-2"></i>Hủy
+                                <i class="bi bi-arrow-left me-2"></i>Quay lại
                             </a>
                         </div>
                     </form>
@@ -311,25 +226,3 @@
     }
 </style>
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const statusRadios = document.querySelectorAll('input[name="status"]');
-    const completionWarning = document.getElementById('completionWarning');
-
-    statusRadios.forEach(radio => {
-        radio.addEventListener('change', function() {
-            if (this.value === 'COMPLETED') {
-                completionWarning.style.display = 'block';
-            } else {
-                completionWarning.style.display = 'none';
-            }
-        });
-    });
-
-    // Trigger on page load if COMPLETED is selected
-    const selectedRadio = document.querySelector('input[name="status"]:checked');
-    if (selectedRadio && selectedRadio.value === 'COMPLETED') {
-        completionWarning.style.display = 'block';
-    }
-});
-</script>

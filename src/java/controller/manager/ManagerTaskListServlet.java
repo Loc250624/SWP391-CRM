@@ -73,9 +73,7 @@ public class ManagerTaskListServlet extends HttpServlet {
             String pageParam = request.getParameter("page");
             if (pageParam != null && !pageParam.isEmpty()) {
                 page = Integer.parseInt(pageParam);
-                if (page < 1) {
-                    page = 1;
-                }
+                if (page < 1) page = 1;
             }
         } catch (NumberFormatException e) {
             page = 1;
@@ -104,52 +102,56 @@ public class ManagerTaskListServlet extends HttpServlet {
             }
         }
 
-        // ── Fetch tasks based on taskType ───────────────────────────────────
+        // ── Fetch ALL tasks created by this manager (no assignee-count restriction) ──
+        List<Task> managerTasks = taskDAO.getAllTasksByCreator(
+                currentUser.getUserId(),
+                statusFilter, priorityFilter, keyword,
+                sortBy, sortOrder);
+
+        // ── Split into personal (assignee <= 1) and team (assignee > 1) ─────
         List<Task> allTasks = new ArrayList<>();
         Map<Integer, List<Task>> groupMembersMap = new HashMap<>();
 
         if ("team".equals(taskType)) {
-            // Team tasks: group tasks with multiple assignees
-            if (!teamMemberIds.isEmpty()) {
-                Integer selectedEmployee = null;
-                if (employeeFilter != null && !employeeFilter.isEmpty()) {
-                    try {
-                        int parsed = Integer.parseInt(employeeFilter);
-                        if (teamMemberIds.contains(parsed)) {
-                            selectedEmployee = parsed;
-                        } else {
-                            employeeFilter = null;
-                        }
-                    } catch (NumberFormatException e) {
-                        employeeFilter = null;
-                    }
-                }
-                List<Task> groupTasks = taskDAO.getGroupTaskSummaries(
-                        teamMemberIds, selectedEmployee,
-                        statusFilter, priorityFilter, keyword,
-                        sortBy, sortOrder, 0, 1000);
-
-                for (Task t : groupTasks) {
+            for (Task t : managerTasks) {
+                int assigneeCount = taskDAO.countAssignees(t.getTaskId());
+                if (assigneeCount > 1) {
+                    t.setGroupTaskId(t.getTaskId());
                     allTasks.add(t);
                     groupMembersMap.put(t.getTaskId(), taskDAO.getGroupTaskMembers(t.getTaskId()));
                 }
             }
+            // Employee filter for team tasks
+            if (employeeFilter != null && !employeeFilter.isEmpty()) {
+                try {
+                    int empId = Integer.parseInt(employeeFilter);
+                    List<Task> filtered = new ArrayList<>();
+                    for (Task t : allTasks) {
+                        List<Task> members = groupMembersMap.get(t.getTaskId());
+                        if (members != null) {
+                            for (Task m : members) {
+                                if (m.getAssignedTo() != null && m.getAssignedTo() == empId) {
+                                    filtered.add(t);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    allTasks = filtered;
+                } catch (NumberFormatException ignored) {
+                    employeeFilter = null;
+                }
+            }
         } else {
-            // Personal tasks: individual tasks created by manager (assignee count <= 1)
-            List<Task> individualTasks = taskDAO.getTasksByManager(
-                    currentUser.getUserId(),
-                    statusFilter, priorityFilter, keyword,
-                    sortBy, sortOrder, 0, 1000);
-
-            Set<Integer> seenIds = new HashSet<>();
-            for (Task t : individualTasks) {
-                if (seenIds.add(t.getTaskId())) {
+            for (Task t : managerTasks) {
+                int assigneeCount = taskDAO.countAssignees(t.getTaskId());
+                if (assigneeCount <= 1) {
                     allTasks.add(t);
                 }
             }
         }
 
-        // Filter by relatedType (LEAD or CUSTOMER)
+        // ── Filter by relatedType (LEAD or CUSTOMER) ────────────────────────
         List<Task> filteredTasks = new ArrayList<>();
         for (Task t : allTasks) {
             if (filterRelatedType.equals(t.getRelatedType())) {
@@ -157,7 +159,7 @@ public class ManagerTaskListServlet extends HttpServlet {
             }
         }
 
-        // Java-side pagination
+        // ── Java-side pagination ─────────────────────────────────────────────
         int totalTasks = filteredTasks.size();
         int offset = (page - 1) * pageSize;
         int fromIndex = Math.min(offset, totalTasks);
