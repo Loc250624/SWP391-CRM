@@ -38,7 +38,7 @@ public class AuditLogDAO extends DBContext {
             String keyword, int offset, int limit) {
         List<AuditLog> list = new ArrayList<>();
         StringBuilder sql = new StringBuilder(
-                "SELECT a.*, u.full_name AS user_name, u.email AS user_email "
+                "SELECT a.*, CONCAT(u.first_name, ' ', u.last_name) AS user_name, u.email AS user_email "
                 + "FROM audit_logs a LEFT JOIN users u ON a.user_id = u.user_id WHERE 1=1 ");
         List<Object> params = new ArrayList<>();
 
@@ -51,10 +51,10 @@ public class AuditLogDAO extends DBContext {
             params.add(entityType);
         }
         if (keyword != null && !keyword.isEmpty()) {
-            sql.append("AND (u.full_name LIKE ? OR u.email LIKE ? OR a.ip_address LIKE ? "
+            sql.append("AND (u.first_name LIKE ? OR u.last_name LIKE ? OR u.email LIKE ? OR a.ip_address LIKE ? "
                     + "OR a.old_values LIKE ? OR a.new_values LIKE ?) ");
             String kw = "%" + keyword + "%";
-            for (int i = 0; i < 5; i++) params.add(kw);
+            for (int i = 0; i < 6; i++) params.add(kw);
         }
 
         sql.append("ORDER BY a.created_at DESC OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
@@ -93,10 +93,10 @@ public class AuditLogDAO extends DBContext {
             params.add(entityType);
         }
         if (keyword != null && !keyword.isEmpty()) {
-            sql.append("AND (u.full_name LIKE ? OR u.email LIKE ? OR a.ip_address LIKE ? "
+            sql.append("AND (u.first_name LIKE ? OR u.last_name LIKE ? OR u.email LIKE ? OR a.ip_address LIKE ? "
                     + "OR a.old_values LIKE ? OR a.new_values LIKE ?) ");
             String kw = "%" + keyword + "%";
-            for (int i = 0; i < 5; i++) params.add(kw);
+            for (int i = 0; i < 6; i++) params.add(kw);
         }
 
         try (PreparedStatement st = connection.prepareStatement(sql.toString())) {
@@ -144,7 +144,7 @@ public class AuditLogDAO extends DBContext {
     }
 
     public AuditLog getById(int logId) {
-        String sql = "SELECT a.*, u.full_name AS user_name, u.email AS user_email "
+        String sql = "SELECT a.*, CONCAT(u.first_name, ' ', u.last_name) AS user_name, u.email AS user_email "
                 + "FROM audit_logs a LEFT JOIN users u ON a.user_id = u.user_id WHERE a.log_id = ?";
         try (PreparedStatement st = connection.prepareStatement(sql)) {
             st.setInt(1, logId);
