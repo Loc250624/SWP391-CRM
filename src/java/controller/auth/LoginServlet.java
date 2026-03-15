@@ -9,6 +9,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import model.Users;
+import util.AuditUtil;
 
 @WebServlet(name = "LoginServlet", urlPatterns = { "/login", "/auth/login" })
 public class LoginServlet extends HttpServlet {
@@ -42,6 +43,8 @@ public class LoginServlet extends HttpServlet {
             session.setAttribute("user", user);
             session.setAttribute("role", roleCode != null ? roleCode.toUpperCase() : null);
 
+            AuditUtil.logLogin(request, user.getUserId());
+
             // 3. Điều hướng dựa trên danh sách Role
             if (roleCode == null) {
                 response.sendRedirect(request.getContextPath() + "/home");
@@ -60,7 +63,7 @@ public class LoginServlet extends HttpServlet {
                         response.sendRedirect(request.getContextPath() + "/support/activities");
                         break;
                     case "MANAGER":
-                        response.sendRedirect(request.getContextPath() + "/manager/task/report");
+                        response.sendRedirect(request.getContextPath() + "/manager/dashboard");
                         break;
                     default:
                         response.sendRedirect(request.getContextPath() + "/home");

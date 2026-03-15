@@ -647,6 +647,57 @@ public class TaskDAO extends DBContext {
         return tasks;
     }
 
+    // ── Get ALL tasks created by a user (no assignee-count restriction) ──
+    public List<Task> getAllTasksByCreator(int creatorId, String status, String priority,
+                                          String keyword, String sortBy, String sortOrder) {
+        List<Task> tasks = new ArrayList<>();
+        StringBuilder sql = new StringBuilder(
+            BASE_SELECT + "WHERE t.created_by = ? AND " + NOT_DELETED
+        );
+
+        if (status != null && !status.isEmpty()) sql.append(" AND t.status = ?");
+        if (priority != null && !priority.isEmpty()) sql.append(" AND t.priority = ?");
+        if (keyword != null && !keyword.isEmpty()) sql.append(" AND (t.title LIKE ? OR t.description LIKE ?)");
+
+        if (sortBy != null && !sortBy.isEmpty()) {
+            sql.append(" ORDER BY t.").append(sortBy);
+            if ("DESC".equalsIgnoreCase(sortOrder)) sql.append(" DESC"); else sql.append(" ASC");
+        } else {
+            sql.append(" ORDER BY t.created_at DESC");
+        }
+
+        try (PreparedStatement st = connection.prepareStatement(sql.toString())) {
+            int idx = 1;
+            st.setInt(idx++, creatorId);
+            if (status != null && !status.isEmpty()) st.setInt(idx++, TaskStatus.valueOf(status).ordinal());
+            if (priority != null && !priority.isEmpty()) st.setInt(idx++, Priority.valueOf(priority).ordinal());
+            if (keyword != null && !keyword.isEmpty()) {
+                String pat = "%" + keyword + "%";
+                st.setString(idx++, pat); st.setString(idx++, pat);
+            }
+            try (ResultSet rs = st.executeQuery()) {
+                while (rs.next()) tasks.add(mapResultSetToTask(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return tasks;
+    }
+
+    // ── Count assignees for a task ──
+    public int countAssignees(int taskId) {
+        String sql = "SELECT COUNT(*) AS cnt FROM task_assignees WHERE task_id = ?";
+        try (PreparedStatement st = connection.prepareStatement(sql)) {
+            st.setInt(1, taskId);
+            try (ResultSet rs = st.executeQuery()) {
+                if (rs.next()) return rs.getInt("cnt");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
     // ── Count tasks by manager ──
     public int countTasksByManager(int managerId, String status, String priority, String keyword) {
         StringBuilder sql = new StringBuilder(
@@ -1324,6 +1375,39 @@ public class TaskDAO extends DBContext {
         return taDao.insert(primary);
     }
 
+    // ── Get ALL overdue tasks (for scheduler - no user filter) ──
+    public List<Task> getAllOverdueTasks() {
+        List<Task> tasks = new ArrayList<>();
+        String sql = BASE_SELECT + "WHERE t.due_date < GETDATE() AND t.status != 2 AND t.status != 3 AND " + NOT_DELETED
+                + " ORDER BY t.due_date ASC";
+        try (PreparedStatement st = connection.prepareStatement(sql)) {
+            try (ResultSet rs = st.executeQuery()) {
+                while (rs.next()) tasks.add(mapResultSetToTask(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return tasks;
+    }
+
+    // ── Get ALL upcoming tasks with due within N hours (for scheduler) ──
+    public List<Task> getAllUpcomingTasks(int hoursAhead) {
+        List<Task> tasks = new ArrayList<>();
+        String sql = BASE_SELECT
+                + "WHERE t.status != 2 AND t.status != 3 "
+                + "AND t.due_date BETWEEN GETDATE() AND DATEADD(HOUR, ?, GETDATE()) "
+                + "AND " + NOT_DELETED + " ORDER BY t.due_date ASC";
+        try (PreparedStatement st = connection.prepareStatement(sql)) {
+            st.setInt(1, hoursAhead);
+            try (ResultSet rs = st.executeQuery()) {
+                while (rs.next()) tasks.add(mapResultSetToTask(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return tasks;
+    }
+
     // ── Get overdue tasks ──
     public List<Task> getOverdueTasks(Integer userId, List<Integer> teamMemberIds) {
         List<Task> tasks = new ArrayList<>();
@@ -1346,6 +1430,24 @@ public class TaskDAO extends DBContext {
             } else if (teamMemberIds != null && !teamMemberIds.isEmpty()) {
                 for (Integer id : teamMemberIds) st.setInt(idx++, id);
             }
+            try (ResultSet rs = st.executeQuery()) {
+                while (rs.next()) tasks.add(mapResultSetToTask(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return tasks;
+    }
+
+    // ── Get tasks related to a specific lead (via task_relations) ──
+    public List<Task> getTasksByRelatedLead(int leadId) {
+        List<Task> tasks = new ArrayList<>();
+        String sql = BASE_SELECT +
+            "INNER JOIN task_relations tr2 ON tr2.task_id = t.task_id " +
+            "WHERE tr2.related_type = 'LEAD' AND tr2.related_id = ? " +
+            "AND " + NOT_DELETED + " ORDER BY t.created_at DESC";
+        try (PreparedStatement st = connection.prepareStatement(sql)) {
+            st.setInt(1, leadId);
             try (ResultSet rs = st.executeQuery()) {
                 while (rs.next()) tasks.add(mapResultSetToTask(rs));
             }

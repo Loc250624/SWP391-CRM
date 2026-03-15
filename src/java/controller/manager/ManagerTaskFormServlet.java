@@ -5,6 +5,7 @@ import dao.LeadDAO;
 import dao.OpportunityDAO;
 import dao.TaskAssigneeDAO;
 import dao.TaskDAO;
+import dao.TaskRelationDAO;
 import dao.UserDAO;
 import enums.Priority;
 import enums.TaskStatus;
@@ -23,7 +24,9 @@ import model.Lead;
 import model.Opportunity;
 import model.Task;
 import model.TaskAssignee;
+import model.TaskRelation;
 import model.Users;
+import util.AuditUtil;
 
 @WebServlet(name = "ManagerTaskFormServlet", urlPatterns = {"/manager/task/form"})
 public class ManagerTaskFormServlet extends HttpServlet {
@@ -82,11 +85,46 @@ public class ManagerTaskFormServlet extends HttpServlet {
 
         List<Integer> existingDepIds = TaskDAO.parseDependencyIds(task.getDescription());
 
+        // Handle leadId param (from lead-list page redirect)
+        LeadDAO leadDAO = new LeadDAO();
+        String leadIdStr = request.getParameter("leadId");
+        if (leadIdStr != null && !leadIdStr.trim().isEmpty() && !"edit".equals(action)) {
+            try {
+                int leadId = Integer.parseInt(leadIdStr.trim());
+                Lead linkedLead = leadDAO.getLeadById(leadId);
+                if (linkedLead != null) {
+                    request.setAttribute("linkedLead", linkedLead);
+                }
+            } catch (NumberFormatException ignored) {}
+        }
+
+        // Handle customerId param (from customer-list page redirect)
+        CustomerDAO customerDAO = new CustomerDAO();
+        String customerIdStr = request.getParameter("customerId");
+        if (customerIdStr != null && !customerIdStr.trim().isEmpty() && !"edit".equals(action)) {
+            try {
+                int customerId = Integer.parseInt(customerIdStr.trim());
+                Customer linkedCustomer = customerDAO.getCustomerById(customerId);
+                if (linkedCustomer != null) {
+                    request.setAttribute("linkedCustomer", linkedCustomer);
+                }
+            } catch (NumberFormatException ignored) {}
+        }
+
+        // Unassigned leads/customers for picker modal (create mode)
+        request.setAttribute("pickerLeads", leadDAO.getUnassignedLeadsForPicker());
+        request.setAttribute("pickerCustomers", customerDAO.getUnassignedCustomersForPicker());
+
+        // Users by role for assignee picker
+        List<Users> salesUsers = userDAO.getUsersByRoleCode("SALES");
+        List<Users> supportUsers = userDAO.getUsersByRoleCode("SUPPORT");
+
         request.setAttribute("task",             task);
-        request.setAttribute("allUsers",         userDAO.getAllUsers());
+        request.setAttribute("allUsers",         salesUsers);
+        request.setAttribute("supportUsers",     supportUsers);
         request.setAttribute("salesForAssign",   salesForAssign);
-        request.setAttribute("leads",            new LeadDAO().getAllLeads());
-        request.setAttribute("customers",        new CustomerDAO().getAllCustomers());
+        request.setAttribute("leads",            leadDAO.getAllLeads());
+        request.setAttribute("customers",        customerDAO.getAllCustomers());
         request.setAttribute("opportunities",    new OpportunityDAO().getAllOpportunities());
         request.setAttribute("taskStatusValues", TaskStatus.values());
         request.setAttribute("priorityValues",   Priority.values());
@@ -166,29 +204,66 @@ public class ManagerTaskFormServlet extends HttpServlet {
             // ── Parse related object ────────────────────────────────────────
             String  relatedType = null;
             Integer relatedId   = null;
-            String  rawRelated  = request.getParameter("relatedId");
-            if (rawRelated != null && !rawRelated.trim().isEmpty()) {
-                String raw = rawRelated.trim();
-                int us = raw.indexOf('_');
-                if (us <= 0 || us >= raw.length() - 1) {
-                    session.setAttribute("errorMessage", "Đối tượng liên kết không hợp lệ");
-                    response.sendRedirect(errorBase); return;
+            List<Integer> extraLeadIds = new ArrayList<>();
+            List<Integer> extraCustomerIds = new ArrayList<>();
+
+            // Check for selected leads from lead picker (multiple)
+            String[] selectedLeads = request.getParameterValues("selectedLeads");
+            if (selectedLeads != null && selectedLeads.length > 0) {
+                relatedType = "LEAD";
+                for (int i = 0; i < selectedLeads.length; i++) {
+                    try {
+                        int lid = Integer.parseInt(selectedLeads[i].trim());
+                        if (lid > 0) {
+                            if (relatedId == null) {
+                                relatedId = lid; // first one is primary
+                            } else {
+                                extraLeadIds.add(lid);
+                            }
+                        }
+                    } catch (NumberFormatException ignored) {}
                 }
-                String typeToken = raw.substring(0, us);
-                switch (typeToken) {
-                    case "LEAD":        relatedType = "LEAD";        break;
-                    case "CUSTOMER":    relatedType = "CUSTOMER";    break;
-                    case "OPPORTUNITY": relatedType = "OPPORTUNITY"; break;
-                    default:
-                        session.setAttribute("errorMessage", "Loại đối tượng không hợp lệ");
-                        response.sendRedirect(errorBase); return;
+            }
+
+            // Check for selected customers from customer picker (multiple)
+            String[] selectedCustomers = request.getParameterValues("selectedCustomers");
+            if (selectedCustomers != null && selectedCustomers.length > 0) {
+                // If no leads were selected, first customer becomes primary related object
+                if (relatedId == null) {
+                    relatedType = "CUSTOMER";
                 }
-                try {
-                    relatedId = Integer.parseInt(raw.substring(us + 1));
-                    if (relatedId <= 0) throw new NumberFormatException();
-                } catch (NumberFormatException e) {
-                    session.setAttribute("errorMessage", "ID đối tượng không hợp lệ");
-                    response.sendRedirect(errorBase); return;
+                for (int i = 0; i < selectedCustomers.length; i++) {
+                    try {
+                        int cid = Integer.parseInt(selectedCustomers[i].trim());
+                        if (cid > 0) {
+                            if (relatedId == null) {
+                                relatedId = cid; // first one is primary
+                            } else {
+                                extraCustomerIds.add(cid);
+                            }
+                        }
+                    } catch (NumberFormatException ignored) {}
+                }
+            }
+
+            // Fallback: old composite relatedId format (for edit mode or other cases)
+            if (relatedId == null) {
+                String rawRelated = request.getParameter("relatedId");
+                if (rawRelated != null && !rawRelated.trim().isEmpty()) {
+                    String raw = rawRelated.trim();
+                    int us = raw.indexOf('_');
+                    if (us > 0 && us < raw.length() - 1) {
+                        String typeToken = raw.substring(0, us);
+                        switch (typeToken) {
+                            case "LEAD":        relatedType = "LEAD";        break;
+                            case "CUSTOMER":    relatedType = "CUSTOMER";    break;
+                            case "OPPORTUNITY": relatedType = "OPPORTUNITY"; break;
+                        }
+                        try {
+                            relatedId = Integer.parseInt(raw.substring(us + 1));
+                            if (relatedId <= 0) relatedId = null;
+                        } catch (NumberFormatException e) { relatedId = null; }
+                    }
                 }
             }
 
@@ -211,22 +286,13 @@ public class ManagerTaskFormServlet extends HttpServlet {
                     for (String s : groupArr) {
                         try {
                             int gId = Integer.parseInt(s.trim());
-                            if (isInTeam(gId, team) && !mainIds.contains(gId)) mainIds.add(gId);
+                            if (userDAO.getUserById(gId) != null && !mainIds.contains(gId))
+                                mainIds.add(gId);
                         } catch (NumberFormatException ignored) {}
                     }
                     if (mainIds.size() < 2) {
                         session.setAttribute("errorMessage", "Nhóm cần ít nhất 2 người");
                         response.sendRedirect(errorBase); return;
-                    }
-                    String[] supportArr = request.getParameterValues("supportMembers");
-                    if (supportArr != null) {
-                        for (String s : supportArr) {
-                            try {
-                                int sId = Integer.parseInt(s.trim());
-                                if (isInTeam(sId, team) && !mainIds.contains(sId)
-                                        && !supportIds.contains(sId)) supportIds.add(sId);
-                            } catch (NumberFormatException ignored) {}
-                        }
                     }
                 } else {
                     String aStr = request.getParameter("assignedTo");
@@ -246,63 +312,54 @@ public class ManagerTaskFormServlet extends HttpServlet {
 
                 String cleanDesc = description != null ? description.trim() : null;
                 boolean success;
+                Task createdTask = new Task();
+                createdTask.setTitle(title.trim());
+                createdTask.setDescription(cleanDesc);
+                createdTask.setAssignedTo(mainIds.get(0));
+                createdTask.setDueDate(dueDate);
+                createdTask.setPriority(priority);
+                createdTask.setStatus(TaskStatus.IN_PROGRESS.ordinal());
+                createdTask.setRelatedType(relatedType);
+                createdTask.setRelatedId(relatedId);
+                createdTask.setCreatedBy(currentUser.getUserId());
+                createdTask.setReminderAt(dueDate.minusHours(24));
+                success = taskDAO.insertTask(createdTask);
 
-                if ("GROUP".equals(assignType)) {
-                    // New approach: 1 task + N assignees in task_assignees
-                    Task t = new Task();
-                    t.setTitle(title.trim());
-                    t.setDescription(cleanDesc);
-                    t.setAssignedTo(mainIds.get(0)); // primary assignee (auto-inserted by insertTask)
-                    t.setDueDate(dueDate);
-                    t.setPriority(priority);
-                    t.setStatus(TaskStatus.PENDING.ordinal());
-                    t.setRelatedType(relatedType);
-                    t.setRelatedId(relatedId);
-                    t.setCreatedBy(currentUser.getUserId());
-                    t.setReminderAt(dueDate.minusHours(24));
-                    success = taskDAO.insertTask(t);
+                if (success && createdTask.getTaskId() != null) {
+                    AuditUtil.logCreate(request, currentUser.getUserId(), "Task", createdTask.getTaskId(),
+                            "title=" + title.trim() + ", priority=" + priorityStr + ", assignedTo=" + mainIds.get(0)
+                            + ", relatedType=" + relatedType + ", relatedId=" + relatedId);
 
-                    if (success && t.getTaskId() != null) {
-                        TaskAssigneeDAO taDao = new TaskAssigneeDAO();
-                        // Add remaining main assignees (first one already inserted by insertTask)
-                        for (int i = 1; i < mainIds.size(); i++) {
-                            TaskAssignee ta = new TaskAssignee();
-                            ta.setTaskId(t.getTaskId());
-                            ta.setUserId(mainIds.get(i));
-                            ta.setRole("ASSIGNEE");
-                            ta.setTaskStatus(0);
-                            ta.setProgress(0);
-                            ta.setAssignedBy(currentUser.getUserId());
-                            ta.setAssignedAt(LocalDateTime.now());
-                            taDao.insert(ta);
-                        }
-                        // Add support members
-                        for (int sId : supportIds) {
-                            TaskAssignee ta = new TaskAssignee();
-                            ta.setTaskId(t.getTaskId());
-                            ta.setUserId(sId);
-                            ta.setRole("SUPPORT");
-                            ta.setTaskStatus(0);
-                            ta.setProgress(0);
-                            ta.setAssignedBy(currentUser.getUserId());
-                            ta.setAssignedAt(LocalDateTime.now());
-                            taDao.insert(ta);
-                        }
+                    // Fix: insertTask() hardcodes first assignee taskStatus=0 (PENDING)
+                    // Update to IN_PROGRESS to match the task status
+                    TaskAssigneeDAO taDao = new TaskAssigneeDAO();
+                    taDao.updateTaskStatus(createdTask.getTaskId(), mainIds.get(0), TaskStatus.IN_PROGRESS.ordinal());
+                }
+
+                if ("GROUP".equals(assignType) && success && createdTask.getTaskId() != null) {
+                    TaskAssigneeDAO taDao = new TaskAssigneeDAO();
+                    for (int i = 1; i < mainIds.size(); i++) {
+                        TaskAssignee ta = new TaskAssignee();
+                        ta.setTaskId(createdTask.getTaskId());
+                        ta.setUserId(mainIds.get(i));
+                        ta.setRole("ASSIGNEE");
+                        ta.setTaskStatus(TaskStatus.IN_PROGRESS.ordinal());
+                        ta.setProgress(0);
+                        ta.setAssignedBy(currentUser.getUserId());
+                        ta.setAssignedAt(LocalDateTime.now());
+                        taDao.insert(ta);
                     }
-                } else {
-                    // Individual task: 1 task + 1 assignee
-                    Task t = new Task();
-                    t.setTitle(title.trim());
-                    t.setDescription(cleanDesc);
-                    t.setAssignedTo(mainIds.get(0));
-                    t.setDueDate(dueDate);
-                    t.setPriority(priority);
-                    t.setStatus(TaskStatus.PENDING.ordinal());
-                    t.setRelatedType(relatedType);
-                    t.setRelatedId(relatedId);
-                    t.setCreatedBy(currentUser.getUserId());
-                    t.setReminderAt(dueDate.minusHours(24));
-                    success = taskDAO.insertTask(t);
+                    for (int sId : supportIds) {
+                        TaskAssignee ta = new TaskAssignee();
+                        ta.setTaskId(createdTask.getTaskId());
+                        ta.setUserId(sId);
+                        ta.setRole("SUPPORT");
+                        ta.setTaskStatus(TaskStatus.IN_PROGRESS.ordinal());
+                        ta.setProgress(0);
+                        ta.setAssignedBy(currentUser.getUserId());
+                        ta.setAssignedAt(LocalDateTime.now());
+                        taDao.insert(ta);
+                    }
                 }
 
                 if (!success) {
@@ -310,26 +367,87 @@ public class ManagerTaskFormServlet extends HttpServlet {
                     response.sendRedirect(errorBase); return;
                 }
 
-                // ── Auto-assign Lead/Customer nếu chưa có người phụ trách ──
-                // FIX: gán assigned_to của Lead/Customer theo người nhận task đầu tiên
-                if (relatedId != null && !mainIds.isEmpty()) {
-                    int primary = mainIds.get(0);
-                    if ("LEAD".equals(relatedType)) {
-                        Lead lead = new LeadDAO().getLeadById(relatedId);
-                        if (lead != null && lead.getAssignedTo() == null)
-                            new LeadDAO().updateLeadAssignedTo(relatedId, primary);
-                    } else if ("CUSTOMER".equals(relatedType)) {
-                        Customer c = new CustomerDAO().getCustomerById(relatedId);
-                        if (c != null && c.getOwnerId() == null)
-                            new CustomerDAO().updateCustomerOwnerId(relatedId, primary);
+                // ── Insert extra lead relations (if multiple leads selected) ──
+                if (!extraLeadIds.isEmpty() && createdTask.getTaskId() != null) {
+                    TaskRelationDAO trDao = new TaskRelationDAO();
+                    for (int extraLid : extraLeadIds) {
+                        TaskRelation tr = new TaskRelation();
+                        tr.setTaskId(createdTask.getTaskId());
+                        tr.setRelatedType("LEAD");
+                        tr.setRelatedId(extraLid);
+                        tr.setCreatedAt(LocalDateTime.now());
+                        tr.setCreatedBy(currentUser.getUserId());
+                        trDao.insert(tr);
                     }
                 }
+
+                // ── Insert extra customer relations (if multiple customers selected) ──
+                if (!extraCustomerIds.isEmpty() && createdTask.getTaskId() != null) {
+                    TaskRelationDAO trDao = new TaskRelationDAO();
+                    for (int extraCid : extraCustomerIds) {
+                        TaskRelation tr = new TaskRelation();
+                        tr.setTaskId(createdTask.getTaskId());
+                        tr.setRelatedType("CUSTOMER");
+                        tr.setRelatedId(extraCid);
+                        tr.setCreatedAt(LocalDateTime.now());
+                        tr.setCreatedBy(currentUser.getUserId());
+                        trDao.insert(tr);
+                    }
+                }
+
+                // ── Auto-assign Lead/Customer nếu chưa có người phụ trách ──
+                if (!mainIds.isEmpty()) {
+                    int primary = mainIds.get(0);
+                    LeadDAO ldDao = new LeadDAO();
+                    CustomerDAO cdDao = new CustomerDAO();
+
+                    // Auto-assign primary related object
+                    if (relatedId != null) {
+                        if ("LEAD".equals(relatedType)) {
+                            Lead lead = ldDao.getLeadById(relatedId);
+                            if (lead != null && lead.getAssignedTo() == null) {
+                                ldDao.updateLeadAssignedTo(relatedId, primary);
+                                ldDao.updateLeadStatus(relatedId, "Assigned");
+                            }
+                        } else if ("CUSTOMER".equals(relatedType)) {
+                            Customer c = cdDao.getCustomerById(relatedId);
+                            if (c != null && c.getOwnerId() == null)
+                                cdDao.updateCustomerOwnerId(relatedId, primary);
+                        }
+                    }
+
+                    // Auto-assign extra leads + update status to Assigned
+                    for (int extraLid : extraLeadIds) {
+                        Lead lead = ldDao.getLeadById(extraLid);
+                        if (lead != null && lead.getAssignedTo() == null) {
+                            ldDao.updateLeadAssignedTo(extraLid, primary);
+                            ldDao.updateLeadStatus(extraLid, "Assigned");
+                        }
+                    }
+
+                    // Auto-assign extra customers
+                    for (int extraCid : extraCustomerIds) {
+                        Customer c = cdDao.getCustomerById(extraCid);
+                        if (c != null && c.getOwnerId() == null)
+                            cdDao.updateCustomerOwnerId(extraCid, primary);
+                    }
+                }
+
+                // ── Gui thong bao cho tat ca assignees ──────────────────────
+                List<Integer> allAssignees = new ArrayList<>();
+                allAssignees.addAll(mainIds);
+                allAssignees.addAll(supportIds);
+                util.NotificationUtil.notifyTaskAssigned(
+                        createdTask.getTaskId(), createdTask.getTaskCode(), title.trim(),
+                        priorityStr, allAssignees, currentUser.getUserId());
 
                 String who = (mainIds.size() + supportIds.size()) > 1
                         ? (mainIds.size() + supportIds.size()) + " nhân viên" : "1 nhân viên";
                 session.setAttribute("successMessage",
-                    "Đã tạo công việc cho " + who + ". Trạng thái: Chờ xử lý — Sale xác nhận nhận việc sẽ chuyển sang Đang thực hiện.");
-                response.sendRedirect(request.getContextPath() + "/manager/task/list?view=team");
+                    "Đã tạo và giao công việc cho " + who + ". Trạng thái: Đang thực hiện.");
+                String redirectView = "CUSTOMER".equals(relatedType) ? "customer" : "lead";
+                String redirectTaskType = (mainIds.size() + supportIds.size()) > 1 ? "team" : "personal";
+                response.sendRedirect(request.getContextPath() + "/manager/task/list?taskType=" + redirectTaskType + "&view=" + redirectView);
 
 
             } else if ("edit".equals(formAction)) {
@@ -400,6 +518,10 @@ public class ManagerTaskFormServlet extends HttpServlet {
                 task.setReminderAt(dueDate.minusHours(24));
 
                 if (taskDAO.updateTask(task)) {
+                    AuditUtil.logUpdate(request, currentUser.getUserId(), "Task", taskId,
+                            null,
+                            "title=" + title.trim() + ", priority=" + priorityStr
+                            + ", status=" + request.getParameter("status") + ", assignedTo=" + assignedTo);
                     session.setAttribute("successMessage", "Cập nhật công việc thành công");
                     response.sendRedirect(request.getContextPath() + "/manager/task/detail?id=" + taskId);
                 } else {

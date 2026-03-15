@@ -28,11 +28,6 @@
                 <i class="bi bi-people me-2"></i>Lịch nhóm
             </a>
         </li>
-        <li class="nav-item">
-            <a class="nav-link" href="${pageContext.request.contextPath}/manager/task/list">
-                <i class="bi bi-list-task me-2"></i>Danh sách
-            </a>
-        </li>
     </ul>
 
     <!-- Calendar Navigation -->
@@ -97,8 +92,8 @@
                                                                     <a href="${pageContext.request.contextPath}/manager/task/detail?id=${task.taskId}"
                                                                        class="d-block text-decoration-none mb-1">
                                                                         <div class="task-item-mini p-1 rounded
-                                                                            ${task.priorityName == 'HIGH' ? 'bg-danger' : task.priorityName == 'MEDIUM' ? 'bg-warning' : 'bg-secondary'}
-                                                                            bg-opacity-10 border border-${task.priorityName == 'HIGH' ? 'danger' : task.priorityName == 'MEDIUM' ? 'warning' : 'secondary'}">
+                                                                             ${task.priorityName == 'HIGH' ? 'bg-danger' : task.priorityName == 'MEDIUM' ? 'bg-warning' : 'bg-secondary'}
+                                                                             bg-opacity-10 border border-${task.priorityName == 'HIGH' ? 'danger' : task.priorityName == 'MEDIUM' ? 'warning' : 'secondary'}">
                                                                             <small class="text-dark d-block text-truncate" style="max-width: 100%;">
                                                                                 ${task.title}
                                                                             </small>

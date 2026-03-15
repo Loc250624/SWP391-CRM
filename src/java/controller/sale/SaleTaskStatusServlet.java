@@ -1,9 +1,12 @@
 package controller.sale;
 
+import dao.TaskAssigneeDAO;
 import dao.TaskDAO;
 import dao.UserDAO;
 import enums.TaskStatus;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -113,9 +116,9 @@ public class SaleTaskStatusServlet extends HttpServlet {
             return;
         }
 
-        // SALE users cannot set CANCELLED status
-        if ("CANCELLED".equals(newStatus)) {
-            session.setAttribute("errorMessage", "Bạn không có quyền hủy công việc");
+        // SALE users can only set COMPLETED
+        if (!"COMPLETED".equals(newStatus)) {
+            session.setAttribute("errorMessage", "Bạn chỉ có thể cập nhật trạng thái sang Hoàn thành");
             response.sendRedirect(redirectBack);
             return;
         }
@@ -159,6 +162,18 @@ public class SaleTaskStatusServlet extends HttpServlet {
             boolean success = taskDAO.updateTask(task);
 
             if (success) {
+                // Thong bao cho assignees + creator (tru nguoi thay doi)
+                List<Integer> notifyIds = new ArrayList<>();
+                for (model.TaskAssignee ta : new TaskAssigneeDAO().getByTaskId(taskId)) {
+                    if (!notifyIds.contains(ta.getUserId())) notifyIds.add(ta.getUserId());
+                }
+                if (task.getCreatedBy() != null && !notifyIds.contains(task.getCreatedBy())) {
+                    notifyIds.add(task.getCreatedBy());
+                }
+                util.NotificationUtil.notifyTaskStatusChanged(
+                        taskId, task.getTaskCode(), task.getTitle(),
+                        newStatus, currentUser.getUserId(), notifyIds);
+
                 session.setAttribute("successMessage", "Cập nhật trạng thái thành công");
                 response.sendRedirect(request.getContextPath() + "/sale/task/detail?id=" + taskId);
             } else {

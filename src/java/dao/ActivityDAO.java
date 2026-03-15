@@ -3,7 +3,9 @@ package dao;
 import dbConnection.DBContext;
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import model.Activity;
 
 public class ActivityDAO extends DBContext {
@@ -38,19 +40,18 @@ public class ActivityDAO extends DBContext {
      * hoàn thành ('Completed') để hiển thị trong Lịch sử.
      */
     // 1. CHỈ LẤY CÁC BÁO CÁO ĐÃ XONG CHO TRANG LỊCH SỬ
-    public List<Activity> getActivitiesByCustomerId(int customerId) {
+    public List<Activity> getReportsHistory(int id, String type) {
         List<Activity> list = new ArrayList<>();
-        // Đảm bảo có điều kiện: AND a.status = 'Completed'
         String sql = "SELECT a.*, (u.last_name + ' ' + u.first_name) AS full_performer_name "
-                + "FROM activities a "
-                + "LEFT JOIN users u ON a.performed_by = u.user_id "
-                + "WHERE a.related_id = ? AND a.related_type = 'Customer' "
-                + "ORDER BY a.created_at DESC";
+                + "FROM activities a LEFT JOIN users u ON a.performed_by = u.user_id "
+                + "WHERE a.related_id = ? AND a.related_type = ? " // Lọc theo ID và Loại (Lead/Customer)
+                + "AND a.status = 'Completed' ORDER BY a.created_at DESC";
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
-            ps.setInt(1, customerId);
+            ps.setInt(1, id);
+            ps.setString(2, type);
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
-                Activity a = mapResultSetToActivity(rs);
+                Activity a = mapResultSetToActivity(rs); // Dùng hàm map có sẵn của bạn
                 a.setPerformerName(rs.getString("full_performer_name"));
                 list.add(a);
             }
@@ -60,7 +61,7 @@ public class ActivityDAO extends DBContext {
         return list;
     }
 
-    // 2. HÀM CẬP NHẬT NỘI DUNG VÀ HOÀN THÀNH
+// 2. HÀM CẬP NHẬT NỘI DUNG VÀ HOÀN THÀNH
     public boolean updateAndCompleteActivity(int activityId, String subject, String description) {
         // Cho phép cập nhật lại cả tiêu đề và nội dung trước khi đóng phiếu
         String sql = "UPDATE activities SET subject = ?, [description] = ?, status = 'Completed', created_at = GETDATE() "
@@ -80,19 +81,25 @@ public class ActivityDAO extends DBContext {
      * THÊM MỚI: Lấy danh sách các báo cáo đang ở trạng thái 'Pending'. Sử dụng
      * cho trang "Hàng chờ".
      */
-    public List<Activity> getPendingActivities() {
+   public List<Activity> getPendingActivities(int userId) {
         List<Activity> list = new ArrayList<>();
         String sql = "SELECT a.*, c.full_name, c.phone "
                 + "FROM activities a "
                 + "INNER JOIN customers c ON a.related_id = c.customer_id "
                 + "WHERE a.status = 'Pending' AND a.related_type = 'Customer' "
-                + "ORDER BY a.created_at ASC"; // Ưu tiên việc cũ hiện lên trước
+                + "AND a.performed_by = ? " 
+                // Thêm dòng này để chặn phiếu chuyển tiếp
+                + "AND (a.[description] NOT LIKE N'Phiếu yêu cầu hỗ trợ được chuyển tiếp%' OR a.[description] IS NULL) "
+                + "ORDER BY a.created_at ASC";
+                
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setInt(1, userId); 
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
                 Activity a = mapResultSetToActivity(rs);
                 a.setCustomerName(rs.getString("full_name"));
                 a.setCustomerPhone(rs.getString("phone"));
+                a.setRelatedType("Customer");
                 list.add(a);
             }
         } catch (SQLException e) {
@@ -364,26 +371,35 @@ public class ActivityDAO extends DBContext {
         return a;
     }
 
-    // Giữ nguyên hàm báo cáo theo tháng (Có bổ sung Mapping sạch hơn)
+    // CẬP NHẬT: Lấy nhật ký hoạt động cho cả Lead và Customer
     public List<Activity> getActivitiesByMonth(int staffId, int month, int year) {
         List<Activity> list = new ArrayList<>();
-        // THÊM: AND a.status = 'Completed' để không hiện phiếu đang chờ
-        String sql = "SELECT a.*, c.full_name, c.phone "
+        // Dùng LEFT JOIN kết hợp COALESCE để lấy dữ liệu từ cả 2 bảng
+        String sql = "SELECT a.*, "
+                + "COALESCE(c.full_name, l.full_name) AS contact_name, "
+                + "COALESCE(c.phone, l.phone) AS contact_phone "
                 + "FROM activities a "
-                + "INNER JOIN customers c ON a.related_id = c.customer_id "
-                + "WHERE a.performed_by = ? AND a.related_type = 'Customer' "
+                + "LEFT JOIN customers c ON a.related_type = 'Customer' AND a.related_id = c.customer_id "
+                + "LEFT JOIN leads l ON a.related_type = 'Lead' AND a.related_id = l.lead_id "
+                + "WHERE a.performed_by = ? "
                 + "AND a.status = 'Completed' "
                 + "AND MONTH(a.created_at) = ? AND YEAR(a.created_at) = ? "
                 + "ORDER BY a.created_at DESC";
+
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setInt(1, staffId);
             ps.setInt(2, month);
             ps.setInt(3, year);
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
+                // Tận dụng hàm map cơ bản của bạn
                 Activity a = mapResultSetToActivity(rs);
-                a.setCustomerName(rs.getString("full_name"));
-                a.setCustomerPhone(rs.getString("phone"));
+
+                // Gán tên và SĐT lấy được (không phân biệt là Lead hay Customer)
+                a.setCustomerName(rs.getString("contact_name"));
+                a.setCustomerPhone(rs.getString("contact_phone"));
+                a.setRelatedType(rs.getString("related_type")); // Lưu lại type để phân biệt trên giao diện
+
                 list.add(a);
             }
         } catch (SQLException e) {
@@ -435,6 +451,484 @@ public class ActivityDAO extends DBContext {
                 a.setStatus(rs.getString("status"));
                 a.setCreatedBy(rs.getInt("created_by"));
                 a.setPerformerName(rs.getString("creator_name"));
+                list.add(a);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    public List<Activity> getPendingLeads(int userId) {
+        List<Activity> list = new ArrayList<>();
+        String sql = "SELECT a.*, l.full_name, l.phone "
+                + "FROM activities a "
+                + "INNER JOIN leads l ON a.related_id = l.lead_id "
+                + "WHERE a.status = 'Pending' AND a.related_type = 'Lead' "
+                + "AND a.performed_by = ? " 
+                // Thêm dòng này để chặn phiếu chuyển tiếp
+                + "AND (a.[description] NOT LIKE N'Phiếu yêu cầu hỗ trợ được chuyển tiếp%' OR a.[description] IS NULL) "
+                + "ORDER BY a.created_at ASC";
+                
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                Activity a = mapResultSetToActivity(rs);
+                a.setCustomerName(rs.getString("full_name"));
+                a.setCustomerPhone(rs.getString("phone"));
+                a.setRelatedType("Lead");
+                list.add(a);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    // ==================== NEW SALE MODULE METHODS ====================
+
+    public boolean deleteActivity(int activityId) {
+        String sql = "DELETE FROM activities WHERE activity_id = ?";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setInt(1, activityId);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public List<Activity> getActivitiesByRelatedEntity(int relatedId, String relatedType) {
+        List<Activity> list = new ArrayList<>();
+        String sql = "SELECT a.*, "
+                + "(u.last_name + ' ' + u.first_name) AS performer_name, "
+                + "COALESCE(c.full_name, l.full_name) AS contact_name "
+                + "FROM activities a "
+                + "LEFT JOIN users u ON a.performed_by = u.user_id "
+                + "LEFT JOIN customers c ON a.related_type = 'Customer' AND a.related_id = c.customer_id "
+                + "LEFT JOIN leads l ON a.related_type = 'Lead' AND a.related_id = l.lead_id "
+                + "WHERE a.related_id = ? AND a.related_type = ? "
+                + "ORDER BY a.activity_date DESC, a.created_at DESC";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setInt(1, relatedId);
+            ps.setString(2, relatedType);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                Activity a = mapFullActivity(rs);
+                a.setPerformerName(rs.getString("performer_name"));
+                a.setCustomerName(rs.getString("contact_name"));
+                list.add(a);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    public List<Activity> getActivitiesByRelatedEntityForOpportunity(int opportunityId) {
+        List<Activity> list = new ArrayList<>();
+        String sql = "SELECT a.*, "
+                + "(u.last_name + ' ' + u.first_name) AS performer_name, "
+                + "COALESCE(c.full_name, l.full_name) AS contact_name "
+                + "FROM activities a "
+                + "LEFT JOIN users u ON a.performed_by = u.user_id "
+                + "LEFT JOIN customers c ON a.related_type = 'Customer' AND a.related_id = c.customer_id "
+                + "LEFT JOIN leads l ON a.related_type = 'Lead' AND a.related_id = l.lead_id "
+                + "WHERE a.related_id = ? AND a.related_type = 'Opportunity' "
+                + "ORDER BY a.activity_date DESC, a.created_at DESC";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setInt(1, opportunityId);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                Activity a = mapFullActivity(rs);
+                a.setPerformerName(rs.getString("performer_name"));
+                a.setCustomerName(rs.getString("contact_name"));
+                list.add(a);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    public List<Activity> getActivitiesByUserFiltered(int userId, String typeFilter, String keyword,
+            String statusFilter, String relatedTypeFilter, String startDate, String endDate, int offset, int limit) {
+        List<Activity> list = new ArrayList<>();
+        StringBuilder sql = new StringBuilder(
+                "SELECT a.*, "
+                + "(u.last_name + ' ' + u.first_name) AS performer_name, "
+                + "COALESCE(c.full_name, l.full_name) AS contact_name "
+                + "FROM activities a "
+                + "LEFT JOIN users u ON a.performed_by = u.user_id "
+                + "LEFT JOIN customers c ON a.related_type = 'Customer' AND a.related_id = c.customer_id "
+                + "LEFT JOIN leads l ON a.related_type = 'Lead' AND a.related_id = l.lead_id "
+                + "WHERE a.performed_by = ?");
+        List<Object> params = new ArrayList<>();
+        params.add(userId);
+
+        if (typeFilter != null && !typeFilter.isEmpty()) {
+            sql.append(" AND a.activity_type = ?");
+            params.add(typeFilter);
+        }
+        if (statusFilter != null && !statusFilter.isEmpty()) {
+            sql.append(" AND a.status = ?");
+            params.add(statusFilter);
+        }
+        if (relatedTypeFilter != null && !relatedTypeFilter.isEmpty()) {
+            sql.append(" AND a.related_type = ?");
+            params.add(relatedTypeFilter);
+        }
+        if (startDate != null && !startDate.isEmpty()) {
+            sql.append(" AND CAST(a.activity_date AS DATE) >= ?");
+            params.add(startDate);
+        }
+        if (endDate != null && !endDate.isEmpty()) {
+            sql.append(" AND CAST(a.activity_date AS DATE) <= ?");
+            params.add(endDate);
+        }
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            sql.append(" AND (a.subject LIKE ? OR a.[description] LIKE ?)");
+            String kw = "%" + keyword.trim() + "%";
+            params.add(kw);
+            params.add(kw);
+        }
+        sql.append(" ORDER BY a.activity_date DESC, a.created_at DESC");
+        sql.append(" OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
+        params.add(offset);
+        params.add(limit);
+
+        try (PreparedStatement ps = connection.prepareStatement(sql.toString())) {
+            for (int i = 0; i < params.size(); i++) {
+                Object p = params.get(i);
+                if (p instanceof Integer) {
+                    ps.setInt(i + 1, (Integer) p);
+                } else {
+                    ps.setString(i + 1, (String) p);
+                }
+            }
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                Activity a = mapFullActivity(rs);
+                a.setPerformerName(rs.getString("performer_name"));
+                a.setCustomerName(rs.getString("contact_name"));
+                list.add(a);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    public int countActivitiesByUserFiltered(int userId, String typeFilter, String keyword,
+            String statusFilter, String relatedTypeFilter, String startDate, String endDate) {
+        StringBuilder sql = new StringBuilder(
+                "SELECT COUNT(*) AS cnt FROM activities a WHERE a.performed_by = ?");
+        List<Object> params = new ArrayList<>();
+        params.add(userId);
+
+        if (typeFilter != null && !typeFilter.isEmpty()) {
+            sql.append(" AND a.activity_type = ?");
+            params.add(typeFilter);
+        }
+        if (statusFilter != null && !statusFilter.isEmpty()) {
+            sql.append(" AND a.status = ?");
+            params.add(statusFilter);
+        }
+        if (relatedTypeFilter != null && !relatedTypeFilter.isEmpty()) {
+            sql.append(" AND a.related_type = ?");
+            params.add(relatedTypeFilter);
+        }
+        if (startDate != null && !startDate.isEmpty()) {
+            sql.append(" AND CAST(a.activity_date AS DATE) >= ?");
+            params.add(startDate);
+        }
+        if (endDate != null && !endDate.isEmpty()) {
+            sql.append(" AND CAST(a.activity_date AS DATE) <= ?");
+            params.add(endDate);
+        }
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            sql.append(" AND (a.subject LIKE ? OR a.[description] LIKE ?)");
+            String kw = "%" + keyword.trim() + "%";
+            params.add(kw);
+            params.add(kw);
+        }
+
+        try (PreparedStatement ps = connection.prepareStatement(sql.toString())) {
+            for (int i = 0; i < params.size(); i++) {
+                Object p = params.get(i);
+                if (p instanceof Integer) {
+                    ps.setInt(i + 1, (Integer) p);
+                } else {
+                    ps.setString(i + 1, (String) p);
+                }
+            }
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return rs.getInt("cnt");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    public List<Activity> getRecentActivitiesByUser(int userId, int limit) {
+        List<Activity> list = new ArrayList<>();
+        String sql = "SELECT TOP (?) a.*, "
+                + "(u.last_name + ' ' + u.first_name) AS performer_name, "
+                + "COALESCE(c.full_name, l.full_name) AS contact_name "
+                + "FROM activities a "
+                + "LEFT JOIN users u ON a.performed_by = u.user_id "
+                + "LEFT JOIN customers c ON a.related_type = 'Customer' AND a.related_id = c.customer_id "
+                + "LEFT JOIN leads l ON a.related_type = 'Lead' AND a.related_id = l.lead_id "
+                + "WHERE a.performed_by = ? "
+                + "ORDER BY a.created_at DESC";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setInt(1, limit);
+            ps.setInt(2, userId);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                Activity a = mapFullActivity(rs);
+                a.setPerformerName(rs.getString("performer_name"));
+                a.setCustomerName(rs.getString("contact_name"));
+                list.add(a);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    public boolean markActivityCompleted(int activityId) {
+        String sql = "UPDATE activities SET status = 'Completed' WHERE activity_id = ?";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setInt(1, activityId);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    // ==================== MANAGER ACTIVITY LOG ====================
+
+    /**
+     * Lấy KPI tổng quan cho trang Log Activities của Manager.
+     * Đếm tổng hoạt động, số meeting, call, email trong 7 ngày gần nhất.
+     */
+    public Map<String, Integer> getManagerActivityKpi() {
+        Map<String, Integer> kpi = new HashMap<>();
+        String sql = "SELECT "
+                + "COUNT(*) AS total, "
+                + "SUM(CASE WHEN activity_type = 'Meeting' THEN 1 ELSE 0 END) AS meetings, "
+                + "SUM(CASE WHEN activity_type = 'Call' THEN 1 ELSE 0 END) AS calls, "
+                + "SUM(CASE WHEN activity_type = 'Email' THEN 1 ELSE 0 END) AS emails "
+                + "FROM activities a "
+                + "INNER JOIN users u ON a.performed_by = u.user_id "
+                + "INNER JOIN user_roles ur ON ur.user_id = u.user_id "
+                + "INNER JOIN roles r ON r.role_id = ur.role_id "
+                + "WHERE LOWER(r.role_code) IN ('sales', 'support')";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                kpi.put("total", rs.getInt("total"));
+                kpi.put("meetings", rs.getInt("meetings"));
+                kpi.put("calls", rs.getInt("calls"));
+                kpi.put("emails", rs.getInt("emails"));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return kpi;
+    }
+
+    /**
+     * Lấy danh sách activities có phân trang và bộ lọc cho Manager.
+     * Chỉ lấy activities của nhân viên Sales và Customer Success (SUPPORT).
+     */
+    public List<Activity> getManagerActivityLogPaged(String activityType, String relatedType,
+            String roleFilter, String keyword, String status, int offset, int limit) {
+        List<Activity> list = new ArrayList<>();
+        StringBuilder sql = new StringBuilder(
+                "SELECT a.*, "
+                + "(u.last_name + ' ' + u.first_name) AS performer_name, "
+                + "COALESCE(c.full_name, l.full_name) AS contact_name, "
+                + "r.role_code AS performer_role "
+                + "FROM activities a "
+                + "INNER JOIN users u ON a.performed_by = u.user_id "
+                + "INNER JOIN user_roles ur ON ur.user_id = u.user_id "
+                + "INNER JOIN roles r ON r.role_id = ur.role_id "
+                + "LEFT JOIN customers c ON a.related_type = 'Customer' AND a.related_id = c.customer_id "
+                + "LEFT JOIN leads l ON a.related_type = 'Lead' AND a.related_id = l.lead_id "
+                + "WHERE LOWER(r.role_code) IN ('sales', 'support') ");
+
+        List<Object> params = new ArrayList<>();
+
+        if (activityType != null && !activityType.isEmpty()) {
+            sql.append("AND a.activity_type = ? ");
+            params.add(activityType);
+        }
+        if (relatedType != null && !relatedType.isEmpty()) {
+            sql.append("AND a.related_type = ? ");
+            params.add(relatedType);
+        }
+        if (roleFilter != null && !roleFilter.isEmpty()) {
+            sql.append("AND LOWER(r.role_code) = LOWER(?) ");
+            params.add(roleFilter);
+        }
+        if (status != null && !status.isEmpty()) {
+            sql.append("AND a.status = ? ");
+            params.add(status);
+        }
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            sql.append("AND (a.subject LIKE ? OR a.[description] LIKE ? "
+                    + "OR (u.last_name + ' ' + u.first_name) LIKE ? "
+                    + "OR COALESCE(c.full_name, l.full_name) LIKE ?) ");
+            String kw = "%" + keyword.trim() + "%";
+            params.add(kw);
+            params.add(kw);
+            params.add(kw);
+            params.add(kw);
+        }
+
+        sql.append("ORDER BY a.created_at DESC ");
+        sql.append("OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
+        params.add(offset);
+        params.add(limit);
+
+        try (PreparedStatement ps = connection.prepareStatement(sql.toString())) {
+            for (int i = 0; i < params.size(); i++) {
+                Object p = params.get(i);
+                if (p instanceof Integer) {
+                    ps.setInt(i + 1, (Integer) p);
+                } else {
+                    ps.setString(i + 1, (String) p);
+                }
+            }
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                Activity a = mapFullActivity(rs);
+                a.setPerformerName(rs.getString("performer_name"));
+                a.setCustomerName(rs.getString("contact_name"));
+                list.add(a);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    /**
+     * Đếm tổng số activities cho phân trang (Manager).
+     */
+    public int countManagerActivityLog(String activityType, String relatedType,
+            String roleFilter, String keyword, String status) {
+        StringBuilder sql = new StringBuilder(
+                "SELECT COUNT(*) AS cnt "
+                + "FROM activities a "
+                + "INNER JOIN users u ON a.performed_by = u.user_id "
+                + "INNER JOIN user_roles ur ON ur.user_id = u.user_id "
+                + "INNER JOIN roles r ON r.role_id = ur.role_id "
+                + "LEFT JOIN customers c ON a.related_type = 'Customer' AND a.related_id = c.customer_id "
+                + "LEFT JOIN leads l ON a.related_type = 'Lead' AND a.related_id = l.lead_id "
+                + "WHERE LOWER(r.role_code) IN ('sales', 'support') ");
+
+        List<Object> params = new ArrayList<>();
+
+        if (activityType != null && !activityType.isEmpty()) {
+            sql.append("AND a.activity_type = ? ");
+            params.add(activityType);
+        }
+        if (relatedType != null && !relatedType.isEmpty()) {
+            sql.append("AND a.related_type = ? ");
+            params.add(relatedType);
+        }
+        if (roleFilter != null && !roleFilter.isEmpty()) {
+            sql.append("AND LOWER(r.role_code) = LOWER(?) ");
+            params.add(roleFilter);
+        }
+        if (status != null && !status.isEmpty()) {
+            sql.append("AND a.status = ? ");
+            params.add(status);
+        }
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            sql.append("AND (a.subject LIKE ? OR a.[description] LIKE ? "
+                    + "OR (u.last_name + ' ' + u.first_name) LIKE ? "
+                    + "OR COALESCE(c.full_name, l.full_name) LIKE ?) ");
+            String kw = "%" + keyword.trim() + "%";
+            params.add(kw);
+            params.add(kw);
+            params.add(kw);
+            params.add(kw);
+        }
+
+        try (PreparedStatement ps = connection.prepareStatement(sql.toString())) {
+            for (int i = 0; i < params.size(); i++) {
+                Object p = params.get(i);
+                if (p instanceof Integer) {
+                    ps.setInt(i + 1, (Integer) p);
+                } else {
+                    ps.setString(i + 1, (String) p);
+                }
+            }
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return rs.getInt("cnt");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    // LẤY DANH SÁCH PHIẾU ĐƯỢC CHUYỂN TIẾP CHO RIÊNG NHÂN VIÊN
+   // LẤY DANH SÁCH PHIẾU ĐƯỢC CHUYỂN TIẾP CHO RIÊNG NHÂN VIÊN
+    public List<Activity> getMyAssignedTickets(int userId) {
+        List<Activity> list = new ArrayList<>();
+        
+        // CẬP NHẬT: Thêm điều kiện lọc a.[description] LIKE N'Phiếu yêu cầu hỗ trợ được chuyển tiếp%'
+        String sql = "SELECT a.*, "
+                   + "COALESCE(c.full_name, l.full_name) AS contact_name, "
+                   + "COALESCE(c.phone, l.phone) AS contact_phone "
+                   + "FROM activities a "
+                   + "LEFT JOIN customers c ON a.related_type = 'Customer' AND a.related_id = c.customer_id "
+                   + "LEFT JOIN leads l ON a.related_type = 'Lead' AND a.related_id = l.lead_id "
+                   + "WHERE a.performed_by = ? AND a.status = 'Pending' "
+                   + "AND a.[description] LIKE N'Phiếu yêu cầu hỗ trợ được chuyển tiếp%' "
+                   + "ORDER BY a.created_at ASC";
+
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                // Tận dụng hàm map có sẵn của bạn
+                Activity a = mapResultSetToActivity(rs);
+                a.setCustomerName(rs.getString("contact_name"));
+                a.setCustomerPhone(rs.getString("contact_phone"));
+                a.setRelatedType(rs.getString("related_type"));
+                list.add(a);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+    
+    public List<Activity> getActivitiesByCustomerId(int customerId) {
+        List<Activity> list = new ArrayList<>();
+        // Đảm bảo có điều kiện: AND a.status = 'Completed'
+        String sql = "SELECT a.*, (u.last_name + ' ' + u.first_name) AS full_performer_name "
+                + "FROM activities a "
+                + "LEFT JOIN users u ON a.performed_by = u.user_id "
+                + "WHERE a.related_id = ? AND a.related_type = 'Customer' "
+                + "ORDER BY a.created_at DESC";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setInt(1, customerId);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                Activity a = mapResultSetToActivity(rs);
+                a.setPerformerName(rs.getString("full_performer_name"));
                 list.add(a);
             }
         } catch (SQLException e) {

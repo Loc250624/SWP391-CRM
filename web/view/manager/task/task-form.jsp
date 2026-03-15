@@ -35,7 +35,7 @@
         <c:remove var="errorMessage" scope="session"/>
     </c:if>
 
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-2">
         <h3 class="mb-0">
             <i class="bi bi-${formAction == 'edit' ? 'pencil-square' : 'plus-circle'} me-2"></i>
             ${formAction == 'edit' ? 'Chỉnh sửa Công việc' : 'Tạo Công việc mới'}
@@ -47,21 +47,40 @@
         </c:if>
     </div>
 
+    <%-- ══════ Task Type Tabs (create mode) ══════ --%>
+    <c:if test="${formAction != 'edit'}">
+        <ul class="nav nav-tabs mb-4" role="tablist">
+            <li class="nav-item">
+                <a class="nav-link active" href="javascript:void(0)" id="tabLead" onclick="toggleTaskType('LEAD')">
+                    <i class="bi bi-person-lines-fill me-1"></i>Lead
+                    <span class="badge bg-primary ms-1" id="tabLeadBadge">Sales</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="javascript:void(0)" id="tabCustomer" onclick="toggleTaskType('CUSTOMER')">
+                    <i class="bi bi-people-fill me-1"></i>Customer
+                    <span class="badge bg-secondary ms-1" id="tabCustomerBadge">Support</span>
+                </a>
+            </li>
+        </ul>
+    </c:if>
+
+    <form action="${pageContext.request.contextPath}/manager/task/form"
+          method="post" id="taskForm" novalidate>
+        <input type="hidden" name="formAction" value="${formAction}">
+        <c:if test="${formAction == 'edit'}">
+            <input type="hidden" name="taskId" value="${task.taskId}">
+        </c:if>
+        <%-- Status: editable for edit; always IN_PROGRESS for create --%>
+        <c:if test="${formAction != 'edit'}">
+            <input type="hidden" name="status" value="IN_PROGRESS">
+        </c:if>
+
     <div class="row">
         <!-- ═══════════════════ Main Form ═══════════════════ -->
         <div class="col-lg-8">
             <div class="card shadow-sm">
                 <div class="card-body">
-                    <form action="${pageContext.request.contextPath}/manager/task/form"
-                          method="post" id="taskForm" novalidate>
-                        <input type="hidden" name="formAction" value="${formAction}">
-                        <c:if test="${formAction == 'edit'}">
-                            <input type="hidden" name="taskId" value="${task.taskId}">
-                        </c:if>
-                        <%-- Status: editable for edit; always IN_PROGRESS for create --%>
-                        <c:if test="${formAction != 'edit'}">
-                            <input type="hidden" name="status" value="IN_PROGRESS">
-                        </c:if>
 
                         <%-- ── Title ─────────────────────────────────────────── --%>
                         <div class="mb-3">
@@ -132,307 +151,92 @@
                         </div>
 
                         <%-- ════════════════════════════════════════════════════
-                             ASSIGN SECTION
-                             Create: Individual / Group with Support Members
-                             Edit:   Single assignee only
+                             ASSIGN SECTION (edit mode only — in main form)
+                             Create mode: assign section is in sidebar
                              ════════════════════════════════════════════════════ --%>
-                        <div class="card border-primary border-opacity-25 mb-4">
-                            <div class="card-header bg-primary bg-opacity-10">
-                                <h6 class="mb-0"><i class="bi bi-person-check me-2"></i>Phân công</h6>
-                            </div>
-                            <div class="card-body">
-
-                                <c:choose>
-                                    <c:when test="${formAction != 'edit'}">
-                                        <%-- Assign type radio: create mode only --%>
-                                        <div class="mb-3">
-                                            <label class="form-label fw-semibold">Hình thức giao <span class="text-danger">*</span></label>
-                                            <div class="d-flex gap-4">
-                                                <div class="form-check">
-                                                    <input class="form-check-input" type="radio"
-                                                           name="assignType" id="assignIndividual"
-                                                           value="INDIVIDUAL" checked
-                                                           onchange="toggleAssignType('INDIVIDUAL')">
-                                                    <label class="form-check-label" for="assignIndividual">
-                                                        <i class="bi bi-person me-1"></i>Cá nhân
-                                                    </label>
-                                                </div>
-                                                <div class="form-check">
-                                                    <input class="form-check-input" type="radio"
-                                                           name="assignType" id="assignGroup"
-                                                           value="GROUP"
-                                                           onchange="toggleAssignType('GROUP')">
-                                                    <label class="form-check-label" for="assignGroup">
-                                                        <i class="bi bi-people me-1"></i>Nhóm
-                                                    </label>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <%-- Individual: single select (all users) --%>
-                                        <div id="sectionIndividual">
-                                            <label for="assignedTo" class="form-label fw-semibold">
-                                                Người thực hiện <span class="text-danger">*</span>
-                                            </label>
-                                            <select class="form-select" id="assignedTo" name="assignedTo">
-                                                <option value="">-- Chọn người thực hiện --</option>
-                                                <c:forEach var="user" items="${allUsers}">
-                                                    <option value="${user.userId}">
-                                                        ${user.firstName} ${user.lastName}
-                                                    </option>
-                                                </c:forEach>
-                                            </select>
-                                            <div class="invalid-feedback">Vui lòng chọn người thực hiện</div>
-                                        </div>
-
-                                        <%-- Group: checkboxes (team members) --%>
-                                        <div id="sectionGroup" class="d-none">
-                                            <label class="form-label fw-semibold">
-                                                Thành viên nhóm (chính) — chọn ít nhất 2 người <span class="text-danger">*</span>
-                                            </label>
-                                            <div class="border rounded p-3 mb-2"
-                                                 style="max-height:180px; overflow-y:auto;" id="groupMemberBox">
-                                                <c:choose>
-                                                    <c:when test="${empty salesForAssign}">
-                                                        <span class="text-muted small">Không có nhân viên trong phòng ban</span>
-                                                    </c:when>
-                                                    <c:otherwise>
-                                                        <c:forEach var="u" items="${salesForAssign}">
-                                                            <div class="form-check mb-1">
-                                                                <input class="form-check-input group-main-cb"
-                                                                       type="checkbox"
-                                                                       name="assignedToGroup"
-                                                                       value="${u.userId}"
-                                                                       id="grpMain_${u.userId}">
-                                                                <label class="form-check-label" for="grpMain_${u.userId}">
-                                                                    ${u.firstName} ${u.lastName}
-                                                                </label>
-                                                            </div>
-                                                        </c:forEach>
-                                                    </c:otherwise>
-                                                </c:choose>
-                                            </div>
-                                            <div class="text-danger small d-none" id="groupMainError">
-                                                Vui lòng chọn ít nhất một thành viên
-                                            </div>
-
-                                            <%-- Support members (optional) --%>
-                                            <c:if test="${not empty salesForAssign}">
-                                                <div class="mt-3">
-                                                    <label class="form-label fw-semibold text-secondary">
-                                                        <i class="bi bi-person-plus me-1"></i>
-                                                        Thành viên hỗ trợ (tùy chọn)
-                                                    </label>
-                                                    <div class="border rounded p-3"
-                                                         style="max-height:150px; overflow-y:auto;">
-                                                        <c:forEach var="u" items="${salesForAssign}">
-                                                            <div class="form-check mb-1">
-                                                                <input class="form-check-input group-support-cb"
-                                                                       type="checkbox"
-                                                                       name="supportMembers"
-                                                                       value="${u.userId}"
-                                                                       id="grpSupport_${u.userId}">
-                                                                <label class="form-check-label text-muted" for="grpSupport_${u.userId}">
-                                                                    ${u.firstName} ${u.lastName}
-                                                                    <small class="badge bg-secondary ms-1">Hỗ trợ</small>
-                                                                </label>
-                                                            </div>
-                                                        </c:forEach>
-                                                    </div>
-                                                    <small class="text-muted">
-                                                        <i class="bi bi-info-circle me-1"></i>
-                                                        Thành viên hỗ trợ cũng nhận bản sao công việc với ghi chú vai trò hỗ trợ.
-                                                    </small>
-                                                </div>
-                                            </c:if>
-                                        </div>
-                                    </c:when>
-
-                                    <c:otherwise>
-                                        <%-- Edit mode: single assignee --%>
-                                        <label for="assignedTo" class="form-label fw-semibold">
-                                            Người thực hiện <span class="text-danger">*</span>
-                                        </label>
-                                        <select class="form-select" id="assignedTo" name="assignedTo" required>
-                                            <option value="">-- Chọn người thực hiện --</option>
-                                            <c:forEach var="user" items="${allUsers}">
-                                                <option value="${user.userId}"
-                                                        ${task.assignedTo == user.userId ? 'selected' : ''}>
-                                                    ${user.firstName} ${user.lastName}
-                                                </option>
-                                            </c:forEach>
-                                        </select>
-                                        <div class="invalid-feedback">Vui lòng chọn người thực hiện</div>
-                                    </c:otherwise>
-                                </c:choose>
-
-                            </div><%-- /card-body assign --%>
-                        </div>
-
-                        <%-- ════════════════════════════════════════════════════
-                             RELATED OBJECT + OBJECT INFO PANEL
-                             ════════════════════════════════════════════════════ --%>
-                        <div class="card bg-light border-0 mb-4">
-                            <div class="card-body">
-                                <h6 class="mb-3">
-                                    <i class="bi bi-link-45deg me-1"></i>Liên kết đối tượng (tùy chọn)
-                                </h6>
-
-                                <%-- Hidden field: servlet derives type from composite relatedId anyway --%>
-                                <input type="hidden" name="relatedType" id="relatedType">
-
-                                <%-- Build initial composite value for edit-mode preselection.
-                                     Handle both old title-case ("Lead") and new uppercase ("LEAD"). --%>
-                                <c:set var="initRelatedValue" value=""/>
-                                <c:if test="${(task.relatedType == 'LEAD' || task.relatedType == 'Lead') && task.relatedId != null}">
-                                    <c:set var="initRelatedValue" value="LEAD_${task.relatedId}"/>
-                                </c:if>
-                                <c:if test="${(task.relatedType == 'CUSTOMER' || task.relatedType == 'Customer') && task.relatedId != null}">
-                                    <c:set var="initRelatedValue" value="CUSTOMER_${task.relatedId}"/>
-                                </c:if>
-                                <c:if test="${(task.relatedType == 'OPPORTUNITY' || task.relatedType == 'Opportunity') && task.relatedId != null}">
-                                    <c:set var="initRelatedValue" value="OPPORTUNITY_${task.relatedId}"/>
-                                </c:if>
-
-                                <select class="form-select mb-3" id="relatedObject" name="relatedId">
-                                    <option value="">-- Không liên kết --</option>
-                                    <optgroup label="Lead">
-                                        <c:forEach var="l" items="${leads}">
-                                            <option value="LEAD_${l.leadId}"
-                                                    ${initRelatedValue == 'LEAD_'.concat(l.leadId) ? 'selected' : ''}>
-                                                ${fn:escapeXml(l.fullName)} (${l.leadCode})
-                                            </option>
-                                        </c:forEach>
-                                    </optgroup>
-                                    <optgroup label="Khách hàng">
-                                        <c:forEach var="c" items="${customers}">
-                                            <option value="CUSTOMER_${c.customerId}"
-                                                    ${initRelatedValue == 'CUSTOMER_'.concat(c.customerId) ? 'selected' : ''}>
-                                                ${fn:escapeXml(c.fullName)} (${c.customerCode})
-                                            </option>
-                                        </c:forEach>
-                                    </optgroup>
-                                    <optgroup label="Cơ hội">
-                                        <c:forEach var="o" items="${opportunities}">
-                                            <option value="OPPORTUNITY_${o.opportunityId}"
-                                                    ${initRelatedValue == 'OPPORTUNITY_'.concat(o.opportunityId) ? 'selected' : ''}>
-                                                ${fn:escapeXml(o.opportunityName)} (${o.opportunityCode})
-                                            </option>
-                                        </c:forEach>
-                                    </optgroup>
-                                </select>
-
-                                <%-- Object info panel: shown when Lead or Customer is selected --%>
-                                <div id="objectInfoPanel" class="d-none">
-                                    <div class="alert alert-info py-2 mb-2 d-flex align-items-center gap-2" id="objectInfoLoading">
-                                        <span class="spinner-border spinner-border-sm"></span>
-                                        <span>Đang tải thông tin...</span>
-                                    </div>
-
-                                    <div id="objectInfoContent" class="d-none">
-                                        <div class="border rounded p-3 bg-white">
-                                            <div class="row g-2 mb-2">
-                                                <div class="col-sm-6">
-                                                    <small class="text-muted d-block">Họ tên</small>
-                                                    <strong id="infoFullName">—</strong>
-                                                </div>
-                                                <div class="col-sm-3">
-                                                    <small class="text-muted d-block">SĐT</small>
-                                                    <span id="infoPhone">—</span>
-                                                </div>
-                                                <div class="col-sm-3">
-                                                    <small class="text-muted d-block">Email</small>
-                                                    <span id="infoEmail" class="small">—</span>
-                                                </div>
-                                            </div>
-                                            <div class="row g-2 mb-2">
-                                                <div class="col-sm-4">
-                                                    <small class="text-muted d-block">Nguồn</small>
-                                                    <span id="infoSource">—</span>
-                                                </div>
-                                                <div class="col-sm-4">
-                                                    <small class="text-muted d-block">Sales phụ trách</small>
-                                                    <span id="infoAssignedUser">—</span>
-                                                </div>
-                                                <div class="col-sm-4" id="infoExtraLabelRow">
-                                                    <small class="text-muted d-block" id="infoExtraLabel">—</small>
-                                                    <span id="infoExtraValue">—</span>
-                                                </div>
-                                            </div>
-                                            <div id="infoNotesRow" class="d-none">
-                                                <small class="text-muted d-block">Ghi chú / Lịch sử tương tác</small>
-                                                <div id="infoNotes" class="small text-muted fst-italic"
-                                                     style="max-height:60px;overflow-y:auto;"></div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div id="objectInfoError" class="alert alert-warning py-2 d-none">
-                                        <i class="bi bi-exclamation-triangle me-1"></i>
-                                        Không thể tải thông tin đối tượng
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <%-- ── Recurring Task (create mode only) ────────────── --%>
-                        <c:if test="${formAction != 'edit'}">
+                        <c:if test="${formAction == 'edit'}">
                             <div class="card border-primary border-opacity-25 mb-4">
                                 <div class="card-header bg-primary bg-opacity-10">
-                                    <div class="form-check form-switch mb-0">
-                                        <input class="form-check-input" type="checkbox"
-                                               id="enableRecurring" name="enableRecurring">
-                                        <label class="form-check-label fw-bold" for="enableRecurring">
-                                            <i class="bi bi-arrow-repeat me-1"></i>Bật lặp lại tự động
-                                        </label>
-                                    </div>
+                                    <h6 class="mb-0"><i class="bi bi-person-check me-2"></i>Phân công</h6>
                                 </div>
-                                <div class="card-body" id="recurringPanel" style="display:none;">
-                                    <div class="row g-3">
-                                        <div class="col-md-4">
-                                            <div class="form-check">
-                                                <input class="form-check-input" type="radio"
-                                                       name="recurrencePattern" id="pat_daily" value="DAILY">
-                                                <label class="form-check-label" for="pat_daily">
-                                                    <i class="bi bi-calendar-day me-1 text-primary"></i>Hàng ngày
-                                                </label>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <div class="form-check">
-                                                <input class="form-check-input" type="radio"
-                                                       name="recurrencePattern" id="pat_weekly" value="WEEKLY" checked>
-                                                <label class="form-check-label" for="pat_weekly">
-                                                    <i class="bi bi-calendar-week me-1 text-primary"></i>Hàng tuần
-                                                </label>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <div class="form-check">
-                                                <input class="form-check-input" type="radio"
-                                                       name="recurrencePattern" id="pat_monthly" value="MONTHLY">
-                                                <label class="form-check-label" for="pat_monthly">
-                                                    <i class="bi bi-calendar-month me-1 text-primary"></i>Hàng tháng
-                                                </label>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <small class="text-muted d-block mt-2">
-                                        <i class="bi bi-info-circle me-1"></i>
-                                        Công việc mới sẽ tự động được tạo khi công việc hiện tại hoàn thành.
-                                    </small>
+                                <div class="card-body">
+                                    <label for="assignedTo" class="form-label fw-semibold">
+                                        Người thực hiện <span class="text-danger">*</span>
+                                    </label>
+                                    <select class="form-select" id="assignedTo" name="assignedTo" required>
+                                        <option value="">-- Chọn người thực hiện --</option>
+                                        <c:forEach var="user" items="${allUsers}">
+                                            <option value="${user.userId}"
+                                                    ${task.assignedTo == user.userId ? 'selected' : ''}>
+                                                ${user.firstName} ${user.lastName}
+                                            </option>
+                                        </c:forEach>
+                                    </select>
+                                    <div class="invalid-feedback">Vui lòng chọn người thực hiện</div>
                                 </div>
                             </div>
                         </c:if>
 
-                        <%-- Recurring info for edit mode --%>
-                        <c:if test="${formAction == 'edit' && fn:contains(task.title, '[R-')}">
-                            <div class="alert alert-info mb-3">
-                                <i class="bi bi-arrow-repeat me-2"></i>
-                                Công việc này có cài đặt lặp lại.
-                                <a href="${pageContext.request.contextPath}/manager/task/recurring?id=${task.taskId}"
-                                   class="alert-link">Chỉnh sửa cài đặt lặp lại</a>
+                        <%-- ════════════════════════════════════════════════════
+                             RELATED OBJECT (edit mode only — keeps old dropdown)
+                             Create mode uses sidebar lead picker or linkedLead
+                             ════════════════════════════════════════════════════ --%>
+                        <c:if test="${formAction == 'edit'}">
+                            <div class="card bg-light border-0 mb-4">
+                                <div class="card-body">
+                                    <h6 class="mb-3">
+                                        <i class="bi bi-link-45deg me-1"></i>Liên kết đối tượng (tùy chọn)
+                                    </h6>
+                                    <input type="hidden" name="relatedType" id="relatedType">
+                                    <c:set var="initRelatedValue" value=""/>
+                                    <c:if test="${(task.relatedType == 'LEAD' || task.relatedType == 'Lead') && task.relatedId != null}">
+                                        <c:set var="initRelatedValue" value="LEAD_${task.relatedId}"/>
+                                    </c:if>
+                                    <c:if test="${(task.relatedType == 'CUSTOMER' || task.relatedType == 'Customer') && task.relatedId != null}">
+                                        <c:set var="initRelatedValue" value="CUSTOMER_${task.relatedId}"/>
+                                    </c:if>
+                                    <c:if test="${(task.relatedType == 'OPPORTUNITY' || task.relatedType == 'Opportunity') && task.relatedId != null}">
+                                        <c:set var="initRelatedValue" value="OPPORTUNITY_${task.relatedId}"/>
+                                    </c:if>
+                                    <select class="form-select mb-3" id="relatedObject" name="relatedId">
+                                        <option value="">-- Không liên kết --</option>
+                                        <optgroup label="Lead">
+                                            <c:forEach var="l" items="${leads}">
+                                                <option value="LEAD_${l.leadId}"
+                                                        ${initRelatedValue == 'LEAD_'.concat(l.leadId) ? 'selected' : ''}>
+                                                    ${fn:escapeXml(l.fullName)} (${l.leadCode})
+                                                </option>
+                                            </c:forEach>
+                                        </optgroup>
+                                        <optgroup label="Khách hàng">
+                                            <c:forEach var="c" items="${customers}">
+                                                <option value="CUSTOMER_${c.customerId}"
+                                                        ${initRelatedValue == 'CUSTOMER_'.concat(c.customerId) ? 'selected' : ''}>
+                                                    ${fn:escapeXml(c.fullName)} (${c.customerCode})
+                                                </option>
+                                            </c:forEach>
+                                        </optgroup>
+                                        <optgroup label="Cơ hội">
+                                            <c:forEach var="o" items="${opportunities}">
+                                                <option value="OPPORTUNITY_${o.opportunityId}"
+                                                        ${initRelatedValue == 'OPPORTUNITY_'.concat(o.opportunityId) ? 'selected' : ''}>
+                                                    ${fn:escapeXml(o.opportunityName)} (${o.opportunityCode})
+                                                </option>
+                                            </c:forEach>
+                                        </optgroup>
+                                    </select>
+                                </div>
                             </div>
+                        </c:if>
+
+                        <%-- Hidden field for linked lead from lead-list page --%>
+                        <c:if test="${formAction != 'edit' && not empty linkedLead}">
+                            <input type="hidden" name="selectedLeads" value="${linkedLead.leadId}">
+                        </c:if>
+
+                        <%-- Hidden field for linked customer from customer-list page --%>
+                        <c:if test="${formAction != 'edit' && not empty linkedCustomer}">
+                            <input type="hidden" name="selectedCustomers" value="${linkedCustomer.customerId}">
                         </c:if>
 
                         <%-- ── Task Dependencies (edit mode only) ──────────── --%>
@@ -487,33 +291,184 @@
                             </a>
                         </div>
 
-                    </form>
                 </div>
             </div>
         </div>
 
         <!-- ═══════════════════ Sidebar ═══════════════════ -->
         <div class="col-lg-4">
-            <div class="card bg-light border-0 mb-3">
-                <div class="card-body">
-                    <h6 class="mb-2"><i class="bi bi-info-circle me-1 text-success"></i>Hướng dẫn</h6>
-                    <ul class="list-unstyled small mb-0">
-                        <c:if test="${formAction != 'edit'}">
-                            <li class="mb-1">
-                                <i class="bi bi-play-circle-fill text-success me-1"></i>
-                                Trạng thái mặc định: <strong>Đang thực hiện</strong>
-                            </li>
-                        </c:if>
-                        <li class="mb-1"><i class="bi bi-check2 text-success me-1"></i>Tiêu đề, ưu tiên, hạn chót là bắt buộc</li>
-                        <li class="mb-1"><i class="bi bi-check2 text-success me-1"></i>Nhắc nhở tự động 24 giờ trước hạn chót</li>
-                        <li class="mb-1"><i class="bi bi-check2 text-success me-1"></i>Liên kết với Lead, Khách hàng hoặc Cơ hội để tự động hiển thị thông tin</li>
-                        <c:if test="${formAction != 'edit'}">
-                            <li><i class="bi bi-check2 text-success me-1"></i>Chế độ nhóm: mỗi người nhận bản sao riêng</li>
-                        </c:if>
-                    </ul>
-                </div>
-            </div>
 
+            <c:if test="${formAction != 'edit'}">
+                <%-- ══════ 1. Phân công (create mode — in sidebar) ══════ --%>
+                <div class="card border-primary border-opacity-25 mb-3">
+                    <div class="card-header bg-primary bg-opacity-10 py-2">
+                        <h6 class="mb-0"><i class="bi bi-person-check me-2"></i>Phân công</h6>
+                    </div>
+                    <div class="card-body py-3 px-3">
+                        <%-- Assign type radio --%>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold mb-1">Hình thức giao <span class="text-danger">*</span></label>
+                            <div class="d-flex gap-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio"
+                                           name="assignType" id="assignIndividual"
+                                           value="INDIVIDUAL" checked
+                                           onchange="toggleAssignType('INDIVIDUAL')">
+                                    <label class="form-check-label" for="assignIndividual">
+                                        <i class="bi bi-person me-1"></i>Cá nhân
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio"
+                                           name="assignType" id="assignGroup"
+                                           value="GROUP"
+                                           onchange="toggleAssignType('GROUP')">
+                                    <label class="form-check-label" for="assignGroup">
+                                        <i class="bi bi-people me-1"></i>Nhóm
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <%-- Individual: popup picker --%>
+                        <div id="sectionIndividual">
+                            <label class="form-label fw-semibold mb-1">
+                                <span id="assigneeRoleLabel">Nhân viên Sales</span> <span class="text-danger">*</span>
+                            </label>
+                            <div class="d-flex align-items-center gap-2">
+                                <input type="hidden" name="assignedTo" id="assignedTo" value="">
+                                <div class="border rounded p-2 flex-grow-1 bg-white" id="assigneeDisplay">
+                                    <span class="text-muted small">-- Chưa chọn --</span>
+                                </div>
+                                <button type="button" class="btn btn-sm btn-outline-primary" onclick="openAssigneePickerModal('INDIVIDUAL')">
+                                    <i class="bi bi-search me-1"></i>Chọn
+                                </button>
+                            </div>
+                            <div class="text-danger small d-none mt-1" id="assigneeError">Vui lòng chọn người thực hiện</div>
+                        </div>
+
+                        <%-- Group: popup picker for multiple --%>
+                        <div id="sectionGroup" class="d-none">
+                            <label class="form-label fw-semibold mb-1">
+                                Thành viên nhóm — chọn ít nhất 2 người <span class="text-danger">*</span>
+                            </label>
+                            <div class="d-flex align-items-start gap-2 mb-2">
+                                <div class="border rounded p-2 flex-grow-1 bg-white" id="groupMembersDisplay" style="min-height:40px;">
+                                    <span class="text-muted small">-- Chưa chọn --</span>
+                                </div>
+                                <button type="button" class="btn btn-sm btn-outline-primary" onclick="openAssigneePickerModal('GROUP')">
+                                    <i class="bi bi-search me-1"></i>Chọn
+                                </button>
+                            </div>
+                            <div class="text-danger small d-none" id="groupMainError">
+                                Vui lòng chọn ít nhất 2 thành viên
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <%-- ══════ 2. Linked Lead card (from lead page redirect) ══════ --%>
+                <c:if test="${not empty linkedLead}">
+                    <div class="card border-primary mb-3" id="linkedLeadCard">
+                        <div class="card-header bg-primary bg-opacity-10 py-2 d-flex align-items-center gap-2">
+                            <i class="bi bi-person-vcard-fill text-primary"></i>
+                            <span class="fw-semibold text-primary">Lead liên kết</span>
+                            <span class="badge bg-info text-dark ms-1">${linkedLead.leadCode}</span>
+                            <button type="button" class="btn btn-sm btn-outline-danger border-0 ms-auto"
+                                    onclick="removeLinkedObject('lead')" title="Bỏ liên kết">
+                                <i class="bi bi-x-lg"></i>
+                            </button>
+                        </div>
+                        <div class="card-body py-2 px-3">
+                            <div class="d-flex flex-column gap-2">
+                                <div>
+                                    <small class="text-muted d-block">Họ tên</small>
+                                    <strong>${fn:escapeXml(linkedLead.fullName)}</strong>
+                                </div>
+                                <div class="row g-2">
+                                    <div class="col-6">
+                                        <small class="text-muted d-block">SĐT</small>
+                                        <span>${not empty linkedLead.phone ? linkedLead.phone : '—'}</span>
+                                    </div>
+                                    <div class="col-6">
+                                        <small class="text-muted d-block">Email</small>
+                                        <span class="small">${not empty linkedLead.email ? linkedLead.email : '—'}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </c:if>
+
+                <%-- Linked Customer card (from customer page redirect) --%>
+                <c:if test="${not empty linkedCustomer}">
+                    <div class="card border-success mb-3" id="linkedCustomerCard">
+                        <div class="card-header bg-success bg-opacity-10 py-2 d-flex align-items-center gap-2">
+                            <i class="bi bi-people-fill text-success"></i>
+                            <span class="fw-semibold text-success">Khách hàng liên kết</span>
+                            <span class="badge bg-info text-dark ms-1">${linkedCustomer.customerCode}</span>
+                            <button type="button" class="btn btn-sm btn-outline-danger border-0 ms-auto"
+                                    onclick="removeLinkedObject('customer')" title="Bỏ liên kết">
+                                <i class="bi bi-x-lg"></i>
+                            </button>
+                        </div>
+                        <div class="card-body py-2 px-3">
+                            <div class="d-flex flex-column gap-2">
+                                <div>
+                                    <small class="text-muted d-block">Họ tên</small>
+                                    <strong>${fn:escapeXml(linkedCustomer.fullName)}</strong>
+                                </div>
+                                <div class="row g-2">
+                                    <div class="col-6">
+                                        <small class="text-muted d-block">SĐT</small>
+                                        <span>${not empty linkedCustomer.phone ? linkedCustomer.phone : '—'}</span>
+                                    </div>
+                                    <div class="col-6">
+                                        <small class="text-muted d-block">Email</small>
+                                        <span class="small">${not empty linkedCustomer.email ? linkedCustomer.email : '—'}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </c:if>
+
+                <%-- ══════ 3. Object picker (Lead/Customer) ══════ --%>
+                <div class="card border-success mb-3" id="objectPickerSidebar"
+                     style="${not empty linkedLead || not empty linkedCustomer ? 'display:none;' : ''}">
+                    <div class="card-header bg-success bg-opacity-10 py-2 d-flex justify-content-between align-items-center">
+                        <span class="fw-semibold text-success" id="objectPickerTitle">
+                            <i class="bi bi-link-45deg me-1"></i>Chọn Lead
+                        </span>
+                        <button type="button" class="btn btn-sm btn-outline-success" onclick="openObjectPickerModal()">
+                            <i class="bi bi-plus-circle me-1"></i>Chọn
+                        </button>
+                    </div>
+                    <div class="card-body py-2 px-3">
+                        <div id="selectedObjectsContainer">
+                            <div class="text-muted small text-center py-2" id="noObjectSelected">
+                                <i class="bi bi-inbox me-1"></i>Chưa chọn đối tượng nào
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <%-- ══════ 4. Hướng dẫn ══════ --%>
+                <div class="card border-0 bg-light mb-3">
+                    <div class="card-body py-3 px-3">
+                        <h6 class="mb-2"><i class="bi bi-info-circle me-1 text-info"></i>Hướng dẫn</h6>
+                        <ul class="small text-muted mb-0 ps-3">
+                            <li class="mb-1"><strong>Tab Lead:</strong> Tạo task giao cho nhân viên <span class="text-primary fw-semibold">Sales</span>. Chọn 1 hoặc nhiều Lead cần xử lý.</li>
+                            <li class="mb-1"><strong>Tab Customer:</strong> Tạo task giao cho nhân viên <span class="text-success fw-semibold">Support</span>. Chọn 1 hoặc nhiều Customer cần chăm sóc.</li>
+                            <li class="mb-1">Khi tạo task thành công, Lead sẽ tự động chuyển trạng thái sang <span class="badge bg-warning text-dark" style="font-size:0.7rem">Assigned</span>.</li>
+                            <li class="mb-1">Task được tạo với trạng thái <span class="badge bg-success" style="font-size:0.7rem">Đang thực hiện</span> (không cần Sale xác nhận).</li>
+                            <li>Nhấn nút <i class="bi bi-x-lg text-danger"></i> trên đối tượng đã chọn để bỏ liên kết.</li>
+                        </ul>
+                    </div>
+                </div>
+            </c:if>
+
+            <%-- Edit mode: creation info card --%>
             <c:if test="${formAction == 'edit' && task.createdAt != null}">
                 <div class="card shadow-sm">
                     <div class="card-header bg-white">
@@ -535,13 +490,202 @@
             </c:if>
         </div>
     </div>
+    </form>
 </div>
 
-<!-- Select2 JS -->
+<%-- ═══════════════════ Assignee Picker Modal ═══════════════════ --%>
+<c:if test="${formAction != 'edit'}">
+<div class="modal fade" id="assigneePickerModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title"><i class="bi bi-person-check me-2"></i>Chọn nhân viên</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="input-group mb-3">
+                    <span class="input-group-text"><i class="bi bi-search"></i></span>
+                    <input type="text" class="form-control" id="assigneePickerSearch" placeholder="Tìm theo tên, mã, email...">
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <small class="text-muted">Đã chọn: <strong id="assigneePickerCount">0</strong></small>
+                    <span class="badge bg-info" id="assigneePickerMode">Cá nhân</span>
+                </div>
+                <div class="table-responsive" style="max-height:400px; overflow-y:auto;">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light sticky-top">
+                            <tr><th style="width:40px"></th><th>Mã NV</th><th>Họ tên</th><th>Email</th><th>SĐT</th></tr>
+                        </thead>
+                        <tbody>
+                            <c:forEach var="u" items="${allUsers}">
+                                <tr class="assignee-picker-row" data-role="SALES"
+                                    data-search="${fn:toLowerCase(u.employeeCode)} ${fn:toLowerCase(u.firstName)} ${fn:toLowerCase(u.lastName)} ${fn:toLowerCase(u.email)}">
+                                    <td>
+                                        <input type="checkbox" class="form-check-input assignee-picker-cb"
+                                               value="${u.userId}"
+                                               data-name="${fn:escapeXml(u.firstName)} ${fn:escapeXml(u.lastName)}"
+                                               data-code="${fn:escapeXml(u.employeeCode)}"
+                                               data-email="${fn:escapeXml(u.email)}">
+                                    </td>
+                                    <td><span class="badge bg-light text-dark border">${u.employeeCode}</span></td>
+                                    <td class="fw-semibold">${u.firstName} ${u.lastName}</td>
+                                    <td><small>${u.email}</small></td>
+                                    <td><small>${u.phone}</small></td>
+                                </tr>
+                            </c:forEach>
+                            <c:forEach var="u" items="${supportUsers}">
+                                <tr class="assignee-picker-row" data-role="SUPPORT" style="display:none;"
+                                    data-search="${fn:toLowerCase(u.employeeCode)} ${fn:toLowerCase(u.firstName)} ${fn:toLowerCase(u.lastName)} ${fn:toLowerCase(u.email)}">
+                                    <td>
+                                        <input type="checkbox" class="form-check-input assignee-picker-cb"
+                                               value="${u.userId}"
+                                               data-name="${fn:escapeXml(u.firstName)} ${fn:escapeXml(u.lastName)}"
+                                               data-code="${fn:escapeXml(u.employeeCode)}"
+                                               data-email="${fn:escapeXml(u.email)}">
+                                    </td>
+                                    <td><span class="badge bg-light text-dark border">${u.employeeCode}</span></td>
+                                    <td class="fw-semibold">${u.firstName} ${u.lastName}</td>
+                                    <td><small>${u.email}</small></td>
+                                    <td><small>${u.phone}</small></td>
+                                </tr>
+                            </c:forEach>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-primary" onclick="confirmAssigneePicker()">
+                    <i class="bi bi-check-circle me-1"></i>Xác nhận
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+</c:if>
+
+<%-- ═══════════════════ Object Picker Modal (Lead + Customer tabs) ═══════════════════ --%>
+<c:if test="${formAction != 'edit'}">
+<div class="modal fade" id="objectPickerModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title"><i class="bi bi-link-45deg me-2"></i>Chọn đối tượng liên kết</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <%-- Tabs: Lead / Customer --%>
+                <ul class="nav nav-tabs mb-3" role="tablist">
+                    <li class="nav-item">
+                        <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tabPickerLead" type="button">
+                            <i class="bi bi-person-lines-fill me-1"></i>Lead <span class="badge bg-secondary ms-1" id="pickerLeadCount">${fn:length(pickerLeads)}</span>
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabPickerCustomer" type="button">
+                            <i class="bi bi-people me-1"></i>Customer <span class="badge bg-secondary ms-1" id="pickerCustomerCount">${fn:length(pickerCustomers)}</span>
+                        </button>
+                    </li>
+                </ul>
+
+                <div class="input-group mb-3">
+                    <span class="input-group-text"><i class="bi bi-search"></i></span>
+                    <input type="text" class="form-control" id="objectPickerSearch" placeholder="Tìm theo tên, mã, SĐT, email...">
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <small class="text-muted">Đã chọn: <strong id="objectPickerSelectedCount">0</strong></small>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="objectPickerSelectAll()">Chọn tất cả</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="objectPickerDeselectAll()">Bỏ chọn</button>
+                    </div>
+                </div>
+
+                <div class="tab-content">
+                    <%-- Lead Tab --%>
+                    <div class="tab-pane fade show active" id="tabPickerLead">
+                        <div class="table-responsive" style="max-height:350px; overflow-y:auto;">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light sticky-top">
+                                    <tr><th style="width:40px"></th><th>Mã</th><th>Họ tên</th><th>SĐT</th><th>Email</th></tr>
+                                </thead>
+                                <tbody>
+                                    <c:forEach var="l" items="${pickerLeads}">
+                                        <tr class="obj-picker-row" data-tab="lead"
+                                            data-search="${fn:toLowerCase(l.leadCode)} ${fn:toLowerCase(l.fullName)} ${fn:toLowerCase(l.phone)} ${fn:toLowerCase(l.email)}">
+                                            <td>
+                                                <input type="checkbox" class="form-check-input obj-picker-cb"
+                                                       value="${l.leadId}" data-type="LEAD"
+                                                       data-code="${fn:escapeXml(l.leadCode)}"
+                                                       data-name="${fn:escapeXml(l.fullName)}"
+                                                       data-phone="${fn:escapeXml(l.phone)}"
+                                                       data-email="${fn:escapeXml(l.email)}">
+                                            </td>
+                                            <td><span class="badge bg-light text-dark border">${l.leadCode}</span></td>
+                                            <td class="fw-semibold">${fn:escapeXml(l.fullName)}</td>
+                                            <td><small>${l.phone}</small></td>
+                                            <td><small>${l.email}</small></td>
+                                        </tr>
+                                    </c:forEach>
+                                    <c:if test="${empty pickerLeads}">
+                                        <tr><td colspan="5" class="text-center text-muted py-3">Không có Lead chưa giao</td></tr>
+                                    </c:if>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <%-- Customer Tab --%>
+                    <div class="tab-pane fade" id="tabPickerCustomer">
+                        <div class="table-responsive" style="max-height:350px; overflow-y:auto;">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light sticky-top">
+                                    <tr><th style="width:40px"></th><th>Mã</th><th>Họ tên</th><th>SĐT</th><th>Email</th></tr>
+                                </thead>
+                                <tbody>
+                                    <c:forEach var="c" items="${pickerCustomers}">
+                                        <tr class="obj-picker-row" data-tab="customer"
+                                            data-search="${fn:toLowerCase(c.customerCode)} ${fn:toLowerCase(c.fullName)} ${fn:toLowerCase(c.phone)} ${fn:toLowerCase(c.email)}">
+                                            <td>
+                                                <input type="checkbox" class="form-check-input obj-picker-cb"
+                                                       value="${c.customerId}" data-type="CUSTOMER"
+                                                       data-code="${fn:escapeXml(c.customerCode)}"
+                                                       data-name="${fn:escapeXml(c.fullName)}"
+                                                       data-phone="${fn:escapeXml(c.phone)}"
+                                                       data-email="${fn:escapeXml(c.email)}">
+                                            </td>
+                                            <td><span class="badge bg-light text-dark border">${c.customerCode}</span></td>
+                                            <td class="fw-semibold">${fn:escapeXml(c.fullName)}</td>
+                                            <td><small>${c.phone}</small></td>
+                                            <td><small>${c.email}</small></td>
+                                        </tr>
+                                    </c:forEach>
+                                    <c:if test="${empty pickerCustomers}">
+                                        <tr><td colspan="5" class="text-center text-muted py-3">Không có Customer chưa giao</td></tr>
+                                    </c:if>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-success" onclick="confirmObjectPicker()">
+                    <i class="bi bi-check-circle me-1"></i>Xác nhận
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+</c:if>
+
+<!-- Select2 JS (for edit mode) -->
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
 <script>
+// ── Global state ────────────────────────────────────────────────────────
+var _currentTaskType = '${not empty linkedCustomer ? "CUSTOMER" : "LEAD"}';
+
 $(document).ready(function () {
 
     var CTX     = '${pageContext.request.contextPath}';
@@ -556,171 +700,482 @@ $(document).ready(function () {
             + String(today.getDate()).padStart(2, '0');
     }
 
-    // ── Select2 on related-object dropdown ───────────────────────────────
-    $('#relatedObject').select2({
-        theme: 'bootstrap-5',
-        placeholder: '-- Không liên kết --',
-        allowClear: true,
-        width: '100%'
-    });
+    // ── Select2 on related-object dropdown (edit mode only) ──────────────
+    if (IS_EDIT && document.getElementById('relatedObject')) {
+        $('#relatedObject').select2({
+            theme: 'bootstrap-5',
+            placeholder: '-- Không liên kết --',
+            allowClear: true,
+            width: '100%'
+        });
+
+        var relTypeInput = document.getElementById('relatedType');
+        var TYPE_MAP = { 'LEAD': 'LEAD', 'CUSTOMER': 'CUSTOMER', 'OPPORTUNITY': 'OPPORTUNITY' };
+
+        function parseRelatedValue(val) {
+            if (!val) return { prefix: '', id: '' };
+            var idx = val.indexOf('_');
+            if (idx <= 0 || idx === val.length - 1) return { prefix: '', id: '' };
+            return { prefix: val.substring(0, idx), id: val.substring(idx + 1) };
+        }
+
+        function onRelatedChange(val) {
+            var parsed = parseRelatedValue(val);
+            if (relTypeInput) relTypeInput.value = TYPE_MAP[parsed.prefix] || '';
+        }
+
+        $('#relatedObject').on('change', function() { onRelatedChange(this.value); });
+        onRelatedChange($('#relatedObject').val() || '');
+    }
+
+    // ── Task type toggle (create mode only) ────────────────────────────
+    window.toggleTaskType = function(type) {
+        _currentTaskType = type;
+
+        // Toggle tab active state
+        var tabLead = document.getElementById('tabLead');
+        var tabCustomer = document.getElementById('tabCustomer');
+        var badgeLead = document.getElementById('tabLeadBadge');
+        var badgeCustomer = document.getElementById('tabCustomerBadge');
+        if (type === 'LEAD') {
+            if (tabLead) tabLead.classList.add('active');
+            if (tabCustomer) tabCustomer.classList.remove('active');
+            if (badgeLead) { badgeLead.className = 'badge bg-primary ms-1'; }
+            if (badgeCustomer) { badgeCustomer.className = 'badge bg-secondary ms-1'; }
+        } else {
+            if (tabLead) tabLead.classList.remove('active');
+            if (tabCustomer) tabCustomer.classList.add('active');
+            if (badgeLead) { badgeLead.className = 'badge bg-secondary ms-1'; }
+            if (badgeCustomer) { badgeCustomer.className = 'badge bg-success ms-1'; }
+        }
+
+        // Update assignee role label
+        var roleLabel = document.getElementById('assigneeRoleLabel');
+        if (roleLabel) roleLabel.textContent = type === 'LEAD' ? 'Nhân viên Sales' : 'Nhân viên Support';
+
+        // Clear current assignee selections
+        var assignedTo = document.getElementById('assignedTo');
+        if (assignedTo) assignedTo.value = '';
+        var assigneeDisplay = document.getElementById('assigneeDisplay');
+        if (assigneeDisplay) assigneeDisplay.innerHTML = '<span class="text-muted small">-- Chưa chọn --</span>';
+        document.querySelectorAll('input[name="assignedToGroup"]').forEach(function(el) { el.remove(); });
+        var groupDisp = document.getElementById('groupMembersDisplay');
+        if (groupDisp) groupDisp.innerHTML = '<span class="text-muted small">-- Chưa chọn --</span>';
+
+        // Clear current object selections
+        var objContainer = document.getElementById('selectedObjectsContainer');
+        if (objContainer) {
+            objContainer.querySelectorAll('.selected-obj-item').forEach(function(el) { el.remove(); });
+            var noObj = document.getElementById('noObjectSelected');
+            if (noObj) noObj.style.display = '';
+        }
+        // Remove hidden selectedLeads/selectedCustomers
+        document.querySelectorAll('input[name="selectedLeads"], input[name="selectedCustomers"]').forEach(function(el) { el.remove(); });
+        // Also remove linked cards if switching type
+        var linkedLead = document.getElementById('linkedLeadCard');
+        var linkedCust = document.getElementById('linkedCustomerCard');
+        if (type === 'CUSTOMER' && linkedLead) linkedLead.remove();
+        if (type === 'LEAD' && linkedCust) linkedCust.remove();
+
+        // Update object picker sidebar title
+        var sidebarTitle = document.getElementById('objectPickerTitle');
+        if (sidebarTitle) {
+            sidebarTitle.innerHTML = type === 'LEAD'
+                ? '<i class="bi bi-link-45deg me-1"></i>Chọn Lead'
+                : '<i class="bi bi-link-45deg me-1"></i>Chọn Customer';
+        }
+        // Show object picker sidebar
+        var picker = document.getElementById('objectPickerSidebar');
+        if (picker) picker.style.display = '';
+    };
 
     // ── Assign-type toggle (create mode only) ────────────────────────────
     window.toggleAssignType = function(type) {
         var indiv = document.getElementById('sectionIndividual');
         var group = document.getElementById('sectionGroup');
-        var assignedTo = document.getElementById('assignedTo');
 
         if (type === 'GROUP') {
             if (indiv) indiv.classList.add('d-none');
             if (group) group.classList.remove('d-none');
-            if (assignedTo) assignedTo.removeAttribute('required');
+            // Clear individual selection
+            var assignedTo = document.getElementById('assignedTo');
+            if (assignedTo) assignedTo.value = '';
+            var display = document.getElementById('assigneeDisplay');
+            if (display) display.innerHTML = '<span class="text-muted small">-- Chưa chọn --</span>';
         } else {
             if (indiv) indiv.classList.remove('d-none');
             if (group) group.classList.add('d-none');
-            if (assignedTo) assignedTo.setAttribute('required', '');
+            // Clear group selection
+            document.querySelectorAll('input[name="assignedToGroup"]').forEach(function(el) { el.remove(); });
+            var groupDisp = document.getElementById('groupMembersDisplay');
+            if (groupDisp) groupDisp.innerHTML = '<span class="text-muted small">-- Chưa chọn --</span>';
             var mainErr = document.getElementById('groupMainError');
             if (mainErr) mainErr.classList.add('d-none');
         }
     };
 
-    // ── Object info panel ────────────────────────────────────────────────
-    var panel        = document.getElementById('objectInfoPanel');
-    var loadingEl    = document.getElementById('objectInfoLoading');
-    var contentEl    = document.getElementById('objectInfoContent');
-    var errorEl      = document.getElementById('objectInfoError');
-    var relTypeInput = document.getElementById('relatedType');
-
-    function showPanel()  { panel.classList.remove('d-none'); }
-    function hidePanel()  { panel.classList.add('d-none'); }
-    function showLoading(){ loadingEl.classList.remove('d-none'); contentEl.classList.add('d-none'); errorEl.classList.add('d-none'); }
-    function showContent(){ loadingEl.classList.add('d-none'); contentEl.classList.remove('d-none'); errorEl.classList.add('d-none'); }
-    function showError()  { loadingEl.classList.add('d-none'); contentEl.classList.add('d-none'); errorEl.classList.remove('d-none'); }
-
-    function setText(id, val) {
-        var el = document.getElementById(id);
-        if (el) el.textContent = val || '—';
-    }
-
-    function renderObjectInfo(data) {
-        setText('infoFullName',     data.fullName);
-        setText('infoPhone',        data.phone);
-        setText('infoEmail',        data.email);
-        setText('infoSource',       data.sourceName);
-        setText('infoAssignedUser', data.assignedUserName || 'Chưa phụ trách');
-
-        var extraLabel = document.getElementById('infoExtraLabel');
-        var extraValue = document.getElementById('infoExtraValue');
-        var notesRow   = document.getElementById('infoNotesRow');
-        var notesEl    = document.getElementById('infoNotes');
-
-        if (data.type === 'LEAD') {
-            if (extraLabel) extraLabel.textContent = 'Đánh giá / Sở thích';
-            var extra = [data.rating, data.interests].filter(function(v){ return v && v.trim(); }).join(' · ');
-            if (extraValue) extraValue.textContent = extra || '—';
+    // ── Remove linked lead/customer (X button) ────────────────────────
+    window.removeLinkedObject = function(type) {
+        if (type === 'lead') {
+            var card = document.getElementById('linkedLeadCard');
+            if (card) card.remove();
+            document.querySelectorAll('input[name="selectedLeads"]').forEach(function(el) { el.remove(); });
         } else {
-            if (extraLabel) extraLabel.textContent = 'Phân khúc';
-            if (extraValue) extraValue.textContent = data.customerSegment || '—';
+            var card = document.getElementById('linkedCustomerCard');
+            if (card) card.remove();
+            document.querySelectorAll('input[name="selectedCustomers"]').forEach(function(el) { el.remove(); });
         }
-
-        var notes = (data.notes || '').trim() || (data.purchasedCourses ? 'Khóa học: ' + data.purchasedCourses : '');
-        if (notes && notesEl && notesRow) {
-            notesEl.textContent = notes;
-            notesRow.classList.remove('d-none');
-        } else if (notesRow) {
-            notesRow.classList.add('d-none');
-        }
-
-        showContent();
-    }
-
-    function fetchObjectInfo(type, id) {
-        if (!type || !id) { hidePanel(); return; }
-        showPanel();
-        showLoading();
-
-        fetch(CTX + '/manager/task/object-info?type=' + encodeURIComponent(type) + '&id=' + encodeURIComponent(id),
-              { credentials: 'same-origin' })
-            .then(function(resp) {
-                if (!resp.ok) throw new Error('HTTP ' + resp.status);
-                return resp.json();
-            })
-            .then(function(data) {
-                if (data.error) { showError(); return; }
-                renderObjectInfo(data);
-            })
-            .catch(function() { showError(); });
-    }
-
-    // ── Parse composite value (e.g. "CUSTOMER_45") ───────────────────────
-    function parseRelatedValue(val) {
-        if (!val) return { prefix: '', id: '' };
-        var idx = val.indexOf('_');
-        if (idx <= 0 || idx === val.length - 1) return { prefix: '', id: '' };
-        return { prefix: val.substring(0, idx), id: val.substring(idx + 1) };
-    }
-
-    // ── Central handler for related-object change ─────────────────────────
-    var TYPE_MAP = { 'LEAD': 'LEAD', 'CUSTOMER': 'CUSTOMER', 'OPPORTUNITY': 'OPPORTUNITY' };
-
-    function onRelatedChange(val) {
-        var parsed = parseRelatedValue(val);
-        var typeStr = TYPE_MAP[parsed.prefix] || '';
-        if (relTypeInput) relTypeInput.value = typeStr;
-
-        if (typeStr === 'LEAD' || typeStr === 'CUSTOMER') {
-            fetchObjectInfo(typeStr, parsed.id);
-        } else {
-            hidePanel();
-        }
-    }
-
-    // Wire up Select2 change event
-    $('#relatedObject').on('change', function() {
-        onRelatedChange(this.value);
-    });
-
-    // On page load: init for edit mode
-    onRelatedChange($('#relatedObject').val() || '');
+        // Show object picker sidebar
+        var picker = document.getElementById('objectPickerSidebar');
+        if (picker) picker.style.display = '';
+    };
 
     // ── Form submit validation ────────────────────────────────────────────
     document.getElementById('taskForm').addEventListener('submit', function(e) {
-        var assignType = !IS_EDIT && document.querySelector('[name="assignType"]:checked')
-                         ? document.querySelector('[name="assignType"]:checked').value
-                         : 'INDIVIDUAL';
+        if (IS_EDIT) {
+            if (!this.checkValidity()) { e.preventDefault(); e.stopPropagation(); }
+            this.classList.add('was-validated');
+            return;
+        }
+
+        var assignType = document.querySelector('[name="assignType"]:checked')
+                         ? document.querySelector('[name="assignType"]:checked').value : 'INDIVIDUAL';
 
         if (assignType === 'GROUP') {
-            var checked = this.querySelectorAll('.group-main-cb:checked');
+            var groupInputs = this.querySelectorAll('input[name="assignedToGroup"]');
             var mainErr = document.getElementById('groupMainError');
-            if (checked.length < 2) {
-                e.preventDefault();
-                e.stopPropagation();
-                if (mainErr) {
-                    mainErr.textContent = checked.length === 0
-                        ? 'Vui lòng chọn ít nhất 2 thành viên cho nhóm'
-                        : 'Công việc nhóm cần ít nhất 2 người';
-                    mainErr.classList.remove('d-none');
-                }
+            if (groupInputs.length < 2) {
+                e.preventDefault(); e.stopPropagation();
+                if (mainErr) { mainErr.textContent = 'Vui lòng chọn ít nhất 2 thành viên'; mainErr.classList.remove('d-none'); }
                 return;
             }
             if (mainErr) mainErr.classList.add('d-none');
+        } else {
             var assignedTo = document.getElementById('assignedTo');
-            if (assignedTo) assignedTo.removeAttribute('required');
+            var assigneeErr = document.getElementById('assigneeError');
+            if (assignedTo && !assignedTo.value) {
+                e.preventDefault(); e.stopPropagation();
+                if (assigneeErr) assigneeErr.classList.remove('d-none');
+                return;
+            }
+            if (assigneeErr) assigneeErr.classList.add('d-none');
         }
 
-        if (!this.checkValidity()) {
-            e.preventDefault();
-            e.stopPropagation();
-        }
+        if (!this.checkValidity()) { e.preventDefault(); e.stopPropagation(); }
         this.classList.add('was-validated');
     });
 
-    // ── Recurring toggle ──────────────────────────────────────────────────
-    var enableCheck = document.getElementById('enableRecurring');
-    var recurPanel  = document.getElementById('recurringPanel');
-    if (enableCheck && recurPanel) {
-        enableCheck.addEventListener('change', function() {
-            recurPanel.style.display = this.checked ? 'block' : 'none';
+    // ── Search filters ──────────────────────────────────────────────────
+    bindSearch('assigneePickerSearch', '.assignee-picker-row');
+    bindSearch('objectPickerSearch', '.obj-picker-row');
+
+    function bindSearch(inputId, rowSelector) {
+        var inp = document.getElementById(inputId);
+        if (!inp) return;
+        inp.addEventListener('input', function() {
+            var kw = this.value.toLowerCase().trim();
+            document.querySelectorAll(rowSelector).forEach(function(row) {
+                var data = row.getAttribute('data-search') || '';
+                var matchesSearch = !kw || data.indexOf(kw) !== -1;
+
+                // For assignee picker: respect role filter
+                var role = row.getAttribute('data-role');
+                if (role) {
+                    var showRole = _currentTaskType === 'CUSTOMER' ? 'SUPPORT' : 'SALES';
+                    row.style.display = (matchesSearch && role === showRole) ? '' : 'none';
+                } else {
+                    row.style.display = matchesSearch ? '' : 'none';
+                }
+            });
         });
     }
+
+    // ── Checkbox count listeners ──────────────────────────────────────────
+    document.querySelectorAll('.assignee-picker-cb').forEach(function(cb) {
+        cb.addEventListener('change', updateAssigneePickerCount);
+    });
+    document.querySelectorAll('.obj-picker-cb').forEach(function(cb) {
+        cb.addEventListener('change', updateObjectPickerCount);
+    });
+
+    // ── Init UI based on linked object type ──────────────────────────────
+    if (_currentTaskType === 'CUSTOMER') {
+        // Sync tab active state
+        var tabLead = document.getElementById('tabLead');
+        var tabCustomer = document.getElementById('tabCustomer');
+        var badgeLead = document.getElementById('tabLeadBadge');
+        var badgeCustomer = document.getElementById('tabCustomerBadge');
+        if (tabLead) tabLead.classList.remove('active');
+        if (tabCustomer) tabCustomer.classList.add('active');
+        if (badgeLead) badgeLead.className = 'badge bg-secondary ms-1';
+        if (badgeCustomer) badgeCustomer.className = 'badge bg-success ms-1';
+
+        // Sync assignee role label
+        var roleLabel = document.getElementById('assigneeRoleLabel');
+        if (roleLabel) roleLabel.textContent = 'Nhân viên Support';
+
+        // Sync object picker sidebar title
+        var sidebarTitle = document.getElementById('objectPickerTitle');
+        if (sidebarTitle) sidebarTitle.innerHTML = '<i class="bi bi-link-45deg me-1"></i>Chọn Customer';
+    }
 });
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ASSIGNEE PICKER
+// ═══════════════════════════════════════════════════════════════════════════
+var _assigneePickerMode = 'INDIVIDUAL'; // or 'GROUP'
+
+function openAssigneePickerModal(mode) {
+    _assigneePickerMode = mode;
+    var modeLabel = document.getElementById('assigneePickerMode');
+    if (modeLabel) modeLabel.textContent = mode === 'GROUP' ? 'Nhóm' : 'Cá nhân';
+
+    // Filter rows by task type: LEAD → SALES, CUSTOMER → SUPPORT
+    var showRole = _currentTaskType === 'CUSTOMER' ? 'SUPPORT' : 'SALES';
+    document.querySelectorAll('.assignee-picker-row').forEach(function(r) {
+        var role = r.getAttribute('data-role');
+        r.style.display = (role === showRole) ? '' : 'none';
+        // Uncheck hidden rows
+        if (role !== showRole) {
+            var cb = r.querySelector('.assignee-picker-cb');
+            if (cb) { cb.checked = false; cb.disabled = false; }
+        }
+    });
+
+    // Pre-check current selection
+    document.querySelectorAll('.assignee-picker-row[data-role="' + showRole + '"] .assignee-picker-cb').forEach(function(cb) { cb.checked = false; });
+
+    if (mode === 'INDIVIDUAL') {
+        var current = document.getElementById('assignedTo').value;
+        if (current) {
+            var cb = document.querySelector('.assignee-picker-row[data-role="' + showRole + '"] .assignee-picker-cb[value="' + current + '"]');
+            if (cb) cb.checked = true;
+        }
+    } else {
+        document.querySelectorAll('input[name="assignedToGroup"]').forEach(function(inp) {
+            var cb = document.querySelector('.assignee-picker-row[data-role="' + showRole + '"] .assignee-picker-cb[value="' + inp.value + '"]');
+            if (cb) cb.checked = true;
+        });
+    }
+
+    updateAssigneePickerCount();
+    var searchInp = document.getElementById('assigneePickerSearch');
+    if (searchInp) { searchInp.value = ''; }
+
+    new bootstrap.Modal(document.getElementById('assigneePickerModal')).show();
+}
+
+function updateAssigneePickerCount() {
+    var showRole = _currentTaskType === 'CUSTOMER' ? 'SUPPORT' : 'SALES';
+    var visibleChecked = document.querySelectorAll('.assignee-picker-row[data-role="' + showRole + '"] .assignee-picker-cb:checked');
+    var count = visibleChecked.length;
+    var el = document.getElementById('assigneePickerCount');
+    if (el) el.textContent = count;
+
+    // Individual mode: only allow 1 selection
+    var visibleCbs = document.querySelectorAll('.assignee-picker-row[data-role="' + showRole + '"] .assignee-picker-cb');
+    if (_assigneePickerMode === 'INDIVIDUAL' && count >= 1) {
+        visibleCbs.forEach(function(cb) {
+            if (!cb.checked) cb.disabled = true;
+        });
+    } else {
+        visibleCbs.forEach(function(cb) { cb.disabled = false; });
+    }
+}
+
+function confirmAssigneePicker() {
+    var checked = document.querySelectorAll('.assignee-picker-cb:checked');
+
+    if (_assigneePickerMode === 'INDIVIDUAL') {
+        if (checked.length === 0) return;
+        var cb = checked[0];
+        document.getElementById('assignedTo').value = cb.value;
+        var display = document.getElementById('assigneeDisplay');
+        display.innerHTML = '<div class="d-flex align-items-center gap-2">'
+            + '<i class="bi bi-person-fill text-primary"></i>'
+            + '<span class="fw-semibold small">' + escapeHtml(cb.getAttribute('data-name')) + '</span>'
+            + '<small class="text-muted">(' + escapeHtml(cb.getAttribute('data-code')) + ')</small>'
+            + '</div>';
+        var err = document.getElementById('assigneeError');
+        if (err) err.classList.add('d-none');
+    } else {
+        // GROUP mode
+        var container = document.getElementById('groupMembersDisplay');
+        // Remove old hidden inputs
+        document.querySelectorAll('input[name="assignedToGroup"]').forEach(function(el) { el.remove(); });
+        container.innerHTML = '';
+
+        if (checked.length === 0) {
+            container.innerHTML = '<span class="text-muted small">-- Chưa chọn --</span>';
+        } else {
+            var form = document.getElementById('taskForm');
+            checked.forEach(function(cb) {
+                // Hidden input inside the form
+                var hidden = document.createElement('input');
+                hidden.type = 'hidden'; hidden.name = 'assignedToGroup'; hidden.value = cb.value;
+                form.appendChild(hidden);
+
+                // Badge in display
+                var badge = document.createElement('span');
+                badge.className = 'badge bg-primary-subtle text-primary me-1 mb-1';
+                badge.innerHTML = '<i class="bi bi-person me-1"></i>' + escapeHtml(cb.getAttribute('data-name'));
+                container.appendChild(badge);
+            });
+        }
+
+        var err = document.getElementById('groupMainError');
+        if (err) { if (checked.length < 2) { err.textContent = 'Cần chọn ít nhất 2 người'; err.classList.remove('d-none'); } else { err.classList.add('d-none'); } }
+    }
+
+    bootstrap.Modal.getInstance(document.getElementById('assigneePickerModal')).hide();
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// OBJECT PICKER (Lead + Customer)
+// ═══════════════════════════════════════════════════════════════════════════
+function openObjectPickerModal() {
+    // Show/hide tabs based on task type
+    var leadTab = document.querySelector('[data-bs-target="#tabPickerLead"]');
+    var customerTab = document.querySelector('[data-bs-target="#tabPickerCustomer"]');
+    var leadPane = document.getElementById('tabPickerLead');
+    var customerPane = document.getElementById('tabPickerCustomer');
+
+    if (_currentTaskType === 'CUSTOMER') {
+        // Show only Customer tab
+        if (leadTab) { leadTab.classList.remove('active'); leadTab.parentElement.style.display = 'none'; }
+        if (customerTab) { customerTab.classList.add('active'); customerTab.parentElement.style.display = ''; }
+        if (leadPane) { leadPane.classList.remove('show', 'active'); }
+        if (customerPane) { customerPane.classList.add('show', 'active'); }
+        // Uncheck all leads
+        document.querySelectorAll('.obj-picker-cb[data-type="LEAD"]').forEach(function(cb) { cb.checked = false; });
+    } else {
+        // Show only Lead tab
+        if (leadTab) { leadTab.classList.add('active'); leadTab.parentElement.style.display = ''; }
+        if (customerTab) { customerTab.classList.remove('active'); customerTab.parentElement.style.display = 'none'; }
+        if (leadPane) { leadPane.classList.add('show', 'active'); }
+        if (customerPane) { customerPane.classList.remove('show', 'active'); }
+        // Uncheck all customers
+        document.querySelectorAll('.obj-picker-cb[data-type="CUSTOMER"]').forEach(function(cb) { cb.checked = false; });
+    }
+
+    // Pre-check current selections
+    document.querySelectorAll('.obj-picker-cb').forEach(function(cb) { cb.checked = false; });
+    document.querySelectorAll('input[name="selectedLeads"]').forEach(function(inp) {
+        var cb = document.querySelector('.obj-picker-cb[data-type="LEAD"][value="' + inp.value + '"]');
+        if (cb) cb.checked = true;
+    });
+    document.querySelectorAll('input[name="selectedCustomers"]').forEach(function(inp) {
+        var cb = document.querySelector('.obj-picker-cb[data-type="CUSTOMER"][value="' + inp.value + '"]');
+        if (cb) cb.checked = true;
+    });
+
+    updateObjectPickerCount();
+    var searchInp = document.getElementById('objectPickerSearch');
+    if (searchInp) searchInp.value = '';
+    document.querySelectorAll('.obj-picker-row').forEach(function(r) { r.style.display = ''; });
+
+    new bootstrap.Modal(document.getElementById('objectPickerModal')).show();
+}
+
+function updateObjectPickerCount() {
+    // Only count items matching current task type
+    var type = _currentTaskType;
+    var count = document.querySelectorAll('.obj-picker-cb[data-type="' + type + '"]:checked').length;
+    var el = document.getElementById('objectPickerSelectedCount');
+    if (el) el.textContent = count;
+}
+
+function objectPickerSelectAll() {
+    // Only select items matching current task type (LEAD or CUSTOMER)
+    var type = _currentTaskType;
+    document.querySelectorAll('.obj-picker-cb[data-type="' + type + '"]').forEach(function(cb) {
+        var row = cb.closest('.obj-picker-row');
+        if (row && row.style.display !== 'none') cb.checked = true;
+    });
+    updateObjectPickerCount();
+}
+function objectPickerDeselectAll() {
+    // Only deselect items matching current task type
+    var type = _currentTaskType;
+    document.querySelectorAll('.obj-picker-cb[data-type="' + type + '"]').forEach(function(cb) { cb.checked = false; });
+    updateObjectPickerCount();
+}
+
+function confirmObjectPicker() {
+    var container = document.getElementById('selectedObjectsContainer');
+    var noObj = document.getElementById('noObjectSelected');
+
+    // Clear old
+    container.querySelectorAll('.selected-obj-item').forEach(function(el) { el.remove(); });
+
+    var checked = document.querySelectorAll('.obj-picker-cb:checked');
+    if (checked.length === 0) {
+        if (noObj) noObj.style.display = '';
+        bootstrap.Modal.getInstance(document.getElementById('objectPickerModal')).hide();
+        return;
+    }
+    if (noObj) noObj.style.display = 'none';
+
+    checked.forEach(function(cb) {
+        var objType = cb.getAttribute('data-type');
+        var objId   = cb.value;
+        var code    = cb.getAttribute('data-code');
+        var name    = cb.getAttribute('data-name');
+        var phone   = cb.getAttribute('data-phone');
+
+        var inputName = objType === 'LEAD' ? 'selectedLeads' : 'selectedCustomers';
+        var icon = objType === 'LEAD' ? 'bi-person-fill text-primary' : 'bi-building text-success';
+        var typeBadge = objType === 'LEAD'
+            ? '<span class="badge bg-info-subtle text-info ms-1" style="font-size:0.65rem">Lead</span>'
+            : '<span class="badge bg-success-subtle text-success ms-1" style="font-size:0.65rem">Customer</span>';
+
+        var hidden = document.createElement('input');
+        hidden.type = 'hidden'; hidden.name = inputName; hidden.value = objId;
+        hidden.className = 'selected-obj-item';
+
+        var badge = document.createElement('div');
+        badge.className = 'selected-obj-item d-flex align-items-center justify-content-between border rounded p-2 mb-1 bg-white';
+        badge.setAttribute('data-type', objType);
+        badge.setAttribute('data-id', objId);
+        badge.innerHTML = '<div class="d-flex align-items-center gap-2">'
+            + '<i class="bi ' + icon + '"></i>'
+            + '<div><div class="fw-semibold small">' + escapeHtml(name) + typeBadge + '</div>'
+            + '<small class="text-muted">' + escapeHtml(code) + (phone ? ' · ' + escapeHtml(phone) : '') + '</small></div>'
+            + '</div>'
+            + '<button type="button" class="btn btn-sm btn-outline-danger border-0" '
+            + 'onclick="removeSelectedObject(this)" title="Xóa"><i class="bi bi-x-lg"></i></button>';
+
+        container.appendChild(hidden);
+        container.appendChild(badge);
+    });
+
+    bootstrap.Modal.getInstance(document.getElementById('objectPickerModal')).hide();
+}
+
+function removeSelectedObject(btn) {
+    var item = btn.closest('.selected-obj-item');
+    var objType = item.getAttribute('data-type');
+    var objId = item.getAttribute('data-id');
+    var inputName = objType === 'LEAD' ? 'selectedLeads' : 'selectedCustomers';
+
+    // Remove hidden input
+    var container = document.getElementById('selectedObjectsContainer');
+    container.querySelectorAll('input[name="' + inputName + '"][value="' + objId + '"]').forEach(function(el) { el.remove(); });
+    item.remove();
+
+    if (container.querySelectorAll('.selected-obj-item').length === 0) {
+        var noObj = document.getElementById('noObjectSelected');
+        if (noObj) noObj.style.display = '';
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════════════════════════════════
+function escapeHtml(text) {
+    if (!text) return '';
+    var div = document.createElement('div');
+    div.appendChild(document.createTextNode(text));
+    return div.innerHTML;
+}
 </script>

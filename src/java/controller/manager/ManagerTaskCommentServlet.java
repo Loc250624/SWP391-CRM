@@ -1,5 +1,6 @@
 package controller.manager;
 
+import dao.TaskAssigneeDAO;
 import dao.TaskCommentDAO;
 import dao.TaskDAO;
 import dao.UserDAO;
@@ -78,6 +79,18 @@ public class ManagerTaskCommentServlet extends HttpServlet {
 
         boolean ok = new TaskCommentDAO().insertComment(taskId, currentUser.getUserId(), content.trim());
         if (ok) {
+            // Thong bao cho assignees + creator (tru nguoi comment)
+            java.util.List<Integer> notifyIds = new java.util.ArrayList<>();
+            for (model.TaskAssignee ta : new TaskAssigneeDAO().getByTaskId(taskId)) {
+                if (!notifyIds.contains(ta.getUserId())) notifyIds.add(ta.getUserId());
+            }
+            if (task.getCreatedBy() != null && !notifyIds.contains(task.getCreatedBy())) {
+                notifyIds.add(task.getCreatedBy());
+            }
+            util.NotificationUtil.notifyTaskComment(
+                    taskId, task.getTaskCode(), task.getTitle(),
+                    currentUser.getUserId(), notifyIds);
+
             session.setAttribute("successMessage", "Đã thêm bình luận");
         } else {
             session.setAttribute("errorMessage", "Thêm bình luận thất bại");

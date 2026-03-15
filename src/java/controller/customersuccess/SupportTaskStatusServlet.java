@@ -65,8 +65,8 @@ public class SupportTaskStatusServlet extends HttpServlet {
             request.setAttribute("task",             task);
             request.setAttribute("taskStatusValues", TaskStatus.values());
             request.setAttribute("pageTitle",    "Cập nhật Trạng thái");
-            request.setAttribute("contentPage",  "/view/support/task/task-status.jsp");
-            request.getRequestDispatcher("/view/customersuccess/main_layout.jsp").forward(request, response);
+            request.setAttribute("contentPage",  "/view/customersuccess/pages/task/task-status.jsp");
+            request.getRequestDispatcher("/view/customersuccess/pages/main_layout.jsp").forward(request, response);
 
         } catch (NumberFormatException e) {
             response.sendRedirect(request.getContextPath() + "/support/task/list");
@@ -112,9 +112,9 @@ public class SupportTaskStatusServlet extends HttpServlet {
             return;
         }
 
-        // FIX: SUPPORT cannot set CANCELLED status
-        if ("CANCELLED".equals(newStatus)) {
-            session.setAttribute("errorMessage", "Bạn không có quyền hủy công việc");
+        // SUPPORT can only set COMPLETED
+        if (!"COMPLETED".equals(newStatus)) {
+            session.setAttribute("errorMessage", "Bạn chỉ có thể cập nhật trạng thái sang Hoàn thành");
             response.sendRedirect(redirectBack);
             return;
         }
@@ -157,6 +157,19 @@ public class SupportTaskStatusServlet extends HttpServlet {
             boolean success = taskDAO.updateTask(task);
 
             if (success) {
+                // Notify task status changed
+                java.util.List<Integer> notifyIds = new java.util.ArrayList<>();
+                dao.TaskAssigneeDAO taDao = new dao.TaskAssigneeDAO();
+                for (model.TaskAssignee ta : taDao.getByTaskId(taskId)) {
+                    if (!notifyIds.contains(ta.getUserId())) notifyIds.add(ta.getUserId());
+                }
+                if (task.getCreatedBy() != null && !notifyIds.contains(task.getCreatedBy())) {
+                    notifyIds.add(task.getCreatedBy());
+                }
+                util.NotificationUtil.notifyTaskStatusChanged(
+                        taskId, task.getTaskCode(), task.getTitle(),
+                        newStatus, currentUser.getUserId(), notifyIds);
+
                 session.setAttribute("successMessage", "Cập nhật trạng thái thành công");
                 response.sendRedirect(request.getContextPath() + "/support/task/detail?id=" + taskId);
             } else {

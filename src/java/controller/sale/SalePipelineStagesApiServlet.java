@@ -11,7 +11,7 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-@WebServlet(name = "SalePipelineStagesApiServlet", urlPatterns = {"/sale/api/stages"})
+@WebServlet(name = "SalePipelineStagesServlet", urlPatterns = {"/sale/stages"})
 public class SalePipelineStagesApiServlet extends HttpServlet {
 
     private PipelineStageDAO stageDAO = new PipelineStageDAO();

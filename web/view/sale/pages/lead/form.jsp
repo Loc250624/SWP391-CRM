@@ -152,6 +152,13 @@
                         </select>
                         <div class="form-text">Muc do tiem nang cua lead</div>
                     </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-medium" for="leadScore">Diem (Score)</label>
+                        <input type="number" class="form-control" id="leadScore" name="leadScore"
+                               placeholder="0" value="${lead.leadScore != null ? lead.leadScore : 0}"
+                               min="0" max="100">
+                        <div class="form-text">Diem danh gia lead (0 - 100)</div>
+                    </div>
                 </div>
             </div>
 
@@ -330,6 +337,11 @@
         }
         if (notes && notes.length > 2000) {
             errors.push('Ghi chu khong duoc vuot qua 2000 ky tu!');
+        }
+
+        var leadScore = parseInt(document.getElementById('leadScore').value) || 0;
+        if (leadScore < 0 || leadScore > 100) {
+            errors.push('Diem (Score) phai tu 0 den 100!');
         }
 
         if (errors.length > 0) {

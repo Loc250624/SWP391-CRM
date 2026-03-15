@@ -3,15 +3,18 @@ package controller.customersuccess;
 import dao.CustomerDAO;
 import dao.LeadDAO;
 import dao.OpportunityDAO;
+import dao.TaskCommentDAO;
 import dao.TaskDAO;
 import dao.UserDAO;
 import java.io.IOException;
+import java.util.List;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
+import model.Comment;
 import model.Customer;
 import model.Lead;
 import model.Opportunity;
@@ -72,20 +75,21 @@ public class SupportTaskDetailServlet extends HttpServlet {
 
             // Get related object info
             String relatedObjectName = null;
+            Lead relatedLead = null;
+            Customer relatedCustomer = null;
             if (task.getRelatedType() != null && task.getRelatedId() != null) {
-                if ("Lead".equals(task.getRelatedType())) {
-                    LeadDAO leadDAO = new LeadDAO();
-                    Lead lead = leadDAO.getLeadById(task.getRelatedId());
-                    if (lead != null) {
-                        relatedObjectName = lead.getFullName() + " (" + lead.getLeadCode() + ")";
+                String rt = task.getRelatedType().toUpperCase();
+                if ("LEAD".equals(rt)) {
+                    relatedLead = new LeadDAO().getLeadById(task.getRelatedId());
+                    if (relatedLead != null) {
+                        relatedObjectName = relatedLead.getFullName() + " (" + relatedLead.getLeadCode() + ")";
                     }
-                } else if ("Customer".equals(task.getRelatedType())) {
-                    CustomerDAO customerDAO = new CustomerDAO();
-                    Customer customer = customerDAO.getCustomerById(task.getRelatedId());
-                    if (customer != null) {
-                        relatedObjectName = customer.getFullName() + " (" + customer.getCustomerCode() + ")";
+                } else if ("CUSTOMER".equals(rt)) {
+                    relatedCustomer = new CustomerDAO().getCustomerById(task.getRelatedId());
+                    if (relatedCustomer != null) {
+                        relatedObjectName = relatedCustomer.getFullName() + " (" + relatedCustomer.getCustomerCode() + ")";
                     }
-                } else if ("Opportunity".equals(task.getRelatedType())) {
+                } else if ("OPPORTUNITY".equals(rt)) {
                     OpportunityDAO opportunityDAO = new OpportunityDAO();
                     Opportunity opportunity = opportunityDAO.getOpportunityById(task.getRelatedId());
                     if (opportunity != null) {
@@ -94,13 +98,21 @@ public class SupportTaskDetailServlet extends HttpServlet {
                 }
             }
 
+            // Comments
+            List<Comment> comments = new TaskCommentDAO().getCommentsByTaskId(taskId);
+            List<Users> allUsers = userDAO.getAllUsers();
+
             request.setAttribute("task", task);
             request.setAttribute("creator", creator);
             request.setAttribute("relatedObjectName", relatedObjectName);
+            request.setAttribute("relatedLead", relatedLead);
+            request.setAttribute("relatedCustomer", relatedCustomer);
+            request.setAttribute("comments", comments);
+            request.setAttribute("allUsers", allUsers);
 
             request.setAttribute("pageTitle", "Chi tiết Công việc");
-            request.setAttribute("contentPage", "/view/support/task/task-detail.jsp");
-            request.getRequestDispatcher("/view/customersuccess/main_layout.jsp").forward(request, response);
+            request.setAttribute("contentPage", "/view/customersuccess/pages/task/task-detail.jsp");
+            request.getRequestDispatcher("/view/customersuccess/pages/main_layout.jsp").forward(request, response);
 
         } catch (NumberFormatException e) {
             response.sendRedirect(request.getContextPath() + "/support/task/list");

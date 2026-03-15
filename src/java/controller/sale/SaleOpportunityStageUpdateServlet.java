@@ -211,6 +211,46 @@ public class SaleOpportunityStageUpdateServlet extends HttpServlet {
                     }
                 }
 
+                // ── Notifications ──
+                // Build notify list: owner + managers
+                java.util.List<Integer> notifyIds = new java.util.ArrayList<>();
+                if (opp.getOwnerId() != null && opp.getOwnerId() != currentUserId) {
+                    notifyIds.add(opp.getOwnerId());
+                }
+                if (opp.getCreatedBy() != null && !notifyIds.contains(opp.getCreatedBy())
+                        && opp.getCreatedBy() != currentUserId) {
+                    notifyIds.add(opp.getCreatedBy());
+                }
+
+                // Stage changed
+                PipelineStage toStage = stageDAO.getStageById(newStageId);
+                String stageName = toStage != null ? toStage.getStageName() : "N/A";
+                util.NotificationUtil.notifyOpportunityStageChanged(
+                        oppId, opp.getOpportunityCode(), opp.getOpportunityName(),
+                        stageName, currentUserId, notifyIds);
+
+                // Won / Lost
+                if ("Won".equals(opp.getStatus()) && !"Won".equals(oldStatus)) {
+                    util.NotificationUtil.notifyOpportunityWon(
+                            oppId, opp.getOpportunityCode(), opp.getOpportunityName(),
+                            currentUserId, notifyIds);
+                } else if ("Lost".equals(opp.getStatus()) && !"Lost".equals(oldStatus)) {
+                    util.NotificationUtil.notifyOpportunityLost(
+                            oppId, opp.getOpportunityCode(), opp.getOpportunityName(),
+                            currentUserId, notifyIds);
+                }
+
+                // Lead converted + Customer created
+                if (leadConverted && lead != null) {
+                    util.NotificationUtil.notifyLeadConverted(
+                            lead.getLeadId(), lead.getLeadCode(), lead.getFullName(),
+                            currentUserId, notifyIds);
+                    util.NotificationUtil.notifyCustomerCreated(
+                            opp.getCustomerId() != null ? opp.getCustomerId() : 0,
+                            null, lead.getFullName(),
+                            currentUserId, notifyIds);
+                }
+
                 String msg = leadConverted
                         ? "Stage updated. Lead da duoc chuyen doi thanh Customer!"
                         : "Stage updated";

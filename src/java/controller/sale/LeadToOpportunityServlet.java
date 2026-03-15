@@ -89,6 +89,19 @@ public class LeadToOpportunityServlet extends HttpServlet {
                 lead.setIsConverted(true);
                 lead.setStatus(LeadStatus.Converted.name());
                 leadDAO.updateLead(lead);
+
+                // Notify lead conversion
+                Integer currentUserId = SessionHelper.getLoggedInUserId(request);
+                if (currentUserId != null) {
+                    java.util.List<Integer> notifyIds = new java.util.ArrayList<>();
+                    if (lead.getAssignedTo() != null) notifyIds.add(lead.getAssignedTo());
+                    if (lead.getCreatedBy() != null && !notifyIds.contains(lead.getCreatedBy())) {
+                        notifyIds.add(lead.getCreatedBy());
+                    }
+                    util.NotificationUtil.notifyLeadConverted(
+                            leadId, lead.getLeadCode(), lead.getFullName(),
+                            currentUserId, notifyIds);
+                }
             }
 
             // Redirect back to opportunity form

@@ -2,58 +2,16 @@
 <%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 
+<%-- Giữ nguyên phần Style của bạn --%>
 <style>
-    /* Style cho các Badge trạng thái */
-    .status-badge {
-        padding: 4px 12px;
-        border-radius: 20px;
-        font-size: 12px;
-        font-weight: 600;
-    }
-    .status-active {
-        background-color: #d1fae5;
-        color: #065f46;
-    }
-    .status-inactive {
-        background-color: #f1f5f9;
-        color: #475569;
-    }
-
-    /* Style cho Modal giống hệt mẫu Thông tin chi tiết */
-    .modal-label {
-        font-weight: 600;
-        color: #64748b;
-        font-size: 13px;
-        margin-bottom: 2px;
-        text-transform: uppercase;
-    }
-    .modal-value {
-        color: #1e293b;
-        font-weight: 500;
-        margin-bottom: 15px;
-        border-bottom: 1px solid #f1f5f9;
-        padding-bottom: 5px;
-    }
-
-    /* Tùy chỉnh input để hài hòa với modal detail */
-    .form-input-custom {
-        border: none;
-        border-bottom: 2px solid #e2e8f0;
-        border-radius: 0;
-        padding: 8px 0;
-        background: transparent;
-        transition: all 0.3s;
-    }
-    .form-input-custom:focus {
-        box-shadow: none;
-        border-bottom-color: #3b82f6;
-        outline: none;
-    }
-
-    .table-hover tbody tr:hover {
-        background-color: #f8fafc;
-        cursor: pointer;
-    }
+    .status-badge { padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+    .status-active { background-color: #d1fae5; color: #065f46; }
+    .status-inactive { background-color: #f1f5f9; color: #475569; }
+    .modal-label { font-weight: 600; color: #64748b; font-size: 13px; margin-bottom: 2px; text-transform: uppercase; }
+    .modal-value { color: #1e293b; font-weight: 500; margin-bottom: 15px; border-bottom: 1px solid #f1f5f9; padding-bottom: 5px; }
+    .form-input-custom { border: none; border-bottom: 2px solid #e2e8f0; border-radius: 0; padding: 8px 0; background: transparent; transition: all 0.3s; }
+    .form-input-custom:focus { box-shadow: none; border-bottom-color: #3b82f6; outline: none; }
+    .table-hover tbody tr:hover { background-color: #f8fafc; cursor: pointer; }
 </style>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -104,10 +62,10 @@
                         <td class="text-center">
                             <div class="btn-group">
                                 <button type="button" class="btn btn-sm btn-outline-success d-flex align-items-center gap-1" 
-                                        onclick="openReportModal('${c.customerId}', '${c.customerCode}', '${c.fullName}')">
+                                        onclick="openReportModal('${c.customerId}', '${c.customerCode}', '${c.fullName}', 'Customer')">
                                     <i class="bi bi-plus-circle"></i> <span>Tạo phiếu</span>
                                 </button>
-                                <a href="${pageContext.request.contextPath}/support/activities?customerId=${c.customerId}" 
+                                <a href="${pageContext.request.contextPath}/support/activities?id=${c.customerId}&type=Customer" 
                                    class="btn btn-sm btn-outline-info d-flex align-items-center gap-1">
                                     <i class="bi bi-clock-history"></i> <span>Lịch sử</span>
                                 </a>
@@ -120,6 +78,7 @@
     </div>
 </div>
 
+<%-- Detail Modal giữ nguyên --%>
 <div class="modal fade" id="detailModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg" style="border-radius: 15px;">
@@ -146,8 +105,7 @@
     </div>
 </div>
 
-<%-- Phần Style và Table giữ nguyên của bạn --%>
-
+<%-- Report Modal: Đã thêm hidden input 'type' để đồng bộ --%>
 <div class="modal fade" id="reportModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg" style="border-radius: 15px;">
@@ -157,12 +115,13 @@
             </div>
             <div class="modal-body p-4">
                 <div class="row rounded-3 p-3 mb-4 mx-1" style="background-color: #f0f7ff !important; border: 1px solid #e0efff;">
-                    <div class="col-md-4"><div class="modal-label">Mã khách hàng</div><div class="modal-value mb-0" id="rpt_Code"></div></div>
+                    <div class="col-md-4"><div class="modal-label">Mã định danh</div><div class="modal-value mb-0" id="rpt_Code"></div></div>
                     <div class="col-md-8"><div class="modal-label">Họ và tên</div><div class="modal-value fw-bold text-primary mb-0" id="rpt_Name"></div></div>
                 </div>
 
                 <form id="reportForm">
-                    <input type="hidden" name="customerId" id="rpt_Id">
+                    <input type="hidden" name="id" id="rpt_Id">
+                    <input type="hidden" name="type" id="rpt_Type">
                     <input type="hidden" name="status" id="rpt_Status" value="Completed">
 
                     <div class="row px-1">
@@ -179,11 +138,9 @@
             </div>
             <div class="modal-footer border-0 pb-4 pr-4">
                 <button type="button" class="btn btn-light px-4 rounded-pill border" data-bs-dismiss="modal">Hủy bỏ</button>
-
                 <button type="button" class="btn btn-warning px-4 rounded-pill shadow-sm text-dark fw-bold" onclick="addToQueue()">
                     <i class="bi bi-clock-history me-1"></i> Thêm vào hàng chờ
                 </button>
-
                 <button type="button" class="btn btn-success px-5 rounded-pill shadow-sm" onclick="submitReport()">
                     <i class="bi bi-check-lg me-1"></i> Lưu báo cáo
                 </button>
@@ -194,7 +151,6 @@
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
-    // --- CÁC HÀM CŨ GIỮ NGUYÊN ---
     function filterTable() {
         let input = document.getElementById("searchPhone").value.toLowerCase();
         let rows = document.querySelectorAll("#customerTable tbody tr");
@@ -218,21 +174,19 @@
         new bootstrap.Modal(document.getElementById('detailModal')).show();
     }
 
-    function openReportModal(id, code, name) {
+    // --- ĐÃ ĐỒNG BỘ THAM SỐ TYPE ---
+    function openReportModal(id, code, name, type) {
         document.getElementById("rpt_Id").value = id;
+        document.getElementById("rpt_Type").value = type; // Gán 'Customer'
         document.getElementById("rpt_Code").innerText = code;
         document.getElementById("rpt_Name").innerText = name;
         document.getElementById("reportForm").reset(); 
         new bootstrap.Modal(document.getElementById('reportModal')).show();
     }
 
-    // --- LOGIC XỬ LÝ GỬI DỮ LIỆU ---
-
     function submitReport() {
         const subject = $("input[name='subject']").val();
         if(!subject) { alert("Vui lòng nhập tiêu đề!"); return; }
-        
-        // Gán trạng thái trước khi gửi
         document.getElementById("rpt_Status").value = "Completed"; 
         executeSubmit();
     }
@@ -240,45 +194,40 @@
     function addToQueue() {
         const subject = $("input[name='subject']").val();
         if(!subject) { alert("Vui lòng nhập tiêu đề!"); return; }
-        
-        // Gán trạng thái chờ xử lý
         document.getElementById("rpt_Status").value = "Pending"; 
         executeSubmit();
     }
 
     function executeSubmit() {
-        // Serialize giờ đã bao gồm cả 'status' vì nó nằm trong form
         const formData = $('#reportForm').serialize();
         const status = document.getElementById("rpt_Status").value;
         const subject = $("input[name='subject']").val();
 
+        // Gửi tới ActivityController đã được đồng bộ
         $.post('${pageContext.request.contextPath}/support/activities', formData, function (response) {
             if (response.trim() === "success") {
-                // Đóng modal
                 const modalElement = document.getElementById('reportModal');
                 bootstrap.Modal.getInstance(modalElement).hide();
 
-                // Cấu hình thông báo (Sử dụng nối chuỗi để tránh lỗi JSP/JS template literal)
                 let alertTitle = (status === "Pending") ? "Đã vào hàng chờ!" : "Thành công!";
                 let alertColor = (status === "Pending") ? "#ffc107" : "#198754";
                 let icon = (status === "Pending") ? "bi-clock-history" : "bi-check-circle-fill";
                 let alertMsg = (status === "Pending") 
-                    ? "Báo cáo \"" + subject + "\" đã được chuyển vào hàng chờ xử lý sau." 
-                    : "Báo cáo \"" + subject + "\" đã được lưu vào lịch sử của khách hàng.";
+                    ? "Báo cáo \"" + subject + "\" đã chuyển vào hàng chờ." 
+                    : "Báo cáo \"" + subject + "\" đã được lưu vào lịch sử.";
 
                 const alertHtml = 
                     '<div class="alert alert-dismissible fade show shadow-sm border-0 mb-4" role="alert" ' +
                     'style="border-left: 5px solid ' + alertColor + ' !important; background-color: white;">' +
                     '<i class="bi ' + icon + ' me-2" style="color: ' + alertColor + '"></i>' +
                     '<strong style="color: ' + alertColor + '">' + alertTitle + '</strong> ' + alertMsg +
-                    '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>' +
+                    '<button type="button" class="btn-close" data-bs-alert="alert"></button>' +
                     '</div>';
                 
                 $('#liveAlertPlaceholder').html(alertHtml);
                 window.scrollTo({top: 0, behavior: 'smooth'});
-
             } else {
-                alert("Lỗi từ hệ thống: " + response);
+                alert("Lỗi: " + response);
             }
         }).fail(function () {
             alert("Không thể kết nối với máy chủ.");

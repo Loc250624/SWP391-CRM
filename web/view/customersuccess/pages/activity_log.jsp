@@ -103,7 +103,15 @@
                         <div class="p-3 bg-white border rounded-3 shadow-sm mb-3">
                             <small class="text-muted fw-bold">${log.createdAt.toLocalTime()}</small>
                             <p class="mb-0 mt-1">
-                                Bạn đã thực hiện hỗ trợ khách hàng 
+                                Bạn đã thực hiện hỗ trợ 
+                                <c:choose>
+                                    <c:when test="${log.relatedType == 'Lead'}">
+                                        <span class="badge bg-secondary px-2 py-1 mx-1">Lead</span>
+                                    </c:when>
+                                    <c:otherwise>
+                                        khách hàng 
+                                    </c:otherwise>
+                                </c:choose>
                                 <strong class="text-primary">${log.customerName}</strong> 
                                 (SĐT: <span class="fw-bold text-dark">${log.customerPhone}</span>).
                             </p>

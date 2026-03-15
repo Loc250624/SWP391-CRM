@@ -80,8 +80,16 @@ public class ManagerCRMTaskCreateServlet extends HttpServlet {
             response.sendRedirect(redirectTo); return;
         }
 
-        int departmentId = currentUser.getDepartmentId();
-        List<Users> teamMembers = userDAO.getUsersByDepartment(departmentId);
+        // Lấy danh sách nhân viên SALES + SUPPORT để validate assignee
+        List<Users> teamMembers = new ArrayList<>();
+        teamMembers.addAll(userDAO.getUsersByRoleCode("SALES"));
+        for (Users su : userDAO.getUsersByRoleCode("SUPPORT")) {
+            boolean exists = false;
+            for (Users u : teamMembers) {
+                if (u.getUserId() == su.getUserId()) { exists = true; break; }
+            }
+            if (!exists) teamMembers.add(su);
+        }
 
         // ── Validate Lead/Customer: exists, in scope, not already assigned ─
         LeadDAO     leadDAO     = new LeadDAO();
@@ -97,10 +105,7 @@ public class ManagerCRMTaskCreateServlet extends HttpServlet {
                 session.setAttribute("errorMessage", "Lead này đã được giao rồi, không thể giao lại");
                 response.sendRedirect(redirectTo); return;
             }
-            if (!isInDeptScope(lead.getCreatedBy(), currentUser.getUserId(), teamMembers)) {
-                session.setAttribute("errorMessage", "Lead này không thuộc phạm vi quản lý của bạn");
-                response.sendRedirect(redirectTo); return;
-            }
+            // Lead chưa giao (assigned_to = NULL) thì manager nào cũng được phép giao việc
         } else {
             Customer customer = customerDAO.getCustomerById(relatedId);
             if (customer == null) {
@@ -111,10 +116,7 @@ public class ManagerCRMTaskCreateServlet extends HttpServlet {
                 session.setAttribute("errorMessage", "Khách hàng này đã được giao rồi, không thể giao lại");
                 response.sendRedirect(redirectTo); return;
             }
-            if (!isInDeptScope(customer.getCreatedBy(), currentUser.getUserId(), teamMembers)) {
-                session.setAttribute("errorMessage", "Khách hàng này không thuộc phạm vi quản lý của bạn");
-                response.sendRedirect(redirectTo); return;
-            }
+            // Customer chưa giao (owner_id = NULL) thì manager nào cũng được phép giao việc
         }
 
         // ── Parse priority and due date ────────────────────────────────────
@@ -161,7 +163,7 @@ public class ManagerCRMTaskCreateServlet extends HttpServlet {
             try {
                 int aId = Integer.parseInt(assignedToStr.trim());
                 if (!isValidAssignee(aId, currentUser.getUserId(), teamMembers)) {
-                    session.setAttribute("errorMessage", "Nhân viên không thuộc phòng ban của bạn");
+                    session.setAttribute("errorMessage", "Nhân viên không thuộc đội ngũ SALES/SUPPORT");
                     response.sendRedirect(redirectTo); return;
                 }
                 assigneeIds.add(aId);
@@ -192,6 +194,11 @@ public class ManagerCRMTaskCreateServlet extends HttpServlet {
             response.sendRedirect(redirectTo); return;
         }
 
+        // Fix: insertTask() hardcodes first assignee taskStatus=0 (PENDING)
+        // Update to IN_PROGRESS to match the task status
+        TaskAssigneeDAO taDao0 = new TaskAssigneeDAO();
+        taDao0.updateTaskStatus(task.getTaskId(), assigneeIds.get(0), TaskStatus.IN_PROGRESS.ordinal());
+
         // Add remaining assignees for GROUP
         if ("GROUP".equals(assignType) && assigneeIds.size() >= 2) {
             TaskAssigneeDAO taDao = new TaskAssigneeDAO();
@@ -214,9 +221,23 @@ public class ManagerCRMTaskCreateServlet extends HttpServlet {
 
         if ("LEAD".equals(relatedType)) {
             leadDAO.updateLeadAssignedTo(relatedId, primaryAssignee);
+            leadDAO.updateLeadStatus(relatedId, "Assigned");
+
+            // Notify lead assigned
+            model.Lead assignedLead = leadDAO.getLeadById(relatedId);
+            if (assignedLead != null) {
+                util.NotificationUtil.notifyLeadAssigned(
+                        relatedId, assignedLead.getLeadCode(), assignedLead.getFullName(),
+                        primaryAssignee, currentUser.getUserId());
+            }
         } else {
             customerDAO.updateCustomerOwnerId(relatedId, primaryAssignee);
         }
+
+        // ── Gui thong bao cho tat ca assignees ──────────────────────
+        util.NotificationUtil.notifyTaskAssigned(
+                task.getTaskId(), task.getTaskCode(), title.trim(),
+                priorityStr, assigneeIds, currentUser.getUserId());
 
         // Build success message
         String who = "GROUP".equals(assignType) && assigneeIds.size() > 1
