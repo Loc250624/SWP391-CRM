@@ -20,11 +20,11 @@
                     <form method="post"
                           action="${pageContext.request.contextPath}/manager/task/status"
                           class="d-inline"
-                          onsubmit="return confirm('Bạn có chắc chắn muốn đóng công việc này?');">
+                          onsubmit="return confirm('Bạn có chắc chắn muốn HỦY công việc này? Hành động này không thể hoàn tác.');">
                         <input type="hidden" name="taskId" value="${task.taskId}">
-                        <input type="hidden" name="status" value="COMPLETED">
-                        <button type="submit" class="btn btn-success btn-sm">
-                            <i class="bi bi-check-circle me-1"></i>Đóng công việc
+                        <input type="hidden" name="status" value="CANCELLED">
+                        <button type="submit" class="btn btn-danger btn-sm">
+                            <i class="bi bi-x-circle me-1"></i>Hủy công việc
                         </button>
                     </form>
                 </c:if>

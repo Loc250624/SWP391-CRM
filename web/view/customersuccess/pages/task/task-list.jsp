@@ -215,7 +215,15 @@
                                 <div class="kb-card-code">
                                     ${task.taskCode}
                                     <c:if test="${not empty task.relatedType}">
-                                        &nbsp;· ${task.relatedType}
+                                        <c:set var="relKey" value="${task.relatedType}:${task.relatedId}" />
+                                        <c:choose>
+                                            <c:when test="${not empty relatedObjectMap[relKey]}">
+                                                &nbsp;· ${task.relatedType == 'LEAD' ? 'Lead' : 'Customer'}: ${relatedObjectMap[relKey]}
+                                            </c:when>
+                                            <c:otherwise>
+                                                &nbsp;· ${task.relatedType}
+                                            </c:otherwise>
+                                        </c:choose>
                                     </c:if>
                                 </div>
                                 <div class="kb-card-footer">
@@ -265,7 +273,15 @@
                                 <div class="kb-card-code">
                                     ${task.taskCode}
                                     <c:if test="${not empty task.relatedType}">
-                                        &nbsp;· ${task.relatedType}
+                                        <c:set var="relKey" value="${task.relatedType}:${task.relatedId}" />
+                                        <c:choose>
+                                            <c:when test="${not empty relatedObjectMap[relKey]}">
+                                                &nbsp;· ${task.relatedType == 'LEAD' ? 'Lead' : 'Customer'}: ${relatedObjectMap[relKey]}
+                                            </c:when>
+                                            <c:otherwise>
+                                                &nbsp;· ${task.relatedType}
+                                            </c:otherwise>
+                                        </c:choose>
                                     </c:if>
                                 </div>
                                 <div class="kb-card-footer">
@@ -312,7 +328,15 @@
                                 <div class="kb-card-code">
                                     ${task.taskCode}
                                     <c:if test="${not empty task.relatedType}">
-                                        &nbsp;· ${task.relatedType}
+                                        <c:set var="relKey" value="${task.relatedType}:${task.relatedId}" />
+                                        <c:choose>
+                                            <c:when test="${not empty relatedObjectMap[relKey]}">
+                                                &nbsp;· ${task.relatedType == 'LEAD' ? 'Lead' : 'Customer'}: ${relatedObjectMap[relKey]}
+                                            </c:when>
+                                            <c:otherwise>
+                                                &nbsp;· ${task.relatedType}
+                                            </c:otherwise>
+                                        </c:choose>
                                     </c:if>
                                 </div>
                                 <div class="kb-card-footer">
@@ -396,11 +420,13 @@
                 return;
             }
 
-            // SUPPORT cannot drag to CANCELLED
-            if (toStatus === 'CANCELLED') {
-                showToast('Bạn không có quyền hủy công việc', false);
+            // SUPPORT can only drag to COMPLETED
+            if (toStatus !== 'COMPLETED') {
+                showToast('Bạn chỉ có thể cập nhật sang Hoàn thành', false);
                 return;
             }
+
+            if (!confirm('Bạn có chắc chắn muốn đánh dấu công việc này là Hoàn thành?')) return;
 
             var fd = new URLSearchParams();
             fd.append('taskId', taskId);
@@ -415,12 +441,9 @@
                 .then(function(data) {
                     if (data.success) {
                         dragged.setAttribute('data-status', toStatus);
+                        dragged.setAttribute('draggable', 'false');
+                        dragged.style.opacity = '.85';
                         col.querySelector('.kb-cards').appendChild(dragged);
-                        // Disable drag if moved to terminal state
-                        if (toStatus === 'COMPLETED') {
-                            dragged.setAttribute('draggable', 'false');
-                            dragged.style.opacity = '.85';
-                        }
                         updateCount(fromStatus);
                         updateCount(toStatus);
                         showToast('Cập nhật trạng thái thành công', true);

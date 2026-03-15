@@ -106,19 +106,21 @@ public class SaleTaskDetailServlet extends HttpServlet {
 
             // Related object info
             String relatedObjectName = null;
+            Lead relatedLead = null;
+            Customer relatedCustomer = null;
             if (task.getRelatedType() != null && task.getRelatedId() != null) {
                 switch (task.getRelatedType().toUpperCase()) {
                     case "LEAD": {
-                        Lead lead = new LeadDAO().getLeadById(task.getRelatedId());
-                        if (lead != null) {
-                            relatedObjectName = lead.getFullName() + " (" + lead.getLeadCode() + ")";
+                        relatedLead = new LeadDAO().getLeadById(task.getRelatedId());
+                        if (relatedLead != null) {
+                            relatedObjectName = relatedLead.getFullName() + " (" + relatedLead.getLeadCode() + ")";
                         }
                         break;
                     }
                     case "CUSTOMER": {
-                        Customer customer = new CustomerDAO().getCustomerById(task.getRelatedId());
-                        if (customer != null) {
-                            relatedObjectName = customer.getFullName() + " (" + customer.getCustomerCode() + ")";
+                        relatedCustomer = new CustomerDAO().getCustomerById(task.getRelatedId());
+                        if (relatedCustomer != null) {
+                            relatedObjectName = relatedCustomer.getFullName() + " (" + relatedCustomer.getCustomerCode() + ")";
                         }
                         break;
                     }
@@ -149,6 +151,8 @@ public class SaleTaskDetailServlet extends HttpServlet {
             request.setAttribute("groupMembers", groupMembers);
             request.setAttribute("assigneeList", assigneeList);
             request.setAttribute("relatedObjectName", relatedObjectName);
+            request.setAttribute("relatedLead", relatedLead);
+            request.setAttribute("relatedCustomer", relatedCustomer);
             request.setAttribute("cleanDescription", cleanDescription);
             request.setAttribute("allUsers", allUsers);
             request.setAttribute("comments", comments);

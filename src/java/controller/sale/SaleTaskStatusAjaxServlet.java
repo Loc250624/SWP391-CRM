@@ -88,6 +88,12 @@ public class SaleTaskStatusAjaxServlet extends HttpServlet {
                 return;
             }
 
+            // SALE can only update to COMPLETED
+            if (!"COMPLETED".equals(normalizedStatus)) {
+                out.print("{\"success\":false,\"message\":\"Bạn chỉ có thể cập nhật trạng thái sang Hoàn thành\"}");
+                return;
+            }
+
             task.setStatus(TaskStatus.valueOf(normalizedStatus).ordinal());
             boolean ok = taskDAO.updateTask(task);
 

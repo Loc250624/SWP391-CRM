@@ -1,11 +1,15 @@
 package controller.sale;
 
+import dao.CustomerDAO;
+import dao.LeadDAO;
 import dao.TaskDAO;
 import dao.UserDAO;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -74,6 +78,35 @@ public class SaleTaskListServlet extends HttpServlet {
             cancelledTasks  = filterByRelatedType(cancelledTasks, rt);
         }
 
+        // ── Batch load related object names for kanban cards ──────────────
+        List<Task> allKanbanTasks = new ArrayList<>();
+        allKanbanTasks.addAll(inProgressTasks);
+        allKanbanTasks.addAll(completedTasks);
+        allKanbanTasks.addAll(cancelledTasks);
+
+        List<Integer> leadIds = new ArrayList<>();
+        List<Integer> customerIds = new ArrayList<>();
+        for (Task t : allKanbanTasks) {
+            if ("LEAD".equals(t.getRelatedType()) && t.getRelatedId() != null) {
+                leadIds.add(t.getRelatedId());
+            }
+            if ("CUSTOMER".equals(t.getRelatedType()) && t.getRelatedId() != null) {
+                customerIds.add(t.getRelatedId());
+            }
+        }
+
+        Map<Integer, String> leadNameMap = new LeadDAO().getLeadNameMap(leadIds);
+        Map<Integer, String> customerNameMap = new CustomerDAO().getCustomerNameMap(customerIds);
+
+        Map<String, String> relatedObjectMap = new HashMap<>();
+        for (Map.Entry<Integer, String> e : leadNameMap.entrySet()) {
+            relatedObjectMap.put("LEAD:" + e.getKey(), e.getValue());
+        }
+        for (Map.Entry<Integer, String> e : customerNameMap.entrySet()) {
+            relatedObjectMap.put("CUSTOMER:" + e.getKey(), e.getValue());
+        }
+
+        request.setAttribute("relatedObjectMap", relatedObjectMap);
         request.setAttribute("inProgressTasks", inProgressTasks);
         request.setAttribute("completedTasks",  completedTasks);
         request.setAttribute("cancelledTasks",  cancelledTasks);

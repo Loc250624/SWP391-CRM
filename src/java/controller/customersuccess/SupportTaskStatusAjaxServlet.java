@@ -53,9 +53,9 @@ public class SupportTaskStatusAjaxServlet extends HttpServlet {
             return;
         }
 
-        // SUPPORT cannot set CANCELLED
-        if ("CANCELLED".equals(normalizedStatus)) {
-            out.print("{\"success\":false,\"message\":\"Bạn không có quyền hủy công việc\"}");
+        // SUPPORT can only set COMPLETED
+        if (!"COMPLETED".equals(normalizedStatus)) {
+            out.print("{\"success\":false,\"message\":\"Bạn chỉ có thể cập nhật trạng thái sang Hoàn thành\"}");
             return;
         }
 

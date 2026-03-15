@@ -75,20 +75,21 @@ public class SupportTaskDetailServlet extends HttpServlet {
 
             // Get related object info
             String relatedObjectName = null;
+            Lead relatedLead = null;
+            Customer relatedCustomer = null;
             if (task.getRelatedType() != null && task.getRelatedId() != null) {
-                if ("Lead".equals(task.getRelatedType())) {
-                    LeadDAO leadDAO = new LeadDAO();
-                    Lead lead = leadDAO.getLeadById(task.getRelatedId());
-                    if (lead != null) {
-                        relatedObjectName = lead.getFullName() + " (" + lead.getLeadCode() + ")";
+                String rt = task.getRelatedType().toUpperCase();
+                if ("LEAD".equals(rt)) {
+                    relatedLead = new LeadDAO().getLeadById(task.getRelatedId());
+                    if (relatedLead != null) {
+                        relatedObjectName = relatedLead.getFullName() + " (" + relatedLead.getLeadCode() + ")";
                     }
-                } else if ("Customer".equals(task.getRelatedType())) {
-                    CustomerDAO customerDAO = new CustomerDAO();
-                    Customer customer = customerDAO.getCustomerById(task.getRelatedId());
-                    if (customer != null) {
-                        relatedObjectName = customer.getFullName() + " (" + customer.getCustomerCode() + ")";
+                } else if ("CUSTOMER".equals(rt)) {
+                    relatedCustomer = new CustomerDAO().getCustomerById(task.getRelatedId());
+                    if (relatedCustomer != null) {
+                        relatedObjectName = relatedCustomer.getFullName() + " (" + relatedCustomer.getCustomerCode() + ")";
                     }
-                } else if ("Opportunity".equals(task.getRelatedType())) {
+                } else if ("OPPORTUNITY".equals(rt)) {
                     OpportunityDAO opportunityDAO = new OpportunityDAO();
                     Opportunity opportunity = opportunityDAO.getOpportunityById(task.getRelatedId());
                     if (opportunity != null) {
@@ -104,6 +105,8 @@ public class SupportTaskDetailServlet extends HttpServlet {
             request.setAttribute("task", task);
             request.setAttribute("creator", creator);
             request.setAttribute("relatedObjectName", relatedObjectName);
+            request.setAttribute("relatedLead", relatedLead);
+            request.setAttribute("relatedCustomer", relatedCustomer);
             request.setAttribute("comments", comments);
             request.setAttribute("allUsers", allUsers);
 

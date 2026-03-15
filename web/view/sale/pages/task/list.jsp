@@ -217,7 +217,15 @@
                                 <div class="kb-card-code">
                                     ${task.taskCode}
                                     <c:if test="${not empty task.relatedType}">
-                                        &nbsp;· ${task.relatedType}
+                                        <c:set var="relKey" value="${task.relatedType}:${task.relatedId}" />
+                                        <c:choose>
+                                            <c:when test="${not empty relatedObjectMap[relKey]}">
+                                                &nbsp;· ${task.relatedType == 'LEAD' ? 'Lead' : 'Customer'}: ${relatedObjectMap[relKey]}
+                                            </c:when>
+                                            <c:otherwise>
+                                                &nbsp;· ${task.relatedType}
+                                            </c:otherwise>
+                                        </c:choose>
                                     </c:if>
                                     <c:if test="${task.groupTaskId != null}">
                                         &nbsp;· Nhóm
@@ -277,7 +285,15 @@
                                 <div class="kb-card-code">
                                     ${task.taskCode}
                                     <c:if test="${not empty task.relatedType}">
-                                        &nbsp;· ${task.relatedType}
+                                        <c:set var="relKey" value="${task.relatedType}:${task.relatedId}" />
+                                        <c:choose>
+                                            <c:when test="${not empty relatedObjectMap[relKey]}">
+                                                &nbsp;· ${task.relatedType == 'LEAD' ? 'Lead' : 'Customer'}: ${relatedObjectMap[relKey]}
+                                            </c:when>
+                                            <c:otherwise>
+                                                &nbsp;· ${task.relatedType}
+                                            </c:otherwise>
+                                        </c:choose>
                                     </c:if>
                                     <c:if test="${task.groupTaskId != null}">
                                         &nbsp;· Nhóm
@@ -334,7 +350,15 @@
                                 <div class="kb-card-code">
                                     ${task.taskCode}
                                     <c:if test="${not empty task.relatedType}">
-                                        &nbsp;· ${task.relatedType}
+                                        <c:set var="relKey" value="${task.relatedType}:${task.relatedId}" />
+                                        <c:choose>
+                                            <c:when test="${not empty relatedObjectMap[relKey]}">
+                                                &nbsp;· ${task.relatedType == 'LEAD' ? 'Lead' : 'Customer'}: ${relatedObjectMap[relKey]}
+                                            </c:when>
+                                            <c:otherwise>
+                                                &nbsp;· ${task.relatedType}
+                                            </c:otherwise>
+                                        </c:choose>
                                     </c:if>
                                     <c:if test="${task.groupTaskId != null}">
                                         &nbsp;· Nhóm
@@ -428,12 +452,20 @@
                 return;
             }
 
+            // Sale can only drag to COMPLETED
+            if (toStatus !== 'COMPLETED') {
+                showToast('Bạn chỉ có thể cập nhật sang Hoàn thành', false);
+                return;
+            }
+
+            if (!confirm('Bạn có chắc chắn muốn đánh dấu công việc này là Hoàn thành?')) return;
+
             var fd = new URLSearchParams();
             fd.append('taskId', taskId);
             fd.append('newStatus', String(toStatus || ''));
 
-            fetch(ajaxUrl, { 
-                method: 'POST', 
+            fetch(ajaxUrl, {
+                method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
                 body: fd.toString()
             })
@@ -441,6 +473,8 @@
                 .then(function(data) {
                     if (data.success) {
                         dragged.setAttribute('data-status', toStatus);
+                        dragged.setAttribute('draggable', 'false');
+                        dragged.style.opacity = '.85';
                         col.querySelector('.kb-cards').appendChild(dragged);
                         updateCount(fromStatus);
                         updateCount(toStatus);

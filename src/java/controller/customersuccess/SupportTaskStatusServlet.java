@@ -112,9 +112,9 @@ public class SupportTaskStatusServlet extends HttpServlet {
             return;
         }
 
-        // FIX: SUPPORT cannot set CANCELLED status
-        if ("CANCELLED".equals(newStatus)) {
-            session.setAttribute("errorMessage", "Bạn không có quyền hủy công việc");
+        // SUPPORT can only set COMPLETED
+        if (!"COMPLETED".equals(newStatus)) {
+            session.setAttribute("errorMessage", "Bạn chỉ có thể cập nhật trạng thái sang Hoàn thành");
             response.sendRedirect(redirectBack);
             return;
         }

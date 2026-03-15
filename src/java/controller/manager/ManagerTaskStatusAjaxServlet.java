@@ -73,31 +73,16 @@ public class ManagerTaskStatusAjaxServlet extends HttpServlet {
                 return;
             }
 
-            // Dependency check for IN_PROGRESS or COMPLETED
-            if ("IN_PROGRESS".equals(newStatus) || "COMPLETED".equals(newStatus)) {
-                List<Integer> depIds = TaskDAO.parseDependencyIds(task.getDescription());
-                if (!depIds.isEmpty()) {
-                    List<Task> deps = taskDAO.getTasksByIds(depIds);
-                    boolean blocked = deps.stream().anyMatch(d -> !"COMPLETED".equals(d.getStatusName()));
-                    if (blocked) {
-                        out.print("{\"success\":false,\"message\":\"Công việc đang bị chặn bởi các phụ thuộc chưa hoàn thành\"}");
-                        return;
-                    }
-                }
+            // Manager can only set CANCELLED
+            if (!"CANCELLED".equals(newStatus)) {
+                out.print("{\"success\":false,\"message\":\"Quản lý chỉ có thể hủy công việc\"}");
+                return;
             }
 
             task.setStatus(TaskStatus.valueOf(newStatus).ordinal());
             boolean ok = taskDAO.updateTask(task);
 
             if (ok) {
-                // Auto-spawn recurring instance on COMPLETED
-                if ("COMPLETED".equals(newStatus)) {
-                    String title = task.getTitle() != null ? task.getTitle() : "";
-                    if (title.startsWith("[R-DAILY]") || title.startsWith("[R-WEEKLY]")
-                            || title.startsWith("[R-MONTHLY]")) {
-                        taskDAO.insertNextRecurringInstance(task);
-                    }
-                }
                 out.print("{\"success\":true,\"taskId\":" + taskId + ",\"newStatus\":\"" + newStatus + "\"}");
             } else {
                 out.print("{\"success\":false,\"message\":\"Cập nhật thất bại\"}");

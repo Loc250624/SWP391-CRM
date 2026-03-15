@@ -116,6 +116,13 @@ public class ManagerTaskStatusServlet extends HttpServlet {
             return;
         }
 
+        // Manager can only set CANCELLED
+        if (!"CANCELLED".equals(newStatus)) {
+            session.setAttribute("errorMessage", "Quản lý chỉ có thể hủy công việc");
+            response.sendRedirect(redirectBack);
+            return;
+        }
+
         try {
             int taskId = Integer.parseInt(taskIdStr.trim());
             TaskDAO taskDAO = new TaskDAO();
@@ -135,34 +142,10 @@ public class ManagerTaskStatusServlet extends HttpServlet {
                 return;
             }
 
-            // Dependency check: block IN_PROGRESS / COMPLETED if unmet dependencies exist
-            if ("IN_PROGRESS".equals(newStatus) || "COMPLETED".equals(newStatus)) {
-                List<Integer> depIds = TaskDAO.parseDependencyIds(task.getDescription());
-                if (!depIds.isEmpty()) {
-                    List<Task> deps = taskDAO.getTasksByIds(depIds);
-                    boolean blocked = deps.stream().anyMatch(d -> !"COMPLETED".equals(d.getStatusName()));
-                    if (blocked) {
-                        session.setAttribute("errorMessage",
-                                "Công việc này đang bị chặn bởi các công việc phụ thuộc chưa hoàn thành");
-                        response.sendRedirect(redirectBack);
-                        return;
-                    }
-                }
-            }
-
             task.setStatus(TaskStatus.valueOf(newStatus).ordinal());
             boolean success = taskDAO.updateTask(task);
 
             if (success) {
-                // If just completed and task is recurring, auto-spawn next instance
-                if ("COMPLETED".equals(newStatus)) {
-                    String title = task.getTitle() != null ? task.getTitle() : "";
-                    if (title.startsWith("[R-DAILY]") || title.startsWith("[R-WEEKLY]")
-                            || title.startsWith("[R-MONTHLY]")) {
-                        taskDAO.insertNextRecurringInstance(task);
-                    }
-                }
-
                 // Thong bao cho assignees + creator
                 List<Integer> notifyIds = new ArrayList<>();
                 for (model.TaskAssignee ta : new TaskAssigneeDAO().getByTaskId(taskId)) {
@@ -175,10 +158,10 @@ public class ManagerTaskStatusServlet extends HttpServlet {
                         taskId, task.getTaskCode(), task.getTitle(),
                         newStatus, currentUser.getUserId(), notifyIds);
 
-                session.setAttribute("successMessage", "Cập nhật trạng thái thành công");
+                session.setAttribute("successMessage", "Hủy công việc thành công");
                 response.sendRedirect(request.getContextPath() + "/manager/task/detail?id=" + taskId);
             } else {
-                session.setAttribute("errorMessage", "Cập nhật trạng thái thất bại");
+                session.setAttribute("errorMessage", "Hủy công việc thất bại");
                 response.sendRedirect(redirectBack);
             }
 
