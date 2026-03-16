@@ -675,6 +675,31 @@ public class ActivityDAO extends DBContext {
         return 0;
     }
 
+    public List<Activity> getGlobalRecentActivities(int limit) {
+        List<Activity> list = new ArrayList<>();
+        String sql = "SELECT TOP (?) a.*, "
+                + "(u.last_name + ' ' + u.first_name) AS performer_name, "
+                + "COALESCE(c.full_name, l.full_name) AS contact_name "
+                + "FROM activities a "
+                + "LEFT JOIN users u ON a.performed_by = u.user_id "
+                + "LEFT JOIN customers c ON a.related_type = 'Customer' AND a.related_id = c.customer_id "
+                + "LEFT JOIN leads l ON a.related_type = 'Lead' AND a.related_id = l.lead_id "
+                + "ORDER BY a.created_at DESC";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setInt(1, limit);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                Activity a = mapFullActivity(rs);
+                a.setPerformerName(rs.getString("performer_name"));
+                a.setCustomerName(rs.getString("contact_name"));
+                list.add(a);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
     public List<Activity> getRecentActivitiesByUser(int userId, int limit) {
         List<Activity> list = new ArrayList<>();
         String sql = "SELECT TOP (?) a.*, "
