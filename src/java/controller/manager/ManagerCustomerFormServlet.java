@@ -1,10 +1,11 @@
-package controller.sale;
+package controller.manager;
 
 import dao.CustomerDAO;
 import dao.CustomerTagDAO;
 import dao.EnrollmentDAO;
 import dao.LeadSourceDAO;
 import dao.QuotationDAO;
+import dao.UserDAO;
 import enums.CustomerSegment;
 import enums.CustomerStatus;
 import java.io.IOException;
@@ -18,15 +19,16 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import util.SessionHelper;
+import jakarta.servlet.http.HttpSession;
 import model.Customer;
 import model.CustomerEnrollment;
 import model.CustomerTag;
 import model.LeadSource;
+import model.Users;
 import util.AuditUtil;
 
-@WebServlet(name = "SaleCustomerFormServlet", urlPatterns = {"/sale/customer/form"})
-public class SaleCustomerFormServlet extends HttpServlet {
+@WebServlet(name = "ManagerCustomerFormServlet", urlPatterns = {"/manager/crm/customer/form"})
+public class ManagerCustomerFormServlet extends HttpServlet {
 
     private CustomerDAO customerDAO = new CustomerDAO();
     private LeadSourceDAO leadSourceDAO = new LeadSourceDAO();
@@ -36,9 +38,16 @@ public class SaleCustomerFormServlet extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        Integer currentUserId = SessionHelper.getLoggedInUserId(request);
-        if (currentUserId == null) {
+        HttpSession session = request.getSession(false);
+        if (session == null || session.getAttribute("user") == null) {
             response.sendRedirect(request.getContextPath() + "/login");
+            return;
+        }
+
+        Users currentUser = (Users) session.getAttribute("user");
+        UserDAO userDAO = new UserDAO();
+        if (!"MANAGER".equals(userDAO.getRoleCodeByUserId(currentUser.getUserId()))) {
+            response.sendRedirect(request.getContextPath() + "/error/403.jsp");
             return;
         }
 
@@ -49,28 +58,17 @@ public class SaleCustomerFormServlet extends HttpServlet {
             try {
                 int customerId = Integer.parseInt(customerIdParam);
                 customer = customerDAO.getCustomerById(customerId);
-
                 if (customer == null) {
-                    response.sendRedirect(request.getContextPath() + "/sale/customer/list");
+                    response.sendRedirect(request.getContextPath() + "/manager/crm/customers");
                     return;
                 }
-
-                boolean hasPermission = (customer.getCreatedBy() != null && customer.getCreatedBy().equals(currentUserId))
-                        || (customer.getOwnerId() != null && customer.getOwnerId().equals(currentUserId));
-
-                if (!hasPermission) {
-                    response.sendRedirect(request.getContextPath() + "/sale/customer/list?error=no_permission");
-                    return;
-                }
-
                 request.setAttribute("mode", "edit");
                 request.setAttribute("customer", customer);
 
-                // Load assigned tags for this customer
                 List<Integer> assignedTagIds = customerTagDAO.getTagIdsByCustomerId(customer.getCustomerId());
                 request.setAttribute("assignedTagIds", assignedTagIds);
             } catch (NumberFormatException e) {
-                response.sendRedirect(request.getContextPath() + "/sale/customer/list");
+                response.sendRedirect(request.getContextPath() + "/manager/crm/customers");
                 return;
             }
         } else {
@@ -83,7 +81,6 @@ public class SaleCustomerFormServlet extends HttpServlet {
         List<LeadSource> sources = leadSourceDAO.getAllActiveSources();
         request.setAttribute("leadSources", sources);
 
-        // Load all active tags
         List<CustomerTag> allTags = customerTagDAO.getAllActiveTags();
         request.setAttribute("allTags", allTags);
 
@@ -92,10 +89,14 @@ public class SaleCustomerFormServlet extends HttpServlet {
         List<Map<String, Object>> courses = quotationDAO.getActiveCourses();
         request.setAttribute("courses", courses);
 
-        request.setAttribute("ACTIVE_MENU", "CUSTOMER_FORM");
-        request.setAttribute("pageTitle", customerIdParam != null ? "Edit Customer" : "Create New Customer");
-        request.setAttribute("CONTENT_PAGE", "/view/sale/pages/customer/form.jsp");
-        request.getRequestDispatcher("/view/sale/layout/layout.jsp").forward(request, response);
+        // Load sales users for owner assignment
+        List<Users> salesUsers = userDAO.getUsersByRoleCode("SALES");
+        request.setAttribute("salesUsers", salesUsers);
+
+        request.setAttribute("ACTIVE_MENU", "CRM_CUSTOMERS");
+        request.setAttribute("pageTitle", customerIdParam != null ? "Chỉnh sửa Customer" : "Tạo Customer mới");
+        request.setAttribute("CONTENT_PAGE", "/view/manager/crm/customer-form.jsp");
+        request.getRequestDispatcher("/view/manager/layout/layout-manager.jsp").forward(request, response);
     }
 
     @Override
@@ -104,6 +105,21 @@ public class SaleCustomerFormServlet extends HttpServlet {
 
         request.setCharacterEncoding("UTF-8");
         response.setCharacterEncoding("UTF-8");
+
+        HttpSession session = request.getSession(false);
+        if (session == null || session.getAttribute("user") == null) {
+            response.sendRedirect(request.getContextPath() + "/login");
+            return;
+        }
+
+        Users currentUser = (Users) session.getAttribute("user");
+        UserDAO userDAO = new UserDAO();
+        if (!"MANAGER".equals(userDAO.getRoleCodeByUserId(currentUser.getUserId()))) {
+            response.sendRedirect(request.getContextPath() + "/error/403.jsp");
+            return;
+        }
+
+        int currentUserId = currentUser.getUserId();
 
         String customerIdParam = request.getParameter("customerId");
         String fullName = request.getParameter("fullName");
@@ -121,33 +137,29 @@ public class SaleCustomerFormServlet extends HttpServlet {
         String smsOptOutStr = request.getParameter("smsOptOut");
         String[] tagIdParams = request.getParameterValues("tagIds");
         String[] courseIdParams = request.getParameterValues("courseIds");
+        String ownerIdParam = request.getParameter("ownerId");
 
         // Validation
         if (fullName == null || fullName.trim().isEmpty()) {
-            request.setAttribute("error", "Ho ten la bat buoc!");
+            request.setAttribute("error", "Họ tên là bắt buộc!");
             doGet(request, response);
             return;
         }
         if (fullName.trim().length() > 150) {
-            request.setAttribute("error", "Ho ten khong duoc vuot qua 150 ky tu!");
+            request.setAttribute("error", "Họ tên không được vượt quá 150 ký tự!");
             doGet(request, response);
             return;
         }
         if (email != null && !email.trim().isEmpty()) {
             if (!email.trim().matches("^[\\w.%+-]+@[\\w.-]+\\.[a-zA-Z]{2,}$")) {
-                request.setAttribute("error", "Email khong hop le!");
-                doGet(request, response);
-                return;
-            }
-            if (email.trim().length() > 255) {
-                request.setAttribute("error", "Email khong duoc vuot qua 255 ky tu!");
+                request.setAttribute("error", "Email không hợp lệ!");
                 doGet(request, response);
                 return;
             }
         }
         if (phone != null && !phone.trim().isEmpty()) {
             if (!phone.trim().matches("^[0-9+\\-()\\s]{7,20}$")) {
-                request.setAttribute("error", "So dien thoai khong hop le!");
+                request.setAttribute("error", "Số điện thoại không hợp lệ!");
                 doGet(request, response);
                 return;
             }
@@ -156,30 +168,12 @@ public class SaleCustomerFormServlet extends HttpServlet {
             try {
                 LocalDate dob = LocalDate.parse(dobStr);
                 if (dob.isAfter(LocalDate.now())) {
-                    request.setAttribute("error", "Ngay sinh khong duoc o tuong lai!");
+                    request.setAttribute("error", "Ngày sinh không được ở tương lai!");
                     doGet(request, response);
                     return;
                 }
             } catch (Exception e) {
-                request.setAttribute("error", "Ngay sinh khong hop le!");
-                doGet(request, response);
-                return;
-            }
-        }
-        if (status != null && !status.isEmpty()) {
-            try {
-                CustomerStatus.valueOf(status);
-            } catch (IllegalArgumentException e) {
-                request.setAttribute("error", "Trang thai khong hop le!");
-                doGet(request, response);
-                return;
-            }
-        }
-        if (customerSegment != null && !customerSegment.isEmpty()) {
-            try {
-                CustomerSegment.valueOf(customerSegment);
-            } catch (IllegalArgumentException e) {
-                request.setAttribute("error", "Phan khuc khong hop le!");
+                request.setAttribute("error", "Ngày sinh không hợp lệ!");
                 doGet(request, response);
                 return;
             }
@@ -193,7 +187,7 @@ public class SaleCustomerFormServlet extends HttpServlet {
             try {
                 customer.setCustomerId(Integer.parseInt(customerIdParam));
             } catch (NumberFormatException e) {
-                request.setAttribute("error", "Invalid customer ID!");
+                request.setAttribute("error", "ID customer không hợp lệ!");
                 doGet(request, response);
                 return;
             }
@@ -230,18 +224,19 @@ public class SaleCustomerFormServlet extends HttpServlet {
             }
         }
 
-        Integer currentUserId = SessionHelper.getLoggedInUserId(request);
-        if (currentUserId == null) {
-            response.sendRedirect(request.getContextPath() + "/login");
-            return;
+        // Owner assignment (manager can assign to a sales user)
+        if (ownerIdParam != null && !ownerIdParam.isEmpty()) {
+            try {
+                customer.setOwnerId(Integer.parseInt(ownerIdParam));
+            } catch (NumberFormatException e) {
+                customer.setOwnerId(null);
+            }
         }
 
         if (!isEdit) {
             customer.setCreatedBy(currentUserId);
-            customer.setOwnerId(currentUserId);
         }
 
-        // Capture old values for update audit
         Customer oldCustomer = null;
         if (isEdit) {
             oldCustomer = customerDAO.getCustomerById(customer.getCustomerId());
@@ -273,14 +268,12 @@ public class SaleCustomerFormServlet extends HttpServlet {
             } else {
                 AuditUtil.logCreate(request, currentUserId, "Customer", customer.getCustomerId(), newVals);
             }
+
             // Save tag assignments
             List<Integer> tagIds = new ArrayList<>();
             if (tagIdParams != null) {
                 for (String tid : tagIdParams) {
-                    try {
-                        tagIds.add(Integer.parseInt(tid));
-                    } catch (NumberFormatException e) {
-                    }
+                    try { tagIds.add(Integer.parseInt(tid)); } catch (NumberFormatException ignored) {}
                 }
             }
             customerTagDAO.assignTags(customer.getCustomerId(), tagIds, currentUserId);
@@ -288,14 +281,13 @@ public class SaleCustomerFormServlet extends HttpServlet {
             // Save course enrollments (only for new customer)
             if (!isEdit && courseIdParams != null && courseIdParams.length > 0) {
                 EnrollmentDAO enrollmentDAO = new EnrollmentDAO();
-                QuotationDAO quotationDAO2 = new QuotationDAO();
-                List<Map<String, Object>> allCourses = quotationDAO2.getActiveCourses();
+                QuotationDAO quotationDAO = new QuotationDAO();
+                List<Map<String, Object>> allCourses = quotationDAO.getActiveCourses();
                 List<String> courseNames = new ArrayList<>();
 
                 for (String cid : courseIdParams) {
                     try {
                         int courseId = Integer.parseInt(cid);
-                        // Find course price from active courses list
                         BigDecimal coursePrice = BigDecimal.ZERO;
                         String cName = "";
                         for (Map<String, Object> c : allCourses) {
@@ -322,7 +314,6 @@ public class SaleCustomerFormServlet extends HttpServlet {
                     } catch (NumberFormatException ignored) {}
                 }
 
-                // Update totalCourses and purchasedCourses on customer
                 if (!courseNames.isEmpty()) {
                     customer.setTotalCourses(courseNames.size());
                     customer.setPurchasedCourses(String.join(", ", courseNames));
@@ -330,39 +321,20 @@ public class SaleCustomerFormServlet extends HttpServlet {
                 }
             }
 
-            // Notify customer created (only for new)
-            if (!isEdit) {
-                java.util.List<Integer> notifyIds = new java.util.ArrayList<>();
-                dao.UserDAO userDAO = new dao.UserDAO();
-                for (model.Users u : userDAO.getAllUsers()) {
-                    String rc = userDAO.getRoleCodeByUserId(u.getUserId());
-                    if ("MANAGER".equals(rc) && u.getUserId() != currentUserId) {
-                        notifyIds.add(u.getUserId());
-                    }
-                }
-                if (!notifyIds.isEmpty()) {
-                    util.NotificationUtil.notifyCustomerCreated(
-                            customer.getCustomerId(),
-                            customer.getCustomerCode(),
-                            customer.getFullName(),
-                            currentUserId, notifyIds);
-                }
-
-                // Auto-send welcome email to new customer
-                if (util.EmailSendUtil.isConfigured()
-                        && customer.getEmail() != null && !customer.getEmail().isEmpty()) {
-                    java.util.Map<String, String> vars = new java.util.HashMap<>();
-                    vars.put("customer_name", customer.getFullName());
-                    vars.put("customer_code", customer.getCustomerCode() != null ? customer.getCustomerCode() : "");
-                    util.EmailSendUtil.sendWithTemplateAsync("CUSTOMER_WELCOME", vars,
-                            customer.getEmail(), customer.getFullName(), currentUserId);
-                }
+            // Send welcome email for new customer
+            if (!isEdit && util.EmailSendUtil.isConfigured()
+                    && customer.getEmail() != null && !customer.getEmail().isEmpty()) {
+                java.util.Map<String, String> vars = new java.util.HashMap<>();
+                vars.put("customer_name", customer.getFullName());
+                vars.put("customer_code", customer.getCustomerCode() != null ? customer.getCustomerCode() : "");
+                util.EmailSendUtil.sendWithTemplateAsync("CUSTOMER_WELCOME", vars,
+                        customer.getEmail(), customer.getFullName(), currentUserId);
             }
 
-            response.sendRedirect(request.getContextPath() + "/sale/customer/list?success=" +
+            response.sendRedirect(request.getContextPath() + "/manager/crm/customers?success=" +
                     (isEdit ? "updated" : "created"));
         } else {
-            request.setAttribute("error", "Luu customer that bai. Vui long thu lai.");
+            request.setAttribute("error", "Lưu customer thất bại. Vui lòng thử lại.");
             request.setAttribute("customer", customer);
             doGet(request, response);
         }

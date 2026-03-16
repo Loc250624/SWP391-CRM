@@ -8,7 +8,7 @@
         <h4 class="mb-1 fw-bold">
             <c:choose>
                 <c:when test="${mode == 'edit'}">Chỉnh sửa Customer</c:when>
-                <c:otherwise>Thêm Customer mới</c:otherwise>
+                <c:otherwise>Tạo Customer mới</c:otherwise>
             </c:choose>
         </h4>
         <p class="text-muted mb-0">
@@ -18,15 +18,18 @@
             </c:choose>
         </p>
     </div>
-    <a href="${pageContext.request.contextPath}/sale/customer/list" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Quay lại</a>
+    <a href="${pageContext.request.contextPath}/manager/crm/customers" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Quay lại</a>
 </div>
 
 <!-- Toast Messages -->
 <c:if test="${not empty error}">
-    <script>document.addEventListener('DOMContentLoaded', function(){ CRM.showToast('${error}', 'error'); });</script>
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle me-1"></i>${error}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
 </c:if>
 
-<form method="POST" action="${pageContext.request.contextPath}/sale/customer/form" id="customerForm">
+<form method="POST" action="${pageContext.request.contextPath}/manager/crm/customer/form" id="customerForm">
     <c:if test="${mode == 'edit'}">
         <input type="hidden" name="customerId" value="${customer.customerId}">
     </c:if>
@@ -137,10 +140,19 @@
                     <h6 class="mb-0 fw-semibold"><i class="bi bi-tags me-2"></i>Phân loại</h6>
                 </div>
                 <div class="card-body">
-                    <input type="hidden" name="status" value="Active">
                     <div class="mb-3">
                         <label class="form-label small">Trạng thái</label>
-                        <input type="text" class="form-control form-control-sm" value="Active" disabled>
+                        <select name="status" class="form-select form-select-sm">
+                            <c:forEach var="s" items="${customerStatuses}">
+                                <option value="${s}" ${customer.status == s.toString() ? 'selected' : ''}>${s}</option>
+                            </c:forEach>
+                            <c:if test="${empty customerStatuses}">
+                                <option value="Active" ${customer.status == 'Active' || empty customer.status ? 'selected' : ''}>Active</option>
+                                <option value="Inactive" ${customer.status == 'Inactive' ? 'selected' : ''}>Inactive</option>
+                                <option value="Churned" ${customer.status == 'Churned' ? 'selected' : ''}>Churned</option>
+                                <option value="Blocked" ${customer.status == 'Blocked' ? 'selected' : ''}>Blocked</option>
+                            </c:if>
+                        </select>
                     </div>
                     <div class="mb-3">
                         <label class="form-label small">Phân khúc</label>
@@ -160,18 +172,29 @@
                 </div>
             </div>
 
-            <!-- Nguồn -->
+            <!-- Nguồn & Phân công -->
             <div class="card border-0 shadow-sm mb-4">
                 <div class="card-header bg-transparent border-0">
-                    <h6 class="mb-0 fw-semibold"><i class="bi bi-diagram-3 me-2"></i>Nguồn khách hàng</h6>
+                    <h6 class="mb-0 fw-semibold"><i class="bi bi-diagram-3 me-2"></i>Nguồn & Phân công</h6>
                 </div>
                 <div class="card-body">
                     <div class="mb-3">
-                        <label class="form-label small">Nguồn</label>
+                        <label class="form-label small">Nguồn khách hàng</label>
                         <select name="sourceId" class="form-select form-select-sm">
                             <option value="">-- Chọn nguồn --</option>
                             <c:forEach var="src" items="${leadSources}">
                                 <option value="${src.sourceId}" ${customer.sourceId == src.sourceId ? 'selected' : ''}>${src.sourceName}</option>
+                            </c:forEach>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small">Giao cho nhân viên Sale</label>
+                        <select name="ownerId" class="form-select form-select-sm">
+                            <option value="">-- Chưa giao --</option>
+                            <c:forEach var="u" items="${salesUsers}">
+                                <option value="${u.userId}" ${customer.ownerId == u.userId ? 'selected' : ''}>
+                                    ${u.firstName} ${u.lastName}
+                                </option>
                             </c:forEach>
                         </select>
                     </div>
@@ -197,6 +220,37 @@
                 </div>
             </div>
 
+            <!-- Tags -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-transparent border-0">
+                    <h6 class="mb-0 fw-semibold"><i class="bi bi-bookmark-star me-2"></i>Tags</h6>
+                </div>
+                <div class="card-body">
+                    <c:if test="${not empty allTags}">
+                        <div class="d-flex flex-wrap gap-2">
+                            <c:forEach var="tag" items="${allTags}">
+                                <c:set var="tagChecked" value=""/>
+                                <c:if test="${not empty assignedTagIds}">
+                                    <c:forEach var="aid" items="${assignedTagIds}">
+                                        <c:if test="${aid == tag.tagId}"><c:set var="tagChecked" value="checked"/></c:if>
+                                    </c:forEach>
+                                </c:if>
+                                <label class="tag-checkbox-label" style="cursor:pointer;">
+                                    <input type="checkbox" name="tagIds" value="${tag.tagId}" class="d-none tag-cb" ${tagChecked}>
+                                    <span class="badge rounded-pill px-3 py-2 tag-badge"
+                                          style="background-color: ${tag.tagColor}20; color: ${tag.tagColor}; border: 1.5px solid ${tag.tagColor};">
+                                        <i class="bi bi-bookmark-fill me-1"></i>${tag.tagName}
+                                    </span>
+                                </label>
+                            </c:forEach>
+                        </div>
+                    </c:if>
+                    <c:if test="${empty allTags}">
+                        <p class="text-muted small mb-0">Chưa có tag nào.</p>
+                    </c:if>
+                </div>
+            </div>
+
             <!-- Action Buttons -->
             <div class="card border-0 shadow-sm">
                 <div class="card-body">
@@ -208,7 +262,7 @@
                                 <c:otherwise>Tạo Customer</c:otherwise>
                             </c:choose>
                         </button>
-                        <a href="${pageContext.request.contextPath}/sale/customer/list" class="btn btn-outline-secondary btn-sm">
+                        <a href="${pageContext.request.contextPath}/manager/crm/customers" class="btn btn-outline-secondary btn-sm">
                             <i class="bi bi-x-lg me-1"></i>Hủy
                         </a>
                     </div>
@@ -297,6 +351,23 @@
         btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Đang lưu...';
     });
 
+    // Tag checkbox toggle styling
+    document.querySelectorAll('.tag-cb').forEach(function (cb) {
+        function updateStyle() {
+            var badge = cb.nextElementSibling;
+            var color = badge.style.color;
+            if (cb.checked) {
+                badge.style.backgroundColor = color;
+                badge.style.color = '#fff';
+            } else {
+                badge.style.backgroundColor = color + '20';
+                badge.style.color = color;
+            }
+        }
+        cb.addEventListener('change', updateStyle);
+        updateStyle();
+    });
+
     // ==================== Course Picker ====================
     var courseModal = null;
     function getCourseModal() {
@@ -307,7 +378,6 @@
     }
 
     function openCoursePicker() {
-        // Reset checkboxes - pre-check already selected
         var existingIds = [];
         document.querySelectorAll('#selectedCoursesBody input[name="courseIds"]').forEach(function(inp) {
             existingIds.push(inp.value);
@@ -368,7 +438,6 @@
         var tbody = document.getElementById('selectedCoursesBody');
         if (!tbody) { getCourseModal().hide(); return; }
 
-        // Clear current selection
         tbody.innerHTML = '';
 
         if (checked.length === 0) {

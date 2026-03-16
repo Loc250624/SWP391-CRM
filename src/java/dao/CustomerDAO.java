@@ -518,6 +518,18 @@ public class CustomerDAO extends DBContext {
         }
     }
 
+    public int getTotalCustomersCount() {
+        String sql = "SELECT COUNT(*) FROM customers";
+        try (PreparedStatement st = connection.prepareStatement(sql); ResultSet rs = st.executeQuery()) {
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
     private Customer mapResultSetToCustomer(ResultSet rs) throws SQLException {
         Customer c = new Customer();
         c.setCustomerId(rs.getInt("customer_id"));

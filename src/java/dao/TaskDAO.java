@@ -1148,9 +1148,8 @@ public class TaskDAO extends DBContext {
                     double completionRate = active > 0 ? (completed * 100.0 / active)  : 0;
                     double onTimeRate     = completed > 0 ? (onTime * 100.0 / completed) : 0;
                     double slaBreachRate  = active > 0 ? (breached * 100.0 / active)   : 0;
-                    double productivityScore = (completionRate / 100.0 * 0.4
-                                             + onTimeRate / 100.0 * 0.4
-                                             + (1.0 - slaBreachRate / 100.0) * 0.2) * 100.0;
+                    double productivityScore = (completionRate / 100.0 * 0.6
+                                             + onTimeRate / 100.0 * 0.4) * 100.0;
 
                     stats.put("totalTasks",        total);
                     stats.put("completedTasks",    completed);

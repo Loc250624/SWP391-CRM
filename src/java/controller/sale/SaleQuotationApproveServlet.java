@@ -1,4 +1,4 @@
-package controller.sale;
+ package controller.sale;
 
 import dao.QuotationDAO;
 import model.Quotation;
