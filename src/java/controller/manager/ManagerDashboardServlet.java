@@ -14,8 +14,6 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
-import model.Customer;
-import model.Lead;
 import model.Task;
 import model.Users;
 
@@ -100,28 +98,20 @@ public class ManagerDashboardServlet extends HttpServlet {
             }
         }
 
-        // ── 2. Lead stats (all leads in system) ──
-        List<Lead> allLeadsList = leadDAO.getAllLeads();
-        int totalLeads = allLeadsList.size();
-        int assignedLeads = 0;
-        int unassignedLeads = 0;
-        for (Lead lead : allLeadsList) {
-            if (lead.assignedTo != null && lead.assignedTo > 0) {
-                assignedLeads++;
-            } else {
-                unassignedLeads++;
-            }
-        }
+        // Adjust task counts so KPI cards add up: totalTasks = completed + inProgress + overdue
+        // Overdue tasks overlap with pending/inProgress, so subtract overdue from active count
+        inProgressTasks = inProgressTasks + pendingTasks - overdueTasks;
+        totalTasks = completedTasks + inProgressTasks + overdueTasks;
 
-        // ── 3. Customer stats ──
-        List<Customer> allCustomers = customerDAO.getAllCustomers();
-        int totalCustomers = allCustomers.size();
-        int activeCustomers = 0;
-        for (Customer c : allCustomers) {
-            if (c.getStatus() != null && "active".equalsIgnoreCase(c.getStatus())) {
-                activeCustomers++;
-            }
-        }
+        // ── 2. Lead stats (matching lead list page logic) ──
+        int unassignedLeads = leadDAO.countUnassignedLeadsForManager(null, null, null, null);
+        int assignedLeads = leadDAO.countAssignedLeadsByManager(managerId, null, null, null, null, null);
+        int totalLeads = unassignedLeads + assignedLeads;
+
+        // ── 3. Customer stats (assigned vs unassigned by ownerId) ──
+        int unassignedCustomers = customerDAO.countCustomersByManagerScope(null, null, null, null, null, null);
+        int assignedCustomers = customerDAO.countAssignedCustomers(null, null, null, null, null, null);
+        int totalCustomers = unassignedCustomers + assignedCustomers;
 
         // ── 4. Overdue tasks (all users) ──
         List<Task> overdueTaskList = taskDAO.getOverdueTasks(null, allUserIds);
@@ -138,8 +128,7 @@ public class ManagerDashboardServlet extends HttpServlet {
         }
 
         // ── Completion rate ──
-        int activeTasks = totalTasks - cancelledTasks;
-        double completionRate = activeTasks > 0 ? (completedTasks * 100.0 / activeTasks) : 0;
+        double completionRate = totalTasks > 0 ? (completedTasks * 100.0 / totalTasks) : 0;
 
         // ── Set attributes ──
         // KPI cards
@@ -157,8 +146,9 @@ public class ManagerDashboardServlet extends HttpServlet {
         request.setAttribute("totalLeads",      totalLeads);
 
         // Customer stats
-        request.setAttribute("totalCustomers",  totalCustomers);
-        request.setAttribute("activeCustomers", activeCustomers);
+        request.setAttribute("totalCustomers",       totalCustomers);
+        request.setAttribute("unassignedCustomers",  unassignedCustomers);
+        request.setAttribute("assignedCustomers",    assignedCustomers);
 
         // Overdue
         request.setAttribute("overdueCount",   overdueCount);

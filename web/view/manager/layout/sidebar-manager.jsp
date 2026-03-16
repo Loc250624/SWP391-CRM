@@ -79,13 +79,6 @@
                     </a>
                 </li>
 
-                <li class="nav-item mb-1">
-                    <a href="${pageContext.request.contextPath}/manager/crm/customer/form"
-                       class="nav-link rounded-2 d-flex align-items-center gap-2 py-2 px-3 ${ACTIVE_MENU == 'CRM_CUSTOMER_FORM' ? 'active bg-success text-white' : 'text-body-secondary'}">
-                        <i class="bi bi-person-plus"></i>
-                        <span>Tạo Customer</span>
-                    </a>
-                </li>
 
                 <li class="nav-item mb-1">
                     <a href="${pageContext.request.contextPath}/manager/task/list"

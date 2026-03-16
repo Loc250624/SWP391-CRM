@@ -41,14 +41,13 @@ public class ManagerTaskReportServlet extends HttpServlet {
 
         TaskDAO taskDAO = new TaskDAO();
 
-        // Build team member list
+        // Build team member list (all users except current manager)
         List<Users> allUsers = userDAO.getAllUsers();
         List<Integer> teamMemberIds   = new ArrayList<>();
         List<Users> teamMembersList   = new ArrayList<>();
 
         for (Users user : allUsers) {
-            if (user.getDepartmentId() == currentUser.getDepartmentId()
-                    && user.getUserId() != currentUser.getUserId()) {
+            if (user.getUserId() != currentUser.getUserId()) {
                 teamMemberIds.add(user.getUserId());
                 teamMembersList.add(user);
             }

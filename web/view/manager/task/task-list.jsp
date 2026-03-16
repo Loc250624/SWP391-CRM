@@ -22,19 +22,35 @@
     <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h3 class="mb-1"><i class="bi bi-list-task me-2"></i>Quản lý Công việc</h3>
-            <p class="text-muted mb-0">
-                <c:choose>
-                    <c:when test="${taskType == 'team'}">Công việc nhóm đã giao cho nhân viên</c:when>
-                    <c:otherwise>Công việc cá nhân (Lead & Khách hàng)</c:otherwise>
-                </c:choose>
-            </p>
+            <c:choose>
+                <c:when test="${taskType == 'workload'}">
+                    <h3 class="mb-1"><i class="bi bi-person-workspace me-2"></i>Công việc của ${workloadEmployee}</h3>
+                    <p class="text-muted mb-0">Tất cả công việc được giao cho nhân viên này</p>
+                </c:when>
+                <c:otherwise>
+                    <h3 class="mb-1"><i class="bi bi-list-task me-2"></i>Quản lý Công việc</h3>
+                    <p class="text-muted mb-0">
+                        <c:choose>
+                            <c:when test="${taskType == 'team'}">Công việc nhóm đã giao cho nhân viên</c:when>
+                            <c:otherwise>Công việc cá nhân (Lead & Khách hàng)</c:otherwise>
+                        </c:choose>
+                    </p>
+                </c:otherwise>
+            </c:choose>
         </div>
-        <a href="${pageContext.request.contextPath}/manager/task/form?action=create" class="btn btn-primary">
-            <i class="bi bi-plus-circle me-2"></i>Tạo Công việc
-        </a>
+        <div class="d-flex gap-2">
+            <c:if test="${taskType == 'workload'}">
+                <a href="${pageContext.request.contextPath}/manager/task/workload" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-1"></i>Quay lại Workload
+                </a>
+            </c:if>
+            <a href="${pageContext.request.contextPath}/manager/task/form?action=create" class="btn btn-primary">
+                <i class="bi bi-plus-circle me-2"></i>Tạo Công việc
+            </a>
+        </div>
     </div>
 
+    <c:if test="${taskType != 'workload'}">
     <%-- Top-level: Personal / Team --%>
     <ul class="nav nav-pills mb-3">
         <li class="nav-item">
@@ -68,13 +84,22 @@
             </a>
         </li>
     </ul>
+    </c:if>
 
     <!-- Filters -->
     <div class="card mb-4">
         <div class="card-body">
             <form method="get" action="${pageContext.request.contextPath}/manager/task/list" class="row g-3">
-                <input type="hidden" name="taskType" value="${taskType}">
-                <input type="hidden" name="view" value="${viewType}">
+                <c:choose>
+                    <c:when test="${taskType == 'workload'}">
+                        <input type="hidden" name="source" value="workload">
+                        <input type="hidden" name="employee" value="${workloadEmployeeId}">
+                    </c:when>
+                    <c:otherwise>
+                        <input type="hidden" name="taskType" value="${taskType}">
+                        <input type="hidden" name="view" value="${viewType}">
+                    </c:otherwise>
+                </c:choose>
 
                 <div class="col-md-3">
                     <label class="form-label">Tìm kiếm</label>
@@ -137,6 +162,7 @@
         <div class="card-header bg-white">
             <div class="d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">Danh sách Công việc (${totalTasks})</h5>
+                <c:if test="${taskType != 'workload'}">
                 <%-- FIX: Sort URL now preserves all active filter params --%>
                 <select class="form-select form-select-sm" style="width: auto;"
                         onchange="
@@ -153,6 +179,7 @@
                     <option value="priority"   ${sortBy == 'priority'   ? 'selected' : ''}>Sắp xếp: Ưu tiên</option>
                     <option value="created_at" ${sortBy == 'created_at' ? 'selected' : ''}>Sắp xếp: Ngày tạo</option>
                 </select>
+                </c:if>
             </div>
         </div>
         <div class="card-body p-0">
@@ -476,27 +503,32 @@
         <!-- Pagination -->
         <c:if test="${totalPages > 1}">
             <div class="card-footer bg-white">
+                <c:choose>
+                    <c:when test="${taskType == 'workload'}">
+                        <c:set var="pageBaseUrl" value="${pageContext.request.contextPath}/manager/task/list?source=workload&employee=${workloadEmployeeId}&status=${statusFilter}&priority=${priorityFilter}&keyword=${keyword}"/>
+                    </c:when>
+                    <c:otherwise>
+                        <c:set var="pageBaseUrl" value="${pageContext.request.contextPath}/manager/task/list?taskType=${taskType}&view=${viewType}&status=${statusFilter}&priority=${priorityFilter}&keyword=${keyword}&employee=${employeeFilter}&sortBy=${sortBy}&sortOrder=${sortOrder}"/>
+                    </c:otherwise>
+                </c:choose>
                 <nav>
                     <ul class="pagination justify-content-center mb-0">
                         <li class="page-item ${currentPage == 1 ? 'disabled' : ''}">
-                            <a class="page-link"
-                               href="${pageContext.request.contextPath}/manager/task/list?taskType=${taskType}&view=${viewType}&page=${currentPage - 1}&status=${statusFilter}&priority=${priorityFilter}&keyword=${keyword}&employee=${employeeFilter}&sortBy=${sortBy}&sortOrder=${sortOrder}">
+                            <a class="page-link" href="${pageBaseUrl}&page=${currentPage - 1}">
                                 <i class="bi bi-chevron-left"></i>
                             </a>
                         </li>
                         <c:forEach begin="1" end="${totalPages}" var="i">
                             <c:if test="${i == 1 || i == totalPages || (i >= currentPage - 2 && i <= currentPage + 2)}">
                                 <li class="page-item ${currentPage == i ? 'active' : ''}">
-                                    <a class="page-link"
-                                       href="${pageContext.request.contextPath}/manager/task/list?taskType=${taskType}&view=${viewType}&page=${i}&status=${statusFilter}&priority=${priorityFilter}&keyword=${keyword}&employee=${employeeFilter}&sortBy=${sortBy}&sortOrder=${sortOrder}">
+                                    <a class="page-link" href="${pageBaseUrl}&page=${i}">
                                         ${i}
                                     </a>
                                 </li>
                             </c:if>
                         </c:forEach>
                         <li class="page-item ${currentPage == totalPages ? 'disabled' : ''}">
-                            <a class="page-link"
-                               href="${pageContext.request.contextPath}/manager/task/list?taskType=${taskType}&view=${viewType}&page=${currentPage + 1}&status=${statusFilter}&priority=${priorityFilter}&keyword=${keyword}&employee=${employeeFilter}&sortBy=${sortBy}&sortOrder=${sortOrder}">
+                            <a class="page-link" href="${pageBaseUrl}&page=${currentPage + 1}">
                                 <i class="bi bi-chevron-right"></i>
                             </a>
                         </li>

@@ -127,7 +127,7 @@
                                             </c:choose>
                                         </td>
                                         <td class="text-end">
-                                            <a href="${pageContext.request.contextPath}/manager/task/list?view=team&employee=${member.userId}"
+                                            <a href="${pageContext.request.contextPath}/manager/task/list?source=workload&employee=${member.userId}"
                                                class="btn btn-sm btn-outline-primary">
                                                 <i class="bi bi-eye me-1"></i>Xem việc
                                             </a>

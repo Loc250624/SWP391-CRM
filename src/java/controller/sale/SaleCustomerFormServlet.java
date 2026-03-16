@@ -69,6 +69,11 @@ public class SaleCustomerFormServlet extends HttpServlet {
                 // Load assigned tags for this customer
                 List<Integer> assignedTagIds = customerTagDAO.getTagIdsByCustomerId(customer.getCustomerId());
                 request.setAttribute("assignedTagIds", assignedTagIds);
+
+                // Load existing enrollments for edit
+                EnrollmentDAO enrollmentDAO = new EnrollmentDAO();
+                List<CustomerEnrollment> enrollments = enrollmentDAO.getEnrollmentsByCustomerId(customer.getCustomerId());
+                request.setAttribute("enrollments", enrollments);
             } catch (NumberFormatException e) {
                 response.sendRedirect(request.getContextPath() + "/sale/customer/list");
                 return;
@@ -130,6 +135,16 @@ public class SaleCustomerFormServlet extends HttpServlet {
         }
         if (fullName.trim().length() > 150) {
             request.setAttribute("error", "Ho ten khong duoc vuot qua 150 ky tu!");
+            doGet(request, response);
+            return;
+        }
+        if (dobStr == null || dobStr.trim().isEmpty()) {
+            request.setAttribute("error", "Ngay sinh la bat buoc!");
+            doGet(request, response);
+            return;
+        }
+        if (gender == null || gender.trim().isEmpty()) {
+            request.setAttribute("error", "Gioi tinh la bat buoc!");
             doGet(request, response);
             return;
         }
@@ -285,17 +300,20 @@ public class SaleCustomerFormServlet extends HttpServlet {
             }
             customerTagDAO.assignTags(customer.getCustomerId(), tagIds, currentUserId);
 
-            // Save course enrollments (only for new customer)
-            if (!isEdit && courseIdParams != null && courseIdParams.length > 0) {
+            // Save course enrollments (create and edit)
+            if (courseIdParams != null && courseIdParams.length > 0) {
                 EnrollmentDAO enrollmentDAO = new EnrollmentDAO();
                 QuotationDAO quotationDAO2 = new QuotationDAO();
                 List<Map<String, Object>> allCourses = quotationDAO2.getActiveCourses();
                 List<String> courseNames = new ArrayList<>();
 
+                if (isEdit) {
+                    enrollmentDAO.deleteEnrollmentsByCustomerId(customer.getCustomerId());
+                }
+
                 for (String cid : courseIdParams) {
                     try {
                         int courseId = Integer.parseInt(cid);
-                        // Find course price from active courses list
                         BigDecimal coursePrice = BigDecimal.ZERO;
                         String cName = "";
                         for (Map<String, Object> c : allCourses) {
@@ -322,12 +340,17 @@ public class SaleCustomerFormServlet extends HttpServlet {
                     } catch (NumberFormatException ignored) {}
                 }
 
-                // Update totalCourses and purchasedCourses on customer
                 if (!courseNames.isEmpty()) {
                     customer.setTotalCourses(courseNames.size());
                     customer.setPurchasedCourses(String.join(", ", courseNames));
                     customerDAO.updateCustomer(customer);
                 }
+            } else if (isEdit) {
+                EnrollmentDAO enrollmentDAO = new EnrollmentDAO();
+                enrollmentDAO.deleteEnrollmentsByCustomerId(customer.getCustomerId());
+                customer.setTotalCourses(0);
+                customer.setPurchasedCourses(null);
+                customerDAO.updateCustomer(customer);
             }
 
             // Notify customer created (only for new)

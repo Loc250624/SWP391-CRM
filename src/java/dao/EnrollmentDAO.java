@@ -95,6 +95,18 @@ public class EnrollmentDAO extends DBContext {
         return false;
     }
 
+    public boolean deleteEnrollmentsByCustomerId(int customerId) {
+        String sql = "DELETE FROM customer_enrollments WHERE customer_id = ?";
+        try (PreparedStatement st = connection.prepareStatement(sql)) {
+            st.setInt(1, customerId);
+            st.executeUpdate();
+            return true;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
     public List<CustomerEnrollment> getEnrollmentsByCustomerId(int customerId) {
         List<CustomerEnrollment> list = new ArrayList<>();
         // Query joins with courses to get course name

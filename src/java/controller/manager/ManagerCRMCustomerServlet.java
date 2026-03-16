@@ -148,6 +148,7 @@ public class ManagerCRMCustomerServlet extends HttpServlet {
         request.setAttribute("countAssigned", customerDAO.countAssignedCustomers(
                 null, null, null, null, null, null));
 
+        request.setAttribute("currentUserId", currentUser.getUserId());
         request.setAttribute("pageTitle",    "CRM - Quản lý Khách hàng");
         request.setAttribute("ACTIVE_MENU",  "CRM_CUSTOMERS");
         request.setAttribute("CONTENT_PAGE", "/view/manager/crm/customer-list.jsp");

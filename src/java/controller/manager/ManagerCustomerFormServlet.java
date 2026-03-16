@@ -67,6 +67,21 @@ public class ManagerCustomerFormServlet extends HttpServlet {
 
                 List<Integer> assignedTagIds = customerTagDAO.getTagIdsByCustomerId(customer.getCustomerId());
                 request.setAttribute("assignedTagIds", assignedTagIds);
+
+                // Load existing enrollments for edit
+                EnrollmentDAO enrollmentDAO = new EnrollmentDAO();
+                List<CustomerEnrollment> enrollments = enrollmentDAO.getEnrollmentsByCustomerId(customer.getCustomerId());
+                request.setAttribute("enrollments", enrollments);
+
+                // Load current owner name for display
+                if (customer.getOwnerId() != null) {
+                    Users owner = userDAO.getUserById(customer.getOwnerId());
+                    if (owner != null) {
+                        String ownerName = ((owner.getFirstName() != null ? owner.getFirstName() : "")
+                                + " " + (owner.getLastName() != null ? owner.getLastName() : "")).trim();
+                        request.setAttribute("ownerName", ownerName);
+                    }
+                }
             } catch (NumberFormatException e) {
                 response.sendRedirect(request.getContextPath() + "/manager/crm/customers");
                 return;
@@ -89,9 +104,9 @@ public class ManagerCustomerFormServlet extends HttpServlet {
         List<Map<String, Object>> courses = quotationDAO.getActiveCourses();
         request.setAttribute("courses", courses);
 
-        // Load sales users for owner assignment
-        List<Users> salesUsers = userDAO.getUsersByRoleCode("SALES");
-        request.setAttribute("salesUsers", salesUsers);
+        // Load Customer Success (SUPPORT) users for owner assignment
+        List<Users> supportUsers = userDAO.getUsersByRoleCode("SUPPORT");
+        request.setAttribute("supportUsers", supportUsers);
 
         request.setAttribute("ACTIVE_MENU", "CRM_CUSTOMERS");
         request.setAttribute("pageTitle", customerIdParam != null ? "Chỉnh sửa Customer" : "Tạo Customer mới");
@@ -147,6 +162,16 @@ public class ManagerCustomerFormServlet extends HttpServlet {
         }
         if (fullName.trim().length() > 150) {
             request.setAttribute("error", "Họ tên không được vượt quá 150 ký tự!");
+            doGet(request, response);
+            return;
+        }
+        if (dobStr == null || dobStr.trim().isEmpty()) {
+            request.setAttribute("error", "Ngày sinh là bắt buộc!");
+            doGet(request, response);
+            return;
+        }
+        if (gender == null || gender.trim().isEmpty()) {
+            request.setAttribute("error", "Giới tính là bắt buộc!");
             doGet(request, response);
             return;
         }
@@ -278,12 +303,17 @@ public class ManagerCustomerFormServlet extends HttpServlet {
             }
             customerTagDAO.assignTags(customer.getCustomerId(), tagIds, currentUserId);
 
-            // Save course enrollments (only for new customer)
-            if (!isEdit && courseIdParams != null && courseIdParams.length > 0) {
+            // Save course enrollments (create and edit)
+            if (courseIdParams != null && courseIdParams.length > 0) {
                 EnrollmentDAO enrollmentDAO = new EnrollmentDAO();
                 QuotationDAO quotationDAO = new QuotationDAO();
                 List<Map<String, Object>> allCourses = quotationDAO.getActiveCourses();
                 List<String> courseNames = new ArrayList<>();
+
+                // In edit mode, remove old enrollments and re-insert
+                if (isEdit) {
+                    enrollmentDAO.deleteEnrollmentsByCustomerId(customer.getCustomerId());
+                }
 
                 for (String cid : courseIdParams) {
                     try {
@@ -319,6 +349,13 @@ public class ManagerCustomerFormServlet extends HttpServlet {
                     customer.setPurchasedCourses(String.join(", ", courseNames));
                     customerDAO.updateCustomer(customer);
                 }
+            } else if (isEdit) {
+                // No courses selected in edit mode - remove all enrollments
+                EnrollmentDAO enrollmentDAO = new EnrollmentDAO();
+                enrollmentDAO.deleteEnrollmentsByCustomerId(customer.getCustomerId());
+                customer.setTotalCourses(0);
+                customer.setPurchasedCourses(null);
+                customerDAO.updateCustomer(customer);
             }
 
             // Send welcome email for new customer

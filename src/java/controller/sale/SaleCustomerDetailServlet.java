@@ -2,6 +2,7 @@ package controller.sale;
 
 import dao.ActivityDAO;
 import dao.CustomerDAO;
+import dao.EnrollmentDAO;
 import dao.LeadSourceDAO;
 import java.io.IOException;
 import jakarta.servlet.ServletException;
@@ -12,6 +13,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import util.SessionHelper;
 import model.Activity;
 import model.Customer;
+import model.CustomerEnrollment;
 import model.LeadSource;
 import java.util.List;
 
@@ -20,6 +22,7 @@ public class SaleCustomerDetailServlet extends HttpServlet {
 
     private CustomerDAO customerDAO = new CustomerDAO();
     private LeadSourceDAO leadSourceDAO = new LeadSourceDAO();
+    private EnrollmentDAO enrollmentDAO = new EnrollmentDAO();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -69,6 +72,10 @@ public class SaleCustomerDetailServlet extends HttpServlet {
             ActivityDAO actDAO = new ActivityDAO();
             List<Activity> customerActivities = actDAO.getActivitiesByRelatedEntity(customerId, "Customer");
             request.setAttribute("activities", customerActivities);
+
+            // Load enrollments for this customer
+            List<CustomerEnrollment> enrollments = enrollmentDAO.getEnrollmentsByCustomerId(customerId);
+            request.setAttribute("enrollments", enrollments);
 
             request.setAttribute("customer", customer);
             request.setAttribute("sourceName", sourceName);
