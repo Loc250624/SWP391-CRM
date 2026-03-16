@@ -27,6 +27,9 @@
             <h3 class="mb-1"><i class="bi bi-people-fill me-2 text-success"></i>Quản lý Khách hàng</h3>
             <p class="text-muted mb-0">Quản lý danh sách khách hàng chưa giao và đã giao cho Sales.</p>
         </div>
+        <a href="${pageContext.request.contextPath}/manager/crm/customer/form" class="btn btn-success btn-sm">
+            <i class="bi bi-person-plus me-1"></i>Tạo Customer
+        </a>
     </div>
 
     <%-- Tabs: Chưa giao / Đã giao --%>
