@@ -179,6 +179,18 @@ public class UserDAO extends DBContext {
         return list;
     }
 
+    public int getTotalUsersCount() {
+        String sql = "SELECT COUNT(*) FROM users WHERE status = 'Active'";
+        try (PreparedStatement st = connection.prepareStatement(sql); ResultSet rs = st.executeQuery()) {
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
     private Users mapResultSetToUser(ResultSet rs) throws SQLException {
         Users u = new Users();
         u.setUserId(rs.getInt("user_id"));

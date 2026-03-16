@@ -127,6 +127,28 @@
                 </div>
 
                 <!-- System Settings -->
+                <div class="mb-1">
+                    <div class="px-3 py-2">
+                        <small class="text-uppercase text-muted fw-semibold"
+                            style="font-size: 10px; letter-spacing: 0.5px;">Hệ thống</small>
+                    </div>
+                    <ul class="nav flex-column px-2">
+                        <li class="nav-item mb-1">
+                            <a href="${pageContext.request.contextPath}/admin/user/list"
+                                class="nav-link rounded-2 d-flex align-items-center gap-2 py-2 px-3 ${ACTIVE_MENU == 'USER_MANAGEMENT' ? 'active bg-indigo text-white' : 'text-body-secondary'}">
+                                <i class="bi bi-person-gear"></i>
+                                <span>Quản lý Tài khoản (User)</span>
+                            </a>
+                        </li>
+                        <li class="nav-item mb-1">
+                            <a href="${pageContext.request.contextPath}/admin/role/list"
+                                class="nav-link rounded-2 d-flex align-items-center gap-2 py-2 px-3 ${ACTIVE_MENU == 'ROLE_MANAGEMENT' ? 'active bg-indigo text-white' : 'text-body-secondary'}">
+                                <i class="bi bi-shield-check"></i>
+                                <span>Phân quyền (Roles)</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
 
             </nav>
 
