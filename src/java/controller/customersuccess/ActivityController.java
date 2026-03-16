@@ -32,7 +32,7 @@ public class ActivityController extends HttpServlet {
         String typeParam = request.getParameter("type");
 
         if (idParam != null && typeParam != null) {
-            // TRƯỜNG HỢP 1: Xem lịch sử phiếu báo cáo chi tiết
+            // TRƯỜNG HỢP 1: Xem lịch sử phiếu báo cáo chi tiết của 1 KH/Lead cụ thể
             int id = Integer.parseInt(idParam);
             
             // Gọi hàm lấy báo cáo linh hoạt (Lead hoặc Customer)
@@ -45,13 +45,23 @@ public class ActivityController extends HttpServlet {
             request.setAttribute("contentPage", "/view/customersuccess/pages/activity_history.jsp");
             
         } else {
-            // TRƯỜNG HỢP 2: Nhật ký hoạt động cá nhân theo tháng
+            // TRƯỜNG HỢP 2: Nhật ký hoạt động cá nhân theo tháng của nhân viên
             LocalDate now = LocalDate.now();
-            List<Activity> staffLogs = dao.getActivitiesByMonth(user.getUserId(), now.getMonthValue(), now.getYear());
+            int currentMonth = now.getMonthValue();
+            int currentYear = now.getYear();
+            
+            // 1. Lấy danh sách các hoạt động hỗ trợ
+            List<Activity> staffLogs = dao.getActivitiesByMonth(user.getUserId(), currentMonth, currentYear);
 
+            // 2. 👉 BỔ SUNG: Lấy thống kê Upsale (Khóa học & Doanh thu)
+            java.util.Map<String, Double> upsaleStats = dao.getMonthlyUpsaleStats(user.getUserId(), currentMonth, currentYear);
+            request.setAttribute("upsaleCount", upsaleStats.get("upsaleCount").intValue());
+            request.setAttribute("totalRevenue", upsaleStats.get("totalRevenue"));
+
+            // 3. Gửi dữ liệu ra View
             request.setAttribute("activities", staffLogs);
-            request.setAttribute("month", now.getMonthValue());
-            request.setAttribute("year", now.getYear());
+            request.setAttribute("month", currentMonth);
+            request.setAttribute("year", currentYear);
             request.setAttribute("pageTitle", "Nhật ký hoạt động của tôi");
             request.setAttribute("contentPage", "/view/customersuccess/pages/activity_log.jsp");
         }

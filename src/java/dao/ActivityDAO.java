@@ -974,7 +974,7 @@ public class ActivityDAO extends DBContext {
             String finalRelatedType = relatedType;
 
             // 2. NẾU CÓ CHỌN KHÓA HỌC -> XỬ LÝ UPSALE & CONVERT
-            if (courseIds != null && courseIds.length > 0) {
+            if (courseIds != null && courseIds.length > 0 && "Completed".equalsIgnoreCase(status)) {
                 
                 if ("Lead".equalsIgnoreCase(relatedType)) {
                     // A. Chuyển đổi Lead thành Customer
@@ -1177,5 +1177,32 @@ public class ActivityDAO extends DBContext {
             try { connection.setAutoCommit(true); } catch (Exception e) {}
         }
         return isSuccess;
+    }
+    /**
+     * Lấy thống kê Upsale (Số khóa bán được & Tổng doanh thu) trong tháng của nhân viên
+     */
+    public java.util.Map<String, Double> getMonthlyUpsaleStats(int staffId, int month, int year) {
+        java.util.Map<String, Double> stats = new java.util.HashMap<>();
+        stats.put("upsaleCount", 0.0);
+        stats.put("totalRevenue", 0.0);
+
+        // SQL đếm số khóa học và cộng tổng tiền dựa vào cột created_by (nhân viên tạo)
+        String sql = "SELECT COUNT(*) as upsale_count, COALESCE(SUM(final_amount), 0) as total_revenue " +
+                     "FROM customer_enrollments " +
+                     "WHERE created_by = ? AND MONTH(enrolled_date) = ? AND YEAR(enrolled_date) = ?";
+
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setInt(1, staffId);
+            ps.setInt(2, month);
+            ps.setInt(3, year);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                stats.put("upsaleCount", (double) rs.getInt("upsale_count"));
+                stats.put("totalRevenue", rs.getDouble("total_revenue"));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return stats;
     }
 }
