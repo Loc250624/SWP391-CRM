@@ -63,6 +63,32 @@
         </div>
     </div>
 
+    <!-- Search & Filter -->
+    <div class="card mb-3">
+        <div class="card-body py-2">
+            <div class="row g-2 align-items-center">
+                <div class="col-md-4">
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+                        <input type="text" id="kpiSearch" class="form-control" placeholder="Tìm theo tên, email nhân viên...">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <select id="ratingFilter" class="form-select form-select-sm">
+                        <option value="">Tất cả đánh giá</option>
+                        <option value="excellent">Xuat sac (>= 80)</option>
+                        <option value="good">Tot (60-79)</option>
+                        <option value="average">Trung binh (40-59)</option>
+                        <option value="poor">Can cai thien (< 40)</option>
+                    </select>
+                </div>
+                <div class="col-md-5 text-end">
+                    <small class="text-muted">Tìm thấy <strong id="kpiResultCount">0</strong> nhân viên</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Employee KPI Ranking Table -->
     <div class="card">
         <div class="card-header bg-white">
@@ -70,7 +96,7 @@
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-hover mb-0">
+                <table class="table table-hover mb-0" id="kpiTable">
                     <thead class="table-light">
                         <tr>
                             <th style="width:50px;">#</th>
@@ -87,7 +113,12 @@
                     <tbody>
                         <c:forEach var="perf" items="${performanceList}" varStatus="st">
                             <c:set var="score" value="${perf['productivityScore']}"/>
-                            <tr>
+                            <c:set var="rating" value="${score >= 80 ? 'excellent' : score >= 60 ? 'good' : score >= 40 ? 'average' : 'poor'}"/>
+                            <tr class="kpi-data-row"
+                                data-name="${fn:toLowerCase(perf['firstName'])} ${fn:toLowerCase(perf['lastName'])}"
+                                data-email="${fn:toLowerCase(perf['email'])}"
+                                data-rating="${rating}"
+                                data-rank="${st.index + 1}">
                                 <td class="text-center fw-bold">
                                     <c:choose>
                                         <c:when test="${st.index == 0}">
@@ -169,7 +200,7 @@
                                 </td>
                             </tr>
                             <!-- Collapsible detail row -->
-                            <tr>
+                            <tr class="kpi-detail-row">
                                 <td colspan="9" class="p-0">
                                     <div class="collapse" id="detail-${perf['userId']}">
                                         <div class="bg-light p-3">
@@ -213,6 +244,14 @@
                     </tbody>
                 </table>
             </div>
+            <div id="kpiNoResults" class="text-center py-4 d-none">
+                <i class="bi bi-search text-muted" style="font-size:2rem;"></i>
+                <p class="text-muted mt-2 mb-0">Không tìm thấy nhân viên phù hợp</p>
+            </div>
+        </div>
+        <div class="card-footer bg-white">
+            <nav><ul class="pagination justify-content-center mb-0" id="kpiPagination"></ul></nav>
+            <p class="text-center text-muted small mb-0 mt-2" id="kpiPageInfo"></p>
         </div>
     </div>
 
@@ -233,20 +272,99 @@
 </style>
 
 <script>
-// Toggle detail rows on row click
 document.addEventListener('DOMContentLoaded', function() {
-    document.querySelectorAll('tbody tr').forEach(function(row) {
+    var searchInput = document.getElementById('kpiSearch');
+    var ratingFilter = document.getElementById('ratingFilter');
+    var table = document.getElementById('kpiTable');
+    if (!table) return;
+
+    // Collect data-row / detail-row pairs
+    var dataRows = Array.from(table.querySelectorAll('tr.kpi-data-row'));
+    var currentPage = 1;
+    var PAGE_SIZE = 10;
+
+    function getDetailRow(dataRow) {
+        return dataRow.nextElementSibling && dataRow.nextElementSibling.classList.contains('kpi-detail-row')
+            ? dataRow.nextElementSibling : null;
+    }
+
+    function filterAndPaginate() {
+        var kw = searchInput.value.trim().toLowerCase();
+        var rating = ratingFilter.value;
+        var pageSize = PAGE_SIZE;
+
+        var filtered = dataRows.filter(function(row) {
+            var name = row.getAttribute('data-name') || '';
+            var email = row.getAttribute('data-email') || '';
+            var rowRating = row.getAttribute('data-rating') || '';
+            var matchKw = !kw || name.indexOf(kw) !== -1 || email.indexOf(kw) !== -1;
+            var matchRating = !rating || rowRating === rating;
+            return matchKw && matchRating;
+        });
+
+        var totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+        if (currentPage > totalPages) currentPage = totalPages;
+        var start = (currentPage - 1) * pageSize;
+
+        // Hide all
+        dataRows.forEach(function(r) {
+            r.style.display = 'none';
+            var d = getDetailRow(r);
+            if (d) d.style.display = 'none';
+        });
+
+        // Show filtered page
+        filtered.forEach(function(r, i) {
+            var visible = (i >= start && i < start + pageSize);
+            r.style.display = visible ? '' : 'none';
+            var d = getDetailRow(r);
+            if (d) d.style.display = visible ? '' : 'none';
+        });
+
+        document.getElementById('kpiResultCount').textContent = filtered.length;
+        document.getElementById('kpiNoResults').classList.toggle('d-none', filtered.length > 0);
+        renderPagination(totalPages, filtered.length);
+    }
+
+    function renderPagination(totalPages, total) {
+        var pag = document.getElementById('kpiPagination');
+        var info = document.getElementById('kpiPageInfo');
+        pag.innerHTML = '';
+        if (totalPages <= 1) { info.textContent = 'Tổng ' + total + ' nhân viên'; return; }
+
+        pag.innerHTML += '<li class="page-item '+(currentPage===1?'disabled':'')+'"><a class="page-link" href="#" data-p="'+(currentPage-1)+'"><i class="bi bi-chevron-left"></i></a></li>';
+        for (var i = 1; i <= totalPages; i++) {
+            if (i === 1 || i === totalPages || (i >= currentPage-2 && i <= currentPage+2))
+                pag.innerHTML += '<li class="page-item '+(i===currentPage?'active':'')+'"><a class="page-link" href="#" data-p="'+i+'">'+i+'</a></li>';
+        }
+        pag.innerHTML += '<li class="page-item '+(currentPage===totalPages?'disabled':'')+'"><a class="page-link" href="#" data-p="'+(currentPage+1)+'"><i class="bi bi-chevron-right"></i></a></li>';
+        info.textContent = 'Trang ' + currentPage + ' / ' + totalPages + ' - Tổng ' + total + ' nhân viên';
+
+        pag.querySelectorAll('a[data-p]').forEach(function(a) {
+            a.addEventListener('click', function(e) {
+                e.preventDefault();
+                var p = parseInt(this.getAttribute('data-p'));
+                if (p >= 1 && p <= totalPages) { currentPage = p; filterAndPaginate(); }
+            });
+        });
+    }
+
+    searchInput.addEventListener('input', function() { currentPage = 1; filterAndPaginate(); });
+    ratingFilter.addEventListener('change', function() { currentPage = 1; filterAndPaginate(); });
+    filterAndPaginate();
+
+    // Toggle detail rows on data row click
+    dataRows.forEach(function(row) {
         row.style.cursor = 'pointer';
         row.addEventListener('click', function(e) {
             if (e.target.tagName === 'A' || e.target.closest('a')) return;
-            var userId = row.querySelector('[id^="detail-"]');
-            if (!userId) {
-                return;
-            }
-            var collapseEl = document.getElementById(userId.id);
-            if (collapseEl) {
-                var bsCollapse = bootstrap.Collapse.getOrCreateInstance(collapseEl);
-                bsCollapse.toggle();
+            var detail = getDetailRow(row);
+            if (detail) {
+                var collapseEl = detail.querySelector('.collapse');
+                if (collapseEl) {
+                    var bsCollapse = bootstrap.Collapse.getOrCreateInstance(collapseEl);
+                    bsCollapse.toggle();
+                }
             }
         });
     });

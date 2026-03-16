@@ -144,10 +144,14 @@
 
         <div class="col-lg-6">
             <div class="card">
-                <div class="card-header bg-white">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
                     <h5 class="mb-0"><i class="bi bi-exclamation-triangle me-2"></i>Công việc quá hạn</h5>
+                    <div class="input-group input-group-sm" style="width: 200px;">
+                        <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+                        <input type="text" id="overdueSearch" class="form-control" placeholder="Tìm công việc...">
+                    </div>
                 </div>
-                <div class="card-body" style="max-height: 400px; overflow-y: auto;">
+                <div class="card-body p-0" style="max-height: 400px; overflow-y: auto;">
                     <c:choose>
                         <c:when test="${empty overdueTasks}">
                             <div class="text-center py-4">
@@ -156,14 +160,14 @@
                             </div>
                         </c:when>
                         <c:otherwise>
-                            <div class="list-group">
+                            <div class="list-group list-group-flush" id="overdueList">
                                 <c:forEach var="task" items="${overdueTasks}">
                                     <a href="${pageContext.request.contextPath}/manager/task/detail?id=${task.taskId}"
-                                       class="list-group-item list-group-item-action">
+                                       class="list-group-item list-group-item-action overdue-item"
+                                       data-search="${fn:toLowerCase(task.title)}">
                                         <div class="d-flex w-100 justify-content-between">
                                             <h6 class="mb-1">${task.title}</h6>
                                             <small class="text-danger">
-                                                <%-- FIX: fn:substring replaces fmt:formatDate (incompatible with LocalDateTime) --%>
                                                 ${fn:substring(task.dueDate, 8, 10)}/${fn:substring(task.dueDate, 5, 7)}/${fn:substring(task.dueDate, 0, 4)}
                                             </small>
                                         </div>
@@ -175,6 +179,9 @@
                                     </a>
                                 </c:forEach>
                             </div>
+                            <div id="overdueNoResults" class="text-center py-3 d-none">
+                                <small class="text-muted">Không tìm thấy</small>
+                            </div>
                         </c:otherwise>
                     </c:choose>
                 </div>
@@ -185,11 +192,17 @@
     <!-- Employee Performance -->
     <div class="card">
         <div class="card-header bg-white">
-            <h5 class="mb-0"><i class="bi bi-people me-2"></i>Hiệu suất của nhân viên</h5>
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-people me-2"></i>Hiệu suất của nhân viên</h5>
+                <div class="input-group input-group-sm" style="width: 250px;">
+                    <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+                    <input type="text" id="empSearch" class="form-control" placeholder="Tìm nhân viên...">
+                </div>
+            </div>
         </div>
-        <div class="card-body">
+        <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-hover">
+                <table class="table table-hover mb-0" id="empTable">
                     <thead class="table-light">
                         <tr>
                             <th>Nhân viên</th>
@@ -204,11 +217,11 @@
                     <tbody>
                         <c:forEach var="member" items="${teamMembers}">
                             <c:set var="stats" value="${employeeStats[member.userId]}" />
-                            <tr>
+                            <tr data-name="${fn:toLowerCase(member.firstName)} ${fn:toLowerCase(member.lastName)}"
+                                data-email="${fn:toLowerCase(member.email)}">
                                 <td>
                                     <div class="d-flex align-items-center">
                                         <div class="avatar-sm bg-primary rounded-circle d-flex align-items-center justify-content-center text-white me-2">
-                                            <%-- FIX: fn:substring is null-safe; .substring(0,1) throws NPE on empty string --%>
                                             ${fn:substring(member.firstName, 0, 1)}${fn:substring(member.lastName, 0, 1)}
                                         </div>
                                         <div>
@@ -243,6 +256,14 @@
                     </tbody>
                 </table>
             </div>
+            <div id="empNoResults" class="text-center py-4 d-none">
+                <i class="bi bi-search text-muted" style="font-size:2rem;"></i>
+                <p class="text-muted mt-2 mb-0">Không tìm thấy nhân viên phù hợp</p>
+            </div>
+        </div>
+        <div class="card-footer bg-white">
+            <nav><ul class="pagination justify-content-center mb-0" id="empPagination"></ul></nav>
+            <p class="text-center text-muted small mb-0 mt-2" id="empPageInfo"></p>
         </div>
     </div>
 </div>
@@ -255,3 +276,74 @@
         font-weight: 600;
     }
 </style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // ── Overdue search ──
+    var overdueSearch = document.getElementById('overdueSearch');
+    if (overdueSearch) {
+        overdueSearch.addEventListener('input', function() {
+            var kw = this.value.trim().toLowerCase();
+            var items = document.querySelectorAll('.overdue-item');
+            var found = 0;
+            items.forEach(function(item) {
+                var match = !kw || (item.getAttribute('data-search') || '').indexOf(kw) !== -1;
+                item.style.display = match ? '' : 'none';
+                if (match) found++;
+            });
+            var noRes = document.getElementById('overdueNoResults');
+            if (noRes) noRes.classList.toggle('d-none', found > 0);
+        });
+    }
+
+    // ── Employee table search + pagination ──
+    var empSearch = document.getElementById('empSearch');
+    var empTable = document.getElementById('empTable');
+    if (!empTable) return;
+    var empRows = Array.from(empTable.querySelectorAll('tbody tr'));
+    var empPage = 1;
+    var PAGE_SIZE = 10;
+
+    function empFilter() {
+        var kw = empSearch.value.trim().toLowerCase();
+        var filtered = empRows.filter(function(r) {
+            var name = r.getAttribute('data-name') || '';
+            var email = r.getAttribute('data-email') || '';
+            return !kw || name.indexOf(kw) !== -1 || email.indexOf(kw) !== -1;
+        });
+        var totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+        if (empPage > totalPages) empPage = totalPages;
+        var start = (empPage - 1) * PAGE_SIZE;
+
+        empRows.forEach(function(r) { r.style.display = 'none'; });
+        filtered.forEach(function(r, i) { r.style.display = (i >= start && i < start + PAGE_SIZE) ? '' : 'none'; });
+
+        document.getElementById('empNoResults').classList.toggle('d-none', filtered.length > 0);
+        renderPag('empPagination', 'empPageInfo', totalPages, filtered.length, empPage, function(p) { empPage = p; empFilter(); });
+    }
+
+    function renderPag(pagId, infoId, totalPages, total, curPage, onClick) {
+        var pag = document.getElementById(pagId);
+        var info = document.getElementById(infoId);
+        pag.innerHTML = '';
+        if (totalPages <= 1) { info.textContent = 'Tổng ' + total + ' nhân viên'; return; }
+        pag.innerHTML += '<li class="page-item ' + (curPage === 1 ? 'disabled' : '') + '"><a class="page-link" href="#" data-p="' + (curPage-1) + '"><i class="bi bi-chevron-left"></i></a></li>';
+        for (var i = 1; i <= totalPages; i++) {
+            if (i === 1 || i === totalPages || (i >= curPage-2 && i <= curPage+2))
+                pag.innerHTML += '<li class="page-item ' + (i===curPage?'active':'') + '"><a class="page-link" href="#" data-p="'+i+'">'+i+'</a></li>';
+        }
+        pag.innerHTML += '<li class="page-item ' + (curPage===totalPages?'disabled':'') + '"><a class="page-link" href="#" data-p="'+(curPage+1)+'"><i class="bi bi-chevron-right"></i></a></li>';
+        info.textContent = 'Trang ' + curPage + ' / ' + totalPages + ' - Tổng ' + total + ' nhân viên';
+        pag.querySelectorAll('a[data-p]').forEach(function(a) {
+            a.addEventListener('click', function(e) {
+                e.preventDefault();
+                var p = parseInt(this.getAttribute('data-p'));
+                if (p >= 1 && p <= totalPages) onClick(p);
+            });
+        });
+    }
+
+    empSearch.addEventListener('input', function() { empPage = 1; empFilter(); });
+    empFilter();
+});
+</script>

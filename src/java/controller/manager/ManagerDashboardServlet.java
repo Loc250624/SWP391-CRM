@@ -52,15 +52,16 @@ public class ManagerDashboardServlet extends HttpServlet {
         LeadDAO leadDAO = new LeadDAO();
         CustomerDAO customerDAO = new CustomerDAO();
 
-        // ── 1. KPI Cards: Task stats for ALL users ──
-        int totalTasks     = 0;
-        int completedTasks = 0;
-        int inProgressTasks = 0;
-        int pendingTasks   = 0;
-        int overdueTasks   = 0;
-        int cancelledTasks = 0;
+        // ── 1. KPI Cards: Task stats from tasks table directly ──
+        Map<String, Object> taskStats = taskDAO.getTaskStatistics(null, allUserIds);
+        int totalTasks      = ((Number) taskStats.getOrDefault("totalTasks", 0)).intValue();
+        int completedTasks  = ((Number) taskStats.getOrDefault("completedTasks", 0)).intValue();
+        int inProgressTasks = ((Number) taskStats.getOrDefault("inProgressTasks", 0)).intValue();
+        int pendingTasks    = ((Number) taskStats.getOrDefault("pendingTasks", 0)).intValue();
+        int overdueTasks    = ((Number) taskStats.getOrDefault("overdueTasks", 0)).intValue();
+        int cancelledTasks  = ((Number) taskStats.getOrDefault("cancelledTasks", 0)).intValue();
 
-        // Per-employee stats for charts (only include users who have tasks)
+        // Per-employee stats for charts
         List<String> empNames = new ArrayList<>();
         List<Integer> empCompleted = new ArrayList<>();
         List<Integer> empInProgress = new ArrayList<>();
@@ -71,37 +72,18 @@ public class ManagerDashboardServlet extends HttpServlet {
         for (Users member : allUsers) {
             Map<String, Object> stats = taskDAO.getEmployeePerformanceStats(member.getUserId());
             int total = ((Number) stats.getOrDefault("totalTasks", 0)).intValue();
-            int completed = ((Number) stats.getOrDefault("completedTasks", 0)).intValue();
-            int inProg = ((Number) stats.getOrDefault("inProgressTasks", 0)).intValue();
-            int pending = ((Number) stats.getOrDefault("pendingTasks", 0)).intValue();
-            int overdue = ((Number) stats.getOrDefault("overdueTasks", 0)).intValue();
-            int cancelled = ((Number) stats.getOrDefault("cancelledTasks", 0)).intValue();
-            double productivity = ((Number) stats.getOrDefault("productivityScore", 0.0)).doubleValue();
-
-            totalTasks += total;
-            completedTasks += completed;
-            inProgressTasks += inProg;
-            pendingTasks += pending;
-            overdueTasks += overdue;
-            cancelledTasks += cancelled;
-
-            // Only add to chart if the user has at least 1 task
             if (total > 0) {
                 String name = (member.getFirstName() != null ? member.getFirstName() : "")
                             + " " + (member.getLastName() != null ? member.getLastName() : "");
                 empNames.add(name.trim());
-                empCompleted.add(completed);
-                empInProgress.add(inProg);
-                empPending.add(pending);
-                empOverdue.add(overdue);
+                empCompleted.add(((Number) stats.getOrDefault("completedTasks", 0)).intValue());
+                empInProgress.add(((Number) stats.getOrDefault("inProgressTasks", 0)).intValue());
+                empPending.add(((Number) stats.getOrDefault("pendingTasks", 0)).intValue());
+                empOverdue.add(((Number) stats.getOrDefault("overdueTasks", 0)).intValue());
+                double productivity = ((Number) stats.getOrDefault("productivityScore", 0.0)).doubleValue();
                 empProductivity.add(Math.round(productivity * 10.0) / 10.0);
             }
         }
-
-        // Adjust task counts so KPI cards add up: totalTasks = completed + inProgress + overdue
-        // Overdue tasks overlap with pending/inProgress, so subtract overdue from active count
-        inProgressTasks = inProgressTasks + pendingTasks - overdueTasks;
-        totalTasks = completedTasks + inProgressTasks + overdueTasks;
 
         // ── 2. Lead stats (matching lead list page logic) ──
         int unassignedLeads = leadDAO.countUnassignedLeadsForManager(null, null, null, null);
