@@ -84,19 +84,17 @@ public class LeadDAO extends DBContext {
 
     // Generate unique lead code (LD-000001, LD-000002, ...)
     public String generateLeadCode() {
-        String sql = "SELECT TOP 1 lead_code FROM leads ORDER BY lead_id DESC";
+        String sql = "SELECT MAX(CAST(SUBSTRING(lead_code, 4, LEN(lead_code) - 3) AS INT)) "
+                + "FROM leads WHERE lead_code LIKE 'LD-[0-9][0-9][0-9][0-9][0-9][0-9]'";
 
         try {
             PreparedStatement st = connection.prepareStatement(sql);
             ResultSet rs = st.executeQuery();
 
             if (rs.next()) {
-                String lastCode = rs.getString("lead_code");
-                // Extract number from LD-000001
-                int number = Integer.parseInt(lastCode.substring(3));
-                return String.format("LD-%06d", number + 1);
+                int maxNumber = rs.getInt(1);
+                return String.format("LD-%06d", maxNumber + 1);
             } else {
-                // First lead
                 return "LD-000001";
             }
         } catch (SQLException e) {
@@ -584,16 +582,16 @@ public class LeadDAO extends DBContext {
     }
     // Lấy danh sách Lead CHỈ do người dùng hiện tại tạo ra
 
-    public List<Lead> getLeadsByCreator(int userId) {
+   public List<Lead> getLeadsByCreator(int userId) {
         List<Lead> list = new ArrayList<>();
-        // SQL: Lọc chính xác theo ID người tạo và sắp xếp mới nhất lên đầu
-        String sql = "SELECT * FROM leads WHERE created_by = ? ORDER BY created_at DESC";
+        
+        // 👉 ĐÃ SỬA DÒNG NÀY: Thêm điều kiện lọc is_converted
+        String sql = "SELECT * FROM leads WHERE created_by = ? AND (is_converted = 0 OR is_converted IS NULL) ORDER BY created_at DESC";
 
         try (PreparedStatement st = connection.prepareStatement(sql)) {
             st.setInt(1, userId);
             try (ResultSet rs = st.executeQuery()) {
                 while (rs.next()) {
-                    // Sử dụng hàm mapResultSetToLead tương tự như bên Customer
                     list.add(mapResultSetToLead(rs));
                 }
             }

@@ -6,7 +6,7 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
         <h4 class="mb-1 fw-bold">Pipeline Statistics</h4>
-        <p class="text-muted mb-0">Phan tich chi tiet pipeline ban hang</p>
+        <p class="text-muted mb-0">Phân tích chi tiết pipeline bán hàng</p>
     </div>
     <div class="d-flex gap-2">
         <form method="GET" action="${pageContext.request.contextPath}/sale/report/pipeline">
@@ -28,9 +28,9 @@
                 <div class="d-flex align-items-center">
                     <div class="bg-primary bg-opacity-10 rounded-3 p-2 me-3"><i class="bi bi-funnel text-primary fs-4"></i></div>
                     <div>
-                        <small class="text-muted">Deal dang mo</small>
+                        <small class="text-muted">Deal đang mở</small>
                         <h4 class="mb-0 fw-bold">${totalInPipeline}</h4>
-                        <small class="text-muted">${totalDeals} tong (ca Won/Lost)</small>
+                        <small class="text-muted">${totalDeals} tổng (cả Won/Lost)</small>
                     </div>
                 </div>
             </div>
@@ -42,7 +42,7 @@
                 <div class="d-flex align-items-center">
                     <div class="bg-success bg-opacity-10 rounded-3 p-2 me-3"><i class="bi bi-cash-stack text-success fs-4"></i></div>
                     <div>
-                        <small class="text-muted">Tong gia tri pipeline</small>
+                        <small class="text-muted">Tổng giá trị pipeline</small>
                         <h4 class="mb-0 fw-bold"><fmt:formatNumber value="${totalPipelineValue}" type="number" groupingUsed="true" maxFractionDigits="0"/>d</h4>
                     </div>
                 </div>
@@ -69,7 +69,7 @@
                 <div class="d-flex align-items-center">
                     <div class="bg-info bg-opacity-10 rounded-3 p-2 me-3"><i class="bi bi-calculator text-info fs-4"></i></div>
                     <div>
-                        <small class="text-muted">TB gia tri / deal</small>
+                        <small class="text-muted">TB giá trị / deal</small>
                         <h4 class="mb-0 fw-bold"><fmt:formatNumber value="${avgDealSize}" type="number" groupingUsed="true" maxFractionDigits="0"/>d</h4>
                     </div>
                 </div>
@@ -120,7 +120,7 @@
                         </div>
                     </c:when>
                     <c:otherwise>
-                        <div class="text-center text-muted py-4">Chua co stage nao</div>
+                        <div class="text-center text-muted py-4">Chưa có stage nào</div>
                     </c:otherwise>
                 </c:choose>
             </div>
@@ -131,7 +131,7 @@
     <div class="col-lg-5">
         <div class="card border-0 shadow-sm h-100">
             <div class="card-header bg-transparent border-0">
-                <h6 class="mb-0 fw-semibold"><i class="bi bi-pie-chart me-2"></i>Phan bo deal</h6>
+                <h6 class="mb-0 fw-semibold"><i class="bi bi-pie-chart me-2"></i>Phân bổ deal</h6>
             </div>
             <div class="card-body">
                 <div class="text-center mb-3">
@@ -163,13 +163,13 @@
                     <div class="col-6">
                         <div class="text-center p-2 bg-light rounded">
                             <div class="fs-5 fw-bold text-primary">${totalInPipeline}</div>
-                            <small class="text-muted">Dang mo</small>
+                            <small class="text-muted">Đang mở</small>
                         </div>
                     </div>
                     <div class="col-6">
                         <div class="text-center p-2 bg-light rounded">
                             <div class="fs-5 fw-bold">${totalDeals}</div>
-                            <small class="text-muted">Tong deal</small>
+                            <small class="text-muted">Tổng deal</small>
                         </div>
                     </div>
                     <div class="col-6">
@@ -193,7 +193,7 @@
 <!-- Stage Details Table -->
 <div class="card border-0 shadow-sm">
     <div class="card-header bg-transparent border-0">
-        <h6 class="mb-0 fw-semibold"><i class="bi bi-table me-2"></i>Chi tiet theo Stage</h6>
+        <h6 class="mb-0 fw-semibold"><i class="bi bi-table me-2"></i>Chi tiết theo Stage</h6>
     </div>
     <div class="card-body p-0">
         <c:choose>
@@ -203,11 +203,11 @@
                         <thead class="table-light">
                             <tr>
                                 <th class="ps-3">Stage</th>
-                                <th class="text-center">So deal</th>
-                                <th class="text-end">Tong gia tri</th>
+                                <th class="text-center">Số deal</th>
+                                <th class="text-end">Tổng giá trị</th>
                                 <th class="text-end">TB / deal</th>
-                                <th class="text-center">Xac suat</th>
-                                <th style="width: 180px;">Phan bo gia tri</th>
+                                <th class="text-center">Xác suất</th>
+                                <th style="width: 180px;">Phân bổ giá trị</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -270,7 +270,7 @@
                 </div>
             </c:when>
             <c:otherwise>
-                <div class="text-center text-muted py-4">Chua co stage nao trong pipeline nay</div>
+                <div class="text-center text-muted py-4">Chưa có stage nào trong pipeline nay</div>
             </c:otherwise>
         </c:choose>
     </div>

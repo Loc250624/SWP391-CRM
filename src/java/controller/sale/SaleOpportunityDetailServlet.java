@@ -1,5 +1,6 @@
 package controller.sale;
 
+import dao.ActivityDAO;
 import dao.CampaignDAO;
 import dao.CustomerDAO;
 import dao.LeadDAO;
@@ -15,6 +16,7 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import util.SessionHelper;
+import model.Activity;
 import model.Campaign;
 import model.Customer;
 import model.Lead;
@@ -102,6 +104,11 @@ public class SaleOpportunityDetailServlet extends HttpServlet {
             // Load linked quotations
             List<Quotation> quotations = quotationDAO.getQuotationsByOpportunityId(oppId);
             request.setAttribute("quotations", quotations);
+
+            // Load activities for this opportunity
+            ActivityDAO actDAO = new ActivityDAO();
+            List<Activity> oppActivities = actDAO.getActivitiesByRelatedEntityForOpportunity(oppId);
+            request.setAttribute("activities", oppActivities);
 
             request.setAttribute("opportunity", opp);
             request.setAttribute("pipeline", pipeline);

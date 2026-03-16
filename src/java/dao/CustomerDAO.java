@@ -36,10 +36,13 @@ public class CustomerDAO extends DBContext {
         String sql = "SELECT * FROM customers WHERE owner_id IS NULL"
                 + " AND LOWER(status) = 'active'"
                 + " ORDER BY created_at DESC";
-        try (PreparedStatement st = connection.prepareStatement(sql);
-             ResultSet rs = st.executeQuery()) {
-            while (rs.next()) list.add(mapResultSetToCustomer(rs));
-        } catch (SQLException e) { e.printStackTrace(); }
+        try (PreparedStatement st = connection.prepareStatement(sql); ResultSet rs = st.executeQuery()) {
+            while (rs.next()) {
+                list.add(mapResultSetToCustomer(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
         return list;
     }
 
@@ -78,19 +81,17 @@ public class CustomerDAO extends DBContext {
 
     // Generate unique customer code (CUS-000001, CUS-000002, ...)
     public String generateCustomerCode() {
-        String sql = "SELECT TOP 1 customer_code FROM customers ORDER BY customer_id DESC";
+        String sql = "SELECT MAX(CAST(SUBSTRING(customer_code, 5, LEN(customer_code) - 4) AS INT)) "
+                + "FROM customers WHERE customer_code LIKE 'CUS-[0-9][0-9][0-9][0-9][0-9][0-9]'";
         try (PreparedStatement st = connection.prepareStatement(sql); ResultSet rs = st.executeQuery()) {
             if (rs.next()) {
-                String lastCode = rs.getString("customer_code");
-                int number = Integer.parseInt(lastCode.substring(4));
-                return String.format("CUS-%06d", number + 1);
-            } else {
-                return "CUS-000001";
+                int maxNumber = rs.getInt(1);
+                return String.format("CUS-%06d", maxNumber + 1);
             }
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        return "CUS-" + System.currentTimeMillis();
+        return "CUS-000001";
     }
 
     // Insert new customer
@@ -98,8 +99,10 @@ public class CustomerDAO extends DBContext {
         String sql = "INSERT INTO customers (customer_code, full_name, email, phone, date_of_birth, gender, "
                 + "address, city, source_id, converted_lead_id, customer_segment, status, owner_id, "
                 + "total_courses, total_spent, health_score, satisfaction_score, "
-                + "email_opt_out, sms_opt_out, notes, created_at, updated_at, created_by) "
-                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                + "email_opt_out, sms_opt_out, notes, "
+                + "first_purchase_date, last_purchase_date, purchased_courses, "
+                + "created_at, updated_at, created_by) "
+                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (PreparedStatement st = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             if (c.getCustomerCode() == null || c.getCustomerCode().isEmpty()) {
                 c.setCustomerCode(generateCustomerCode());
@@ -148,13 +151,24 @@ public class CustomerDAO extends DBContext {
             st.setBoolean(18, c.isEmailOptOut());
             st.setBoolean(19, c.isSmsOptOut());
             st.setString(20, c.getNotes());
-            java.time.LocalDateTime now = java.time.LocalDateTime.now();
-            st.setObject(21, now);
-            st.setObject(22, now);
-            if (c.getCreatedBy() != null) {
-                st.setInt(23, c.getCreatedBy());
+            if (c.getFirstPurchaseDate() != null) {
+                st.setObject(21, c.getFirstPurchaseDate());
             } else {
-                st.setNull(23, java.sql.Types.INTEGER);
+                st.setNull(21, java.sql.Types.DATE);
+            }
+            if (c.getLastPurchaseDate() != null) {
+                st.setObject(22, c.getLastPurchaseDate());
+            } else {
+                st.setNull(22, java.sql.Types.DATE);
+            }
+            st.setString(23, c.getPurchasedCourses());
+            java.time.LocalDateTime now = java.time.LocalDateTime.now();
+            st.setObject(24, now);
+            st.setObject(25, now);
+            if (c.getCreatedBy() != null) {
+                st.setInt(26, c.getCreatedBy());
+            } else {
+                st.setNull(26, java.sql.Types.INTEGER);
             }
             int rowsAffected = st.executeUpdate();
             if (rowsAffected > 0) {
@@ -242,11 +256,17 @@ public class CustomerDAO extends DBContext {
         params.add(pageSize);
 
         try (PreparedStatement st = connection.prepareStatement(sql.toString())) {
-            for (int i = 0; i < params.size(); i++) st.setObject(i + 1, params.get(i));
-            try (ResultSet rs = st.executeQuery()) {
-                while (rs.next()) list.add(mapResultSetToCustomer(rs));
+            for (int i = 0; i < params.size(); i++) {
+                st.setObject(i + 1, params.get(i));
             }
-        } catch (SQLException e) { e.printStackTrace(); }
+            try (ResultSet rs = st.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapResultSetToCustomer(rs));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
         return list;
     }
 
@@ -258,9 +278,17 @@ public class CustomerDAO extends DBContext {
         List<Object> params = new ArrayList<>();
         appendCustomerFilters(sql, params, keyword, status, segment, dateFrom, dateTo, course);
         try (PreparedStatement st = connection.prepareStatement(sql.toString())) {
-            for (int i = 0; i < params.size(); i++) st.setObject(i + 1, params.get(i));
-            try (ResultSet rs = st.executeQuery()) { if (rs.next()) return rs.getInt(1); }
-        } catch (SQLException e) { e.printStackTrace(); }
+            for (int i = 0; i < params.size(); i++) {
+                st.setObject(i + 1, params.get(i));
+            }
+            try (ResultSet rs = st.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
         return 0;
     }
 
@@ -280,11 +308,17 @@ public class CustomerDAO extends DBContext {
         params.add(pageSize);
 
         try (PreparedStatement st = connection.prepareStatement(sql.toString())) {
-            for (int i = 0; i < params.size(); i++) st.setObject(i + 1, params.get(i));
-            try (ResultSet rs = st.executeQuery()) {
-                while (rs.next()) list.add(mapResultSetToCustomer(rs));
+            for (int i = 0; i < params.size(); i++) {
+                st.setObject(i + 1, params.get(i));
             }
-        } catch (SQLException e) { e.printStackTrace(); }
+            try (ResultSet rs = st.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapResultSetToCustomer(rs));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
         return list;
     }
 
@@ -296,9 +330,17 @@ public class CustomerDAO extends DBContext {
         List<Object> params = new ArrayList<>();
         appendCustomerFilters(sql, params, keyword, status, segment, dateFrom, dateTo, course);
         try (PreparedStatement st = connection.prepareStatement(sql.toString())) {
-            for (int i = 0; i < params.size(); i++) st.setObject(i + 1, params.get(i));
-            try (ResultSet rs = st.executeQuery()) { if (rs.next()) return rs.getInt(1); }
-        } catch (SQLException e) { e.printStackTrace(); }
+            for (int i = 0; i < params.size(); i++) {
+                st.setObject(i + 1, params.get(i));
+            }
+            try (ResultSet rs = st.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
         return 0;
     }
 
@@ -310,7 +352,10 @@ public class CustomerDAO extends DBContext {
         if (keyword != null && !keyword.trim().isEmpty()) {
             String kw = "%" + keyword.trim() + "%";
             sql.append(" AND (c.full_name LIKE ? OR c.customer_code LIKE ? OR c.phone LIKE ? OR c.email LIKE ?)");
-            params.add(kw); params.add(kw); params.add(kw); params.add(kw);
+            params.add(kw);
+            params.add(kw);
+            params.add(kw);
+            params.add(kw);
         }
         if (segment != null && !segment.trim().isEmpty()) {
             sql.append(" AND LOWER(c.customer_segment) = LOWER(?)");
@@ -334,10 +379,13 @@ public class CustomerDAO extends DBContext {
     public List<String> getDistinctSegments() {
         List<String> list = new ArrayList<>();
         String sql = "SELECT DISTINCT customer_segment FROM customers WHERE customer_segment IS NOT NULL AND customer_segment != '' ORDER BY customer_segment";
-        try (PreparedStatement st = connection.prepareStatement(sql);
-             ResultSet rs = st.executeQuery()) {
-            while (rs.next()) list.add(rs.getString("customer_segment"));
-        } catch (SQLException e) { e.printStackTrace(); }
+        try (PreparedStatement st = connection.prepareStatement(sql); ResultSet rs = st.executeQuery()) {
+            while (rs.next()) {
+                list.add(rs.getString("customer_segment"));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
         return list;
     }
 
@@ -345,10 +393,13 @@ public class CustomerDAO extends DBContext {
     public List<String> getDistinctStatuses() {
         List<String> list = new ArrayList<>();
         String sql = "SELECT DISTINCT status FROM customers WHERE status IS NOT NULL AND status != '' ORDER BY status";
-        try (PreparedStatement st = connection.prepareStatement(sql);
-             ResultSet rs = st.executeQuery()) {
-            while (rs.next()) list.add(rs.getString("status"));
-        } catch (SQLException e) { e.printStackTrace(); }
+        try (PreparedStatement st = connection.prepareStatement(sql); ResultSet rs = st.executeQuery()) {
+            while (rs.next()) {
+                list.add(rs.getString("status"));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
         return list;
     }
 
@@ -356,10 +407,13 @@ public class CustomerDAO extends DBContext {
     public List<String> getDistinctCourseNames() {
         List<String> list = new ArrayList<>();
         String sql = "SELECT course_name FROM courses WHERE status = 'Active' ORDER BY course_name";
-        try (PreparedStatement st = connection.prepareStatement(sql);
-             ResultSet rs = st.executeQuery()) {
-            while (rs.next()) list.add(rs.getString("course_name"));
-        } catch (SQLException e) { e.printStackTrace(); }
+        try (PreparedStatement st = connection.prepareStatement(sql); ResultSet rs = st.executeQuery()) {
+            while (rs.next()) {
+                list.add(rs.getString("course_name"));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
         return list;
     }
 
@@ -400,7 +454,9 @@ public class CustomerDAO extends DBContext {
                     list.add(m);
                 }
             }
-        } catch (SQLException e) { e.printStackTrace(); }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
         return list;
     }
 
@@ -535,32 +591,39 @@ public class CustomerDAO extends DBContext {
     public List<Customer> getPoolCustomers(String keyword, int offset, int pageSize) {
         List<Customer> list = new ArrayList<>();
         StringBuilder sql = new StringBuilder(
-            "SELECT * FROM customers c" +
-            " WHERE c.owner_id IS NULL" +
-            " AND c.created_by NOT IN (" +
-            "   SELECT ur.user_id FROM user_roles ur" +
-            "   INNER JOIN roles r ON r.role_id = ur.role_id" +
-            "   WHERE r.role_code = 'SALE')" +
-            " AND NOT EXISTS (" +
-            "   SELECT 1 FROM task_relations tr" +
-            "   INNER JOIN tasks t ON t.task_id = tr.task_id" +
-            "   WHERE tr.related_type = 'CUSTOMER' AND tr.related_id = c.customer_id" +
-            "   AND (t.is_deleted = 0 OR t.is_deleted IS NULL) AND t.status NOT IN (2,3))"
+                "SELECT * FROM customers c"
+                + " WHERE c.owner_id IS NULL"
+                + " AND c.created_by NOT IN ("
+                + "   SELECT ur.user_id FROM user_roles ur"
+                + "   INNER JOIN roles r ON r.role_id = ur.role_id"
+                + "   WHERE r.role_code = 'SALE')"
+                + " AND NOT EXISTS ("
+                + "   SELECT 1 FROM task_relations tr"
+                + "   INNER JOIN tasks t ON t.task_id = tr.task_id"
+                + "   WHERE tr.related_type = 'CUSTOMER' AND tr.related_id = c.customer_id"
+                + "   AND (t.is_deleted = 0 OR t.is_deleted IS NULL) AND t.status NOT IN (2,3))"
         );
         List<Object> params = new ArrayList<>();
         if (keyword != null && !keyword.trim().isEmpty()) {
             sql.append(" AND (c.full_name LIKE ? OR c.phone LIKE ? OR c.customer_code LIKE ?)");
             String kw = "%" + keyword.trim() + "%";
-            params.add(kw); params.add(kw); params.add(kw);
+            params.add(kw);
+            params.add(kw);
+            params.add(kw);
         }
         sql.append(" ORDER BY c.created_at DESC OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
-        params.add(offset); params.add(pageSize);
+        params.add(offset);
+        params.add(pageSize);
 
         System.out.println("[CustomerDAO.getPoolCustomers] SQL: " + sql.toString());
         try (PreparedStatement st = connection.prepareStatement(sql.toString())) {
-            for (int i = 0; i < params.size(); i++) st.setObject(i + 1, params.get(i));
+            for (int i = 0; i < params.size(); i++) {
+                st.setObject(i + 1, params.get(i));
+            }
             try (ResultSet rs = st.executeQuery()) {
-                while (rs.next()) list.add(mapResultSetToCustomer(rs));
+                while (rs.next()) {
+                    list.add(mapResultSetToCustomer(rs));
+                }
             }
         } catch (Exception e) {
             System.out.println("[CustomerDAO.getPoolCustomers] ERROR: " + e.getMessage());
@@ -572,48 +635,86 @@ public class CustomerDAO extends DBContext {
 
     public int countPoolCustomers(String keyword) {
         StringBuilder sql = new StringBuilder(
-            "SELECT COUNT(*) FROM customers c" +
-            " WHERE c.owner_id IS NULL" +
-            " AND c.created_by NOT IN (" +
-            "   SELECT ur.user_id FROM user_roles ur" +
-            "   INNER JOIN roles r ON r.role_id = ur.role_id" +
-            "   WHERE r.role_code = 'SALE')" +
-            " AND NOT EXISTS (" +
-            "   SELECT 1 FROM task_relations tr" +
-            "   INNER JOIN tasks t ON t.task_id = tr.task_id" +
-            "   WHERE tr.related_type = 'CUSTOMER' AND tr.related_id = c.customer_id" +
-            "   AND (t.is_deleted = 0 OR t.is_deleted IS NULL) AND t.status NOT IN (2,3))"
+                "SELECT COUNT(*) FROM customers c"
+                + " WHERE c.owner_id IS NULL"
+                + " AND c.created_by NOT IN ("
+                + "   SELECT ur.user_id FROM user_roles ur"
+                + "   INNER JOIN roles r ON r.role_id = ur.role_id"
+                + "   WHERE r.role_code = 'SALE')"
+                + " AND NOT EXISTS ("
+                + "   SELECT 1 FROM task_relations tr"
+                + "   INNER JOIN tasks t ON t.task_id = tr.task_id"
+                + "   WHERE tr.related_type = 'CUSTOMER' AND tr.related_id = c.customer_id"
+                + "   AND (t.is_deleted = 0 OR t.is_deleted IS NULL) AND t.status NOT IN (2,3))"
         );
         List<Object> params = new ArrayList<>();
         if (keyword != null && !keyword.trim().isEmpty()) {
             sql.append(" AND (c.full_name LIKE ? OR c.phone LIKE ? OR c.customer_code LIKE ?)");
             String kw = "%" + keyword.trim() + "%";
-            params.add(kw); params.add(kw); params.add(kw);
+            params.add(kw);
+            params.add(kw);
+            params.add(kw);
         }
         try (PreparedStatement st = connection.prepareStatement(sql.toString())) {
-            for (int i = 0; i < params.size(); i++) st.setObject(i + 1, params.get(i));
-            try (ResultSet rs = st.executeQuery()) {
-                if (rs.next()) return rs.getInt(1);
+            for (int i = 0; i < params.size(); i++) {
+                st.setObject(i + 1, params.get(i));
             }
-        } catch (Exception e) { e.printStackTrace(); }
+            try (ResultSet rs = st.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         return 0;
     }
 
-    public List<Customer> getCustomersByCreator(int userId) {
-        List<Customer> list = new ArrayList<>();
-        // SQL: Lọc chính xác cột created_by
-        String sql = "SELECT * FROM customers WHERE created_by = ? ORDER BY created_at DESC";
+   public List<Customer> getCustomersByCreator(int userId) {
+    List<Customer> list = new ArrayList<>();
+    // SQL V7: Bọc khung Flexbox cho TỪNG khóa học để đồng bộ 100% icon và lề
+    String sql = "SELECT c.*, "
+               + "CASE "
+               + "    WHEN LOWER(c.status) = 'inactive' THEN '<span class=\"text-muted opacity-50\">-</span>' "
+               + "    ELSE COALESCE( "
+               + "        NULLIF((SELECT STRING_AGG( "
+               + "            '<div class=\"d-flex align-items-start gap-2 mb-3\">' "
+               + "            + '<i class=\"bi bi-journal-bookmark-fill text-primary\" style=\"margin-top: 2px;\"></i>' "
+               + "            + '<div class=\"d-flex flex-column gap-1\">' "
+               + "            + '  <span class=\"fw-bold text-dark\" style=\"font-size: 13.5px; line-height: 1.2;\">' + ISNULL(crs.course_name, 'Khóa học chưa xác định') + '</span>' "
+               + "            + '  <span class=\"badge rounded-pill bg-warning text-dark timer shadow-sm\" style=\"font-size: 11px; padding: 4px 10px; width: fit-content;\" data-endtime=\"' + CONVERT(varchar, DATEADD(day, 30, ce.enrolled_date), 120) + '\">' "
+               + "            + '    <i class=\"bi bi-clock-history me-1\"></i> Đang tính...</span>' "
+               + "            + '</div>' "
+               + "            + '</div>', '') "
+               + "            FROM customer_enrollments ce "
+               + "            LEFT JOIN courses crs ON ce.course_id = crs.course_id "
+               + "            WHERE ce.customer_id = c.customer_id), ''), "
+               + "        '<div class=\"d-flex align-items-start gap-2 mb-3\">' "
+               + "        + '<i class=\"bi bi-journal-bookmark-fill text-primary\" style=\"margin-top: 2px;\"></i>' "
+               + "        + '<div class=\"d-flex flex-column gap-1\">' "
+               + "        + '  <span class=\"fw-bold text-dark\" style=\"font-size: 13.5px; line-height: 1.2;\">' + ISNULL(c.purchased_courses, 'Chưa đăng ký') + '</span>' "
+               + "        + '  <span class=\"badge rounded-pill bg-warning text-dark timer shadow-sm\" style=\"font-size: 11px; padding: 4px 10px; width: fit-content;\" data-endtime=\"' + CONVERT(varchar, DATEADD(day, 30, ISNULL(c.created_at, GETDATE())), 120) + '\">' "
+               + "        + '    <i class=\"bi bi-clock-history me-1\"></i> Đang tính...</span>' "
+               + "        + '</div>' "
+               + "        + '</div>' "
+               + "    ) "
+               + "END AS timer_courses "
+               + "FROM customers c "
+               + "WHERE c.created_by = ? "
+               + "ORDER BY c.created_at DESC";
 
-        try (PreparedStatement st = connection.prepareStatement(sql)) {
-            st.setInt(1, userId);
-            try (ResultSet rs = st.executeQuery()) {
-                while (rs.next()) {
-                    list.add(mapResultSetToCustomer(rs));
-                }
+    try (PreparedStatement st = connection.prepareStatement(sql)) {
+        st.setInt(1, userId);
+        try (ResultSet rs = st.executeQuery()) {
+            while (rs.next()) {
+                Customer c = mapResultSetToCustomer(rs);
+                c.setPurchasedCourses(rs.getString("timer_courses"));
+                list.add(c);
             }
-        } catch (SQLException e) {
-            e.printStackTrace();
         }
-        return list;
+    } catch (SQLException e) {
+        e.printStackTrace();
     }
+    return list;
+}
 }

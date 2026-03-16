@@ -238,9 +238,9 @@
                                 <thead class="table-light">
                                     <tr>
                                         <th>Stage</th>
-                                        <th class="text-center">So luong</th>
-                                        <th class="text-end">Gia tri</th>
-                                        <th style="width: 200px;">Phan bo</th>
+                                        <th class="text-center">Số lượng</th>
+                                        <th class="text-end">Giá trị</th>
+                                        <th style="width: 200px;">Phân bố</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -254,7 +254,7 @@
                                                     <span class="rounded-1" style="width: 4px; height: 28px; background: ${not empty stage.colorCode ? stage.colorCode : '#6b778c'};"></span>
                                                     <div>
                                                         <div class="fw-medium">${stage.stageName}</div>
-                                                        <small class="text-muted">${stage.probability}% xac suat</small>
+                                                        <small class="text-muted">${stage.probability}% xác suất</small>
                                                     </div>
                                                 </div>
                                             </td>
@@ -292,7 +292,7 @@
                         </div>
                     </c:when>
                     <c:otherwise>
-                        <div class="text-center text-muted py-4">Chua co pipeline/stage nao</div>
+                        <div class="text-center text-muted py-4">Chưa có pipeline/stage nào</div>
                     </c:otherwise>
                 </c:choose>
             </div>
@@ -303,24 +303,24 @@
     <div class="col-lg-4">
         <div class="card border-0 shadow-sm h-100">
             <div class="card-header bg-transparent border-0">
-                <h6 class="mb-0 fw-semibold"><i class="bi bi-lightning me-2"></i>Thao tac nhanh</h6>
+                <h6 class="mb-0 fw-semibold"><i class="bi bi-lightning me-2"></i>Thao tác nhanh</h6>
             </div>
             <div class="card-body pt-0">
                 <div class="d-grid gap-2 mb-3">
-                    <a href="${pageContext.request.contextPath}/sale/lead/form" class="btn btn-outline-info btn-sm text-start"><i class="bi bi-person-plus me-2"></i>Tao Lead moi</a>
-                    <a href="${pageContext.request.contextPath}/sale/opportunity/form" class="btn btn-primary btn-sm text-start"><i class="bi bi-plus-lg me-2"></i>Tao Opportunity</a>
-                    <a href="${pageContext.request.contextPath}/sale/customer/form" class="btn btn-outline-success btn-sm text-start"><i class="bi bi-building me-2"></i>Tao Customer</a>
+                    <a href="${pageContext.request.contextPath}/sale/lead/form" class="btn btn-outline-info btn-sm text-start"><i class="bi bi-person-plus me-2"></i>Tạo Lead mới</a>
+                    <a href="${pageContext.request.contextPath}/sale/opportunity/form" class="btn btn-primary btn-sm text-start"><i class="bi bi-plus-lg me-2"></i>Tạo Opportunity</a>
+                    <a href="${pageContext.request.contextPath}/sale/customer/form" class="btn btn-outline-success btn-sm text-start"><i class="bi bi-building me-2"></i>Tạo Customer</a>
                 </div>
                 <hr>
                 <div class="d-flex flex-column gap-2">
                     <a href="${pageContext.request.contextPath}/sale/lead/list" class="text-decoration-none d-flex align-items-center gap-2 text-body-secondary small">
-                        <i class="bi bi-people"></i><span>Danh sach Lead</span><i class="bi bi-chevron-right ms-auto"></i>
+                        <i class="bi bi-people"></i><span>Danh sách Lead</span><i class="bi bi-chevron-right ms-auto"></i>
                     </a>
                     <a href="${pageContext.request.contextPath}/sale/opportunity/list" class="text-decoration-none d-flex align-items-center gap-2 text-body-secondary small">
-                        <i class="bi bi-briefcase"></i><span>Danh sach Opportunity</span><i class="bi bi-chevron-right ms-auto"></i>
+                        <i class="bi bi-briefcase"></i><span>Danh sách Opportunity</span><i class="bi bi-chevron-right ms-auto"></i>
                     </a>
                     <a href="${pageContext.request.contextPath}/sale/customer/list" class="text-decoration-none d-flex align-items-center gap-2 text-body-secondary small">
-                        <i class="bi bi-building"></i><span>Danh sach Customer</span><i class="bi bi-chevron-right ms-auto"></i>
+                        <i class="bi bi-building"></i><span>Danh sách Customer</span><i class="bi bi-chevron-right ms-auto"></i>
                     </a>
                     <a href="${pageContext.request.contextPath}/sale/opportunity/kanban" class="text-decoration-none d-flex align-items-center gap-2 text-body-secondary small">
                         <i class="bi bi-kanban"></i><span>Pipeline Kanban</span><i class="bi bi-chevron-right ms-auto"></i>
@@ -329,7 +329,7 @@
                         <i class="bi bi-graph-up-arrow"></i><span>Sales Forecast</span><i class="bi bi-chevron-right ms-auto"></i>
                     </a>
                     <a href="${pageContext.request.contextPath}/sale/opportunity/history" class="text-decoration-none d-flex align-items-center gap-2 text-body-secondary small">
-                        <i class="bi bi-clock-history"></i><span>Lich su Opportunity</span><i class="bi bi-chevron-right ms-auto"></i>
+                        <i class="bi bi-clock-history"></i><span>Lịch sử Opportunity</span><i class="bi bi-chevron-right ms-auto"></i>
                     </a>
                 </div>
             </div>
@@ -337,14 +337,110 @@
     </div>
 </div>
 
-<!-- === ROW 4: Recent Opportunities === -->
+<!-- === ROW 4: Activity KPI === -->
+<div class="row g-3 mb-4">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 fw-semibold"><i class="bi bi-activity me-2"></i>Hoạt động</h6>
+                <a href="${pageContext.request.contextPath}/sale/activity/list" class="btn btn-sm btn-link text-decoration-none p-0">Xem tất cả</a>
+            </div>
+            <div class="card-body">
+                <div class="row g-3 mb-4">
+                    <div class="col-md-3">
+                        <div class="text-center p-2 bg-primary bg-opacity-10 rounded-3">
+                            <div class="fs-4 fw-bold text-primary">${activityStats['total'] != null ? activityStats['total'] : 0}</div>
+                            <small class="text-muted">Tổng hoạt động</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center p-2 bg-success bg-opacity-10 rounded-3">
+                            <div class="fs-4 fw-bold text-success">${activityStats['calls'] != null ? activityStats['calls'] : 0}</div>
+                            <small class="text-muted">Cuộc gọi</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center p-2 bg-info bg-opacity-10 rounded-3">
+                            <div class="fs-4 fw-bold text-info">${activityStats['emails'] != null ? activityStats['emails'] : 0}</div>
+                            <small class="text-muted">Email</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center p-2 bg-warning bg-opacity-10 rounded-3">
+                            <div class="fs-4 fw-bold text-warning">${activityStats['meetings'] != null ? activityStats['meetings'] : 0}</div>
+                            <small class="text-muted">Cuộc họp</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Activities Table -->
+                <h6 class="fw-semibold mb-3"><i class="bi bi-clock-history me-2"></i>Hoạt động gần đây</h6>
+                <c:choose>
+                    <c:when test="${not empty recentActivities}">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Loại</th>
+                                        <th>Tiêu đề</th>
+                                        <th>Liên quan</th>
+                                        <th>Trạng thái</th>
+                                        <th>Ngày</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <c:forEach var="act" items="${recentActivities}">
+                                        <tr>
+                                            <td>
+                                                <c:choose>
+                                                    <c:when test="${act.activityType == 'Call'}"><span class="badge bg-success-subtle text-success border border-success-subtle"><i class="bi bi-telephone me-1"></i>Cuộc gọi</span></c:when>
+                                                    <c:when test="${act.activityType == 'Email'}"><span class="badge bg-info-subtle text-info border border-info-subtle"><i class="bi bi-envelope me-1"></i>Email</span></c:when>
+                                                    <c:when test="${act.activityType == 'Meeting'}"><span class="badge bg-primary-subtle text-primary border border-primary-subtle"><i class="bi bi-people me-1"></i>Cuộc họp</span></c:when>
+                                                    <c:when test="${act.activityType == 'Note'}"><span class="badge bg-warning-subtle text-warning border border-warning-subtle"><i class="bi bi-sticky me-1"></i>Ghi chú</span></c:when>
+                                                    <c:otherwise><span class="badge bg-secondary-subtle text-secondary">${act.activityType}</span></c:otherwise>
+                                                </c:choose>
+                                            </td>
+                                            <td>
+                                                <a href="${pageContext.request.contextPath}/sale/activity/detail?id=${act.activityId}" class="text-decoration-none fw-medium">${act.subject}</a>
+                                            </td>
+                                            <td>
+                                                <c:if test="${not empty act.customerName}"><small class="text-muted">${act.relatedType} - ${act.customerName}</small></c:if>
+                                                <c:if test="${empty act.customerName}"><small class="text-muted">${not empty act.relatedType ? act.relatedType : '-'}</small></c:if>
+                                            </td>
+                                            <td>
+                                                <c:choose>
+                                                    <c:when test="${act.status == 'Completed'}"><span class="badge bg-success-subtle text-success border border-success-subtle">Hoàn thành</span></c:when>
+                                                    <c:when test="${act.status == 'Pending'}"><span class="badge bg-warning-subtle text-warning border border-warning-subtle">Đang chờ</span></c:when>
+                                                    <c:otherwise><span class="badge bg-secondary">${act.status}</span></c:otherwise>
+                                                </c:choose>
+                                            </td>
+                                            <td>
+                                                <c:if test="${not empty act.activityDate}"><small class="text-muted">${act.activityDate.toString().substring(0, 16).replace('T', ' ')}</small></c:if>
+                                                <c:if test="${empty act.activityDate}"><small class="text-muted">-</small></c:if>
+                                            </td>
+                                        </tr>
+                                    </c:forEach>
+                                </tbody>
+                            </table>
+                        </div>
+                    </c:when>
+                    <c:otherwise>
+                        <div class="text-center text-muted py-3"><i class="bi bi-inbox me-1"></i>Chưa có hoạt động nào</div>
+                    </c:otherwise>
+                </c:choose>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- === ROW 5: Recent Opportunities === -->
 <div class="card border-0 shadow-sm">
     <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
         <div>
-            <h6 class="mb-0 fw-semibold"><i class="bi bi-clock-history me-2"></i>Opportunity gan day</h6>
-            <small class="text-muted">5 opportunity cap nhat gan nhat</small>
+            <h6 class="mb-0 fw-semibold"><i class="bi bi-clock-history me-2"></i>Opportunity gần đây</h6>
+            <small class="text-muted">5 opportunity cập nhật gần nhất</small>
         </div>
-        <a href="${pageContext.request.contextPath}/sale/opportunity/list" class="btn btn-sm btn-link text-decoration-none">Xem tat ca <i class="bi bi-chevron-right"></i></a>
+        <a href="${pageContext.request.contextPath}/sale/opportunity/list" class="btn btn-sm btn-link text-decoration-none">Xem tất cả <i class="bi bi-chevron-right"></i></a>
     </div>
     <div class="card-body p-0">
         <c:choose>
@@ -355,11 +451,11 @@
                             <tr>
                                 <th class="ps-3">Opportunity</th>
                                 <th>Pipeline / Stage</th>
-                                <th class="text-end">Gia tri</th>
-                                <th class="text-center">Xac suat</th>
-                                <th class="text-center">Trang thai</th>
-                                <th class="text-center">Cap nhat</th>
-                                <th class="text-center">Thao tac</th>
+                                <th class="text-end">Giá trị</th>
+                                <th class="text-center">Xác suất</th>
+                                <th class="text-center">Trạng thái</th>
+                                <th class="text-center">Cập nhật</th>
+                                <th class="text-center">Thao tác</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -410,7 +506,7 @@
                                     <td class="text-center">
                                         <div class="btn-group btn-group-sm">
                                             <a href="${pageContext.request.contextPath}/sale/opportunity/detail?id=${opp.opportunityId}" class="btn btn-outline-primary btn-sm" title="Xem"><i class="bi bi-eye"></i></a>
-                                            <a href="${pageContext.request.contextPath}/sale/opportunity/form?id=${opp.opportunityId}" class="btn btn-outline-secondary btn-sm" title="Sua"><i class="bi bi-pencil"></i></a>
+                                            <a href="${pageContext.request.contextPath}/sale/opportunity/form?id=${opp.opportunityId}" class="btn btn-outline-secondary btn-sm" title="Sửa"><i class="bi bi-pencil"></i></a>
                                         </div>
                                     </td>
                                 </tr>
@@ -420,7 +516,7 @@
                 </div>
             </c:when>
             <c:otherwise>
-                <div class="text-center text-muted py-4">Chua co opportunity nao</div>
+                <div class="text-center text-muted py-4">Chưa có opportunity nào</div>
             </c:otherwise>
         </c:choose>
     </div>

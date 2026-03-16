@@ -363,7 +363,9 @@ public class ActivityDAO extends DBContext {
         a.setSubject(rs.getString("subject"));
         a.setDescription(rs.getString("description"));
         a.setStatus(rs.getString("status")); // Đã thêm vào Model
-
+        // 👉 THÊM 2 DÒNG NÀY ĐỂ TRUYỀN ID KHÁCH HÀNG XUỐNG GIAO DIỆN
+        a.setRelatedId(rs.getInt("related_id"));
+        a.setRelatedType(rs.getString("related_type"));
         Timestamp ts = rs.getTimestamp("created_at");
         if (ts != null) {
             a.setCreatedAt(ts.toLocalDateTime());
@@ -884,10 +886,10 @@ public class ActivityDAO extends DBContext {
 
     // LẤY DANH SÁCH PHIẾU ĐƯỢC CHUYỂN TIẾP CHO RIÊNG NHÂN VIÊN
    // LẤY DANH SÁCH PHIẾU ĐƯỢC CHUYỂN TIẾP CHO RIÊNG NHÂN VIÊN
+  // LẤY DANH SÁCH PHIẾU ĐƯỢC CHUYỂN TIẾP CHO RIÊNG NHÂN VIÊN
     public List<Activity> getMyAssignedTickets(int userId) {
         List<Activity> list = new ArrayList<>();
         
-        // CẬP NHẬT: Thêm điều kiện lọc a.[description] LIKE N'Phiếu yêu cầu hỗ trợ được chuyển tiếp%'
         String sql = "SELECT a.*, "
                    + "COALESCE(c.full_name, l.full_name) AS contact_name, "
                    + "COALESCE(c.phone, l.phone) AS contact_phone "
@@ -902,11 +904,14 @@ public class ActivityDAO extends DBContext {
             ps.setInt(1, userId);
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
-                // Tận dụng hàm map có sẵn của bạn
                 Activity a = mapResultSetToActivity(rs);
                 a.setCustomerName(rs.getString("contact_name"));
                 a.setCustomerPhone(rs.getString("contact_phone"));
                 a.setRelatedType(rs.getString("related_type"));
+                
+                // THÊM DÒNG NÀY ĐỂ BÁO CHO GIAO DIỆN BIẾT LÀ ĐÃ ĐỌC HAY CHƯA
+                a.setIsRead(rs.getBoolean("is_read")); 
+                
                 list.add(a);
             }
         } catch (SQLException e) {
@@ -935,5 +940,242 @@ public class ActivityDAO extends DBContext {
             e.printStackTrace();
         }
         return list;
+    }
+    // 1. HÀM ĐẾM SỐ PHIẾU CHƯA ĐỌC
+    public int countUnreadAssignedTickets(int userId) {
+        String sql = "SELECT COUNT(*) FROM activities WHERE performed_by = ? AND status = 'Pending' "
+                   + "AND [description] LIKE N'Phiếu yêu cầu hỗ trợ được chuyển tiếp%' AND is_read = 0";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) return rs.getInt(1);
+        } catch (SQLException e) { e.printStackTrace(); }
+        return 0;
+    }
+
+    // 2. HÀM ĐÁNH DẤU LÀ ĐÃ ĐỌC
+    public void markActivityAsRead(int activityId) {
+        String sql = "UPDATE activities SET is_read = 1 WHERE activity_id = ?";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setInt(1, activityId);
+            ps.executeUpdate();
+        } catch (SQLException e) { e.printStackTrace(); }
+    }
+    /**
+     * TRÙM CUỐI: Xử lý Giao dịch (Transaction) Upsale khóa học & Lưu báo cáo
+     */
+    public boolean processUpsaleTransaction(int relatedId, String relatedType, String subject, String description, int performedBy, String status, String[] courseIds) {
+        boolean isSuccess = false;
+        try {
+            // 1. TẮT AUTO-COMMIT ĐỂ BẮT ĐẦU TRANSACTION KHÉP KÍN
+            connection.setAutoCommit(false); 
+
+            int finalCustomerId = relatedId;
+            String finalRelatedType = relatedType;
+
+            // 2. NẾU CÓ CHỌN KHÓA HỌC -> XỬ LÝ UPSALE & CONVERT
+            if (courseIds != null && courseIds.length > 0) {
+                
+                if ("Lead".equalsIgnoreCase(relatedType)) {
+                    // A. Chuyển đổi Lead thành Customer
+                    String sqlCreateCust = "INSERT INTO customers (customer_code, full_name, email, phone, status, owner_id, created_at, created_by) " +
+                                           "SELECT CONCAT('KH-L', lead_id, '-', FORMAT(GETDATE(), 'mmss')), full_name, email, phone, 'Active', assigned_to, GETDATE(), ? " +
+                                           "FROM leads WHERE lead_id = ?";
+                    try (PreparedStatement psCust = connection.prepareStatement(sqlCreateCust, Statement.RETURN_GENERATED_KEYS)) {
+                        psCust.setInt(1, performedBy);
+                        psCust.setInt(2, relatedId);
+                        psCust.executeUpdate();
+                        ResultSet rsCust = psCust.getGeneratedKeys();
+                        if (rsCust.next()) {
+                            finalCustomerId = rsCust.getInt(1);
+                            finalRelatedType = "Customer"; // Đã hóa kiếp thành Customer
+                        }
+                    }
+
+                    // B. Đánh dấu Lead đã được chuyển đổi
+                    String sqlUpdateLead = "UPDATE leads SET is_converted = 1, converted_customer_id = ? WHERE lead_id = ?";
+                    try (PreparedStatement psLead = connection.prepareStatement(sqlUpdateLead)) {
+                        psLead.setInt(1, finalCustomerId);
+                        psLead.setInt(2, relatedId);
+                        psLead.executeUpdate();
+                    }
+
+                    // C. Bứng toàn bộ lịch sử chăm sóc cũ của Lead dời sang nhà mới (Customer)
+                    String sqlMoveActivities = "UPDATE activities SET related_type = 'Customer', related_id = ? WHERE related_type = 'Lead' AND related_id = ?";
+                    try (PreparedStatement psMove = connection.prepareStatement(sqlMoveActivities)) {
+                        psMove.setInt(1, finalCustomerId);
+                        psMove.setInt(2, relatedId);
+                        psMove.executeUpdate();
+                    }
+                    
+                } else if ("Customer".equalsIgnoreCase(relatedType)) {
+                    // Kích hoạt khách hàng (nếu họ đang Inactive)
+                    String sqlActivate = "UPDATE customers SET status = 'Active' WHERE customer_id = ?";
+                    try (PreparedStatement psAct = connection.prepareStatement(sqlActivate)) {
+                        psAct.setInt(1, relatedId);
+                        psAct.executeUpdate();
+                    }
+                }
+
+                // D. Đăng ký các khóa học khách đã chọn vào bảng customer_enrollments
+                // Tự động kéo [price] từ bảng courses sang làm final_amount
+               // D. Đăng ký các khóa học khách đã chọn vào bảng customer_enrollments
+                // ĐÃ THÊM: Cột enrollment_code và sinh mã tự động bằng Java
+                String sqlEnroll = "INSERT INTO customer_enrollments (enrollment_code, customer_id, course_id, enrolled_date, original_price, discount_amount, final_amount, payment_method, payment_status, learning_status, created_at, created_by) " +
+                                   "SELECT ?, ?, course_id, GETDATE(), price, 0, price, 'Bank Transfer', 'Paid', 'Not Started', GETDATE(), ? FROM courses WHERE course_id = ?";
+                
+                try (PreparedStatement psEnroll = connection.prepareStatement(sqlEnroll)) {
+                    for (String courseIdStr : courseIds) {
+                        // Tự động sinh mã đăng ký duy nhất dựa trên thời gian thực
+                        String enrollmentCode = "ENR-" + System.currentTimeMillis() + "-" + courseIdStr;
+                        
+                        psEnroll.setString(1, enrollmentCode);
+                        psEnroll.setInt(2, finalCustomerId);
+                        psEnroll.setInt(3, performedBy);
+                        psEnroll.setInt(4, Integer.parseInt(courseIdStr));
+                        psEnroll.addBatch(); // Gom lệnh lại chạy 1 lần cho lẹ
+                    }
+                    psEnroll.executeBatch();
+                }
+            }
+
+            // 3. CUỐI CÙNG: LƯU PHIẾU BÁO CÁO MỚI NHẤT
+            // (Nếu là Lead thì lúc này nó đã gắn vào mã Customer mới)
+            String sqlAct = "INSERT INTO activities (activity_type, related_type, related_id, subject, [description], status, activity_date, performed_by, created_at) " +
+                            "VALUES ('REPORT', ?, ?, ?, ?, ?, GETDATE(), ?, GETDATE())";
+            try (PreparedStatement psAct = connection.prepareStatement(sqlAct)) {
+                psAct.setString(1, finalRelatedType);
+                psAct.setInt(2, finalCustomerId);
+                psAct.setString(3, subject);
+                psAct.setString(4, description);
+                psAct.setString(5, status);
+                psAct.setInt(6, performedBy);
+                psAct.executeUpdate();
+            }
+
+            // 4. COMMIT - BẤM NÚT LƯU TOÀN BỘ VÀO DATABASE
+            connection.commit(); 
+            isSuccess = true;
+            
+        } catch (SQLException e) {
+            e.printStackTrace();
+            try {
+                // NẾU CÓ BẤT KỲ LỖI GÌ XẢY RA -> HOÀN TÁC TOÀN BỘ NHƯ CHƯA CÓ GÌ
+                connection.rollback(); 
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+            }
+        } finally {
+            try {
+                // TRẢ LẠI CHẾ ĐỘ MẶC ĐỊNH CHO HỆ THỐNG
+                connection.setAutoCommit(true); 
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+        return isSuccess;
+    }
+    /**
+     * TRÙM CUỐI 2: Transaction Xử lý phiếu Hàng chờ & Upsale Khóa học
+     */
+    public boolean completeActivityWithUpsaleTransaction(int activityId, String subject, String description, String[] courseIds, int performedBy) {
+        boolean isSuccess = false;
+        try {
+            connection.setAutoCommit(false); // Bắt đầu Transaction
+            
+            // 1. Tìm xem phiếu này thuộc về Khách hàng hay Lead nào
+            int relatedId = 0;
+            String relatedType = "";
+            String sqlGet = "SELECT related_id, related_type FROM activities WHERE activity_id = ?";
+            try (PreparedStatement psGet = connection.prepareStatement(sqlGet)) {
+                psGet.setInt(1, activityId);
+                ResultSet rs = psGet.executeQuery();
+                if (rs.next()) {
+                    relatedId = rs.getInt("related_id");
+                    relatedType = rs.getString("related_type");
+                }
+            }
+
+            int finalCustomerId = relatedId;
+
+            // 2. NẾU CÓ CHỌN KHÓA HỌC -> XỬ LÝ UPSALE & CONVERT
+            if (courseIds != null && courseIds.length > 0 && relatedId > 0) {
+                if ("Lead".equalsIgnoreCase(relatedType)) {
+                    // Chuyển đổi Lead thành Customer
+                    String sqlCreateCust = "INSERT INTO customers (customer_code, full_name, email, phone, status, owner_id, created_at, created_by) " +
+                                           "SELECT CONCAT('KH-L', lead_id, '-', FORMAT(GETDATE(), 'mmss')), full_name, email, phone, 'Active', assigned_to, GETDATE(), ? " +
+                                           "FROM leads WHERE lead_id = ?";
+                    try (PreparedStatement psCust = connection.prepareStatement(sqlCreateCust, Statement.RETURN_GENERATED_KEYS)) {
+                        psCust.setInt(1, performedBy);
+                        psCust.setInt(2, relatedId);
+                        psCust.executeUpdate();
+                        ResultSet rsCust = psCust.getGeneratedKeys();
+                        if (rsCust.next()) {
+                            finalCustomerId = rsCust.getInt(1);
+                            relatedType = "Customer"; 
+                        }
+                    }
+
+                    // Cập nhật trạng thái cho Lead cũ
+                    String sqlUpdateLead = "UPDATE leads SET is_converted = 1, converted_customer_id = ? WHERE lead_id = ?";
+                    try (PreparedStatement psLead = connection.prepareStatement(sqlUpdateLead)) {
+                        psLead.setInt(1, finalCustomerId);
+                        psLead.setInt(2, relatedId);
+                        psLead.executeUpdate();
+                    }
+
+                    // Dời toàn bộ lịch sử sang nhà mới
+                    String sqlMoveActivities = "UPDATE activities SET related_type = 'Customer', related_id = ? WHERE related_type = 'Lead' AND related_id = ?";
+                    try (PreparedStatement psMove = connection.prepareStatement(sqlMoveActivities)) {
+                        psMove.setInt(1, finalCustomerId);
+                        psMove.setInt(2, relatedId);
+                        psMove.executeUpdate();
+                    }
+                } else if ("Customer".equalsIgnoreCase(relatedType)) {
+                    // Kích hoạt khách hàng
+                    String sqlActivate = "UPDATE customers SET status = 'Active' WHERE customer_id = ?";
+                    try (PreparedStatement psAct = connection.prepareStatement(sqlActivate)) {
+                        psAct.setInt(1, relatedId);
+                        psAct.executeUpdate();
+                    }
+                }
+
+                // Thêm khóa học
+                String sqlEnroll = "INSERT INTO customer_enrollments (enrollment_code, customer_id, course_id, enrolled_date, original_price, discount_amount, final_amount, payment_method, payment_status, learning_status, created_at, created_by) " +
+                                   "SELECT ?, ?, course_id, GETDATE(), price, 0, price, 'Bank Transfer', 'Paid', 'Not Started', GETDATE(), ? FROM courses WHERE course_id = ?";
+                try (PreparedStatement psEnroll = connection.prepareStatement(sqlEnroll)) {
+                    for (String courseIdStr : courseIds) {
+                        String enrollmentCode = "ENR-" + System.currentTimeMillis() + "-" + courseIdStr;
+                        psEnroll.setString(1, enrollmentCode);
+                        psEnroll.setInt(2, finalCustomerId);
+                        psEnroll.setInt(3, performedBy);
+                        psEnroll.setInt(4, Integer.parseInt(courseIdStr));
+                        psEnroll.addBatch();
+                    }
+                    psEnroll.executeBatch();
+                }
+            }
+
+            // 3. HOÀN THÀNH PHIẾU (Cập nhật tiêu đề, nội dung và đổi status)
+            // Lưu ý: Cập nhật lại cả related_id và related_type phòng trường hợp Lead hóa thành Customer
+            String sqlUpdateAct = "UPDATE activities SET subject = ?, [description] = ?, status = 'Completed', related_id = ?, related_type = ?, created_at = GETDATE() WHERE activity_id = ?";
+            try (PreparedStatement psUpd = connection.prepareStatement(sqlUpdateAct)) {
+                psUpd.setString(1, subject);
+                psUpd.setString(2, description);
+                psUpd.setInt(3, finalCustomerId);
+                psUpd.setString(4, relatedType);
+                psUpd.setInt(5, activityId);
+                psUpd.executeUpdate();
+            }
+
+            connection.commit(); // Chốt giao dịch
+            isSuccess = true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            try { connection.rollback(); } catch (Exception ex) {}
+        } finally {
+            try { connection.setAutoCommit(true); } catch (Exception e) {}
+        }
+        return isSuccess;
     }
 }

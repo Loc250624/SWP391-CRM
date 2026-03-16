@@ -5,11 +5,11 @@
 <!-- Page Header -->
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h4 class="mb-1 fw-bold">Du bao Doanh thu</h4>
-        <p class="text-muted mb-0">Phan tich va du bao co hoi kinh doanh</p>
+        <h4 class="mb-1 fw-bold">Dự báo Doanh thu</h4>
+        <p class="text-muted mb-0">Phân tích và dự báo cơ hội kinh doanh</p>
     </div>
     <div class="d-flex gap-2">
-        <a href="${pageContext.request.contextPath}/sale/opportunity/list" class="btn btn-outline-secondary btn-sm"><i class="bi bi-list me-1"></i>Danh sach</a>
+        <a href="${pageContext.request.contextPath}/sale/opportunity/list" class="btn btn-outline-secondary btn-sm"><i class="bi bi-list me-1"></i>Danh sách</a>
         <a href="${pageContext.request.contextPath}/sale/opportunity/kanban" class="btn btn-outline-primary btn-sm"><i class="bi bi-kanban me-1"></i>Kanban</a>
     </div>
 </div>
@@ -22,9 +22,9 @@
                 <div class="d-flex align-items-center">
                     <div class="bg-primary bg-opacity-10 rounded-3 p-2 me-3"><i class="bi bi-funnel text-primary fs-4"></i></div>
                     <div>
-                        <small class="text-muted">Pipeline dang mo</small>
+                        <small class="text-muted">Pipeline đang mở</small>
                         <h4 class="mb-0 fw-bold"><fmt:formatNumber value="${totalPipeline}" type="number" groupingUsed="true" maxFractionDigits="0"/>d</h4>
-                        <small class="text-muted">${openCount} co hoi</small>
+                        <small class="text-muted">${openCount} cơ hội</small>
                     </div>
                 </div>
             </div>
@@ -36,7 +36,7 @@
                 <div class="d-flex align-items-center">
                     <div class="bg-warning bg-opacity-10 rounded-3 p-2 me-3"><i class="bi bi-graph-up-arrow text-warning fs-4"></i></div>
                     <div>
-                        <small class="text-muted">Du bao (co trong so)</small>
+                        <small class="text-muted">Dự báo (có trọng số)</small>
                         <h4 class="mb-0 fw-bold"><fmt:formatNumber value="${weightedForecast}" type="number" groupingUsed="true" maxFractionDigits="0"/>d</h4>
                     </div>
                 </div>
@@ -49,7 +49,7 @@
                 <div class="d-flex align-items-center">
                     <div class="bg-success bg-opacity-10 rounded-3 p-2 me-3"><i class="bi bi-trophy text-success fs-4"></i></div>
                     <div>
-                        <small class="text-muted">Da thang (Won)</small>
+                        <small class="text-muted">Đã thắng (Won)</small>
                         <h4 class="mb-0 fw-bold text-success"><fmt:formatNumber value="${wonValue}" type="number" groupingUsed="true" maxFractionDigits="0"/>d</h4>
                         <small class="text-muted">${wonCount} deal</small>
                     </div>
@@ -63,7 +63,7 @@
                 <div class="d-flex align-items-center">
                     <div class="bg-danger bg-opacity-10 rounded-3 p-2 me-3"><i class="bi bi-x-circle text-danger fs-4"></i></div>
                     <div>
-                        <small class="text-muted">Da mat (Lost)</small>
+                        <small class="text-muted">Đã mất (Lost)</small>
                         <h4 class="mb-0 fw-bold text-danger"><fmt:formatNumber value="${lostValue}" type="number" groupingUsed="true" maxFractionDigits="0"/>d</h4>
                         <small class="text-muted">${lostCount} deal | Win rate: ${winRate}%</small>
                     </div>
@@ -78,7 +78,7 @@
     <div class="col-lg-6">
         <div class="card border-0 shadow-sm h-100">
             <div class="card-header bg-transparent border-0">
-                <h6 class="mb-0 fw-semibold"><i class="bi bi-bar-chart me-2"></i>Phan bo gia tri theo Stage</h6>
+                <h6 class="mb-0 fw-semibold"><i class="bi bi-bar-chart me-2"></i>Phân bổ giá trị theo Stage</h6>
             </div>
             <div class="card-body">
                 <c:choose>
@@ -103,7 +103,7 @@
                         </c:forEach>
                     </c:when>
                     <c:otherwise>
-                        <div class="text-center text-muted py-4">Chua co du lieu</div>
+                        <div class="text-center text-muted py-4">Chưa có dữ liệu</div>
                     </c:otherwise>
                 </c:choose>
             </div>
@@ -114,32 +114,32 @@
     <div class="col-lg-6">
         <div class="card border-0 shadow-sm h-100">
             <div class="card-header bg-transparent border-0">
-                <h6 class="mb-0 fw-semibold"><i class="bi bi-pie-chart me-2"></i>Tong quan Opportunity</h6>
+                <h6 class="mb-0 fw-semibold"><i class="bi bi-pie-chart me-2"></i>Tổng quan Opportunity</h6>
             </div>
             <div class="card-body">
                 <div class="row g-3">
                     <div class="col-6">
                         <div class="text-center p-3 bg-light rounded-3">
                             <div class="fs-3 fw-bold text-primary">${totalCount}</div>
-                            <small class="text-muted">Tong so deal</small>
+                            <small class="text-muted">Tổng số deal</small>
                         </div>
                     </div>
                     <div class="col-6">
                         <div class="text-center p-3 bg-light rounded-3">
                             <div class="fs-3 fw-bold text-info">${openCount}</div>
-                            <small class="text-muted">Dang mo</small>
+                            <small class="text-muted">Đang mở</small>
                         </div>
                     </div>
                     <div class="col-6">
                         <div class="text-center p-3 bg-light rounded-3">
                             <div class="fs-3 fw-bold text-success">${wonCount}</div>
-                            <small class="text-muted">Da thang</small>
+                            <small class="text-muted">Đã thắng</small>
                         </div>
                     </div>
                     <div class="col-6">
                         <div class="text-center p-3 bg-light rounded-3">
                             <div class="fs-3 fw-bold text-danger">${lostCount}</div>
-                            <small class="text-muted">Da mat</small>
+                            <small class="text-muted">Đã mất</small>
                         </div>
                     </div>
                 </div>
@@ -171,7 +171,7 @@
 <!-- Top Opportunities Table -->
 <div class="card border-0 shadow-sm mt-4">
     <div class="card-header bg-transparent border-0">
-        <h6 class="mb-0 fw-semibold"><i class="bi bi-star me-2"></i>Co hoi dang mo (sap xep theo gia tri)</h6>
+        <h6 class="mb-0 fw-semibold"><i class="bi bi-star me-2"></i>Cơ hội đang mở (sắp xếp theo giá trị)</h6>
     </div>
     <div class="card-body p-0">
         <c:set var="hasOpen" value="false" />
@@ -188,11 +188,11 @@
                         <thead class="bg-light">
                             <tr>
                                 <th class="ps-3">Opportunity</th>
-                                <th class="text-end">Gia tri</th>
-                                <th class="text-center">Xac suat</th>
-                                <th class="text-end">Du bao</th>
-                                <th class="text-center">Ngay dong</th>
-                                <th class="text-center">Thao tac</th>
+                                <th class="text-end">Giá trị</th>
+                                <th class="text-center">Xác suất</th>
+                                <th class="text-end">Dự báo</th>
+                                <th class="text-center">Ngày đóng</th>
+                                <th class="text-center">Thao tác</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -239,7 +239,7 @@
                 </div>
             </c:when>
             <c:otherwise>
-                <div class="text-center text-muted py-4">Khong co co hoi dang mo</div>
+                <div class="text-center text-muted py-4">Không có cơ hội đang mở</div>
             </c:otherwise>
         </c:choose>
     </div>

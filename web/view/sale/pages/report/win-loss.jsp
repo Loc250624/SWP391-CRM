@@ -3,33 +3,33 @@
 <%@taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt"%>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <div><h4 class="mb-1 fw-bold">Bao cao Win / Loss</h4><p class="text-muted mb-0">Phan tich ty le thang thua va ly do</p></div>
+    <div><h4 class="mb-1 fw-bold">Báo cáo Win / Loss</h4><p class="text-muted mb-0">Phân tích tỷ lệ thắng thua và lý do</p></div>
 </div>
 
 <div class="row g-3 mb-4">
     <div class="col-md-3"><div class="card border-0 shadow-sm"><div class="card-body text-center"><div class="fs-2 fw-bold text-success">${wonCount}</div><small class="text-muted">Won</small></div></div></div>
     <div class="col-md-3"><div class="card border-0 shadow-sm"><div class="card-body text-center"><div class="fs-2 fw-bold text-danger">${lostCount}</div><small class="text-muted">Lost</small></div></div></div>
     <div class="col-md-3"><div class="card border-0 shadow-sm"><div class="card-body text-center"><div class="fs-2 fw-bold text-primary">${winRate}%</div><small class="text-muted">Win Rate</small></div></div></div>
-    <div class="col-md-3"><div class="card border-0 shadow-sm"><div class="card-body text-center"><div class="fs-2 fw-bold text-warning">${avgDays}</div><small class="text-muted">Ngay TB dong deal</small></div></div></div>
+    <div class="col-md-3"><div class="card border-0 shadow-sm"><div class="card-body text-center"><div class="fs-2 fw-bold text-warning">${avgDays}</div><small class="text-muted">Ngày TB đóng deal</small></div></div></div>
 </div>
 
 <div class="row g-3 mb-4">
     <div class="col-lg-6">
         <div class="card border-0 shadow-sm h-100">
-            <div class="card-header bg-transparent border-0"><h6 class="mb-0 fw-semibold">Ty le Won/Lost</h6></div>
+            <div class="card-header bg-transparent border-0"><h6 class="mb-0 fw-semibold">Tỷ lệ Won/Lost</h6></div>
             <div class="card-body text-center">
                 <c:choose>
                     <c:when test="${wonCount > 0 || lostCount > 0}">
                         <canvas id="winLossChart" style="max-width:220px;max-height:220px;margin:0 auto;"></canvas>
                     </c:when>
-                    <c:otherwise><p class="text-muted">Chua co du lieu</p></c:otherwise>
+                    <c:otherwise><p class="text-muted">Chưa có dữ liệu</p></c:otherwise>
                 </c:choose>
             </div>
         </div>
     </div>
     <div class="col-lg-6">
         <div class="card border-0 shadow-sm h-100">
-            <div class="card-header bg-transparent border-0"><h6 class="mb-0 fw-semibold">Ly do thua deal</h6></div>
+            <div class="card-header bg-transparent border-0"><h6 class="mb-0 fw-semibold">Lý do thua deal</h6></div>
             <div class="card-body">
                 <c:choose>
                     <c:when test="${not empty lossReasonList}">
@@ -45,7 +45,7 @@
                             </div>
                         </c:forEach>
                     </c:when>
-                    <c:otherwise><p class="text-muted">Chua co du lieu</p></c:otherwise>
+                    <c:otherwise><p class="text-muted">Chưa có dữ liệu</p></c:otherwise>
                 </c:choose>
             </div>
         </div>
@@ -53,10 +53,10 @@
 </div>
 
 <div class="card border-0 shadow-sm">
-    <div class="card-header bg-transparent border-0"><h6 class="mb-0 fw-semibold">Deals gan day</h6></div>
+    <div class="card-header bg-transparent border-0"><h6 class="mb-0 fw-semibold">Deals gần đây</h6></div>
     <div class="card-body pt-0">
         <div class="table-responsive"><table class="table table-hover align-middle mb-0">
-            <thead class="table-light"><tr><th>Opportunity</th><th>Khach hang</th><th class="text-end">Gia tri</th><th>Ket qua</th><th>Ly do</th><th>Ngay dong</th></tr></thead>
+            <thead class="table-light"><tr><th>Opportunity</th><th>Khách hàng</th><th class="text-end">Giá trị</th><th>Kết quả</th><th>Lý do</th><th>Ngày đóng</th></tr></thead>
             <tbody>
                 <c:choose>
                     <c:when test="${not empty recentDeals}">
@@ -76,7 +76,7 @@
                             </tr>
                         </c:forEach>
                     </c:when>
-                    <c:otherwise><tr><td colspan="6" class="text-center text-muted py-3">Chua co deal nao dong</td></tr></c:otherwise>
+                    <c:otherwise><tr><td colspan="6" class="text-center text-muted py-3">Chưa có deal nào đóng</td></tr></c:otherwise>
                 </c:choose>
             </tbody>
         </table></div>

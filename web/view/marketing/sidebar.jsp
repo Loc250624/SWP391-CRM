@@ -88,46 +88,6 @@
                     </ul>
                 </div>
 
-                <!-- Email Marketing -->
-                <div class="mb-1">
-                    <div class="px-3 py-2">
-                        <small class="text-uppercase text-muted fw-semibold"
-                            style="font-size: 10px; letter-spacing: 0.5px;">Email Marketing</small>
-                    </div>
-                    <ul class="nav flex-column px-2">
-                        <li class="nav-item mb-1">
-                            <a href="${pageContext.request.contextPath}/marketing/email/template/list"
-                                class="nav-link rounded-2 d-flex align-items-center gap-2 py-2 px-3 ${ACTIVE_MENU == 'EMAIL_TEMPLATES' ? 'active bg-primary text-white' : 'text-body-secondary'}">
-                                <i class="bi bi-envelope-paper"></i>
-                                <span>Mẫu Email</span>
-                            </a>
-                        </li>
-                        <li class="nav-item mb-1">
-                            <a href="${pageContext.request.contextPath}/marketing/email/log"
-                                class="nav-link rounded-2 d-flex align-items-center gap-2 py-2 px-3 ${ACTIVE_MENU == 'EMAIL_LOG' ? 'active bg-primary text-white' : 'text-body-secondary'}">
-                                <i class="bi bi-journal-text"></i>
-                                <span>Lịch sử gửi Email</span>
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-
-                <!-- Content & Automation -->
-                <div class="mb-1">
-                    <div class="px-3 py-2">
-                        <small class="text-uppercase text-muted fw-semibold"
-                            style="font-size: 10px; letter-spacing: 0.5px;">Nội dung & Tự động hóa</small>
-                    </div>
-                    <ul class="nav flex-column px-2">
-                        <li class="nav-item mb-1">
-                            <a href="${pageContext.request.contextPath}/marketing/landingpage/list"
-                                class="nav-link rounded-2 d-flex align-items-center gap-2 py-2 px-3 ${ACTIVE_MENU == 'LANDING_PAGE' ? 'active bg-primary text-white' : 'text-body-secondary'}">
-                                <i class="bi bi-window"></i>
-                                <span>Landing Pages / Web Forms</span>
-                            </a>
-                        </li>
-                    </ul>
-                </div>
 
             </nav>
 

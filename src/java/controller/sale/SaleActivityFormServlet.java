@@ -91,11 +91,17 @@ public class SaleActivityFormServlet extends HttpServlet {
         String callDirection = request.getParameter("callDirection");
         String callResult = request.getParameter("callResult");
         String idParam = request.getParameter("activityId");
+        String status = request.getParameter("status");
 
         if (subject == null || subject.trim().isEmpty() || activityType == null || activityType.isEmpty()) {
             request.setAttribute("error", "Vui long dien day du cac truong bat buoc.");
             doGet(request, response);
             return;
+        }
+
+        // Default status to Completed if not provided
+        if (status == null || status.trim().isEmpty()) {
+            status = "Completed";
         }
 
         Integer relatedId = null;
@@ -118,11 +124,11 @@ public class SaleActivityFormServlet extends HttpServlet {
         if (idParam != null && !idParam.trim().isEmpty()) {
             int activityId = Integer.parseInt(idParam);
             actDAO.updateActivity(activityId, activityType, relatedType, relatedId,
-                    subject.trim(), description, activityDate, durationMinutes, callDirection, callResult, "Completed");
+                    subject.trim(), description, activityDate, durationMinutes, callDirection, callResult, status);
         } else {
             actDAO.insertSaleActivity(activityType, relatedType, relatedId,
                     subject.trim(), description, activityDate, durationMinutes, callDirection, callResult,
-                    currentUserId, "Completed");
+                    currentUserId, status);
         }
 
         response.sendRedirect(request.getContextPath() + "/sale/activity/list?success=1");

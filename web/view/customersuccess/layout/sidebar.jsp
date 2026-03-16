@@ -70,11 +70,13 @@
                         <span>Tìm kiếm khách hàng</span>
                     </a>
                 </li>
+                
                 <li class="nav-item mb-1">
                     <a href="${pageContext.request.contextPath}/support/receive"
                        class="nav-link rounded-2 d-flex align-items-center gap-2 py-2 px-3 ${pageTitle == 'Phiếu hỗ trợ được phân công' ? 'active bg-primary text-white' : 'text-body-secondary'}">
                         <i class="bi bi-inbox-fill"></i>
                         <span>Tiếp nhận</span>
+                        <span id="receiveBadge" class="badge bg-danger rounded-pill ms-auto shadow-sm" style="display: none;">0</span>
                     </a>
                 </li>
             </ul>
@@ -143,6 +145,7 @@
     }
 </style>
 
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
     (function () {
         var nav = document.getElementById('sidebarNav');
@@ -155,4 +158,23 @@
             sessionStorage.setItem('sidebarScroll_Support', nav.scrollTop);
         });
     })();
+
+    // --- THÊM MỚI: SCRIPT KIỂM TRA THÔNG BÁO REAL-TIME ---
+    function checkNewNotifications() {
+        $.get('${pageContext.request.contextPath}/support/api/notifications', function(data) {
+            let count = parseInt(data);
+            if(count > 0) {
+                $('#receiveBadge').text(count).fadeIn(); // Hiện chấm đỏ kèm số
+            } else {
+                $('#receiveBadge').fadeOut(); // Ẩn đi nếu không có
+            }
+        });
+    }
+
+    $(document).ready(function() {
+        // Chạy ngay khi tải trang
+        checkNewNotifications();
+        // Lặp lại mỗi 5 giây (5000ms)
+        setInterval(checkNewNotifications, 5000); 
+    });
 </script>

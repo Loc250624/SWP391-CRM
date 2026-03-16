@@ -1,5 +1,6 @@
 package controller.sale;
 
+import dao.ActivityDAO;
 import dao.CustomerDAO;
 import dao.LeadSourceDAO;
 import java.io.IOException;
@@ -9,8 +10,10 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import util.SessionHelper;
+import model.Activity;
 import model.Customer;
 import model.LeadSource;
+import java.util.List;
 
 @WebServlet(name = "SaleCustomerDetailServlet", urlPatterns = {"/sale/customer/detail"})
 public class SaleCustomerDetailServlet extends HttpServlet {
@@ -61,6 +64,11 @@ public class SaleCustomerDetailServlet extends HttpServlet {
                     sourceName = source.getSourceName();
                 }
             }
+
+            // Load activities for this customer
+            ActivityDAO actDAO = new ActivityDAO();
+            List<Activity> customerActivities = actDAO.getActivitiesByRelatedEntity(customerId, "Customer");
+            request.setAttribute("activities", customerActivities);
 
             request.setAttribute("customer", customer);
             request.setAttribute("sourceName", sourceName);
