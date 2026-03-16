@@ -6,13 +6,13 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
+import java.util.Map;
 import model.Users;
 
 @WebServlet(name = "ManagerPerformanceServlet", urlPatterns = {"/manager/performance"})
@@ -67,9 +67,6 @@ public class ManagerPerformanceServlet extends HttpServlet {
                 m -> -((Number) m.getOrDefault("productivityScore", 0.0)).doubleValue()
         ));
 
-        // SLA stats for department
-        Map<String, Integer> slaStats = taskDAO.getSLAStatsByMemberIds(allMemberIds);
-
         // Dept-wide averages
         double avgCompletionRate = performanceList.stream()
                 .mapToDouble(m -> ((Number) m.getOrDefault("completionRate", 0.0)).doubleValue())
@@ -79,7 +76,6 @@ public class ManagerPerformanceServlet extends HttpServlet {
                 .average().orElse(0.0);
 
         request.setAttribute("performanceList",    performanceList);
-        request.setAttribute("slaStats",           slaStats);
         request.setAttribute("avgCompletionRate",  avgCompletionRate);
         request.setAttribute("avgProductivity",    avgProductivity);
         request.setAttribute("deptMembers",        deptMembersList);

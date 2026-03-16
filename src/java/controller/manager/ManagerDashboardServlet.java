@@ -14,6 +14,7 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
+import model.Customer;
 import model.Lead;
 import model.Task;
 import model.Users;
@@ -40,25 +41,20 @@ public class ManagerDashboardServlet extends HttpServlet {
             return;
         }
 
-        int departmentId = currentUser.getDepartmentId();
         int managerId    = currentUser.getUserId();
 
-        // ── Department members ──
+        // ── All users in the system ──
         List<Users> allUsers = userDAO.getAllUsers();
-        List<Users> deptMembers = new ArrayList<>();
-        List<Integer> memberIds = new ArrayList<>();
+        List<Integer> allUserIds = new ArrayList<>();
         for (Users u : allUsers) {
-            if (u.getDepartmentId() == departmentId) {
-                deptMembers.add(u);
-                memberIds.add(u.getUserId());
-            }
+            allUserIds.add(u.getUserId());
         }
 
         TaskDAO taskDAO = new TaskDAO();
         LeadDAO leadDAO = new LeadDAO();
         CustomerDAO customerDAO = new CustomerDAO();
 
-        // ── 1. KPI Cards: Task stats for department ──
+        // ── 1. KPI Cards: Task stats for ALL users ──
         int totalTasks     = 0;
         int completedTasks = 0;
         int inProgressTasks = 0;
@@ -66,7 +62,7 @@ public class ManagerDashboardServlet extends HttpServlet {
         int overdueTasks   = 0;
         int cancelledTasks = 0;
 
-        // Per-employee stats for charts
+        // Per-employee stats for charts (only include users who have tasks)
         List<String> empNames = new ArrayList<>();
         List<Integer> empCompleted = new ArrayList<>();
         List<Integer> empInProgress = new ArrayList<>();
@@ -74,7 +70,7 @@ public class ManagerDashboardServlet extends HttpServlet {
         List<Integer> empOverdue = new ArrayList<>();
         List<Double> empProductivity = new ArrayList<>();
 
-        for (Users member : deptMembers) {
+        for (Users member : allUsers) {
             Map<String, Object> stats = taskDAO.getEmployeePerformanceStats(member.getUserId());
             int total = ((Number) stats.getOrDefault("totalTasks", 0)).intValue();
             int completed = ((Number) stats.getOrDefault("completedTasks", 0)).intValue();
@@ -91,33 +87,51 @@ public class ManagerDashboardServlet extends HttpServlet {
             overdueTasks += overdue;
             cancelledTasks += cancelled;
 
-            String name = (member.getFirstName() != null ? member.getFirstName() : "")
-                        + " " + (member.getLastName() != null ? member.getLastName() : "");
-            empNames.add(name.trim());
-            empCompleted.add(completed);
-            empInProgress.add(inProg);
-            empPending.add(pending);
-            empOverdue.add(overdue);
-            empProductivity.add(Math.round(productivity * 10.0) / 10.0);
+            // Only add to chart if the user has at least 1 task
+            if (total > 0) {
+                String name = (member.getFirstName() != null ? member.getFirstName() : "")
+                            + " " + (member.getLastName() != null ? member.getLastName() : "");
+                empNames.add(name.trim());
+                empCompleted.add(completed);
+                empInProgress.add(inProg);
+                empPending.add(pending);
+                empOverdue.add(overdue);
+                empProductivity.add(Math.round(productivity * 10.0) / 10.0);
+            }
         }
 
-        // ── 2. Lead stats ──
-        int unassignedLeads = leadDAO.countUnassignedLeadsForManager(null, null, null, null);
-        int assignedLeads   = leadDAO.countAssignedLeadsByManager(managerId, null, null, null, null, null);
+        // ── 2. Lead stats (all leads in system) ──
+        List<Lead> allLeadsList = leadDAO.getAllLeads();
+        int totalLeads = allLeadsList.size();
+        int assignedLeads = 0;
+        int unassignedLeads = 0;
+        for (Lead lead : allLeadsList) {
+            if (lead.assignedTo != null && lead.assignedTo > 0) {
+                assignedLeads++;
+            } else {
+                unassignedLeads++;
+            }
+        }
 
-        // ── 3. SLA stats ──
-        Map<String, Integer> slaStats = taskDAO.getSLAStatsByMemberIds(memberIds);
+        // ── 3. Customer stats ──
+        List<Customer> allCustomers = customerDAO.getAllCustomers();
+        int totalCustomers = allCustomers.size();
+        int activeCustomers = 0;
+        for (Customer c : allCustomers) {
+            if (c.getStatus() != null && "active".equalsIgnoreCase(c.getStatus())) {
+                activeCustomers++;
+            }
+        }
 
-        // ── 4. Overdue tasks ──
-        List<Task> overdueTaskList = taskDAO.getOverdueTasks(null, memberIds);
+        // ── 4. Overdue tasks (all users) ──
+        List<Task> overdueTaskList = taskDAO.getOverdueTasks(null, allUserIds);
         int overdueCount = overdueTaskList.size();
-        // Limit to 5 for display
         List<Task> recentOverdue = overdueTaskList.size() > 5
                 ? overdueTaskList.subList(0, 5) : overdueTaskList;
 
-        // Build assignee name map for overdue tasks
+        // Build assignee name map for ALL users
         java.util.Map<Integer, String> userNameMap = new java.util.HashMap<>();
-        for (Users u : deptMembers) {
+        for (Users u : allUsers) {
             String n = (u.getFirstName() != null ? u.getFirstName() : "")
                      + " " + (u.getLastName() != null ? u.getLastName() : "");
             userNameMap.put(u.getUserId(), n.trim());
@@ -134,16 +148,17 @@ public class ManagerDashboardServlet extends HttpServlet {
         request.setAttribute("inProgressTasks", inProgressTasks);
         request.setAttribute("pendingTasks",    pendingTasks);
         request.setAttribute("overdueTasks",    overdueTasks);
+        request.setAttribute("cancelledTasks",  cancelledTasks);
         request.setAttribute("completionRate",  Math.round(completionRate * 10.0) / 10.0);
 
         // Lead stats
         request.setAttribute("unassignedLeads", unassignedLeads);
         request.setAttribute("assignedLeads",   assignedLeads);
+        request.setAttribute("totalLeads",      totalLeads);
 
-        // SLA
-        request.setAttribute("slaTotal",    slaStats.getOrDefault("total", 0));
-        request.setAttribute("slaOk",       slaStats.getOrDefault("ok", 0));
-        request.setAttribute("slaBreached", slaStats.getOrDefault("breached", 0));
+        // Customer stats
+        request.setAttribute("totalCustomers",  totalCustomers);
+        request.setAttribute("activeCustomers", activeCustomers);
 
         // Overdue
         request.setAttribute("overdueCount",   overdueCount);
@@ -166,7 +181,7 @@ public class ManagerDashboardServlet extends HttpServlet {
         request.setAttribute("chartCancelled",  cancelledTasks);
 
         // Team size
-        request.setAttribute("teamSize", deptMembers.size());
+        request.setAttribute("teamSize", allUsers.size());
 
         request.setAttribute("ACTIVE_MENU",  "DASHBOARD");
         request.setAttribute("pageTitle",    "Dashboard");
