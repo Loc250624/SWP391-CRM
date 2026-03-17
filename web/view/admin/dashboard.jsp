@@ -10,7 +10,7 @@
 <!-- Stats Grid -->
 <div class="row g-4 mb-4">
     <!-- Total Customers -->
-    <div class="col-12 col-sm-6 col-xl-3">
+    <div class="col-12 col-md-4">
         <div class="card border-0 shadow-sm rounded-4 h-100 kpi-card">
             <div class="card-body p-4">
                 <div class="d-flex align-items-center justify-content-between mb-3">
@@ -28,7 +28,7 @@
     </div>
 
     <!-- Active Courses -->
-    <div class="col-12 col-sm-6 col-xl-3">
+    <div class="col-12 col-md-4">
         <div class="card border-0 shadow-sm rounded-4 h-100 kpi-card">
             <div class="card-body p-4">
                 <div class="d-flex align-items-center justify-content-between mb-3">
@@ -46,7 +46,7 @@
     </div>
 
     <!-- Staff Members -->
-    <div class="col-12 col-sm-6 col-xl-3">
+    <div class="col-12 col-md-4">
         <div class="card border-0 shadow-sm rounded-4 h-100 kpi-card">
             <div class="card-body p-4">
                 <div class="d-flex align-items-center justify-content-between mb-3">
@@ -62,23 +62,7 @@
         </div>
     </div>
 
-    <!-- System Health -->
-    <div class="col-12 col-sm-6 col-xl-3">
-        <div class="card border-0 shadow-sm rounded-4 h-100 kpi-card">
-            <div class="card-body p-4">
-                <div class="d-flex align-items-center justify-content-between mb-3">
-                    <div class="kpi-icon bg-success bg-opacity-10 text-success">
-                        <i class="bi bi-shield-check fs-4"></i>
-                    </div>
-                    <span class="badge bg-success text-white small">Ổn định</span>
-                </div>
-                <div>
-                    <h3 class="fw-bold mb-1">99.9%</h3>
-                    <p class="text-muted small mb-0">Trạng thái hệ thống</p>
-                </div>
-            </div>
-        </div>
-    </div>
+
 </div>
 
 <div class="row g-4 mb-4">

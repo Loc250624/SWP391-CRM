@@ -191,6 +191,21 @@ public class UserDAO extends DBContext {
         return 0;
     }
 
+    public String getLastEmployeeCodeByPrefix(String prefix) {
+        String sql = "SELECT TOP 1 employee_code FROM users WHERE employee_code LIKE ? ORDER BY employee_code DESC";
+        try (PreparedStatement st = connection.prepareStatement(sql)) {
+            st.setString(1, prefix + "%");
+            try (ResultSet rs = st.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getString("employee_code");
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
     private Users mapResultSetToUser(ResultSet rs) throws SQLException {
         Users u = new Users();
         u.setUserId(rs.getInt("user_id"));
