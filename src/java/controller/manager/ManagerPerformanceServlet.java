@@ -37,16 +37,14 @@ public class ManagerPerformanceServlet extends HttpServlet {
             return;
         }
 
-        // All dept members (include manager)
+        // All members (all users in system)
         List<Users> allUsers = userDAO.getAllUsers();
         List<Users> deptMembersList = new ArrayList<>();
         List<Integer> allMemberIds  = new ArrayList<>();
 
         for (Users user : allUsers) {
-            if (user.getDepartmentId() == currentUser.getDepartmentId()) {
-                deptMembersList.add(user);
-                allMemberIds.add(user.getUserId());
-            }
+            deptMembersList.add(user);
+            allMemberIds.add(user.getUserId());
         }
 
         TaskDAO taskDAO = new TaskDAO();

@@ -47,11 +47,29 @@ public class ManagerLeadFormServlet extends HttpServlet {
             return;
         }
 
-        // Only create mode for manager
-        request.setAttribute("mode", "create");
+        // Check for edit mode
+        String leadIdParam = request.getParameter("id");
+        if (leadIdParam != null && !leadIdParam.isEmpty()) {
+            try {
+                int leadId = Integer.parseInt(leadIdParam);
+                Lead lead = leadDAO.getLeadById(leadId);
+                if (lead == null) {
+                    response.sendRedirect(request.getContextPath() + "/manager/crm/leads");
+                    return;
+                }
+                request.setAttribute("mode", "edit");
+                request.setAttribute("lead", lead);
+            } catch (NumberFormatException e) {
+                response.sendRedirect(request.getContextPath() + "/manager/crm/leads");
+                return;
+            }
+        } else {
+            request.setAttribute("mode", "create");
+        }
 
         // Pass enum values for dropdowns
         request.setAttribute("leadRatings", LeadRating.values());
+        request.setAttribute("leadStatuses", LeadStatus.values());
 
         // Load sources and campaigns
         List<LeadSource> sources = leadSourceDAO.getAllActiveSources();
@@ -61,7 +79,7 @@ public class ManagerLeadFormServlet extends HttpServlet {
 
         // Page metadata
         request.setAttribute("ACTIVE_MENU", "CRM_LEADS");
-        request.setAttribute("pageTitle", "Tao Lead moi");
+        request.setAttribute("pageTitle", leadIdParam != null ? "Chinh sua Lead" : "Tao Lead moi");
         request.setAttribute("CONTENT_PAGE", "/view/manager/crm/lead-form.jsp");
 
         request.getRequestDispatcher("/view/manager/layout/layout-manager.jsp").forward(request, response);
@@ -90,6 +108,10 @@ public class ManagerLeadFormServlet extends HttpServlet {
         }
 
         int currentUserId = currentUser.getUserId();
+
+        // Check edit mode
+        String leadIdParam = request.getParameter("leadId");
+        boolean isEdit = (leadIdParam != null && !leadIdParam.isEmpty());
 
         // Get form parameters
         String fullName = request.getParameter("fullName");
@@ -188,8 +210,8 @@ public class ManagerLeadFormServlet extends HttpServlet {
             }
         }
 
-        // --- Duplicate check by phone ---
-        if (phone != null && !phone.trim().isEmpty() && errors.isEmpty()) {
+        // --- Duplicate check by phone (skip for edit mode on same lead) ---
+        if (!isEdit && phone != null && !phone.trim().isEmpty() && errors.isEmpty()) {
             List<Lead> phoneMatches = leadDAO.searchLeadsByPhone(phone.trim());
             if (!phoneMatches.isEmpty()) {
                 StringBuilder dupMsg = new StringBuilder("So dien thoai da ton tai trong he thong: ");
@@ -202,8 +224,8 @@ public class ManagerLeadFormServlet extends HttpServlet {
             }
         }
 
-        // --- Duplicate check by email ---
-        if (email != null && !email.trim().isEmpty() && errors.isEmpty()) {
+        // --- Duplicate check by email (skip for edit mode on same lead) ---
+        if (!isEdit && email != null && !email.trim().isEmpty() && errors.isEmpty()) {
             List<Lead> emailMatches = leadDAO.searchLeadsByEmail(email.trim());
             if (!emailMatches.isEmpty()) {
                 StringBuilder dupMsg = new StringBuilder("Email da ton tai trong he thong: ");
@@ -225,7 +247,26 @@ public class ManagerLeadFormServlet extends HttpServlet {
         }
 
         // Build final Lead object
-        Lead lead = new Lead();
+        Lead lead;
+        Lead oldLead = null;
+
+        if (isEdit) {
+            int editLeadId = Integer.parseInt(leadIdParam);
+            oldLead = leadDAO.getLeadById(editLeadId);
+            if (oldLead == null) {
+                response.sendRedirect(request.getContextPath() + "/manager/crm/leads");
+                return;
+            }
+            lead = oldLead;
+        } else {
+            lead = new Lead();
+            lead.setIsConverted(false);
+            lead.setStatus(LeadStatus.New.name());
+            lead.setAssignedTo(null);
+            lead.setAssignedAt(null);
+            lead.setCreatedBy(currentUserId);
+        }
+
         lead.setFullName(fullName.trim());
         lead.setEmail(email != null && !email.trim().isEmpty() ? email.trim() : null);
         lead.setPhone(phone != null && !phone.trim().isEmpty() ? phone.trim() : null);
@@ -235,25 +276,36 @@ public class ManagerLeadFormServlet extends HttpServlet {
         lead.setRating(rating != null && !rating.isEmpty() ? rating : null);
         lead.setNotes(notes != null && !notes.trim().isEmpty() ? notes.trim() : null);
         lead.setLeadScore(leadScore);
-        lead.setIsConverted(false);
         lead.setSourceId(formLead.getSourceId());
         lead.setCampaignId(formLead.getCampaignId());
 
-        // Manager creates lead with status = New (not Assigned like sales)
-        lead.setStatus(LeadStatus.New.name());
-        lead.setAssignedTo(null);
-        lead.setAssignedAt(null);
-        lead.setCreatedBy(currentUserId);
+        // Handle status for edit mode
+        if (isEdit) {
+            String statusParam = request.getParameter("status");
+            if (statusParam != null && !statusParam.isEmpty()) {
+                lead.setStatus(statusParam);
+            }
+        }
 
         // Save to database
-        boolean success = leadDAO.insertLead(lead);
+        boolean success;
+        if (isEdit) {
+            success = leadDAO.updateLead(lead);
+        } else {
+            success = leadDAO.insertLead(lead);
+        }
 
         if (success) {
-            AuditUtil.logCreate(request, currentUserId, "Lead", lead.getLeadId(),
-                    "fullName=" + lead.getFullName() + ", email=" + lead.getEmail()
+            String newVals = "fullName=" + lead.getFullName() + ", email=" + lead.getEmail()
                     + ", phone=" + lead.getPhone() + ", company=" + lead.getCompanyName()
-                    + ", rating=" + lead.getRating() + ", score=" + lead.getLeadScore());
-            session.setAttribute("successMessage", "Tao lead thanh cong!");
+                    + ", rating=" + lead.getRating() + ", score=" + lead.getLeadScore();
+            if (isEdit) {
+                AuditUtil.logUpdate(request, currentUserId, "Lead", lead.getLeadId(), null, newVals);
+                session.setAttribute("successMessage", "Cap nhat lead thanh cong!");
+            } else {
+                AuditUtil.logCreate(request, currentUserId, "Lead", lead.getLeadId(), newVals);
+                session.setAttribute("successMessage", "Tao lead thanh cong!");
+            }
             response.sendRedirect(request.getContextPath() + "/manager/crm/leads?tab=unassigned");
         } else {
             request.setAttribute("error", "Luu lead that bai. Vui long thu lai.");

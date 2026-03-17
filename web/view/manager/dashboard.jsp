@@ -131,26 +131,26 @@
             <div class="card-body pt-0">
                 <div class="row g-2 mb-3">
                     <div class="col-6">
-                        <div class="text-center p-3 rounded-3" style="background: #eff6ff;">
-                            <div class="fs-3 fw-bold text-primary">${totalCustomers}</div>
-                            <small class="text-muted">Tong so</small>
+                        <div class="text-center p-3 rounded-3" style="background: #f0f9ff;">
+                            <div class="fs-3 fw-bold text-info">${unassignedCustomers}</div>
+                            <small class="text-muted">Chua giao</small>
                         </div>
                     </div>
                     <div class="col-6">
                         <div class="text-center p-3 rounded-3" style="background: #f0fdf4;">
-                            <div class="fs-3 fw-bold text-success">${activeCustomers}</div>
-                            <small class="text-muted">Dang hoat dong</small>
+                            <div class="fs-3 fw-bold text-success">${assignedCustomers}</div>
+                            <small class="text-muted">Da giao</small>
                         </div>
                     </div>
                 </div>
                 <div>
                     <div class="d-flex justify-content-between mb-1">
-                        <small class="fw-semibold">Ty le hoat dong</small>
-                        <c:set var="activeRate" value="${totalCustomers > 0 ? Math.round(activeCustomers * 1000.0 / totalCustomers) / 10.0 : 0}" />
-                        <small class="fw-bold text-success">${activeRate}%</small>
+                        <small class="fw-semibold">Ty le phan cong</small>
+                        <c:set var="custAssignRate" value="${totalCustomers > 0 ? Math.round(assignedCustomers * 1000.0 / totalCustomers) / 10.0 : 0}" />
+                        <small class="fw-bold text-success">${custAssignRate}%</small>
                     </div>
                     <div class="progress" style="height: 8px;">
-                        <div class="progress-bar bg-primary" style="width: ${activeRate}%;"></div>
+                        <div class="progress-bar bg-primary" style="width: ${custAssignRate}%;"></div>
                     </div>
                 </div>
             </div>

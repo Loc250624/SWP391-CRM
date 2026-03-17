@@ -170,6 +170,7 @@ public class ManagerCRMLeadServlet extends HttpServlet {
         request.setAttribute("dateFrom",       dateFrom != null ? dateFrom : "");
         request.setAttribute("dateTo",         dateTo != null ? dateTo : "");
         request.setAttribute("currentTab",     tab);
+        request.setAttribute("currentUserId",  currentUser.getUserId());
         request.setAttribute("pageTitle",      "CRM - Quản lý Lead");
         request.setAttribute("ACTIVE_MENU",    "CRM_LEADS");
         request.setAttribute("CONTENT_PAGE",   "/view/manager/crm/lead-list.jsp");

@@ -14,8 +14,6 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
-import model.Customer;
-import model.Lead;
 import model.Task;
 import model.Users;
 
@@ -54,15 +52,16 @@ public class ManagerDashboardServlet extends HttpServlet {
         LeadDAO leadDAO = new LeadDAO();
         CustomerDAO customerDAO = new CustomerDAO();
 
-        // ── 1. KPI Cards: Task stats for ALL users ──
-        int totalTasks     = 0;
-        int completedTasks = 0;
-        int inProgressTasks = 0;
-        int pendingTasks   = 0;
-        int overdueTasks   = 0;
-        int cancelledTasks = 0;
+        // ── 1. KPI Cards: Task stats from tasks table directly ──
+        Map<String, Object> taskStats = taskDAO.getTaskStatistics(null, allUserIds);
+        int totalTasks      = ((Number) taskStats.getOrDefault("totalTasks", 0)).intValue();
+        int completedTasks  = ((Number) taskStats.getOrDefault("completedTasks", 0)).intValue();
+        int inProgressTasks = ((Number) taskStats.getOrDefault("inProgressTasks", 0)).intValue();
+        int pendingTasks    = ((Number) taskStats.getOrDefault("pendingTasks", 0)).intValue();
+        int overdueTasks    = ((Number) taskStats.getOrDefault("overdueTasks", 0)).intValue();
+        int cancelledTasks  = ((Number) taskStats.getOrDefault("cancelledTasks", 0)).intValue();
 
-        // Per-employee stats for charts (only include users who have tasks)
+        // Per-employee stats for charts
         List<String> empNames = new ArrayList<>();
         List<Integer> empCompleted = new ArrayList<>();
         List<Integer> empInProgress = new ArrayList<>();
@@ -73,55 +72,28 @@ public class ManagerDashboardServlet extends HttpServlet {
         for (Users member : allUsers) {
             Map<String, Object> stats = taskDAO.getEmployeePerformanceStats(member.getUserId());
             int total = ((Number) stats.getOrDefault("totalTasks", 0)).intValue();
-            int completed = ((Number) stats.getOrDefault("completedTasks", 0)).intValue();
-            int inProg = ((Number) stats.getOrDefault("inProgressTasks", 0)).intValue();
-            int pending = ((Number) stats.getOrDefault("pendingTasks", 0)).intValue();
-            int overdue = ((Number) stats.getOrDefault("overdueTasks", 0)).intValue();
-            int cancelled = ((Number) stats.getOrDefault("cancelledTasks", 0)).intValue();
-            double productivity = ((Number) stats.getOrDefault("productivityScore", 0.0)).doubleValue();
-
-            totalTasks += total;
-            completedTasks += completed;
-            inProgressTasks += inProg;
-            pendingTasks += pending;
-            overdueTasks += overdue;
-            cancelledTasks += cancelled;
-
-            // Only add to chart if the user has at least 1 task
             if (total > 0) {
                 String name = (member.getFirstName() != null ? member.getFirstName() : "")
                             + " " + (member.getLastName() != null ? member.getLastName() : "");
                 empNames.add(name.trim());
-                empCompleted.add(completed);
-                empInProgress.add(inProg);
-                empPending.add(pending);
-                empOverdue.add(overdue);
+                empCompleted.add(((Number) stats.getOrDefault("completedTasks", 0)).intValue());
+                empInProgress.add(((Number) stats.getOrDefault("inProgressTasks", 0)).intValue());
+                empPending.add(((Number) stats.getOrDefault("pendingTasks", 0)).intValue());
+                empOverdue.add(((Number) stats.getOrDefault("overdueTasks", 0)).intValue());
+                double productivity = ((Number) stats.getOrDefault("productivityScore", 0.0)).doubleValue();
                 empProductivity.add(Math.round(productivity * 10.0) / 10.0);
             }
         }
 
-        // ── 2. Lead stats (all leads in system) ──
-        List<Lead> allLeadsList = leadDAO.getAllLeads();
-        int totalLeads = allLeadsList.size();
-        int assignedLeads = 0;
-        int unassignedLeads = 0;
-        for (Lead lead : allLeadsList) {
-            if (lead.assignedTo != null && lead.assignedTo > 0) {
-                assignedLeads++;
-            } else {
-                unassignedLeads++;
-            }
-        }
+        // ── 2. Lead stats (matching lead list page logic) ──
+        int unassignedLeads = leadDAO.countUnassignedLeadsForManager(null, null, null, null);
+        int assignedLeads = leadDAO.countAssignedLeadsByManager(managerId, null, null, null, null, null);
+        int totalLeads = unassignedLeads + assignedLeads;
 
-        // ── 3. Customer stats ──
-        List<Customer> allCustomers = customerDAO.getAllCustomers();
-        int totalCustomers = allCustomers.size();
-        int activeCustomers = 0;
-        for (Customer c : allCustomers) {
-            if (c.getStatus() != null && "active".equalsIgnoreCase(c.getStatus())) {
-                activeCustomers++;
-            }
-        }
+        // ── 3. Customer stats (assigned vs unassigned by ownerId) ──
+        int unassignedCustomers = customerDAO.countCustomersByManagerScope(null, null, null, null, null, null);
+        int assignedCustomers = customerDAO.countAssignedCustomers(null, null, null, null, null, null);
+        int totalCustomers = unassignedCustomers + assignedCustomers;
 
         // ── 4. Overdue tasks (all users) ──
         List<Task> overdueTaskList = taskDAO.getOverdueTasks(null, allUserIds);
@@ -138,8 +110,7 @@ public class ManagerDashboardServlet extends HttpServlet {
         }
 
         // ── Completion rate ──
-        int activeTasks = totalTasks - cancelledTasks;
-        double completionRate = activeTasks > 0 ? (completedTasks * 100.0 / activeTasks) : 0;
+        double completionRate = totalTasks > 0 ? (completedTasks * 100.0 / totalTasks) : 0;
 
         // ── Set attributes ──
         // KPI cards
@@ -157,8 +128,9 @@ public class ManagerDashboardServlet extends HttpServlet {
         request.setAttribute("totalLeads",      totalLeads);
 
         // Customer stats
-        request.setAttribute("totalCustomers",  totalCustomers);
-        request.setAttribute("activeCustomers", activeCustomers);
+        request.setAttribute("totalCustomers",       totalCustomers);
+        request.setAttribute("unassignedCustomers",  unassignedCustomers);
+        request.setAttribute("assignedCustomers",    assignedCustomers);
 
         // Overdue
         request.setAttribute("overdueCount",   overdueCount);

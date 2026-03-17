@@ -60,13 +60,13 @@
                                    value="${customer.phone}" placeholder="0xxx xxx xxx">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label small">Ngày sinh</label>
-                            <input type="date" name="dateOfBirth" class="form-control form-control-sm"
+                            <label class="form-label small">Ngày sinh <span class="text-danger">*</span></label>
+                            <input type="date" name="dateOfBirth" class="form-control form-control-sm" required
                                    value="${customer.dateOfBirth}">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label small">Giới tính</label>
-                            <select name="gender" class="form-select form-select-sm">
+                            <label class="form-label small">Giới tính <span class="text-danger">*</span></label>
+                            <select name="gender" class="form-select form-select-sm" required>
                                 <option value="">-- Chọn --</option>
                                 <option value="Male" ${customer.gender == 'Male' ? 'selected' : ''}>Nam</option>
                                 <option value="Female" ${customer.gender == 'Female' ? 'selected' : ''}>Nữ</option>
@@ -88,37 +88,52 @@
             </div>
 
             <!-- Khóa học đăng ký -->
-            <c:if test="${mode != 'edit'}">
-                <div class="card border-0 shadow-sm mb-4">
-                    <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
-                        <h6 class="mb-0 fw-semibold"><i class="bi bi-mortarboard me-2"></i>Khóa học đăng ký</h6>
-                        <button type="button" class="btn btn-sm btn-primary" onclick="openCoursePicker()">
-                            <i class="bi bi-plus-lg me-1"></i>Chọn khóa học
-                        </button>
-                    </div>
-                    <div class="card-body pt-0">
-                        <div id="selectedCoursesContainer">
-                            <div id="coursesEmpty" class="text-center text-muted py-3">
-                                <i class="bi bi-inbox" style="font-size:1.5rem;"></i>
-                                <p class="mb-0 mt-2 small">Chưa chọn khóa học nào</p>
-                            </div>
-                            <div class="table-responsive" id="coursesTableWrap" style="display:none;">
-                                <table class="table table-sm align-middle mb-0">
-                                    <thead class="table-light">
-                                        <tr>
-                                            <th>Mã</th>
-                                            <th>Tên khóa học</th>
-                                            <th class="text-end">Giá</th>
-                                            <th style="width:40px;"></th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="selectedCoursesBody"></tbody>
-                                </table>
-                            </div>
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0 fw-semibold"><i class="bi bi-mortarboard me-2"></i>Khóa học đăng ký</h6>
+                    <button type="button" class="btn btn-sm btn-primary" onclick="openCoursePicker()">
+                        <i class="bi bi-plus-lg me-1"></i>Chọn khóa học
+                    </button>
+                </div>
+                <div class="card-body pt-0">
+                    <div id="selectedCoursesContainer">
+                        <div id="coursesEmpty" class="text-center text-muted py-3" style="${not empty enrollments ? 'display:none' : ''}">
+                            <i class="bi bi-inbox" style="font-size:1.5rem;"></i>
+                            <p class="mb-0 mt-2 small">Chưa chọn khóa học nào</p>
+                        </div>
+                        <div class="table-responsive" id="coursesTableWrap" style="${not empty enrollments ? '' : 'display:none;'}">
+                            <table class="table table-sm align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Mã</th>
+                                        <th>Tên khóa học</th>
+                                        <th class="text-end">Giá</th>
+                                        <th style="width:40px;"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="selectedCoursesBody">
+                                    <c:if test="${not empty enrollments}">
+                                        <c:forEach var="en" items="${enrollments}">
+                                            <tr>
+                                                <td><small class="text-muted">${en.enrollmentCode}</small>
+                                                    <input type="hidden" name="courseIds" value="${en.courseId}">
+                                                </td>
+                                                <td class="fw-medium">${en.courseName}</td>
+                                                <td class="text-end fw-semibold text-success">
+                                                    <c:if test="${not empty en.finalAmount}">
+                                                        <fmt:formatNumber value="${en.finalAmount}" type="number" groupingUsed="true" maxFractionDigits="0"/> đ
+                                                    </c:if>
+                                                </td>
+                                                <td><button type="button" class="btn btn-sm btn-outline-danger py-0 px-1" onclick="removeCourse(this)"><i class="bi bi-x"></i></button></td>
+                                            </tr>
+                                        </c:forEach>
+                                    </c:if>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
-            </c:if>
+            </div>
 
             <!-- Ghi chú -->
             <div class="card border-0 shadow-sm">
@@ -188,15 +203,24 @@
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label small">Giao cho nhân viên Sale</label>
-                        <select name="ownerId" class="form-select form-select-sm">
-                            <option value="">-- Chưa giao --</option>
-                            <c:forEach var="u" items="${salesUsers}">
-                                <option value="${u.userId}" ${customer.ownerId == u.userId ? 'selected' : ''}>
-                                    ${u.firstName} ${u.lastName}
-                                </option>
-                            </c:forEach>
-                        </select>
+                        <label class="form-label small">Giao cho Customer Success</label>
+                        <c:choose>
+                            <c:when test="${mode == 'edit' && not empty customer.ownerId}">
+                                <input type="hidden" name="ownerId" value="${customer.ownerId}">
+                                <input type="text" class="form-control form-control-sm" value="${ownerName}" disabled>
+                                <div class="form-text text-muted">Không thể thay đổi người phụ trách khi chỉnh sửa</div>
+                            </c:when>
+                            <c:otherwise>
+                                <select name="ownerId" class="form-select form-select-sm">
+                                    <option value="">-- Chưa giao --</option>
+                                    <c:forEach var="u" items="${supportUsers}">
+                                        <option value="${u.userId}" ${customer.ownerId == u.userId ? 'selected' : ''}>
+                                            ${u.firstName} ${u.lastName}
+                                        </option>
+                                    </c:forEach>
+                                </select>
+                            </c:otherwise>
+                        </c:choose>
                     </div>
                 </div>
             </div>
@@ -273,7 +297,6 @@
 </form>
 
 <!-- Course Picker Modal -->
-<c:if test="${mode != 'edit'}">
 <div class="modal fade" id="coursePickerModal" tabindex="-1">
     <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content border-0 shadow">
@@ -342,7 +365,6 @@
         </div>
     </div>
 </div>
-</c:if>
 
 <script>
     document.getElementById('customerForm').addEventListener('submit', function () {

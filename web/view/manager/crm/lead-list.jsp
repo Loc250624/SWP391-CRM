@@ -229,13 +229,28 @@
                                             <div class="d-flex gap-1 justify-content-center">
                                                 <c:choose>
                                                     <c:when test="${currentTab == 'all'}">
-                                                        <%-- Tab "Tất cả": detail + progress (nếu có task) + giao việc (nếu chưa giao) --%>
+                                                        <%-- Tab "Tất cả": detail + edit + progress (nếu có task) + giao việc (nếu chưa giao) --%>
                                                         <button type="button"
                                                                 class="btn btn-sm btn-outline-secondary"
                                                                 title="Xem chi tiết"
                                                                 data-bs-toggle="modal" data-bs-target="#leadModal_${lead.leadId}">
                                                             <i class="bi bi-eye"></i>
                                                         </button>
+                                                        <c:choose>
+                                                            <c:when test="${lead.createdBy == currentUserId}">
+                                                                <a href="${pageContext.request.contextPath}/manager/crm/lead-form?id=${lead.leadId}"
+                                                                   class="btn btn-sm btn-outline-primary" title="Chỉnh sửa">
+                                                                    <i class="bi bi-pencil"></i>
+                                                                </a>
+                                                            </c:when>
+                                                            <c:otherwise>
+                                                                <button type="button" class="btn btn-sm btn-outline-primary"
+                                                                        title="Chỉnh sửa"
+                                                                        onclick="confirmEditLead(${lead.leadId}, '${lead.fullName}')">
+                                                                    <i class="bi bi-pencil"></i>
+                                                                </button>
+                                                            </c:otherwise>
+                                                        </c:choose>
                                                         <c:if test="${not empty leadTasksMap[lead.leadId]}">
                                                             <button type="button"
                                                                     class="btn btn-sm btn-outline-info"
@@ -253,22 +268,52 @@
                                                         </c:if>
                                                     </c:when>
                                                     <c:when test="${currentTab == 'assigned'}">
-                                                        <%-- Tab "Đã giao việc": show progress popup --%>
+                                                        <%-- Tab "Đã giao việc": show progress popup + edit --%>
                                                         <button type="button"
                                                                 class="btn btn-sm btn-outline-info"
                                                                 title="Xem tiến độ"
                                                                 data-bs-toggle="modal" data-bs-target="#leadProgressModal_${lead.leadId}">
                                                             <i class="bi bi-bar-chart-steps me-1"></i>Tiến độ
                                                         </button>
+                                                        <c:choose>
+                                                            <c:when test="${lead.createdBy == currentUserId}">
+                                                                <a href="${pageContext.request.contextPath}/manager/crm/lead-form?id=${lead.leadId}"
+                                                                   class="btn btn-sm btn-outline-primary" title="Chỉnh sửa">
+                                                                    <i class="bi bi-pencil"></i>
+                                                                </a>
+                                                            </c:when>
+                                                            <c:otherwise>
+                                                                <button type="button" class="btn btn-sm btn-outline-primary"
+                                                                        title="Chỉnh sửa"
+                                                                        onclick="confirmEditLead(${lead.leadId}, '${lead.fullName}')">
+                                                                    <i class="bi bi-pencil"></i>
+                                                                </button>
+                                                            </c:otherwise>
+                                                        </c:choose>
                                                     </c:when>
                                                     <c:otherwise>
-                                                        <%-- Tab "Chưa giao": show detail popup + assign button --%>
+                                                        <%-- Tab "Chưa giao": show detail popup + edit + assign button --%>
                                                         <button type="button"
                                                                 class="btn btn-sm btn-outline-secondary"
                                                                 title="Xem chi tiết"
                                                                 data-bs-toggle="modal" data-bs-target="#leadModal_${lead.leadId}">
                                                             <i class="bi bi-eye"></i>
                                                         </button>
+                                                        <c:choose>
+                                                            <c:when test="${lead.createdBy == currentUserId}">
+                                                                <a href="${pageContext.request.contextPath}/manager/crm/lead-form?id=${lead.leadId}"
+                                                                   class="btn btn-sm btn-outline-primary" title="Chỉnh sửa">
+                                                                    <i class="bi bi-pencil"></i>
+                                                                </a>
+                                                            </c:when>
+                                                            <c:otherwise>
+                                                                <button type="button" class="btn btn-sm btn-outline-primary"
+                                                                        title="Chỉnh sửa"
+                                                                        onclick="confirmEditLead(${lead.leadId}, '${lead.fullName}')">
+                                                                    <i class="bi bi-pencil"></i>
+                                                                </button>
+                                                            </c:otherwise>
+                                                        </c:choose>
                                                         <a href="${pageContext.request.contextPath}/manager/task/form?action=create&leadId=${lead.leadId}"
                                                            class="btn btn-sm btn-primary"
                                                            title="Giao việc cho Lead này">
@@ -472,7 +517,19 @@
 
                             </div>
                             <div class="modal-footer">
-                                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Đóng</button>
+                                <c:choose>
+                                    <c:when test="${lead.createdBy == currentUserId}">
+                                        <a href="${pageContext.request.contextPath}/manager/crm/lead-form?id=${lead.leadId}"
+                                           class="btn btn-primary btn-sm"><i class="bi bi-pencil me-1"></i>Chỉnh sửa</a>
+                                    </c:when>
+                                    <c:otherwise>
+                                        <button type="button" class="btn btn-primary btn-sm"
+                                                onclick="confirmEditLead(${lead.leadId}, '${lead.fullName}')">
+                                            <i class="bi bi-pencil me-1"></i>Chỉnh sửa
+                                        </button>
+                                    </c:otherwise>
+                                </c:choose>
+                                <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Đóng</button>
                             </div>
                         </div>
                     </div>
@@ -869,4 +926,36 @@
                                 div.appendChild(document.createTextNode(text));
                                 return div.innerHTML;
                             }
+
+                            /* ── Confirm edit lead not created by current manager ── */
+                            var pendingEditLeadId = null;
+                            function confirmEditLead(leadId, leadName) {
+                                pendingEditLeadId = leadId;
+                                document.getElementById('confirmEditLeadName').textContent = leadName;
+                                new bootstrap.Modal(document.getElementById('confirmEditLeadModal')).show();
+                            }
+                            function proceedEditLead() {
+                                if (pendingEditLeadId) {
+                                    window.location.href = '${pageContext.request.contextPath}/manager/crm/lead-form?id=' + pendingEditLeadId;
+                                }
+                            }
                         </script>
+
+<!-- Modal xác nhận chỉnh sửa Lead -->
+<div class="modal fade" id="confirmEditLeadModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold"><i class="bi bi-exclamation-triangle text-warning me-2"></i>Xác nhận chỉnh sửa</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-0">Lead "<strong id="confirmEditLeadName"></strong>" không phải do bạn tạo.<br>Bạn có chắc muốn chỉnh sửa lead này không?</p>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-primary btn-sm" onclick="proceedEditLead()"><i class="bi bi-pencil me-1"></i>Chỉnh sửa</button>
+            </div>
+        </div>
+    </div>
+</div>

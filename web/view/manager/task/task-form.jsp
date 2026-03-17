@@ -160,19 +160,18 @@
                                     <h6 class="mb-0"><i class="bi bi-person-check me-2"></i>Phân công</h6>
                                 </div>
                                 <div class="card-body">
-                                    <label for="assignedTo" class="form-label fw-semibold">
-                                        Người thực hiện <span class="text-danger">*</span>
+                                    <label class="form-label fw-semibold">
+                                        Người thực hiện
                                     </label>
-                                    <select class="form-select" id="assignedTo" name="assignedTo" required>
-                                        <option value="">-- Chọn người thực hiện --</option>
+                                    <input type="hidden" name="assignedTo" value="${task.assignedTo}">
+                                    <select class="form-select" disabled>
                                         <c:forEach var="user" items="${allUsers}">
-                                            <option value="${user.userId}"
-                                                    ${task.assignedTo == user.userId ? 'selected' : ''}>
-                                                ${user.firstName} ${user.lastName}
-                                            </option>
+                                            <c:if test="${task.assignedTo == user.userId}">
+                                                <option selected>${user.firstName} ${user.lastName}</option>
+                                            </c:if>
                                         </c:forEach>
                                     </select>
-                                    <div class="invalid-feedback">Vui lòng chọn người thực hiện</div>
+                                    <div class="form-text text-muted">Không thể thay đổi người thực hiện khi chỉnh sửa</div>
                                 </div>
                             </div>
                         </c:if>
