@@ -22,9 +22,14 @@
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h5 class="fw-bold text-dark m-0"><i class="bi bi-people-fill me-2 text-primary"></i>Danh sách khách hàng</h5>
-    <div class="input-group" style="max-width: 350px;">
-        <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
-        <input type="text" class="form-control border-start-0 shadow-none" id="searchPhone" placeholder="Tìm theo số điện thoại hoặc tên..." onkeyup="filterTable()">
+    <div class="d-flex gap-2">
+        <button id="btnExpiringFilter" class="btn btn-outline-warning fw-bold shadow-sm text-nowrap" onclick="toggleExpiringFilter()">
+            <i class="bi bi-hourglass-bottom me-1"></i> Sắp hết hạn
+        </button>
+        <div class="input-group" style="max-width: 350px;">
+            <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+            <input type="text" class="form-control border-start-0 shadow-none" id="searchPhone" placeholder="Tìm theo số điện thoại hoặc tên..." onkeyup="applyFilters()">
+        </div>
     </div>
 </div>
 
@@ -40,7 +45,7 @@
                     <th class="border-0">Số điện thoại</th>
                     <th class="border-0">Trạng thái</th>
                     <th class="border-0">Khóa học</th>
-                    <th class="text-center border-0">Chi tiết</th>
+                    <th class="text-center border-0" id="thDetail">Chi tiết</th>
                     <th class="text-center border-0">Hành động</th>
                 </tr>
             </thead>
@@ -79,14 +84,15 @@
                             </div>
                         </td>
 
-                        <td class="text-center">
+                        <td class="text-center detail-btn-cell">
                             <button class="btn btn-sm btn-light border shadow-sm" 
                                     onclick="showDetail('${c.customerCode}', '${c.fullName}', '${c.email}', '${c.phone}', '${c.gender}', '${c.address}', '${c.city}', '${c.customerSegment}', '${c.totalSpent}', '${c.status}', '${c.notes}')">
                                 <i class="bi bi-eye-fill text-primary"></i>
                             </button>
                         </td>
-                        <td class="text-center">
-                            <div class="btn-group">
+                        
+                        <td class="text-center action-cell" style="vertical-align: middle;">
+                            <div class="btn-group normal-actions">
                                 <button type="button" class="btn btn-sm btn-outline-success d-flex align-items-center gap-1" 
                                         onclick="openReportModal('${c.customerId}', '${c.customerCode}', '${c.fullName}', 'Customer')">
                                     <i class="bi bi-plus-circle"></i> <span>Tạo phiếu</span>
@@ -96,6 +102,13 @@
                                     <i class="bi bi-clock-history"></i> <span>Lịch sử</span>
                                 </a>
                             </div>
+                            
+                            <div class="expiring-actions" style="display: none;">
+                                <button type="button" class="btn btn-sm btn-warning text-dark fw-bold shadow-sm rounded-pill px-4" 
+                                        onclick="openReportModal('${c.customerId}', '${c.customerCode}', '${c.fullName}', 'Customer')">
+                                    <i class="bi bi-headset me-1"></i> Hỗ trợ
+                                </button>
+                            </div>
                         </td>
                     </tr>
                 </c:forEach>
@@ -104,7 +117,7 @@
     </div>
 </div>
 
-<%-- ĐÃ KHÔI PHỤC LẠI DETAIL MODAL BỊ MẤT --%>
+<%-- ĐÃ KHÔI PHỤC LẠI DETAIL MODAL --%>
 <div class="modal fade" id="detailModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg" style="border-radius: 15px;">
@@ -186,6 +199,8 @@
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
 <script>
+    let showOnlyExpiring = false;
+
     $(document).ready(function() {
         $('#courseSelect').select2({
             theme: 'bootstrap-5',
@@ -195,16 +210,75 @@
         });
     });
 
-    function filterTable() {
+    function toggleExpiringFilter() {
+        showOnlyExpiring = !showOnlyExpiring;
+        let btn = document.getElementById('btnExpiringFilter');
+        
+        if (showOnlyExpiring) {
+            btn.classList.remove('btn-outline-warning');
+            btn.classList.add('btn-warning');
+        } else {
+            btn.classList.remove('btn-warning');
+            btn.classList.add('btn-outline-warning');
+        }
+        applyFilters();
+    }
+
+    function applyFilters() {
         let input = document.getElementById("searchPhone").value.toLowerCase();
         let rows = document.querySelectorAll("#customerTable tbody tr");
+        
+        let now = new Date().getTime();
+        let threeDaysInMs = 3 * 24 * 60 * 60 * 1000; 
+        
+        // ẨN/HIỆN TIÊU ĐỀ CỘT CHI TIẾT
+        let thDetail = document.getElementById("thDetail");
+
+        if (showOnlyExpiring) {
+            if(thDetail) thDetail.style.display = 'none'; // Ẩn chữ Chi tiết
+        } else {
+            if(thDetail) thDetail.style.display = ''; // Hiện lại
+        }
+
         rows.forEach(row => {
             let phone = row.querySelector(".phone-cell").textContent.toLowerCase();
             let name = row.querySelector(".fw-bold").textContent.toLowerCase();
-            row.style.display = (phone.includes(input) || name.includes(input)) ? "" : "none";
+            let matchText = phone.includes(input) || name.includes(input);
+
+            let matchExpiring = true; 
+            if (showOnlyExpiring) {
+                matchExpiring = false; 
+                let timers = row.querySelectorAll('.timer');
+                timers.forEach(timer => {
+                    let endTimeStr = timer.getAttribute('data-endtime');
+                    if (endTimeStr) {
+                        let endTime = new Date(endTimeStr.replace(' ', 'T')).getTime();
+                        let distance = endTime - now;
+                        if (distance > 0 && distance <= threeDaysInMs) {
+                            matchExpiring = true;
+                        }
+                    }
+                });
+            }
+
+            if (matchText && matchExpiring) {
+                row.style.display = "";
+                if (showOnlyExpiring) {
+                    row.querySelector('.normal-actions').style.display = 'none';
+                    row.querySelector('.expiring-actions').style.display = 'block';
+                    row.querySelector('.detail-btn-cell').style.display = 'none'; // Ẩn nút con mắt
+                } else {
+                    row.querySelector('.normal-actions').style.display = 'flex';
+                    row.querySelector('.expiring-actions').style.display = 'none';
+                    row.querySelector('.detail-btn-cell').style.display = ''; // Hiện lại nút con mắt
+                }
+            } else {
+                row.style.display = "none";
+            }
         });
     }
-    
+
+    // ĐÃ KHÔI PHỤC LẠI HÀM XEM CHI TIẾT
     function showDetail(code, name, email, phone, gender, addr, city, segment, spent, status, notes) {
         document.getElementById("mCode").innerText = code;
         document.getElementById("mName").innerText = name;
@@ -215,7 +289,6 @@
         
         let formattedSpent = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(spent);
         document.getElementById("mSpent").innerText = formattedSpent;
-        
         document.getElementById("mStatus").innerText = status;
         document.getElementById("mNotes").innerText = notes && notes !== 'null' ? notes : "Không có ghi chú";
         
@@ -241,15 +314,13 @@
                     courses.forEach(function(course) {
                         let priceFormatted = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(course.price);
                         let optionText = course.courseName + ' (' + priceFormatted + ')';
-                        let newOption = new Option(optionText, course.courseId, false, false);
-                        $('#courseSelect').append(newOption);
+                        $('#courseSelect').append(new Option(optionText, course.courseId, false, false));
                     });
                     $('#courseSelect').trigger('change');
                 }
             },
             error: function(xhr, status, error) {
-                // ĐÃ CHÈN BẪY LỖI ĐỂ HIỆN THÔNG BÁO RÕ RÀNG NẾU SERVER CHƯA NHẬN API
-                alert("⚠️ Hệ thống không tải được khóa học!\nMã trạng thái: " + xhr.status + "\nLỗi: " + error + "\nHãy nhớ Clean and Build và Restart Server Tomcat nhé!");
+                alert("⚠️ Hệ thống không tải được khóa học!\nMã trạng thái: " + xhr.status + "\nLỗi: " + error);
                 console.log("Chi tiết lỗi:", xhr.responseText);
             }
         });
@@ -267,6 +338,13 @@
     function addToQueue() {
         const subject = $("input[name='subject']").val();
         if (!subject) { alert("Vui lòng nhập tiêu đề!"); return; }
+        
+        let courseCount = $('#courseSelect').val().length;
+        if (courseCount > 0) {
+            alert("⚠️ LỖI LOGIC: Khách đã chốt khóa học thì bạn phải bấm [Lưu báo cáo] để hoàn tất.\n\nNút [Thêm vào hàng chờ] chỉ dành cho khách chưa mua và cần gọi lại sau!");
+            return; 
+        }
+
         document.getElementById("rpt_Status").value = "Pending";
         executeSubmit();
     }

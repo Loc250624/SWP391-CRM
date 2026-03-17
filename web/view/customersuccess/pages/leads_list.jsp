@@ -200,10 +200,18 @@
         executeSubmit();
     }
 
-    function addToQueue() {
+   function addToQueue() {
         const subject = $("input[name='subject']").val();
-        if(!subject) { alert("Vui lòng nhập tiêu đề!"); return; }
-        document.getElementById("rpt_Status").value = "Pending"; 
+        if (!subject) { alert("Vui lòng nhập tiêu đề!"); return; }
+
+        // 👉 THÊM ĐOẠN NÀY: Chặn không cho đưa vào hàng chờ nếu có khóa học
+        let courseCount = $('#courseSelect').val().length;
+        if (courseCount > 0) {
+            alert("⚠️ LỖI LOGIC: Khách đã chốt khóa học thì bạn phải bấm [Lưu báo cáo] để hoàn tất.\n\nNút [Thêm vào hàng chờ] chỉ dành cho khách chưa mua và cần gọi lại sau!");
+            return; // Dừng lại ngay lập tức
+        }
+
+        document.getElementById("rpt_Status").value = "Pending";
         executeSubmit();
     }
 
