@@ -26,6 +26,41 @@ public class TaskCommentDAO extends DBContext {
         }
     }
 
+    public Comment getCommentById(int commentId) {
+        String sql = "SELECT * FROM comments WHERE comment_id = ?";
+        try (PreparedStatement st = connection.prepareStatement(sql)) {
+            st.setInt(1, commentId);
+            try (ResultSet rs = st.executeQuery()) {
+                if (rs.next()) {
+                    Comment c = new Comment();
+                    c.setCommentId(rs.getInt("comment_id"));
+                    c.setRelatedType(rs.getString("related_type"));
+                    c.setRelatedId(rs.getInt("related_id"));
+                    c.setContent(rs.getString("content"));
+                    c.setParentCommentId(rs.getObject("parent_comment_id", Integer.class));
+                    Timestamp ts = rs.getTimestamp("created_at");
+                    if (ts != null) c.setCreatedAt(ts.toLocalDateTime());
+                    c.setCreatedBy(rs.getInt("created_by"));
+                    return c;
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public boolean deleteComment(int commentId) {
+        String sql = "DELETE FROM comments WHERE comment_id = ?";
+        try (PreparedStatement st = connection.prepareStatement(sql)) {
+            st.setInt(1, commentId);
+            return st.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
     public List<Comment> getCommentsByTaskId(int taskId) {
         List<Comment> list = new ArrayList<>();
         String sql = "SELECT * FROM comments WHERE related_type = ? AND related_id = ? ORDER BY created_at ASC";
