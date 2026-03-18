@@ -32,50 +32,67 @@
 
 <div id="liveAlertPlaceholder"></div>
 
-<div class="card border-0 shadow-sm rounded-3 overflow-hidden">
-    <table class="table table-hover align-middle mb-0">
-        <thead class="bg-light text-muted small text-uppercase">
-            <tr>
-                <th class="ps-4">Mã định danh</th>
-                <th>Họ Tên</th>
-                <th>Số điện thoại</th>
-                <th>Trạng thái</th>
-                <th>Người tạo</th>
-                <th class="text-center">Hành động</th>
-            </tr>
-        </thead>
-        <tbody>
-            <c:forEach items="${searchResult}" var="item">
-                <tr>
-                    <td class="ps-4">
-                        <span class="badge ${item.relatedType == 'Customer' ? 'bg-primary' : 'bg-info'} mb-1">${item.relatedType}</span><br>
-                        <span class="fw-bold text-dark">${item.subject}</span>
-                    </td>
-                    <td class="fw-bold text-dark">${item.customerName}</td>
-                    <td class="fw-medium">${item.customerPhone}</td>
-                    <td>
-                        <span class="status-badge ${item.status == 'Active' || item.status == 'New' ? 'status-active' : 'status-inactive'}">
-                            ${item.status}
-                        </span>
-                    </td>
-                    <td class="text-muted small">${item.performerName}</td>
-                    <td class="text-center">
-                        <%-- Chỉ giữ lại nút Chuyển tiếp nếu không phải do chính người dùng hiện tại tạo --%>
-                        <c:if test="${item.createdBy != sessionScope.user.userId}">
-                            <button type="button" class="btn btn-sm btn-warning rounded-pill px-3 fw-bold text-dark" 
-                                    onclick="openForwardModal('${item.relatedId}', '${item.relatedType}', '${item.subject}', '${item.customerName}', '${item.createdBy}', '${item.performerName}')">
-                                <i class="bi bi-arrow-right-short"></i> Chuyển tiếp
-                            </button>
-                        </c:if>
-                    </td>
-                </tr>
-            </c:forEach>
-        </tbody>
-    </table>
-    <c:if test="${empty searchResult}">
-        <div class="text-center py-5 text-muted">Nhập thông tin để tìm kiếm khách hàng.</div>
-    </c:if>
-</div>
+<%-- CẬP NHẬT: Kiểm tra xem người dùng có đang thực hiện tìm kiếm hay không --%>
+<c:set var="isSearching" value="${not empty param.sCode or not empty param.sName or not empty param.sPhone}" />
+
+<c:choose>
+    <%-- TRƯỜNG HỢP 1: NẾU ĐÃ BẤM TÌM KIẾM -> HIỆN BẢNG KẾT QUẢ --%>
+    <c:when test="${isSearching}">
+        <div class="card border-0 shadow-sm rounded-3 overflow-hidden">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light text-muted small text-uppercase">
+                    <tr>
+                        <th class="ps-4">Mã định danh</th>
+                        <th>Họ Tên</th>
+                        <th>Số điện thoại</th>
+                        <th>Trạng thái</th>
+                        <th>Người tạo</th>
+                        <th class="text-center">Hành động</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <c:forEach items="${searchResult}" var="item">
+                        <tr>
+                            <td class="ps-4">
+                                <span class="badge ${item.relatedType == 'Customer' ? 'bg-primary' : 'bg-info'} mb-1">${item.relatedType}</span><br>
+                                <span class="fw-bold text-dark">${item.subject}</span>
+                            </td>
+                            <td class="fw-bold text-dark">${item.customerName}</td>
+                            <td class="fw-medium">${item.customerPhone}</td>
+                            <td>
+                                <span class="status-badge ${item.status == 'Active' || item.status == 'New' ? 'status-active' : 'status-inactive'}">
+                                    ${item.status}
+                                </span>
+                            </td>
+                            <td class="text-muted small">${item.performerName}</td>
+                            <td class="text-center">
+                                <%-- Chỉ giữ lại nút Chuyển tiếp nếu không phải do chính người dùng hiện tại tạo --%>
+                                <c:if test="${item.createdBy != sessionScope.user.userId}">
+                                    <button type="button" class="btn btn-sm btn-warning rounded-pill px-3 fw-bold text-dark" 
+                                            onclick="openForwardModal('${item.relatedId}', '${item.relatedType}', '${item.subject}', '${item.customerName}', '${item.createdBy}', '${item.performerName}')">
+                                        <i class="bi bi-arrow-right-short"></i> Chuyển tiếp
+                                    </button>
+                                </c:if>
+                            </td>
+                        </tr>
+                    </c:forEach>
+                </tbody>
+            </table>
+            <c:if test="${empty searchResult}">
+                <div class="text-center py-5 text-muted">Không tìm thấy khách hàng/Lead nào khớp với thông tin trên.</div>
+            </c:if>
+        </div>
+    </c:when>
+    
+    <%-- TRƯỜNG HỢP 2: NẾU CHƯA TÌM KIẾM -> HIỆN MÀN HÌNH CHỜ XINH ĐẸP --%>
+    <c:otherwise>
+        <div class="text-center py-5" style="margin-top: 20px; background-color: #f8fafc; border-radius: 16px; border: 2px dashed #cbd5e1;">
+            <i class="bi bi-search display-1 text-black-50 opacity-25"></i>
+            <h5 class="text-secondary mt-3 fw-bold">Tìm kiếm Khách hàng & Lead</h5>
+            <p class="text-black-50 mb-0">Vui lòng nhập Mã định danh, Họ tên hoặc Số điện thoại và bấm "Tra cứu".</p>
+        </div>
+    </c:otherwise>
+</c:choose>
 
 <div class="modal fade" id="forwardModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">

@@ -148,12 +148,52 @@
 
     // --- TÌM KIẾM ---
     function filterByPhone() {
-        let input = document.getElementById("searchPhone").value.toLowerCase();
-        let rows = document.querySelectorAll("#leadsTable tbody tr");
+        // 1. Lấy giá trị thô người dùng nhập
+        let rawInput = document.getElementById("searchPhone").value;
+        
+        // Dùng Regex xóa sạch chữ cái, khoảng trắng, chỉ giữ lại các con số
+        let searchNumber = rawInput.replace(/\D/g, ''); 
+
+        // 2. Lấy danh sách các dòng trong bảng
+        let rows = document.querySelectorAll("#leadsTable tbody tr:not(#noResultRow)");
+        let visibleCount = 0;
+
         rows.forEach(row => {
-            let phone = row.querySelector(".phone-cell").textContent.toLowerCase();
-            row.style.display = phone.includes(input) ? "" : "none";
+            let phoneCell = row.querySelector(".phone-cell");
+            // Cũng xóa sạch ký tự thừa trong SĐT của bảng để so sánh cho chuẩn
+            let phoneText = phoneCell ? phoneCell.textContent.replace(/\D/g, '') : "";
+
+            // Nếu ô tìm kiếm trống HOẶC tìm thấy số khớp -> Hiện
+            if (searchNumber === "" || phoneText.includes(searchNumber)) {
+                row.style.display = "";
+                visibleCount++;
+            } else {
+                row.style.display = "none"; // Không khớp -> Ẩn
+            }
         });
+
+        // 3. Xử lý thông báo "Không tìm thấy" mượt mà
+        let tbody = document.querySelector("#leadsTable tbody");
+        let noResultRow = document.getElementById("noResultRow");
+
+        if (visibleCount === 0) {
+            let errorMsg = '<td colspan="10" class="text-center py-5 text-muted">' + 
+                           '<i class="bi bi-search fs-2 d-block mb-2 opacity-50"></i>' + 
+                           'Không tìm thấy số điện thoại nào khớp với "<strong>' + rawInput + '</strong>"</td>';
+                           
+            if (!noResultRow) {
+                let tr = document.createElement("tr");
+                tr.id = "noResultRow";
+                tr.innerHTML = errorMsg;
+                tbody.appendChild(tr);
+            } else {
+                noResultRow.style.display = "";
+                noResultRow.innerHTML = errorMsg;
+            }
+        } else {
+            // Có kết quả thì giấu dòng báo lỗi đi
+            if (noResultRow) noResultRow.style.display = "none";
+        }
     }
 
     // --- MỞ MODAL & GỌI AJAX LẤY KHÓA HỌC ---
