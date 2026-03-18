@@ -41,8 +41,20 @@
                                     </div>
                                     <div class="col-md-6">
                                         <label class="form-label fw-semibold">Mã nhân viên</label>
-                                        <input type="text" name="employeeCode" class="form-control"
-                                            value="${user.employeeCode}" required>
+                                        <c:choose>
+                                            <c:when test="${user != null}">
+                                                <input type="text" name="employeeCode" class="form-control bg-light"
+                                                    value="${user.employeeCode}" readonly
+                                                    title="Mã nhân viên không thể thay đổi">
+                                                <div class="form-text text-muted"><i class="bi bi-lock-fill me-1"></i>Mã nhân viên không thể thay đổi sau khi tạo.</div>
+                                            </c:when>
+                                            <c:otherwise>
+                                                <div class="alert alert-info border-0 rounded-3 py-2 px-3 mb-0 d-flex align-items-center gap-2" style="background:#eef2ff;">
+                                                    <i class="bi bi-magic text-primary"></i>
+                                                    <span class="small">Mã nhân viên sẽ <strong>tự động sinh</strong> theo vai trò (VD: MKT001, SAL002...)</span>
+                                                </div>
+                                            </c:otherwise>
+                                        </c:choose>
                                     </div>
                                     <div class="col-md-6">
                                         <label class="form-label fw-semibold">Số điện thoại</label>

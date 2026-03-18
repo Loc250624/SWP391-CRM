@@ -42,20 +42,19 @@
                                         placeholder="nv-a@company.com" required>
                                 </div>
 
-                                <!-- Employee Code & Phone -->
-                                <div class="col-md-6">
-                                    <label class="form-label fw-bold text-muted small text-uppercase mb-2">Mã nhân viên
-                                        <span class="text-danger">*</span></label>
-                                    <input type="text" name="employeeCode"
-                                        class="form-control form-control-lg bg-light border-0 rounded-3 shadow-none px-4"
-                                        placeholder="NV123456" required>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label fw-bold text-muted small text-uppercase mb-2">Số điện
-                                        thoại</label>
+                                <!-- Phone -->
+                                <div class="col-md-12">
+                                    <label class="form-label fw-bold text-muted small text-uppercase mb-2">Số điện thoại</label>
                                     <input type="text" name="phone"
                                         class="form-control form-control-lg bg-light border-0 rounded-3 shadow-none px-4"
                                         placeholder="0123 456 789">
+                                </div>
+                                <!-- Auto-generated employee code info -->
+                                <div class="col-md-12">
+                                    <div class="alert alert-info border-0 rounded-3 py-2 px-3 mb-0 d-flex align-items-center gap-2" style="background:#eef2ff;">
+                                        <i class="bi bi-info-circle-fill text-primary"></i>
+                                        <span class="small">Mã nhân viên sẽ được <strong>tự động sinh</strong> theo vai trò được chọn (VD: MKT001, SAL002...)</span>
+                                    </div>
                                 </div>
 
                                 <!-- Role & Status -->

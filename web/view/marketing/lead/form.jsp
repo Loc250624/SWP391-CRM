@@ -41,14 +41,19 @@
                                     </div>
                                     <div class="row g-3 mb-3">
                                         <div class="col-md-6">
-                                            <label class="form-label small fw-bold">Email</label>
-                                            <input type="email" name="email" class="form-control" value="${lead.email}">
+                                            <label class="form-label small fw-bold">Email <span class="text-danger">*</span></label>
+                                            <input type="email" name="email" id="emailInput" class="form-control" value="${lead.email}" required
+                                                placeholder="example@email.com">
+                                            <div class="invalid-feedback">Vui lòng nhập địa chỉ email hợp lệ.</div>
                                         </div>
                                         <div class="col-md-6">
-                                            <label class="form-label small fw-bold">Số điện thoại <span
-                                                    class="text-danger">*</span></label>
-                                            <input type="text" name="phone" class="form-control" value="${lead.phone}"
-                                                required>
+                                            <label class="form-label small fw-bold">Số điện thoại <span class="text-danger">*</span></label>
+                                            <input type="text" name="phone" id="phoneInput" class="form-control" value="${lead.phone}"
+                                                required maxlength="10"
+                                                pattern="[0-9]{10}"
+                                                placeholder="0xxxxxxxxx"
+                                                oninput="validatePhone(this)">
+                                            <div class="invalid-feedback" id="phoneError">Số điện thoại phải gồm đúng 10 chữ số.</div>
                                         </div>
                                     </div>
                                 </div>
@@ -101,21 +106,6 @@
                                             <option value="Converted" ${lead.status=='Converted' ? 'selected' : '' }>Đã chuyển đổi (Converted)</option>
                                         </select>
                                     </div>
-                                    <div class="row g-3 mb-3">
-                                        <div class="col-md-6">
-                                            <label class="form-label small fw-bold">Đánh giá (Rating)</label>
-                                            <select name="rating" class="form-select">
-                                                <option value="">-- Chọn --</option>
-                                                <option value="Hot" ${lead.rating=='Hot' ? 'selected' : '' }>Hot 🔥</option>
-                                                <option value="Warm" ${lead.rating=='Warm' ? 'selected' : '' }>Warm ⚡</option>
-                                                <option value="Cold" ${lead.rating=='Cold' ? 'selected' : '' }>Cold ❄️</option>
-                                            </select>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label class="form-label small fw-bold">Điểm số (Score)</label>
-                                            <input type="number" name="leadScore" class="form-control" value="${lead.leadScore != null ? lead.leadScore : 0}">
-                                        </div>
-                                    </div>
                                     <div class="mb-3">
                                         <label class="form-label small fw-bold">Nguồn Lead</label>
                                         <select name="sourceId" class="form-select">
@@ -158,3 +148,41 @@
                 </form>
             </div>
         </div>
+
+<script>
+    // Phone: only allow digits, max 10
+    function validatePhone(input) {
+        input.value = input.value.replace(/\D/g, '').slice(0, 10);
+        if (input.value.length === 10) {
+            input.classList.remove('is-invalid');
+            input.classList.add('is-valid');
+        } else if (input.value.length > 0) {
+            input.classList.remove('is-valid');
+            input.classList.add('is-invalid');
+        } else {
+            input.classList.remove('is-valid', 'is-invalid');
+        }
+    }
+
+    // Validate on submit
+    document.querySelector('form').addEventListener('submit', function(e) {
+        var phone = document.getElementById('phoneInput');
+        var email = document.getElementById('emailInput');
+        var valid = true;
+
+        // Phone: exactly 10 digits
+        if (!/^[0-9]{10}$/.test(phone.value)) {
+            phone.classList.add('is-invalid');
+            phone.classList.remove('is-valid');
+            valid = false;
+        }
+
+        // Email: required
+        if (!email.value.trim()) {
+            email.classList.add('is-invalid');
+            valid = false;
+        }
+
+        if (!valid) e.preventDefault();
+    });
+</script>

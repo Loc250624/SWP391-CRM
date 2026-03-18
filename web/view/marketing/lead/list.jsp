@@ -56,8 +56,6 @@
                                 <th>Công ty / Chức vụ</th>
                                 <th>Sở thích</th>
                                 <th>Trạng thái</th>
-                                <th>Đánh giá</th>
-                                <th>Điểm số</th>
                                 <th>Phân công cho</th>
                                 <th class="text-end pe-4">Thao tác</th>
                             </tr>
@@ -110,25 +108,6 @@
                                             </td>
                                             <td>
                                                 <c:choose>
-                                                    <c:when test="${lead.rating == 'Hot'}">
-                                                        <span class="badge bg-danger shadow-sm">Hot 🔥</span>
-                                                    </c:when>
-                                                    <c:when test="${lead.rating == 'Warm'}">
-                                                        <span class="badge bg-warning text-dark shadow-sm">Warm ⚡</span>
-                                                    </c:when>
-                                                    <c:when test="${lead.rating == 'Cold'}">
-                                                        <span class="badge bg-info text-dark shadow-sm">Cold ❄️</span>
-                                                    </c:when>
-                                                    <c:otherwise>
-                                                        <span class="text-muted small">-</span>
-                                                    </c:otherwise>
-                                                </c:choose>
-                                            </td>
-                                            <td>
-                                                <div class="fw-bold text-primary">${lead.leadScore}</div>
-                                            </td>
-                                            <td>
-                                                <c:choose>
                                                     <c:when test="${not empty lead.assignedTo}">
                                                         <span class="text-dark small"><i
                                                                 class="bi bi-person me-1"></i>User ID:
@@ -152,14 +131,8 @@
                                                         <li><a class="dropdown-item py-2"
                                                                 href="${pageContext.request.contextPath}/marketing/lead/form?id=${lead.leadId}"><i
                                                                     class="bi bi-pencil me-2"></i>Chỉnh sửa</a></li>
-                                                        <li>
-                                                            <hr class="dropdown-divider">
-                                                        </li>
-                                                        <li><a class="dropdown-item py-2 text-primary" href="#"><i
-                                                                    class="bi bi-arrow-repeat me-2"></i>Chuyển đổi</a>
-                                                        </li>
                                                         <li><a class="dropdown-item py-2 text-danger"
-                                                                href="javascript:CRM.confirm('Xóa Lead này?', () => {})"><i
+                                                                href="javascript:CRM.confirm('Xóa Lead này?', () => { window.location.href='${pageContext.request.contextPath}/marketing/lead/delete?id=${lead.leadId}'; })"><i
                                                                     class="bi bi-trash me-2"></i>Xóa</a></li>
                                                     </ul>
                                                 </div>
@@ -169,7 +142,7 @@
                                 </c:when>
                                 <c:otherwise>
                                     <tr>
-                                        <td colspan="9" class="text-center py-5">
+                                        <td colspan="7" class="text-center py-5">
                                             <div class="text-muted">Không tìm thấy Lead nào tương ứng.</div>
                                         </td>
                                     </tr>

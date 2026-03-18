@@ -87,6 +87,100 @@ public class UserDAO extends DBContext {
         return list;
     }
 
+    public List<Map<String, Object>> getUsersFiltered(String search, String roleCode, String status, int page, int pageSize) {
+        List<Map<String, Object>> list = new ArrayList<>();
+        int offset = (page - 1) * pageSize;
+
+        StringBuilder sql = new StringBuilder(
+            "SELECT u.user_id, u.first_name, u.last_name, u.email, u.employee_code, " +
+            "u.status, u.avatar_url, r.role_name, r.role_code " +
+            "FROM users u " +
+            "LEFT JOIN user_roles ur ON u.user_id = ur.user_id " +
+            "LEFT JOIN roles r ON ur.role_id = r.role_id " +
+            "WHERE 1=1 "
+        );
+
+        List<Object> params = new ArrayList<>();
+
+        if (search != null && !search.trim().isEmpty()) {
+            sql.append("AND (u.first_name + ' ' + u.last_name LIKE ? OR u.email LIKE ? OR u.employee_code LIKE ?) ");
+            String like = "%" + search.trim() + "%";
+            params.add(like); params.add(like); params.add(like);
+        }
+        if (roleCode != null && !roleCode.trim().isEmpty()) {
+            sql.append("AND r.role_code = ? ");
+            params.add(roleCode.trim());
+        }
+        if (status != null && !status.trim().isEmpty()) {
+            sql.append("AND u.status = ? ");
+            params.add(status.trim());
+        }
+        sql.append("ORDER BY u.user_id ASC ");
+        sql.append("OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
+        params.add(offset);
+        params.add(pageSize);
+
+        try (PreparedStatement st = connection.prepareStatement(sql.toString())) {
+            for (int i = 0; i < params.size(); i++) {
+                st.setObject(i + 1, params.get(i));
+            }
+            try (ResultSet rs = st.executeQuery()) {
+                while (rs.next()) {
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("userId", rs.getInt("user_id"));
+                    map.put("firstName", rs.getString("first_name"));
+                    map.put("lastName", rs.getString("last_name"));
+                    map.put("email", rs.getString("email"));
+                    map.put("employeeCode", rs.getString("employee_code"));
+                    map.put("status", rs.getString("status"));
+                    map.put("roleName", rs.getString("role_name"));
+                    map.put("roleCode", rs.getString("role_code"));
+                    map.put("avatarUrl", rs.getString("avatar_url"));
+                    list.add(map);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    public int countUsersFiltered(String search, String roleCode, String status) {
+        StringBuilder sql = new StringBuilder(
+            "SELECT COUNT(*) FROM users u " +
+            "LEFT JOIN user_roles ur ON u.user_id = ur.user_id " +
+            "LEFT JOIN roles r ON ur.role_id = r.role_id " +
+            "WHERE 1=1 "
+        );
+        List<Object> params = new ArrayList<>();
+
+        if (search != null && !search.trim().isEmpty()) {
+            sql.append("AND (u.first_name + ' ' + u.last_name LIKE ? OR u.email LIKE ? OR u.employee_code LIKE ?) ");
+            String like = "%" + search.trim() + "%";
+            params.add(like); params.add(like); params.add(like);
+        }
+        if (roleCode != null && !roleCode.trim().isEmpty()) {
+            sql.append("AND r.role_code = ? ");
+            params.add(roleCode.trim());
+        }
+        if (status != null && !status.trim().isEmpty()) {
+            sql.append("AND u.status = ? ");
+            params.add(status.trim());
+        }
+
+        try (PreparedStatement st = connection.prepareStatement(sql.toString())) {
+            for (int i = 0; i < params.size(); i++) {
+                st.setObject(i + 1, params.get(i));
+            }
+            try (ResultSet rs = st.executeQuery()) {
+                if (rs.next()) return rs.getInt(1);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
     public Users getUserById(int userId) {
         String sql = "SELECT * FROM users WHERE user_id = ?";
         try (PreparedStatement st = connection.prepareStatement(sql)) {
@@ -144,20 +238,43 @@ public class UserDAO extends DBContext {
     }
 
     public boolean updateUser(Users u) {
-        String sql = "UPDATE users SET first_name = ?, last_name = ?, email = ?, phone = ?, employee_code = ?, status = ?, updated_at = GETDATE() WHERE user_id = ?";
+        String sql = "UPDATE users SET first_name = ?, last_name = ?, email = ?, phone = ?, status = ?, updated_at = GETDATE() WHERE user_id = ?";
         try (PreparedStatement st = connection.prepareStatement(sql)) {
             st.setString(1, u.getFirstName());
             st.setString(2, u.getLastName());
             st.setString(3, u.getEmail());
             st.setString(4, u.getPhone());
-            st.setString(5, u.getEmployeeCode());
-            st.setString(6, u.getStatus());
-            st.setInt(7, u.getUserId());
+            st.setString(5, u.getStatus());
+            st.setInt(6, u.getUserId());
             return st.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
         }
         return false;
+    }
+
+    public boolean setUserStatus(int userId, String status) {
+        String sql = "UPDATE users SET status = ?, updated_at = GETDATE() WHERE user_id = ?";
+        try (PreparedStatement st = connection.prepareStatement(sql)) {
+            st.setString(1, status);
+            st.setInt(2, userId);
+            return st.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public boolean deleteUser(int userId) {
+        // Hard delete - only use if no foreign key constraints
+        String sql = "DELETE FROM users WHERE user_id = ?";
+        try (PreparedStatement st = connection.prepareStatement(sql)) {
+            st.setInt(1, userId);
+            return st.executeUpdate() > 0;
+        } catch (SQLException e) {
+            // If constraint violation, fall back to deactivate
+            return setUserStatus(userId, "Inactive");
+        }
     }
     public List<Users> getUsersByRoleCode(String roleCode) {
         List<Users> list = new ArrayList<>();
@@ -177,6 +294,33 @@ public class UserDAO extends DBContext {
             e.printStackTrace();
         }
         return list;
+    }
+
+    public int getTotalUsersCount() {
+        String sql = "SELECT COUNT(*) FROM users WHERE status = 'Active'";
+        try (PreparedStatement st = connection.prepareStatement(sql); ResultSet rs = st.executeQuery()) {
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    public String getLastEmployeeCodeByPrefix(String prefix) {
+        String sql = "SELECT TOP 1 employee_code FROM users WHERE employee_code LIKE ? ORDER BY employee_code DESC";
+        try (PreparedStatement st = connection.prepareStatement(sql)) {
+            st.setString(1, prefix + "%");
+            try (ResultSet rs = st.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getString("employee_code");
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     private Users mapResultSetToUser(ResultSet rs) throws SQLException {

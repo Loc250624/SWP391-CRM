@@ -35,6 +35,18 @@ public class CourseDAO extends DBContext {
         return list;
     }
 
+    public int getTotalActiveCoursesCount() {
+        String sql = "SELECT COUNT(*) FROM courses WHERE status = 'Active'";
+        try (PreparedStatement st = connection.prepareStatement(sql); ResultSet rs = st.executeQuery()) {
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
     // 2. Dành cho CUSTOMER: Lấy các khóa học mà người này CHƯA ĐĂNG KÝ
     public List<Course> getAvailableCoursesForCustomer(int customerId) {
         List<Course> list = new ArrayList<>();

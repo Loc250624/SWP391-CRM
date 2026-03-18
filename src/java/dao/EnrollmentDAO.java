@@ -139,4 +139,36 @@ public class EnrollmentDAO extends DBContext {
         }
         return list;
     }
+
+    public List<CustomerEnrollment> getAllEnrollments() {
+        List<CustomerEnrollment> list = new ArrayList<>();
+        String sql = "SELECT e.*, c.course_name, cust.full_name as customer_name " +
+                "FROM customer_enrollments e " +
+                "JOIN courses c ON e.course_id = c.course_id " +
+                "JOIN customers cust ON e.customer_id = cust.customer_id " +
+                "ORDER BY e.enrolled_date DESC";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                CustomerEnrollment e = new CustomerEnrollment();
+                e.setEnrollmentId(rs.getInt("enrollment_id"));
+                e.setEnrollmentCode(rs.getString("enrollment_code"));
+                e.setCustomerId(rs.getInt("customer_id"));
+                e.setCourseId(rs.getInt("course_id"));
+                if (rs.getDate("enrolled_date") != null) {
+                    e.setEnrolledDate(rs.getDate("enrolled_date").toLocalDate());
+                }
+                e.setFinalAmount(rs.getBigDecimal("final_amount"));
+                e.setPaymentStatus(rs.getString("payment_status"));
+                e.setLearningStatus(rs.getString("learning_status"));
+                e.setProgressPercentage(rs.getInt("progress_percentage"));
+                e.setCourseName(rs.getString("course_name"));
+                e.setNotes(rs.getString("customer_name")); // Borrowing notes field to store customer name for display
+                list.add(e);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
 }

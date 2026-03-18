@@ -15,14 +15,12 @@
 <style>
     /* Thẻ thống kê năng suất */
     .summary-card {
-        background: linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%);
+        background: linear-gradient(135deg, #6366f1 0%, #4338ca 100%);
         color: white;
         border-radius: 16px;
         padding: 24px;
         margin-bottom: 24px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
+        /* Đã xóa thuộc tính flex cũ để Bootstrap Grid (row/col) hoạt động chuẩn */
     }
     
     /* Header nhóm theo ngày */
@@ -70,13 +68,44 @@
 </style>
 
 <div class="container-fluid px-4">
-    <div class="summary-card shadow-sm mt-3" style="background: linear-gradient(135deg, #6366f1 0%, #4338ca 100%);">
-        <div>
-            <h6 class="text-white-50 mb-1 text-uppercase small fw-bold">Năng suất Tháng ${month}/${year}</h6>
-            <h3 class="mb-0 fw-bold">${activities.size()} lượt hỗ trợ thành công</h3>
-        </div>
-        <div class="bg-white bg-opacity-20 p-3 rounded-circle">
-            <i class="bi bi-calendar-check-fill fs-1"></i>
+    
+    <div class="summary-card shadow-sm mt-3">
+        <div class="row align-items-center m-0 w-100">
+            
+            <div class="col-md-4 border-end border-light border-opacity-25 pb-3 pb-md-0">
+                <div class="small text-white-50 fw-semibold text-uppercase mb-1">
+                    <i class="bi bi-headset me-1"></i> Năng suất Tháng ${month}/${year}
+                </div>
+                <div class="fs-3 fw-bold text-white">
+                    ${activities.size()} <span class="fs-5 fw-normal">lượt hỗ trợ</span>
+                </div>
+            </div>
+
+            <div class="col-md-4 border-end border-light border-opacity-25 ps-md-4 pb-3 pb-md-0">
+                <div class="small text-warning fw-semibold text-uppercase mb-1">
+                    <i class="bi bi-cart-check-fill me-1"></i> Chốt sale thành công
+                </div>
+                <div class="fs-3 fw-bold text-warning">
+                    ${upsaleCount != null ? upsaleCount : 0} <span class="fs-5 fw-normal text-white">khóa học</span>
+                </div>
+            </div>
+
+            <div class="col-md-4 ps-md-4">
+                <div class="small fw-semibold text-uppercase mb-1" style="color: #6ee7b7;">
+                    <i class="bi bi-cash-coin me-1"></i> Tổng doanh thu mang về
+                </div>
+                <div class="fs-3 fw-bold" style="color: #a7f3d0;">
+                    <c:choose>
+                        <c:when test="${totalRevenue != null}">
+                            <fmt:formatNumber value="${totalRevenue}" type="currency" currencySymbol="₫" maxFractionDigits="0"/>
+                        </c:when>
+                        <c:otherwise>
+                            0 ₫
+                        </c:otherwise>
+                    </c:choose>
+                </div>
+            </div>
+            
         </div>
     </div>
 

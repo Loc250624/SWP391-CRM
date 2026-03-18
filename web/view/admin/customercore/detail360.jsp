@@ -67,60 +67,118 @@
 
                                 <!-- Tab 1: Profile -->
                                 <div class="tab-pane fade show active" id="pills-profile" role="tabpanel">
-                                    <div class="row g-4">
-                                        <div class="col-md-6">
-                                            <h6 class="text-uppercase text-muted fw-bold mb-3 small"
-                                                style="letter-spacing: 1px;">Thông tin cá nhân</h6>
-                                            <div class="list-group list-group-flush border rounded-3 overflow-hidden">
-                                                <div
-                                                    class="list-group-item d-flex justify-content-between align-items-center py-3">
-                                                    <span class="text-muted"><i
-                                                            class="bi bi-envelope me-2"></i>Email</span>
-                                                    <span class="fw-bold">${fn:escapeXml(customer.email)}</span>
-                                                </div>
-                                                <div
-                                                    class="list-group-item d-flex justify-content-between align-items-center py-3">
-                                                    <span class="text-muted"><i class="bi bi-phone me-2"></i>Điện
-                                                        thoại</span>
-                                                    <span class="fw-bold">${fn:escapeXml(customer.phone)}</span>
-                                                </div>
-                                                <div
-                                                    class="list-group-item d-flex justify-content-between align-items-center py-3">
-                                                    <span class="text-muted"><i class="bi bi-geo-alt me-2"></i>Thành
-                                                        phố</span>
-                                                    <span class="fw-bold">${not empty customer.city ? customer.city :
-                                                        'N/A'}</span>
-                                                </div>
-                                                <div
-                                                    class="list-group-item d-flex justify-content-between align-items-center py-3">
-                                                    <span class="text-muted"><i
-                                                            class="bi bi-calendar-event me-2"></i>Ngày sinh</span>
-                                                    <span class="fw-bold">${customer.dob != null ? customer.dob :
-                                                        'N/A'}</span>
+                                    <!-- Summary Cards -->
+                                    <div class="row g-3 mb-4">
+                                        <div class="col-md-3">
+                                            <div class="card border-0 bg-primary-subtle rounded-4 h-100">
+                                                <div class="card-body">
+                                                    <div class="text-primary small fw-bold text-uppercase mb-1">Tổng chi tiêu</div>
+                                                    <div class="h4 fw-bold mb-0">
+                                                        <fmt:formatNumber value="${customer.totalSpent != null ? customer.totalSpent : 0}" type="currency" currencySymbol="₫" />
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="col-md-6">
-                                            <h6 class="text-uppercase text-muted fw-bold mb-3 small"
-                                                style="letter-spacing: 1px;">Trạng thái & Phân loại</h6>
-                                            <div class="list-group list-group-flush border rounded-3 overflow-hidden">
-                                                <div
-                                                    class="list-group-item d-flex justify-content-between align-items-center py-3">
-                                                    <span class="text-muted"><i
-                                                            class="bi bi-shield-check me-2"></i>Trạng thái</span>
-                                                    <span
-                                                        class="badge bg-success-subtle text-success border border-success px-3">${customer.status}</span>
+                                        <div class="col-md-3">
+                                            <div class="card border-0 bg-success-subtle rounded-4 h-100">
+                                                <div class="card-body">
+                                                    <div class="text-success small fw-bold text-uppercase mb-1">Khóa học</div>
+                                                    <div class="h4 fw-bold mb-0">${customer.totalCourses}</div>
                                                 </div>
-                                                <div
-                                                    class="list-group-item d-flex justify-content-between align-items-center py-3">
-                                                    <span class="text-muted"><i class="bi bi-tag me-2"></i>Từ khóa
-                                                        (Tags)</span>
-                                                    <div class="d-flex gap-1">
-                                                        <c:forEach items="${tags}" var="t">
-                                                            <span
-                                                                class="badge bg-light text-dark border small">${t.tagName}</span>
-                                                        </c:forEach>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="card border-0 bg-warning-subtle rounded-4 h-100">
+                                                <div class="card-body">
+                                                    <div class="text-warning small fw-bold text-uppercase mb-1">Mua lần cuối</div>
+                                                    <div class="h4 fw-bold mb-0">
+                                                        ${customer.lastPurchaseDate != null ? customer.lastPurchaseDate : 'N/A'}
                                                     </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="card border-0 bg-info-subtle rounded-4 h-100">
+                                                <div class="card-body">
+                                                    <div class="text-info small fw-bold text-uppercase mb-1">Điểm sức khỏe</div>
+                                                    <div class="h4 fw-bold mb-0">${customer.healthScore != null ? customer.healthScore : '--'}</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="row g-4">
+                                        <div class="col-md-8">
+                                            <div class="card border-0 bg-white shadow-none border rounded-4">
+                                                <div class="card-body p-4">
+                                                    <h6 class="text-uppercase text-muted fw-bold mb-4 small"
+                                                        style="letter-spacing: 1px;">Thông tin chi tiết</h6>
+                                                    <div class="row g-3">
+                                                        <div class="col-sm-6">
+                                                            <label class="text-muted small d-block mb-1">Email</label>
+                                                            <div class="fw-bold">${fn:escapeXml(customer.email)}</div>
+                                                        </div>
+                                                        <div class="col-sm-6">
+                                                            <label class="text-muted small d-block mb-1">Điện thoại</label>
+                                                            <div class="fw-bold">${fn:escapeXml(customer.phone)}</div>
+                                                        </div>
+                                                        <div class="col-sm-6">
+                                                            <label class="text-muted small d-block mb-1">Thành phố</label>
+                                                            <div class="fw-bold">${not empty customer.city ? customer.city : 'N/A'}</div>
+                                                        </div>
+                                                        <div class="col-sm-6">
+                                                            <label class="text-muted small d-block mb-1">Ngày sinh</label>
+                                                            <div class="fw-bold">${customer.dateOfBirth != null ? customer.dateOfBirth : 'N/A'}</div>
+                                                        </div>
+                                                        <div class="col-12">
+                                                            <hr class="my-3 opacity-10">
+                                                        </div>
+                                                        <div class="col-sm-6">
+                                                            <label class="text-muted small d-block mb-1">Trạng thái</label>
+                                                            <span class="badge bg-success-subtle text-success border border-success px-3">${customer.status}</span>
+                                                        </div>
+                                                        <div class="col-sm-6">
+                                                            <label class="text-muted small d-block mb-1">Phân khúc</label>
+                                                            <span class="badge bg-light text-dark border px-3">${customer.customerSegment != null ? customer.customerSegment : 'Active'}</span>
+                                                        </div>
+                                                        <div class="col-12">
+                                                            <label class="text-muted small d-block mb-1">Từ khóa (Tags)</label>
+                                                            <div class="d-flex flex-wrap gap-1 mt-1">
+                                                                <c:if test="${empty tags}">
+                                                                    <span class="text-muted small font-italic">No tags</span>
+                                                                </c:if>
+                                                                <c:forEach items="${tags}" var="t">
+                                                                    <span class="badge bg-light text-dark border small">${t.tagName}</span>
+                                                                </c:forEach>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="card border-0 bg-white shadow-none border rounded-4 h-100">
+                                                <div class="card-body p-4">
+                                                    <h6 class="text-uppercase text-muted fw-bold mb-4 small"
+                                                        style="letter-spacing: 1px;">Hoạt động gần đây</h6>
+                                                    <c:if test="${empty activities}">
+                                                        <p class="text-muted small">No recent activities.</p>
+                                                    </c:if>
+                                                    <ul class="list-unstyled mb-0">
+                                                        <c:forEach items="${activities}" var="a" end="2">
+                                                            <li class="mb-3 pb-3 border-bottom last-child-no-border">
+                                                                <div class="d-flex align-items-center justify-content-between mb-1">
+                                                                    <span class="badge bg-indigo-subtle text-indigo extra-small">${a.activityType}</span>
+                                                                    <small class="text-muted" style="font-size: 0.7rem;">${a.createdAt}</small>
+                                                                </div>
+                                                                <div class="fw-bold small text-dark text-truncate">${fn:escapeXml(a.subject)}</div>
+                                                            </li>
+                                                        </c:forEach>
+                                                    </ul>
+                                                    <c:if test="${not empty activities}">
+                                                        <button class="btn btn-link btn-sm p-0 text-decoration-none text-indigo fw-bold" 
+                                                                onclick="document.getElementById('pills-history-tab').click()">Xem tất cả</button>
+                                                    </c:if>
                                                 </div>
                                             </div>
                                         </div>
