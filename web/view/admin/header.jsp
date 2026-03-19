@@ -21,53 +21,9 @@
                     </ol>
                 </nav>
 
-                <!-- Center: Search -->
-                <form class="d-none d-lg-flex mx-4" style="width: 400px;">
-                    <div class="input-group">
-                        <span class="input-group-text bg-light border-end-0">
-                            <i class="bi bi-search text-muted"></i>
-                        </span>
-                        <input type="text" class="form-control bg-light border-start-0"
-                            placeholder="Tìm kiếm tài khoản, khóa học, cài đặt...">
-                    </div>
-                </form>
 
                 <!-- Right: Actions -->
                 <div class="d-flex align-items-center gap-2">
-
-                    <!-- Quick Add Button -->
-                    <div class="dropdown">
-                        <button class="btn btn-primary d-flex align-items-center gap-1"
-                            style="background-color: #4f46e5; border-color: #4f46e5;" type="button"
-                            data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="bi bi-plus-lg"></i>
-                            <span class="d-none d-md-inline">Hành động nhanh</span>
-                        </button>
-                        <ul class="dropdown-menu dropdown-menu-end">
-                            <li>
-                                <a class="dropdown-item" href="${pageContext.request.contextPath}/admin/customer/form">
-                                    <i class="bi bi-person-plus me-2 text-primary"></i>Tạo Khách hàng mới
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item" href="${pageContext.request.contextPath}/admin/category/form">
-                                    <i class="bi bi-tags me-2 text-success"></i>Tạo Danh mục mới
-                                </a>
-                            </li>
-                            <li>
-                                <hr class="dropdown-divider">
-                            </li>
-                            <li>
-                                <a class="dropdown-item" href="#">
-                                    <i class="bi bi-person-gear me-2 text-indigo"></i>Quản lý Role
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
-
-                    <!-- Divider -->
-                    <div class="vr mx-2 d-none d-md-block"></div>
-
                     <!-- System Notifications -->
                     <div class="dropdown">
                         <button class="btn btn-light btn-sm position-relative" type="button" data-bs-toggle="dropdown"

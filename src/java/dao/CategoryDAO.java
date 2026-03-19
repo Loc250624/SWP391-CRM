@@ -28,7 +28,7 @@ public class CategoryDAO extends DBContext {
     // ─── READ ALL ────────────────────────────────────────────────
     public List<Category> getAllCategories() {
         List<Category> list = new ArrayList<>();
-        String sql = "SELECT * FROM course_categories ORDER BY category_id DESC";
+        String sql = "SELECT * FROM categories ORDER BY category_id DESC";
         try (PreparedStatement st = connection.prepareStatement(sql);
              ResultSet rs = st.executeQuery()) {
             while (rs.next()) list.add(map(rs));
@@ -41,7 +41,7 @@ public class CategoryDAO extends DBContext {
     // ─── READ ALL ACTIVE (for dropdowns) ────────────────────────
     public List<Category> getActiveCategories() {
         List<Category> list = new ArrayList<>();
-        String sql = "SELECT * FROM course_categories WHERE is_active = 1 ORDER BY category_name";
+        String sql = "SELECT * FROM categories WHERE is_active = 1 ORDER BY category_name";
         try (PreparedStatement st = connection.prepareStatement(sql);
              ResultSet rs = st.executeQuery()) {
             while (rs.next()) list.add(map(rs));
@@ -53,7 +53,7 @@ public class CategoryDAO extends DBContext {
 
     // ─── READ ONE ────────────────────────────────────────────────
     public Category getById(int id) {
-        String sql = "SELECT * FROM course_categories WHERE category_id = ?";
+        String sql = "SELECT * FROM categories WHERE category_id = ?";
         try (PreparedStatement st = connection.prepareStatement(sql)) {
             st.setInt(1, id);
             try (ResultSet rs = st.executeQuery()) {
@@ -79,8 +79,8 @@ public class CategoryDAO extends DBContext {
             return new util.PagedResult<>(list, 0, page, pageSize);
         }
 
-        StringBuilder sql = new StringBuilder("SELECT * FROM course_categories WHERE 1=1 ");
-        StringBuilder countSql = new StringBuilder("SELECT COUNT(*) FROM course_categories WHERE 1=1 ");
+        StringBuilder sql = new StringBuilder("SELECT * FROM categories WHERE 1=1 ");
+        StringBuilder countSql = new StringBuilder("SELECT COUNT(*) FROM categories WHERE 1=1 ");
         List<Object> params = new ArrayList<>();
 
         if (q != null && !q.trim().isEmpty()) {
@@ -142,7 +142,7 @@ public class CategoryDAO extends DBContext {
             System.err.println("CategoryDAO.insert: Connection is null!");
             return -1;
         }
-        String sql = "INSERT INTO course_categories (category_code, category_name, description, is_active, created_at) "
+        String sql = "INSERT INTO categories (category_code, category_name, description, is_active, created_at) "
                    + "VALUES (?, ?, ?, ?, GETDATE())";
         try (PreparedStatement st = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             st.setString(1, c.getCategoryCode() != null ? c.getCategoryCode().trim() : "");
@@ -165,7 +165,7 @@ public class CategoryDAO extends DBContext {
 
     // ─── UPDATE ──────────────────────────────────────────────────
     public boolean update(Category c) {
-        String sql = "UPDATE course_categories SET category_code=?, category_name=?, description=?, is_active=? "
+        String sql = "UPDATE categories SET category_code=?, category_name=?, description=?, is_active=? "
                    + "WHERE category_id=?";
         try (PreparedStatement st = connection.prepareStatement(sql)) {
             st.setString(1, c.getCategoryCode());
@@ -182,7 +182,7 @@ public class CategoryDAO extends DBContext {
 
     // ─── DELETE ──────────────────────────────────────────────────
     public boolean delete(int id) {
-        String sql = "DELETE FROM course_categories WHERE category_id = ?";
+        String sql = "DELETE FROM categories WHERE category_id = ?";
         try (PreparedStatement st = connection.prepareStatement(sql)) {
             st.setInt(1, id);
             return st.executeUpdate() > 0;
@@ -194,7 +194,7 @@ public class CategoryDAO extends DBContext {
 
     // ─── SOFT DELETE (toggle is_active) ─────────────────────────
     public boolean toggleActive(int id) {
-        String sql = "UPDATE course_categories SET is_active = CASE WHEN is_active=1 THEN 0 ELSE 1 END WHERE category_id=?";
+        String sql = "UPDATE categories SET is_active = CASE WHEN is_active=1 THEN 0 ELSE 1 END WHERE category_id=?";
         try (PreparedStatement st = connection.prepareStatement(sql)) {
             st.setInt(1, id);
             return st.executeUpdate() > 0;
@@ -206,7 +206,7 @@ public class CategoryDAO extends DBContext {
 
     // ─── CHECK DUPLICATE NAME ───────────────────────────────────
     public boolean isNameDuplicate(String name, Integer excludeId) {
-        String sql = "SELECT COUNT(*) FROM course_categories WHERE category_name = ? "
+        String sql = "SELECT COUNT(*) FROM categories WHERE category_name = ? "
                    + (excludeId != null ? "AND category_id <> ?" : "");
         try (PreparedStatement st = connection.prepareStatement(sql)) {
             st.setString(1, name.trim());
@@ -221,7 +221,7 @@ public class CategoryDAO extends DBContext {
     }
 
     public boolean isCodeDuplicate(String code, Integer excludeId) {
-        String sql = "SELECT COUNT(*) FROM course_categories WHERE category_code = ? "
+        String sql = "SELECT COUNT(*) FROM categories WHERE category_code = ? "
                    + (excludeId != null ? "AND category_id <> ?" : "");
         try (PreparedStatement st = connection.prepareStatement(sql)) {
             st.setString(1, code.trim());
