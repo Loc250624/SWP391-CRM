@@ -43,7 +43,7 @@
         flex-direction: column;
         min-width: 0;
         flex: 1 1 0;
-        max-height: calc(100vh - 340px);
+        max-height: calc(100vh - 300px);
     }
     .kb-col-head { padding: 10px 10px 8px; flex-shrink: 0; }
     .kb-col-title {
@@ -87,18 +87,12 @@
         margin-bottom: 6px;
         box-shadow: 0 1px 1px rgba(9,30,66,.13), 0 0 1px rgba(9,30,66,.2);
         transition: background .12s, box-shadow .12s;
-        cursor: pointer;
-        text-decoration: none;
-        display: block;
-        color: inherit;
+        cursor: grab;
     }
-    .kb-card[draggable="true"] { cursor: grab; }
-    .kb-card[draggable="true"]:active { cursor: grabbing; }
+    .kb-card:active { cursor: grabbing; }
     .kb-card:hover {
         background: #ebecf0;
         box-shadow: 0 2px 4px rgba(9,30,66,.18), 0 0 1px rgba(9,30,66,.2);
-        text-decoration: none;
-        color: inherit;
     }
     .kb-card.dragging { opacity: .5; transform: rotate(2deg); }
     .kb-col.drag-over { background-color: rgba(0, 82, 204, 0.06); border: 2px dashed #0052cc; }
@@ -114,6 +108,8 @@
         -webkit-box-orient: vertical;
         overflow: hidden;
     }
+    .kb-card-title a { color: inherit; text-decoration: none; }
+    .kb-card-title a:hover { color: #0052cc; }
     .kb-card-code { font-size: .65rem; color: #8993a4; }
     .kb-card-footer {
         display: flex;
@@ -153,7 +149,7 @@
     <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-3">
         <div>
-            <h3 class="mb-1"><i class="bi bi-kanban me-2"></i>Kanban Công việc</h3>
+            <h3 class="mb-1"><i class="bi bi-kanban me-2"></i>Công việc của tôi</h3>
             <p class="text-muted mb-0">Kéo thả để cập nhật trạng thái</p>
         </div>
         <a href="${pageContext.request.contextPath}/support/task/calendar" class="btn btn-outline-primary">
@@ -161,30 +157,12 @@
         </a>
     </div>
 
-    <!-- Tabs: Cá nhân / Nhóm -->
-    <ul class="nav nav-tabs mb-3">
-        <li class="nav-item">
-            <a class="nav-link ${empty viewType || viewType == 'personal' ? 'active' : ''}"
-               href="${pageContext.request.contextPath}/support/task/list?view=personal&relatedType=${relatedType}&keyword=${keyword}">
-                <i class="bi bi-person me-1"></i>Công việc cá nhân
-            </a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link ${viewType == 'group' ? 'active' : ''}"
-               href="${pageContext.request.contextPath}/support/task/list?view=group&relatedType=${relatedType}&keyword=${keyword}">
-                <i class="bi bi-people me-1"></i>Công việc nhóm
-            </a>
-        </li>
-    </ul>
-
     <!-- Filters -->
     <div class="kb-toolbar">
         <form method="get" action="${pageContext.request.contextPath}/support/task/list" class="row g-2 align-items-end">
-            <input type="hidden" name="view" value="${empty viewType ? 'personal' : viewType}">
             <div class="col-md-3">
                 <select class="form-select form-select-sm" name="relatedType">
                     <option value="">Tất cả đối tượng</option>
-                    <option value="LEAD" ${relatedType == 'LEAD' ? 'selected' : ''}>Lead</option>
                     <option value="CUSTOMER" ${relatedType == 'CUSTOMER' ? 'selected' : ''}>Khách hàng</option>
                 </select>
             </div>
@@ -227,10 +205,11 @@
                     </c:when>
                     <c:otherwise>
                         <c:forEach var="task" items="${inProgressTasks}">
-                            <a class="kb-card" draggable="true" data-task-id="${task.taskId}" data-status="IN_PROGRESS"
-                               href="${pageContext.request.contextPath}/support/task/detail?id=${task.taskId}">
+                            <div class="kb-card" draggable="true" data-task-id="${task.taskId}" data-status="IN_PROGRESS">
                                 <div class="kb-card-title">
-                                    ${task.title}
+                                    <a href="${pageContext.request.contextPath}/support/task/detail?id=${task.taskId}">
+                                        ${task.title}
+                                    </a>
                                 </div>
                                 <div class="kb-card-code">
                                     ${task.taskCode}
@@ -238,15 +217,12 @@
                                         <c:set var="relKey" value="${task.relatedType}:${task.relatedId}" />
                                         <c:choose>
                                             <c:when test="${not empty relatedObjectMap[relKey]}">
-                                                &nbsp;· ${task.relatedType == 'LEAD' ? 'Lead' : 'Khách hàng'}: ${relatedObjectMap[relKey]}
+                                                &nbsp;· Khách hàng: ${relatedObjectMap[relKey]}
                                             </c:when>
                                             <c:otherwise>
                                                 &nbsp;· ${task.relatedType}
                                             </c:otherwise>
                                         </c:choose>
-                                    </c:if>
-                                    <c:if test="${task.groupTaskId != null}">
-                                        &nbsp;· Nhóm
                                     </c:if>
                                 </div>
                                 <div class="kb-card-footer">
@@ -260,18 +236,11 @@
                                             <span><i class="bi bi-calendar3"></i> ${fn:substring(task.dueDate, 8, 10)}/${fn:substring(task.dueDate, 5, 7)}</span>
                                         </c:if>
                                     </div>
-                                    <c:choose>
-                                        <c:when test="${task.groupTaskId != null}">
-                                            <div class="kb-card-avatar" title="Nhóm"><i class="bi bi-people"></i></div>
-                                        </c:when>
-                                        <c:otherwise>
-                                            <div class="kb-card-avatar" title="${currentUser.firstName} ${currentUser.lastName}">
-                                                ${fn:substring(currentUser.firstName,0,1)}${fn:substring(currentUser.lastName,0,1)}
-                                            </div>
-                                        </c:otherwise>
-                                    </c:choose>
+                                    <div class="kb-card-avatar" title="${currentUser.firstName} ${currentUser.lastName}">
+                                        ${fn:substring(currentUser.firstName,0,1)}${fn:substring(currentUser.lastName,0,1)}
+                                    </div>
                                 </div>
-                            </a>
+                            </div>
                         </c:forEach>
                     </c:otherwise>
                 </c:choose>
@@ -294,10 +263,11 @@
                     </c:when>
                     <c:otherwise>
                         <c:forEach var="task" items="${completedTasks}">
-                            <a class="kb-card" draggable="false" data-task-id="${task.taskId}" data-status="COMPLETED" style="opacity:.85;"
-                               href="${pageContext.request.contextPath}/support/task/detail?id=${task.taskId}">
+                            <div class="kb-card" draggable="false" data-task-id="${task.taskId}" data-status="COMPLETED" style="opacity:.85;">
                                 <div class="kb-card-title">
-                                    <i class="bi bi-check2 text-success me-1"></i>${task.title}
+                                    <a href="${pageContext.request.contextPath}/support/task/detail?id=${task.taskId}">
+                                        <i class="bi bi-check2 text-success me-1"></i>${task.title}
+                                    </a>
                                 </div>
                                 <div class="kb-card-code">
                                     ${task.taskCode}
@@ -305,15 +275,12 @@
                                         <c:set var="relKey" value="${task.relatedType}:${task.relatedId}" />
                                         <c:choose>
                                             <c:when test="${not empty relatedObjectMap[relKey]}">
-                                                &nbsp;· ${task.relatedType == 'LEAD' ? 'Lead' : 'Khách hàng'}: ${relatedObjectMap[relKey]}
+                                                &nbsp;· Khách hàng: ${relatedObjectMap[relKey]}
                                             </c:when>
                                             <c:otherwise>
                                                 &nbsp;· ${task.relatedType}
                                             </c:otherwise>
                                         </c:choose>
-                                    </c:if>
-                                    <c:if test="${task.groupTaskId != null}">
-                                        &nbsp;· Nhóm
                                     </c:if>
                                 </div>
                                 <div class="kb-card-footer">
@@ -324,18 +291,11 @@
                                             <c:otherwise><span class="kb-priority-dot kb-priority-low"></span></c:otherwise>
                                         </c:choose>
                                     </div>
-                                    <c:choose>
-                                        <c:when test="${task.groupTaskId != null}">
-                                            <div class="kb-card-avatar" title="Nhóm"><i class="bi bi-people"></i></div>
-                                        </c:when>
-                                        <c:otherwise>
-                                            <div class="kb-card-avatar" title="${currentUser.firstName} ${currentUser.lastName}">
-                                                ${fn:substring(currentUser.firstName,0,1)}${fn:substring(currentUser.lastName,0,1)}
-                                            </div>
-                                        </c:otherwise>
-                                    </c:choose>
+                                    <div class="kb-card-avatar" title="${currentUser.firstName} ${currentUser.lastName}">
+                                        ${fn:substring(currentUser.firstName,0,1)}${fn:substring(currentUser.lastName,0,1)}
+                                    </div>
                                 </div>
-                            </a>
+                            </div>
                         </c:forEach>
                     </c:otherwise>
                 </c:choose>
@@ -358,10 +318,11 @@
                     </c:when>
                     <c:otherwise>
                         <c:forEach var="task" items="${cancelledTasks}">
-                            <a class="kb-card" draggable="false" data-task-id="${task.taskId}" data-status="CANCELLED" style="opacity:.7;"
-                               href="${pageContext.request.contextPath}/support/task/detail?id=${task.taskId}">
+                            <div class="kb-card" draggable="false" data-task-id="${task.taskId}" data-status="CANCELLED" style="opacity:.7;">
                                 <div class="kb-card-title">
-                                    <i class="bi bi-x-circle text-danger me-1"></i>${task.title}
+                                    <a href="${pageContext.request.contextPath}/support/task/detail?id=${task.taskId}">
+                                        <i class="bi bi-x-circle text-danger me-1"></i>${task.title}
+                                    </a>
                                 </div>
                                 <div class="kb-card-code">
                                     ${task.taskCode}
@@ -369,15 +330,12 @@
                                         <c:set var="relKey" value="${task.relatedType}:${task.relatedId}" />
                                         <c:choose>
                                             <c:when test="${not empty relatedObjectMap[relKey]}">
-                                                &nbsp;· ${task.relatedType == 'LEAD' ? 'Lead' : 'Khách hàng'}: ${relatedObjectMap[relKey]}
+                                                &nbsp;· Khách hàng: ${relatedObjectMap[relKey]}
                                             </c:when>
                                             <c:otherwise>
                                                 &nbsp;· ${task.relatedType}
                                             </c:otherwise>
                                         </c:choose>
-                                    </c:if>
-                                    <c:if test="${task.groupTaskId != null}">
-                                        &nbsp;· Nhóm
                                     </c:if>
                                 </div>
                                 <div class="kb-card-footer">
@@ -388,18 +346,11 @@
                                             <c:otherwise><span class="kb-priority-dot kb-priority-low"></span></c:otherwise>
                                         </c:choose>
                                     </div>
-                                    <c:choose>
-                                        <c:when test="${task.groupTaskId != null}">
-                                            <div class="kb-card-avatar" title="Nhóm"><i class="bi bi-people"></i></div>
-                                        </c:when>
-                                        <c:otherwise>
-                                            <div class="kb-card-avatar" title="${currentUser.firstName} ${currentUser.lastName}">
-                                                ${fn:substring(currentUser.firstName,0,1)}${fn:substring(currentUser.lastName,0,1)}
-                                            </div>
-                                        </c:otherwise>
-                                    </c:choose>
+                                    <div class="kb-card-avatar" title="${currentUser.firstName} ${currentUser.lastName}">
+                                        ${fn:substring(currentUser.firstName,0,1)}${fn:substring(currentUser.lastName,0,1)}
+                                    </div>
                                 </div>
-                            </a>
+                            </div>
                         </c:forEach>
                     </c:otherwise>
                 </c:choose>
@@ -476,9 +427,6 @@
 
             if (!confirm('Bạn có chắc chắn muốn đánh dấu công việc này là Hoàn thành?')) return;
 
-            // Prevent navigation when dropping
-            e.stopPropagation();
-
             var fd = new URLSearchParams();
             fd.append('taskId', taskId);
             fd.append('newStatus', String(toStatus || ''));
@@ -503,28 +451,6 @@
                     }
                 })
                 .catch(function() { showToast('Lỗi kết nối máy chủ', false); });
-        });
-    });
-
-    // Prevent card navigation during drag
-    document.querySelectorAll('.kb-card[draggable="true"]').forEach(function(card) {
-        card.addEventListener('click', function(e) {
-            if (card.classList.contains('dragging')) {
-                e.preventDefault();
-            }
-        });
-        card.addEventListener('dragstart', function() {
-            card._dragging = true;
-        });
-        card.addEventListener('dragend', function() {
-            // Small delay to prevent click after drag
-            setTimeout(function() { card._dragging = false; }, 100);
-        });
-        card.addEventListener('click', function(e) {
-            if (card._dragging) {
-                e.preventDefault();
-                return false;
-            }
         });
     });
 })();

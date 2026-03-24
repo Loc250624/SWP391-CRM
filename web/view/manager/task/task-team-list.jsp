@@ -132,9 +132,7 @@
                             <tbody>
                                 <c:forEach var="task" items="${taskList}">
                                     <tr data-due="${fn:substring(task.dueDate, 0, 10)}"
-                                        data-status="${task.statusName}"
-                                        class="clickable-row" data-href="${pageContext.request.contextPath}/manager/task/detail?id=${task.taskId}"
-                                        style="cursor:pointer;">
+                                        data-status="${task.statusName}">
                                         <td><code class="small">${task.taskCode}</code></td>
                                         <td>
                                             <a href="${pageContext.request.contextPath}/manager/task/detail?id=${task.taskId}"
@@ -267,15 +265,6 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    /* Make entire row clickable */
-    document.querySelectorAll('tr.clickable-row').forEach(function (row) {
-        row.addEventListener('click', function (e) {
-            if (e.target.closest('a, button, input, .btn-group')) return;
-            var href = row.getAttribute('data-href');
-            if (href) window.location.href = href;
-        });
-    });
-
     var today = new Date();
     today.setHours(0, 0, 0, 0);
 

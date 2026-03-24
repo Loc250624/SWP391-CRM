@@ -78,9 +78,7 @@
     .kb-card:hover {
         background: #ebecf0;
         box-shadow: 0 2px 4px rgba(9,30,66,.18), 0 0 1px rgba(9,30,66,.2);
-        text-decoration: none;
     }
-    a.kb-card { color: inherit; text-decoration: none; display: block; cursor: pointer; }
     .kb-card.dragging { opacity: .5; transform: rotate(2deg); }
     .kb-col.drag-over { background-color: rgba(0, 82, 204, 0.06); border: 2px dashed #0052cc; }
 
@@ -210,9 +208,12 @@
                     </c:when>
                     <c:otherwise>
                         <c:forEach var="task" items="${inProgressTasks}">
-                            <a class="kb-card" draggable="true" data-task-id="${task.taskId}" data-status="IN_PROGRESS"
-                               href="${pageContext.request.contextPath}/sale/task/detail?id=${task.taskId}">
-                                <div class="kb-card-title">${task.title}</div>
+                            <div class="kb-card" draggable="true" data-task-id="${task.taskId}" data-status="IN_PROGRESS">
+                                <div class="kb-card-title">
+                                    <a href="${pageContext.request.contextPath}/sale/task/detail?id=${task.taskId}">
+                                        ${task.title}
+                                    </a>
+                                </div>
                                 <div class="kb-card-code">
                                     ${task.taskCode}
                                     <c:if test="${not empty task.relatedType}">
@@ -252,7 +253,7 @@
                                         </c:otherwise>
                                     </c:choose>
                                 </div>
-                            </a>
+                            </div>
                         </c:forEach>
                     </c:otherwise>
                 </c:choose>
@@ -275,10 +276,11 @@
                     </c:when>
                     <c:otherwise>
                         <c:forEach var="task" items="${completedTasks}">
-                            <a class="kb-card" draggable="false" data-task-id="${task.taskId}" data-status="COMPLETED" style="opacity:.85;"
-                               href="${pageContext.request.contextPath}/sale/task/detail?id=${task.taskId}">
+                            <div class="kb-card" draggable="false" data-task-id="${task.taskId}" data-status="COMPLETED" style="opacity:.85;">
                                 <div class="kb-card-title">
-                                    <i class="bi bi-check2 text-success me-1"></i>${task.title}
+                                    <a href="${pageContext.request.contextPath}/sale/task/detail?id=${task.taskId}">
+                                        <i class="bi bi-check2 text-success me-1"></i>${task.title}
+                                    </a>
                                 </div>
                                 <div class="kb-card-code">
                                     ${task.taskCode}
@@ -316,7 +318,7 @@
                                         </c:otherwise>
                                     </c:choose>
                                 </div>
-                            </a>
+                            </div>
                         </c:forEach>
                     </c:otherwise>
                 </c:choose>
@@ -339,10 +341,11 @@
                     </c:when>
                     <c:otherwise>
                         <c:forEach var="task" items="${cancelledTasks}">
-                            <a class="kb-card" draggable="false" data-task-id="${task.taskId}" data-status="CANCELLED" style="opacity:.7;"
-                               href="${pageContext.request.contextPath}/sale/task/detail?id=${task.taskId}">
+                            <div class="kb-card" draggable="false" data-task-id="${task.taskId}" data-status="CANCELLED" style="opacity:.7;">
                                 <div class="kb-card-title">
-                                    <i class="bi bi-x-circle text-danger me-1"></i>${task.title}
+                                    <a href="${pageContext.request.contextPath}/sale/task/detail?id=${task.taskId}">
+                                        <i class="bi bi-x-circle text-danger me-1"></i>${task.title}
+                                    </a>
                                 </div>
                                 <div class="kb-card-code">
                                     ${task.taskCode}
@@ -380,7 +383,7 @@
                                         </c:otherwise>
                                     </c:choose>
                                 </div>
-                            </a>
+                            </div>
                         </c:forEach>
                     </c:otherwise>
                 </c:choose>
@@ -412,11 +415,8 @@
         if (col && cnt) cnt.textContent = col.querySelectorAll('.kb-card').length;
     }
 
-    var isDragging = false;
-
     document.querySelectorAll('.kb-card[draggable="true"]').forEach(function(card) {
         card.addEventListener('dragstart', function(e) {
-            isDragging = true;
             dragged = card;
             card.classList.add('dragging');
             e.dataTransfer.effectAllowed = 'move';
@@ -424,10 +424,6 @@
         });
         card.addEventListener('dragend', function() {
             card.classList.remove('dragging');
-            setTimeout(function() { isDragging = false; }, 100);
-        });
-        card.addEventListener('click', function(e) {
-            if (isDragging) { e.preventDefault(); }
         });
     });
 
