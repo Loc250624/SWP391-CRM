@@ -92,8 +92,6 @@
                                     <th class="ps-4 py-3 border-0 text-uppercase small fw-bold text-muted">Mã</th>
                                     <th class="py-3 border-0 text-uppercase small fw-bold text-muted">Tên Danh mục</th>
                                     <th class="py-3 border-0 text-uppercase small fw-bold text-muted">Mô tả</th>
-                                    <th class="py-3 border-0 text-uppercase small fw-bold text-muted text-center">Khóa
-                                        học</th>
                                     <th class="py-3 border-0 text-uppercase small fw-bold text-muted">Trạng thái</th>
                                     <th class="pe-4 py-3 border-0 text-uppercase small fw-bold text-muted text-end">Hành
                                         động</th>
@@ -102,7 +100,7 @@
                             <tbody>
                                 <c:if test="${empty paged.items}">
                                     <tr>
-                                        <td colspan="6" class="text-center py-5">
+                                        <td colspan="5" class="text-center py-5">
                                             <i class="bi bi-folder-x fs-1 text-muted"></i>
                                             <p class="text-muted mt-2">Không tìm thấy danh mục nào.</p>
                                         </td>
@@ -120,13 +118,6 @@
                                         <td>
                                             <div class="text-muted small text-truncate" style="max-width: 250px;">
                                                 ${fn:escapeXml(cat.description)}</div>
-                                        </td>
-                                        <td class="text-center">
-                                            <span
-                                                class="badge rounded-pill bg-indigo bg-opacity-10 text-indigo px-3 py-2"
-                                                style="color: #4f46e5;">
-                                                ${courseCount[cat.categoryId]} khóa
-                                            </span>
                                         </td>
                                         <td>
                                             <c:choose>
