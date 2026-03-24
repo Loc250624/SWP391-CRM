@@ -217,7 +217,7 @@
                                         <%-- ════ GROUP SUMMARY ROW ════ --%>
                                         <c:when test="${isGroupSummary}">
                                             <c:set var="memberCount" value="${groupMembers != null ? fn:length(groupMembers) : 0}" />
-                                            <tr class="table-group-row">
+                                            <tr class="table-group-row clickable-row" data-href="${pageContext.request.contextPath}/manager/task/detail?id=${task.taskId}">
                                                 <td>
                                                     <span class="badge bg-secondary">${task.taskCode}</span>
                                                 </td>
@@ -374,7 +374,7 @@
 
                                         <%-- ════ INDIVIDUAL TASK ROW (unchanged) ════ --%>
                                         <c:otherwise>
-                                            <tr>
+                                            <tr class="clickable-row" data-href="${pageContext.request.contextPath}/manager/task/detail?id=${task.taskId}">
                                                 <td>
                                                     <span class="badge bg-secondary">${task.taskCode}</span>
                                                 </td>
@@ -567,6 +567,8 @@
     .table-group-row {
         background-color: #f8f9ff;
     }
+    tr.clickable-row { cursor: pointer; }
+    tr.clickable-row:hover { background-color: #f0f4ff; }
 </style>
 
 <script>
@@ -578,6 +580,18 @@
         icon.classList.toggle('bi-chevron-down');
         icon.classList.toggle('bi-chevron-up');
     }
+
+    <%-- Make entire row clickable --%>
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('tr.clickable-row').forEach(function (row) {
+            row.addEventListener('click', function (e) {
+                // Don't navigate if clicking a link, button, or input inside the row
+                if (e.target.closest('a, button, input, .btn-group')) return;
+                var href = row.getAttribute('data-href');
+                if (href) window.location.href = href;
+            });
+        });
+    });
 
     <%-- FIX: Overdue detection via JavaScript (EL cannot call LocalDateTime.isBefore(now())) --%>
     document.addEventListener('DOMContentLoaded', function () {

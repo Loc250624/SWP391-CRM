@@ -609,11 +609,11 @@ public class LeadDAO extends DBContext {
         StringBuilder sql = new StringBuilder(
             "SELECT * FROM leads l" +
             " WHERE l.assigned_to IS NULL" +
-            " AND LOWER(l.status) = 'new'" +
-            " AND l.created_by NOT IN (" +
-            "   SELECT ur.user_id FROM user_roles ur" +
+            " AND LOWER(l.status) IN ('new', 'assigned', 'working', 'nurturing')" +
+            " AND NOT EXISTS (" +
+            "   SELECT 1 FROM user_roles ur" +
             "   INNER JOIN roles r ON r.role_id = ur.role_id" +
-            "   WHERE LOWER(r.role_code) = 'sales')" +
+            "   WHERE ur.user_id = l.created_by AND LOWER(r.role_code) = 'sales')" +
             " AND NOT EXISTS (" +
             "   SELECT 1 FROM task_relations tr" +
             "   INNER JOIN tasks t ON t.task_id = tr.task_id" +
@@ -639,11 +639,11 @@ public class LeadDAO extends DBContext {
         StringBuilder sql = new StringBuilder(
             "SELECT COUNT(*) FROM leads l" +
             " WHERE l.assigned_to IS NULL" +
-            " AND LOWER(l.status) = 'new'" +
-            " AND l.created_by NOT IN (" +
-            "   SELECT ur.user_id FROM user_roles ur" +
+            " AND LOWER(l.status) IN ('new', 'assigned', 'working', 'nurturing')" +
+            " AND NOT EXISTS (" +
+            "   SELECT 1 FROM user_roles ur" +
             "   INNER JOIN roles r ON r.role_id = ur.role_id" +
-            "   WHERE LOWER(r.role_code) = 'sales')" +
+            "   WHERE ur.user_id = l.created_by AND LOWER(r.role_code) = 'sales')" +
             " AND NOT EXISTS (" +
             "   SELECT 1 FROM task_relations tr" +
             "   INNER JOIN tasks t ON t.task_id = tr.task_id" +
@@ -683,17 +683,17 @@ public class LeadDAO extends DBContext {
         }
     }
 
-    // ── All unassigned leads for picker (status=new, not SALES-created, no active tasks) ──
+    // ── All unassigned leads for picker (not SALES-created, no active tasks) ──
     public List<Lead> getUnassignedLeadsForPicker() {
         List<Lead> list = new ArrayList<>();
         String sql =
             "SELECT * FROM leads l" +
             " WHERE l.assigned_to IS NULL" +
-            " AND LOWER(l.status) = 'new'" +
-            " AND l.created_by NOT IN (" +
-            "   SELECT ur.user_id FROM user_roles ur" +
+            " AND LOWER(l.status) IN ('new', 'assigned', 'working', 'nurturing')" +
+            " AND NOT EXISTS (" +
+            "   SELECT 1 FROM user_roles ur" +
             "   INNER JOIN roles r ON r.role_id = ur.role_id" +
-            "   WHERE LOWER(r.role_code) = 'sales')" +
+            "   WHERE ur.user_id = l.created_by AND LOWER(r.role_code) = 'sales')" +
             " AND NOT EXISTS (" +
             "   SELECT 1 FROM task_relations tr" +
             "   INNER JOIN tasks t ON t.task_id = tr.task_id" +
@@ -713,10 +713,10 @@ public class LeadDAO extends DBContext {
         StringBuilder sql = new StringBuilder(
             "SELECT * FROM leads l" +
             " WHERE l.assigned_to IS NULL" +
-            " AND l.created_by NOT IN (" +
-            "   SELECT ur.user_id FROM user_roles ur" +
+            " AND NOT EXISTS (" +
+            "   SELECT 1 FROM user_roles ur" +
             "   INNER JOIN roles r ON r.role_id = ur.role_id" +
-            "   WHERE LOWER(r.role_code) = 'sales')" +
+            "   WHERE ur.user_id = l.created_by AND LOWER(r.role_code) = 'sales')" +
             " AND NOT EXISTS (" +
             "   SELECT 1 FROM task_relations tr" +
             "   INNER JOIN tasks t ON t.task_id = tr.task_id" +
@@ -750,10 +750,10 @@ public class LeadDAO extends DBContext {
         StringBuilder sql = new StringBuilder(
             "SELECT COUNT(*) FROM leads l" +
             " WHERE l.assigned_to IS NULL" +
-            " AND l.created_by NOT IN (" +
-            "   SELECT ur.user_id FROM user_roles ur" +
+            " AND NOT EXISTS (" +
+            "   SELECT 1 FROM user_roles ur" +
             "   INNER JOIN roles r ON r.role_id = ur.role_id" +
-            "   WHERE LOWER(r.role_code) = 'sales')" +
+            "   WHERE ur.user_id = l.created_by AND LOWER(r.role_code) = 'sales')" +
             " AND NOT EXISTS (" +
             "   SELECT 1 FROM task_relations tr" +
             "   INNER JOIN tasks t ON t.task_id = tr.task_id" +
