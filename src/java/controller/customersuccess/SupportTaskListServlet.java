@@ -41,25 +41,30 @@ public class SupportTaskListServlet extends HttpServlet {
             return;
         }
 
-        String keyword = request.getParameter("keyword");
+        String viewType    = request.getParameter("view");        // personal | group
+        String keyword     = request.getParameter("keyword");
         String relatedType = request.getParameter("relatedType");
 
         TaskDAO taskDAO = new TaskDAO();
         List<Integer> memberIds = Collections.singletonList(currentUser.getUserId());
 
-        // Fetch tasks grouped by status for Kanban view (same pattern as SaleTaskListServlet)
-        List<Task> pendingTasks = taskDAO.getTasksWithFilterForTeam(
-                memberIds, currentUser.getUserId(), "PENDING", null,
-                keyword, false, "priority", "DESC", 0, 500);
-        List<Task> inProgressTasks = taskDAO.getTasksWithFilterForTeam(
-                memberIds, currentUser.getUserId(), "IN_PROGRESS", null,
-                keyword, false, "priority", "DESC", 0, 500);
-        List<Task> completedTasks = taskDAO.getTasksWithFilterForTeam(
-                memberIds, currentUser.getUserId(), "COMPLETED", null,
-                keyword, false, "created_at", "DESC", 0, 200);
-        List<Task> cancelledTasks = taskDAO.getTasksWithFilterForTeam(
-                memberIds, currentUser.getUserId(), "CANCELLED", null,
-                keyword, false, "created_at", "DESC", 0, 200);
+        List<Task> pendingTasks    = new ArrayList<>();
+        List<Task> inProgressTasks = new ArrayList<>();
+        List<Task> completedTasks  = new ArrayList<>();
+        List<Task> cancelledTasks  = new ArrayList<>();
+
+        boolean isGroupView = "group".equalsIgnoreCase(viewType);
+        if (isGroupView) {
+            pendingTasks    = taskDAO.getGroupTaskSummaries(memberIds, currentUser.getUserId(), "PENDING",     null, keyword, "priority", "DESC", 0, 500);
+            inProgressTasks = taskDAO.getGroupTaskSummaries(memberIds, currentUser.getUserId(), "IN_PROGRESS", null, keyword, "priority", "DESC", 0, 500);
+            completedTasks  = taskDAO.getGroupTaskSummaries(memberIds, currentUser.getUserId(), "COMPLETED",   null, keyword, "created_at", "DESC", 0, 200);
+            cancelledTasks  = taskDAO.getGroupTaskSummaries(memberIds, currentUser.getUserId(), "CANCELLED",   null, keyword, "created_at", "DESC", 0, 200);
+        } else {
+            pendingTasks    = taskDAO.getTasksWithFilterForTeam(memberIds, currentUser.getUserId(), "PENDING",     null, keyword, false, "priority", "DESC", 0, 500);
+            inProgressTasks = taskDAO.getTasksWithFilterForTeam(memberIds, currentUser.getUserId(), "IN_PROGRESS", null, keyword, false, "priority", "DESC", 0, 500);
+            completedTasks  = taskDAO.getTasksWithFilterForTeam(memberIds, currentUser.getUserId(), "COMPLETED",   null, keyword, false, "created_at", "DESC", 0, 200);
+            cancelledTasks  = taskDAO.getTasksWithFilterForTeam(memberIds, currentUser.getUserId(), "CANCELLED",   null, keyword, false, "created_at", "DESC", 0, 200);
+        }
 
         // Merge PENDING into IN_PROGRESS column for 3-column Kanban
         if (pendingTasks != null && !pendingTasks.isEmpty()) {
@@ -106,6 +111,7 @@ public class SupportTaskListServlet extends HttpServlet {
         request.setAttribute("inProgressTasks", inProgressTasks);
         request.setAttribute("completedTasks", completedTasks);
         request.setAttribute("cancelledTasks", cancelledTasks);
+        request.setAttribute("viewType",        viewType);
         request.setAttribute("keyword", keyword);
         request.setAttribute("relatedType", relatedType);
         request.setAttribute("currentUser", currentUser);

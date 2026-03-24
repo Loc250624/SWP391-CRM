@@ -72,7 +72,8 @@
         margin-bottom: 6px;
         box-shadow: 0 1px 1px rgba(9,30,66,.13), 0 0 1px rgba(9,30,66,.2);
         transition: background .12s, box-shadow .12s;
-        cursor: grab;
+        cursor: pointer;
+        position: relative;
     }
     .kb-card:active { cursor: grabbing; }
     .kb-card:hover {
@@ -210,7 +211,7 @@
                         <c:forEach var="task" items="${inProgressTasks}">
                             <div class="kb-card" draggable="true" data-task-id="${task.taskId}" data-status="IN_PROGRESS">
                                 <div class="kb-card-title">
-                                    <a href="${pageContext.request.contextPath}/sale/task/detail?id=${task.taskId}">
+                                    <a class="stretched-link" href="${pageContext.request.contextPath}/sale/task/detail?id=${task.taskId}">
                                         ${task.title}
                                     </a>
                                 </div>
@@ -278,7 +279,7 @@
                         <c:forEach var="task" items="${completedTasks}">
                             <div class="kb-card" draggable="false" data-task-id="${task.taskId}" data-status="COMPLETED" style="opacity:.85;">
                                 <div class="kb-card-title">
-                                    <a href="${pageContext.request.contextPath}/sale/task/detail?id=${task.taskId}">
+                                    <a class="stretched-link" href="${pageContext.request.contextPath}/sale/task/detail?id=${task.taskId}">
                                         <i class="bi bi-check2 text-success me-1"></i>${task.title}
                                     </a>
                                 </div>
@@ -343,7 +344,7 @@
                         <c:forEach var="task" items="${cancelledTasks}">
                             <div class="kb-card" draggable="false" data-task-id="${task.taskId}" data-status="CANCELLED" style="opacity:.7;">
                                 <div class="kb-card-title">
-                                    <a href="${pageContext.request.contextPath}/sale/task/detail?id=${task.taskId}">
+                                    <a class="stretched-link" href="${pageContext.request.contextPath}/sale/task/detail?id=${task.taskId}">
                                         <i class="bi bi-x-circle text-danger me-1"></i>${task.title}
                                     </a>
                                 </div>
