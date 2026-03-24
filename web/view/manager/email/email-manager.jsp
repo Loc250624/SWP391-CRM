@@ -230,6 +230,26 @@
     </div>
 </div>
 
+<!-- Email Detail Modal -->
+<div class="modal fade" id="emailDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-envelope-open me-2"></i>Chi tiết Email</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="emailDetailBody">
+                <div class="text-center py-4 text-muted">
+                    <div class="spinner-border spinner-border-sm me-2"></div>Đang tải...
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
 var emailMgr = (function () {
     var API = '${pageContext.request.contextPath}/manager/email-data';
@@ -297,13 +317,18 @@ var emailMgr = (function () {
                     + (l.toName ? '<div class="text-muted small">' + l.toName + '</div>' : '') + '</td>'
                     + '<td class="text-truncate" style="max-width:250px">' + (l.subject||'') + '</td>'
                     + '<td><span class="badge bg-light text-dark border">' + (l.relatedType||'') + '</span></td>'
-                    + '<td>' + statusBadge(l.status) + '</td>'
+                    + '<td>' + statusBadge(l.status)
+                    + (l.status === 'Failed' && l.errorMessage ? '<div class="text-danger small mt-1" style="max-width:180px;white-space:normal;">' + l.errorMessage + '</div>' : '')
+                    + '</td>'
                     + '<td class="text-nowrap small">' + timeStr(l.sentDate || l.createdAt) + '</td>'
-                    + '<td class="text-end">';
+                    + '<td class="text-end">'
+                    + '<div class="btn-group btn-group-sm">'
+                    + '<button class="btn btn-outline-secondary" onclick="emailMgr.viewDetail(' + l.id + ')" title="Xem chi tiết"><i class="bi bi-eye"></i></button>';
                 if (l.status === 'Failed') {
-                    html += '<button class="btn btn-sm btn-outline-primary" onclick="emailMgr.resend(' + l.id + ')" title="Gửi lại"><i class="bi bi-arrow-repeat"></i></button>';
+                    html += '<a class="btn btn-outline-warning" href="${pageContext.request.contextPath}/manager/email/send?retry=' + l.id + '" title="Chỉnh sửa & Gửi lại"><i class="bi bi-pencil-square"></i></a>';
+                    html += '<button class="btn btn-outline-primary" onclick="emailMgr.resend(' + l.id + ')" title="Gửi lại ngay"><i class="bi bi-arrow-repeat"></i></button>';
                 }
-                html += '</td></tr>';
+                html += '</div></td></tr>';
             }
             tbody.innerHTML = html;
 
@@ -324,6 +349,51 @@ var emailMgr = (function () {
             .then(function(r){return r.json()})
             .then(function(d){ alert(d.message); loadLogs(); loadKpi(); })
             .catch(function(){ alert('Lỗi'); });
+    }
+
+    function viewDetail(logId) {
+        var body = document.getElementById('emailDetailBody');
+        body.innerHTML = '<div class="text-center py-4 text-muted"><div class="spinner-border spinner-border-sm me-2"></div>Đang tải...</div>';
+        new bootstrap.Modal(document.getElementById('emailDetailModal')).show();
+
+        fetch(API + '?action=logDetail&id=' + logId).then(function(r){return r.json()}).then(function(d){
+            if (d.error) { body.innerHTML = '<div class="alert alert-danger">' + d.error + '</div>'; return; }
+            var html = '<table class="table table-sm mb-3">';
+            html += '<tr><th style="width:120px">Trạng thái</th><td>' + statusBadge(d.status) + '</td></tr>';
+            html += '<tr><th>Từ</th><td>' + (d.fromName ? d.fromName + ' &lt;' + (d.fromEmail||'') + '&gt;' : (d.fromEmail||'--')) + '</td></tr>';
+            html += '<tr><th>Đến</th><td>' + (d.toName ? d.toName + ' &lt;' + (d.toEmail||'') + '&gt;' : (d.toEmail||'--')) + '</td></tr>';
+            if (d.ccEmails) html += '<tr><th>CC</th><td>' + d.ccEmails + '</td></tr>';
+            if (d.bccEmails) html += '<tr><th>BCC</th><td>' + d.bccEmails + '</td></tr>';
+            html += '<tr><th>Chủ đề</th><td class="fw-semibold">' + (d.subject||'') + '</td></tr>';
+            html += '<tr><th>Loại</th><td>' + (d.relatedType||'--') + '</td></tr>';
+            html += '<tr><th>Thời gian gửi</th><td>' + timeStr(d.sentDate || d.createdAt) + '</td></tr>';
+            if (d.errorMessage) html += '<tr><th>Lỗi</th><td class="text-danger">' + d.errorMessage + '</td></tr>';
+            html += '</table>';
+            html += '<h6 class="mb-2">Nội dung email</h6>';
+            html += '<div class="border rounded p-3 bg-light" style="max-height:400px;overflow-y:auto;">';
+            if (d.bodyHtml) {
+                html += '<iframe id="emailPreviewFrame" style="width:100%;min-height:300px;border:none;" sandbox="allow-same-origin"></iframe>';
+            } else if (d.bodyText) {
+                html += '<pre class="mb-0" style="white-space:pre-wrap;">' + d.bodyText + '</pre>';
+            } else {
+                html += '<span class="text-muted">Không có nội dung</span>';
+            }
+            html += '</div>';
+            body.innerHTML = html;
+
+            // Load HTML content into iframe safely
+            if (d.bodyHtml) {
+                setTimeout(function(){
+                    var frame = document.getElementById('emailPreviewFrame');
+                    if (frame) {
+                        var doc = frame.contentDocument || frame.contentWindow.document;
+                        doc.open(); doc.write(d.bodyHtml); doc.close();
+                        // Auto-resize
+                        setTimeout(function(){ frame.style.height = (doc.body.scrollHeight + 20) + 'px'; }, 200);
+                    }
+                }, 100);
+            }
+        }).catch(function(){ body.innerHTML = '<div class="alert alert-danger">Lỗi tải dữ liệu</div>'; });
     }
 
     function categoryBadge(cat) {
@@ -451,7 +521,7 @@ var emailMgr = (function () {
 
     return {
         loadKpi: loadKpi, loadLogs: loadLogs, logPrev: logPrev, logNext: logNext,
-        resend: resend, loadTemplates: loadTemplates, loadConfig: loadConfig,
+        resend: resend, viewDetail: viewDetail, loadTemplates: loadTemplates, loadConfig: loadConfig,
         saveConfig: saveConfig, testConnection: testConnection, enablePassword: enablePassword
     };
 })();
