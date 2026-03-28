@@ -36,9 +36,8 @@
                                     <th class="py-2" style="width: 12%;">Admin</th>
                                     <th class="py-2" style="width: 12%;">Manager</th>
                                     <th class="py-2" style="width: 12%;">Marketing</th>
-                                    <th class="py-2" style="width: 12%;">Sale</th>
                                     <th class="py-2" style="width: 12%;">Support</th>
-                                    <th class="py-2" style="width: 12%;">Customer</th>
+                                    <th class="py-2" style="width: 12%;">Sale</th>
                                 </tr>
                             </thead>
                             <tbody class="text-center">
@@ -103,7 +102,6 @@
                                 </tr>
                                 <tr>
                                     <td class="text-start ps-4">Xem danh sách Khách hàng</td>
-                                    <td><i class="bi bi-check-circle-fill text-success fs-5"></i></td>
                                     <td><i class="bi bi-check-circle-fill text-success fs-5"></i></td>
                                     <td><i class="bi bi-check-circle-fill text-success fs-5"></i></td>
                                     <td><i class="bi bi-check-circle-fill text-success fs-5"></i></td>
