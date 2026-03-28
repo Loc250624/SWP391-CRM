@@ -85,13 +85,7 @@
                                 <span>Danh mục Khóa học</span>
                             </a>
                         </li>
-                        <li class="nav-item mb-1">
-                            <a href="${pageContext.request.contextPath}/admin/category/form"
-                                class="nav-link rounded-2 d-flex align-items-center gap-2 py-2 px-3 ${ACTIVE_MENU == 'CATEGORY_FORM' ? 'active bg-indigo text-white' : 'text-body-secondary'}">
-                                <i class="bi bi-plus-circle"></i>
-                                <span>Thêm Danh mục mới</span>
-                            </a>
-                        </li>
+
                     </ul>
                 </div>
 
