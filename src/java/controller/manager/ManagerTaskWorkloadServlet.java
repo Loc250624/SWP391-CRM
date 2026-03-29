@@ -47,14 +47,13 @@ public class ManagerTaskWorkloadServlet extends HttpServlet {
 
         TaskDAO taskDAO = new TaskDAO();
 
-        // Get all dept members (exclude manager)
+        // Get all users (exclude current manager)
         List<Users> allUsers = userDAO.getAllUsers();
         List<Users> teamMembers = new ArrayList<>();
         List<Integer> teamMemberIds = new ArrayList<>();
 
         for (Users u : allUsers) {
-            if (u.getDepartmentId() == currentUser.getDepartmentId()
-                    && u.getUserId() != currentUser.getUserId()) {
+            if (u.getUserId() != currentUser.getUserId()) {
                 teamMembers.add(u);
                 teamMemberIds.add(u.getUserId());
             }

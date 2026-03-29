@@ -93,7 +93,9 @@
     .kb-card:hover {
         background: #ebecf0;
         box-shadow: 0 2px 4px rgba(9,30,66,.18), 0 0 1px rgba(9,30,66,.2);
+        text-decoration: none;
     }
+    a.kb-card { color: inherit; text-decoration: none; display: block; cursor: pointer; }
     .kb-card-title {
         font-size: .8rem;
         font-weight: 500;
@@ -238,12 +240,8 @@
                     </c:when>
                     <c:otherwise>
                         <c:forEach var="task" items="${inProgressTasks}">
-                            <div class="kb-card">
-                                <div class="kb-card-title">
-                                    <a href="${pageContext.request.contextPath}/manager/task/detail?id=${task.taskId}">
-                                        ${task.title}
-                                    </a>
-                                </div>
+                            <a class="kb-card" href="${pageContext.request.contextPath}/manager/task/detail?id=${task.taskId}">
+                                <div class="kb-card-title">${task.title}</div>
                                 <div class="kb-card-code">
                                     ${task.taskCode}
                                     <c:if test="${not empty task.relatedType}">
@@ -281,7 +279,7 @@
                                         </c:otherwise>
                                     </c:choose>
                                 </div>
-                            </div>
+                            </a>
                         </c:forEach>
                     </c:otherwise>
                 </c:choose>
@@ -304,11 +302,9 @@
                     </c:when>
                     <c:otherwise>
                         <c:forEach var="task" items="${completedTasks}">
-                            <div class="kb-card" style="opacity:.85;">
+                            <a class="kb-card" href="${pageContext.request.contextPath}/manager/task/detail?id=${task.taskId}" style="opacity:.85;">
                                 <div class="kb-card-title">
-                                    <a href="${pageContext.request.contextPath}/manager/task/detail?id=${task.taskId}">
-                                        <i class="bi bi-check2 text-success me-1"></i>${task.title}
-                                    </a>
+                                    <i class="bi bi-check2 text-success me-1"></i>${task.title}
                                 </div>
                                 <div class="kb-card-code">
                                     ${task.taskCode}
@@ -347,7 +343,7 @@
                                         </c:otherwise>
                                     </c:choose>
                                 </div>
-                            </div>
+                            </a>
                         </c:forEach>
                     </c:otherwise>
                 </c:choose>
@@ -370,11 +366,9 @@
                     </c:when>
                     <c:otherwise>
                         <c:forEach var="task" items="${cancelledTasks}">
-                            <div class="kb-card" style="opacity:.7;">
+                            <a class="kb-card" href="${pageContext.request.contextPath}/manager/task/detail?id=${task.taskId}" style="opacity:.7;">
                                 <div class="kb-card-title">
-                                    <a href="${pageContext.request.contextPath}/manager/task/detail?id=${task.taskId}">
-                                        <i class="bi bi-x-circle text-danger me-1"></i>${task.title}
-                                    </a>
+                                    <i class="bi bi-x-circle text-danger me-1"></i>${task.title}
                                 </div>
                                 <div class="kb-card-code">
                                     ${task.taskCode}
@@ -413,7 +407,7 @@
                                         </c:otherwise>
                                     </c:choose>
                                 </div>
-                            </div>
+                            </a>
                         </c:forEach>
                     </c:otherwise>
                 </c:choose>

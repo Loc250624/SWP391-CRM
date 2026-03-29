@@ -339,10 +339,21 @@
                                                         <c:if test="${u.userId == cmt.createdBy}">${u.firstName} ${u.lastName}</c:if>
                                                     </c:forEach>
                                                 </strong>
-                                                <small class="text-muted">
-                                                    ${fn:substring(cmt.createdAt, 8, 10)}/${fn:substring(cmt.createdAt, 5, 7)}/${fn:substring(cmt.createdAt, 0, 4)}
-                                                    ${fn:substring(cmt.createdAt, 11, 16)}
-                                                </small>
+                                                <div class="d-flex align-items-center gap-2">
+                                                    <small class="text-muted">
+                                                        ${fn:substring(cmt.createdAt, 8, 10)}/${fn:substring(cmt.createdAt, 5, 7)}/${fn:substring(cmt.createdAt, 0, 4)}
+                                                        ${fn:substring(cmt.createdAt, 11, 16)}
+                                                    </small>
+                                                    <form method="post" action="${pageContext.request.contextPath}/manager/task/comment"
+                                                          class="d-inline" onsubmit="return confirm('Bạn có chắc muốn xóa bình luận này?');">
+                                                        <input type="hidden" name="action" value="delete">
+                                                        <input type="hidden" name="commentId" value="${cmt.commentId}">
+                                                        <input type="hidden" name="taskId" value="${task.taskId}">
+                                                        <button type="submit" class="btn btn-link btn-sm text-danger p-0" title="Xóa bình luận">
+                                                            <i class="bi bi-trash"></i>
+                                                        </button>
+                                                    </form>
+                                                </div>
                                             </div>
                                             <p class="mb-0 small">${cmt.content}</p>
                                         </div>

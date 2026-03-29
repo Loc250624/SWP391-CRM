@@ -11,7 +11,7 @@
 
     <!-- KPI -->
     <div class="row g-3 mb-4">
-        <div class="col-md-3">
+        <div class="col-md-4">
             <div class="card border-0 shadow-sm">
                 <div class="card-body">
                     <div class="text-muted small">Tổng log</div>
@@ -20,7 +20,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-md-4">
             <div class="card border-0 shadow-sm">
                 <div class="card-body">
                     <div class="text-muted small">Thay đổi quan trọng</div>
@@ -29,20 +29,11 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-md-4">
             <div class="card border-0 shadow-sm">
                 <div class="card-body">
                     <div class="text-muted small">User hoạt động</div>
                     <div class="h4 mb-1" id="kpiActiveUsers">--</div>
-                    <div class="small text-muted">Trong hôm nay</div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body">
-                    <div class="text-muted small">Số IP truy cập</div>
-                    <div class="h4 mb-1" id="kpiDistinctIps">--</div>
                     <div class="small text-muted">Trong hôm nay</div>
                 </div>
             </div>
@@ -79,7 +70,7 @@
                 <div class="col-md-3">
                     <label class="form-label">Tìm kiếm</label>
                     <input type="text" class="form-control" id="filterKeyword"
-                           placeholder="Tên, email, IP, giá trị...">
+                           placeholder="Tên, email, giá trị...">
                 </div>
                 <div class="col-md-3 d-flex gap-2">
                     <button class="btn btn-primary flex-fill" onclick="loadLogs(0)">
@@ -110,14 +101,13 @@
                             <th>Hành động</th>
                             <th>Entity</th>
                             <th>Người dùng</th>
-                            <th>IP</th>
                             <th>Thay đổi</th>
                             <th class="text-end" style="width:70px">Chi tiết</th>
                         </tr>
                     </thead>
                     <tbody id="logTableBody">
                         <tr>
-                            <td colspan="8" class="text-center text-muted py-4">
+                            <td colspan="7" class="text-center text-muted py-4">
                                 <div class="spinner-border spinner-border-sm me-2"></div>Đang tải...
                             </td>
                         </tr>
@@ -203,7 +193,6 @@
                 document.getElementById('kpiTotal').textContent = (data.total || 0).toLocaleString();
                 document.getElementById('kpiChanges').textContent = (data.changes || 0).toLocaleString();
                 document.getElementById('kpiActiveUsers').textContent = (data.activeUsers || 0).toLocaleString();
-                document.getElementById('kpiDistinctIps').textContent = (data.distinctIps || 0).toLocaleString();
             })
             .catch(function() {});
     }
@@ -229,7 +218,7 @@
                 document.getElementById('totalLabel').textContent = '(' + totalLogs.toLocaleString() + ' kết quả)';
 
                 if (!data.logs || data.logs.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">Không có dữ liệu audit log</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4">Không có dữ liệu audit log</td></tr>';
                     document.getElementById('paginationContainer').innerHTML = '';
                     return;
                 }
@@ -249,7 +238,6 @@
                         +   '<div class="fw-semibold">' + escHtml(l.userName || '--') + '</div>'
                         +   '<div class="text-muted small">' + escHtml(l.userEmail || '') + '</div>'
                         + '</td>'
-                        + '<td class="small">' + escHtml(l.ipAddress || '--') + '</td>'
                         + '<td class="small text-muted" style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'
                         +   escHtml(summarizeChanges(l.oldValues, l.newValues))
                         + '</td>'
@@ -264,7 +252,7 @@
                 renderPagination();
             })
             .catch(function() {
-                tbody.innerHTML = '<tr><td colspan="8" class="text-center text-danger py-4">Lỗi tải dữ liệu</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center text-danger py-4">Lỗi tải dữ liệu</td></tr>';
             });
     };
 
@@ -320,7 +308,6 @@
                 html += '<tr><th>Hành động</th><td>' + actionBadge(l.action) + '</td></tr>';
                 html += '<tr><th>Entity</th><td>' + escHtml(l.entityType) + (l.entityId ? ' (ID: ' + l.entityId + ')' : '') + '</td></tr>';
                 html += '<tr><th>Người dùng</th><td>' + escHtml(l.userName || '--') + (l.userEmail ? ' <span class="text-muted">(' + escHtml(l.userEmail) + ')</span>' : '') + '</td></tr>';
-                html += '<tr><th>IP</th><td>' + escHtml(l.ipAddress || '--') + '</td></tr>';
                 html += '<tr><th>User Agent</th><td class="small text-break">' + escHtml(l.userAgent || '--') + '</td></tr>';
 
                 if (l.oldValues) {

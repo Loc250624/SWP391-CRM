@@ -81,6 +81,39 @@ public class AdminUserFormServlet extends HttpServlet {
             }
         } else {
             // Create new user
+            // Generate employee code if not provided or to ensure format
+            if (roleIdStr != null && !roleIdStr.isEmpty()) {
+                int roleId = Integer.parseInt(roleIdStr);
+                dao.RoleDAO roleDAO = new dao.RoleDAO();
+                String roleCode = roleDAO.getRoleCodeById(roleId);
+                String prefix = "EMP";
+                if (roleCode != null) {
+                    switch (roleCode.toUpperCase()) {
+                        case "ADMIN": prefix = "ADM"; break;
+                        case "MARKETING": prefix = "MKT"; break;
+                        case "SALES": prefix = "SAL"; break;
+                        case "SUPPORT": prefix = "SUP"; break;
+                        case "MANAGER": prefix = "MNG"; break;
+                        case "ACCOUNTANT": prefix = "CONT"; break;
+                        default:
+                            if (roleCode.length() >= 3) {
+                                prefix = roleCode.substring(0, 3).toUpperCase();
+                            }
+                            break;
+                    }
+                }
+                
+                String lastCode = userDAO.getLastEmployeeCodeByPrefix(prefix);
+                int nextNum = 1;
+                if (lastCode != null && lastCode.length() > prefix.length()) {
+                    try {
+                        String numPart = lastCode.substring(prefix.length());
+                        nextNum = Integer.parseInt(numPart) + 1;
+                    } catch (NumberFormatException e) {}
+                }
+                u.setEmployeeCode(String.format("%s%03d", prefix, nextNum));
+            }
+
             int newUserId = userDAO.insertUser(u);
             if (newUserId > 0 && roleIdStr != null && !roleIdStr.isEmpty()) {
                 int roleId = Integer.parseInt(roleIdStr);

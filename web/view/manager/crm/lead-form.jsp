@@ -5,8 +5,18 @@
 <!-- Page Header -->
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h4 class="mb-1 fw-bold">Tao Lead moi</h4>
-        <p class="text-muted mb-0">Nhap thong tin khach hang tiem nang moi</p>
+        <h4 class="mb-1 fw-bold">
+            <c:choose>
+                <c:when test="${mode == 'edit'}">Chinh sua Lead</c:when>
+                <c:otherwise>Tao Lead moi</c:otherwise>
+            </c:choose>
+        </h4>
+        <p class="text-muted mb-0">
+            <c:choose>
+                <c:when test="${mode == 'edit'}">${lead.leadCode} - ${lead.fullName}</c:when>
+                <c:otherwise>Nhap thong tin khach hang tiem nang moi</c:otherwise>
+            </c:choose>
+        </p>
     </div>
     <a href="${pageContext.request.contextPath}/manager/crm/leads" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Quay lai</a>
 </div>
@@ -17,6 +27,9 @@
 </c:if>
 
 <form method="POST" action="${pageContext.request.contextPath}/manager/crm/lead-form" id="leadForm" novalidate>
+    <c:if test="${mode == 'edit'}">
+        <input type="hidden" name="leadId" value="${lead.leadId}">
+    </c:if>
 
     <div class="row g-4">
         <!-- Main Content -->
@@ -99,12 +112,34 @@
                     <h6 class="mb-0 fw-semibold"><i class="bi bi-tag me-2"></i>Phan loai</h6>
                 </div>
                 <div class="card-body">
-                    <div class="mb-3">
-                        <label class="form-label fw-medium">Trang thai</label>
-                        <input type="hidden" name="status" value="New">
-                        <div class="form-control bg-light"><span class="badge bg-secondary">New</span> (Mac dinh)</div>
-                        <div class="form-text">Lead moi se o trang thai New, chua duoc giao viec</div>
-                    </div>
+                    <c:choose>
+                        <c:when test="${mode == 'edit'}">
+                            <div class="mb-3">
+                                <label class="form-label fw-medium">Trang thai</label>
+                                <select name="status" class="form-select">
+                                    <c:forEach var="st" items="${leadStatuses}">
+                                        <option value="${st}" ${lead.status == st.toString() ? 'selected' : ''}>${st}</option>
+                                    </c:forEach>
+                                    <c:if test="${empty leadStatuses}">
+                                        <option value="New" ${lead.status == 'New' ? 'selected' : ''}>New</option>
+                                        <option value="Assigned" ${lead.status == 'Assigned' ? 'selected' : ''}>Assigned</option>
+                                        <option value="Working" ${lead.status == 'Working' ? 'selected' : ''}>Working</option>
+                                        <option value="Qualified" ${lead.status == 'Qualified' ? 'selected' : ''}>Qualified</option>
+                                        <option value="Converted" ${lead.status == 'Converted' ? 'selected' : ''}>Converted</option>
+                                        <option value="Unqualified" ${lead.status == 'Unqualified' ? 'selected' : ''}>Unqualified</option>
+                                    </c:if>
+                                </select>
+                            </div>
+                        </c:when>
+                        <c:otherwise>
+                            <div class="mb-3">
+                                <label class="form-label fw-medium">Trang thai</label>
+                                <input type="hidden" name="status" value="New">
+                                <div class="form-control bg-light"><span class="badge bg-secondary">New</span> (Mac dinh)</div>
+                                <div class="form-text">Lead moi se o trang thai New, chua duoc giao viec</div>
+                            </div>
+                        </c:otherwise>
+                    </c:choose>
                     <div class="mb-3">
                         <label class="form-label fw-medium" for="rating">Rating</label>
                         <select class="form-select" id="rating" name="rating">
@@ -113,9 +148,9 @@
                                 <option value="${ratingEnum}" <c:if test="${lead.rating == ratingEnum.toString()}">selected</c:if>>${ratingEnum}</option>
                             </c:forEach>
                             <c:if test="${empty leadRatings}">
-                                <option value="Hot">Hot</option>
-                                <option value="Warm">Warm</option>
-                                <option value="Cold">Cold</option>
+                                <option value="Hot" ${lead.rating == 'Hot' ? 'selected' : ''}>Hot</option>
+                                <option value="Warm" ${lead.rating == 'Warm' ? 'selected' : ''}>Warm</option>
+                                <option value="Cold" ${lead.rating == 'Cold' ? 'selected' : ''}>Cold</option>
                             </c:if>
                         </select>
                         <div class="form-text">Muc do tiem nang cua lead</div>
@@ -161,7 +196,13 @@
 
             <!-- Action buttons -->
             <div class="d-grid gap-2">
-                <button type="submit" class="btn btn-primary" id="submitBtn"><i class="bi bi-check-lg me-1"></i>Tao Lead</button>
+                <button type="submit" class="btn btn-primary" id="submitBtn">
+                    <i class="bi bi-check-lg me-1"></i>
+                    <c:choose>
+                        <c:when test="${mode == 'edit'}">Cap nhat Lead</c:when>
+                        <c:otherwise>Tao Lead</c:otherwise>
+                    </c:choose>
+                </button>
                 <a href="${pageContext.request.contextPath}/manager/crm/leads" class="btn btn-outline-secondary">Huy</a>
             </div>
         </div>

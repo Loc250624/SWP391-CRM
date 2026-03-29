@@ -145,6 +145,79 @@
             </div>
         </div>
 
+        <!-- Danh sách khóa học đã đăng ký -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-transparent border-0">
+                <h6 class="mb-0 fw-semibold"><i class="bi bi-book me-2"></i>Khóa học đã đăng ký</h6>
+            </div>
+            <div class="card-body">
+                <c:choose>
+                    <c:when test="${not empty enrollments}">
+                        <div class="table-responsive">
+                            <table class="table table-sm align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Khóa học</th>
+                                        <th>Ngày đăng ký</th>
+                                        <th class="text-end">Số tiền</th>
+                                        <th>Thanh toán</th>
+                                        <th>Học tập</th>
+                                        <th>Tiến độ</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <c:forEach var="en" items="${enrollments}">
+                                        <tr>
+                                            <td>
+                                                <div class="fw-medium">${en.courseName}</div>
+                                                <small class="text-muted">${en.enrollmentCode}</small>
+                                            </td>
+                                            <td><small>${en.enrolledDate}</small></td>
+                                            <td class="text-end fw-semibold">
+                                                <c:if test="${not empty en.finalAmount}">
+                                                    <fmt:formatNumber value="${en.finalAmount}" type="number" groupingUsed="true" maxFractionDigits="0"/>đ
+                                                </c:if>
+                                            </td>
+                                            <td>
+                                                <c:choose>
+                                                    <c:when test="${en.paymentStatus == 'Paid'}"><span class="badge bg-success-subtle text-success">Đã TT</span></c:when>
+                                                    <c:when test="${en.paymentStatus == 'Pending'}"><span class="badge bg-warning-subtle text-warning">Chờ TT</span></c:when>
+                                                    <c:when test="${en.paymentStatus == 'Failed'}"><span class="badge bg-danger-subtle text-danger">Thất bại</span></c:when>
+                                                    <c:otherwise><span class="badge bg-secondary-subtle text-secondary">${en.paymentStatus}</span></c:otherwise>
+                                                </c:choose>
+                                            </td>
+                                            <td>
+                                                <c:choose>
+                                                    <c:when test="${en.learningStatus == 'Completed'}"><span class="badge bg-success-subtle text-success">Hoàn thành</span></c:when>
+                                                    <c:when test="${en.learningStatus == 'In Progress'}"><span class="badge bg-primary-subtle text-primary">Đang học</span></c:when>
+                                                    <c:when test="${en.learningStatus == 'Not Started'}"><span class="badge bg-secondary-subtle text-secondary">Chưa bắt đầu</span></c:when>
+                                                    <c:otherwise><span class="badge bg-secondary-subtle text-secondary">${en.learningStatus}</span></c:otherwise>
+                                                </c:choose>
+                                            </td>
+                                            <td>
+                                                <div class="d-flex align-items-center gap-2">
+                                                    <div class="progress flex-grow-1" style="height: 6px; min-width: 60px;">
+                                                        <div class="progress-bar bg-primary" style="width: ${en.progressPercentage}%;"></div>
+                                                    </div>
+                                                    <small class="text-muted">${en.progressPercentage}%</small>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </c:forEach>
+                                </tbody>
+                            </table>
+                        </div>
+                    </c:when>
+                    <c:otherwise>
+                        <div class="text-center text-muted py-3">
+                            <i class="bi bi-inbox" style="font-size:1.5rem;"></i>
+                            <p class="mb-0 mt-2 small">Chưa đăng ký khóa học nào</p>
+                        </div>
+                    </c:otherwise>
+                </c:choose>
+            </div>
+        </div>
+
         <!-- Ghi chú -->
         <c:if test="${not empty customer.notes}">
             <div class="card border-0 shadow-sm mb-4">

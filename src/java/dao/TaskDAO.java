@@ -469,12 +469,20 @@ public class TaskDAO extends DBContext {
             }
             try (ResultSet rs = st.executeQuery()) {
                 if (rs.next()) {
-                    stats.put("total", rs.getInt("total"));
-                    stats.put("pending", rs.getInt("pending"));
-                    stats.put("in_progress", rs.getInt("in_progress"));
-                    stats.put("completed", rs.getInt("completed"));
-                    stats.put("cancelled", rs.getInt("cancelled"));
-                    stats.put("overdue", rs.getInt("overdue"));
+                    int total = rs.getInt("total");
+                    int pending = rs.getInt("pending");
+                    int inProgress = rs.getInt("in_progress");
+                    int completed = rs.getInt("completed");
+                    int cancelled = rs.getInt("cancelled");
+                    int overdue = rs.getInt("overdue");
+                    stats.put("totalTasks", total);
+                    stats.put("pendingTasks", pending);
+                    stats.put("inProgressTasks", inProgress);
+                    stats.put("completedTasks", completed);
+                    stats.put("cancelledTasks", cancelled);
+                    stats.put("overdueTasks", overdue);
+                    double completionRate = total > 0 ? (completed * 100.0 / total) : 0;
+                    stats.put("completionRate", Math.round(completionRate * 10.0) / 10.0);
                 }
             }
         } catch (SQLException e) {
@@ -1148,9 +1156,8 @@ public class TaskDAO extends DBContext {
                     double completionRate = active > 0 ? (completed * 100.0 / active)  : 0;
                     double onTimeRate     = completed > 0 ? (onTime * 100.0 / completed) : 0;
                     double slaBreachRate  = active > 0 ? (breached * 100.0 / active)   : 0;
-                    double productivityScore = (completionRate / 100.0 * 0.4
-                                             + onTimeRate / 100.0 * 0.4
-                                             + (1.0 - slaBreachRate / 100.0) * 0.2) * 100.0;
+                    double productivityScore = (completionRate / 100.0 * 0.6
+                                             + onTimeRate / 100.0 * 0.4) * 100.0;
 
                     stats.put("totalTasks",        total);
                     stats.put("completedTasks",    completed);

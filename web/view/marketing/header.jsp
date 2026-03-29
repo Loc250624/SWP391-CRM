@@ -10,9 +10,9 @@
                 <nav aria-label="breadcrumb">
                     <ol class="breadcrumb mb-0">
                         <li class="breadcrumb-item">
-                            <a href="${pageContext.request.contextPath}/sale/dashboard"
+                            <a href="${pageContext.request.contextPath}/marketing/dashboard"
                                 class="text-decoration-none text-muted">
-                                <i class="bi bi-house-door me-1"></i>Sales Pipeline
+                                <i class="bi bi-house-door me-1"></i>Marketing
                             </a>
                         </li>
                         <li class="breadcrumb-item active" aria-current="page">
@@ -21,16 +21,6 @@
                     </ol>
                 </nav>
 
-                <!-- Center: Search -->
-                <form class="d-none d-lg-flex mx-4" style="width: 400px;">
-                    <div class="input-group">
-                        <span class="input-group-text bg-light border-end-0">
-                            <i class="bi bi-search text-muted"></i>
-                        </span>
-                        <input type="text" class="form-control bg-light border-start-0"
-                            placeholder="Tìm kiếm opportunity, khách hàng...">
-                    </div>
-                </form>
 
                 <!-- Right: Actions -->
                 <div class="d-flex align-items-center gap-2">
@@ -216,21 +206,21 @@
                             data-bs-toggle="dropdown" aria-expanded="false">
                             <div class="d-none d-md-block text-end">
                                 <div class="small fw-medium lh-sm">
-                                    ${sessionScope.userName != null ? sessionScope.userName : 'Sales Manager'}
+                                    ${sessionScope.userName != null ? sessionScope.userName : 'Marketing'}
                                 </div>
-                                <div class="text-muted" style="font-size: 11px;">Sales Team</div>
+                                <div class="text-muted" style="font-size: 11px;">Marketing</div>
                             </div>
                             <div class="bg-primary text-white rounded d-flex align-items-center justify-content-center"
                                 style="width: 36px; height: 36px; font-size: 14px; font-weight: 600;">
-                                ${sessionScope.userInitial != null ? sessionScope.userInitial : 'SM'}
+                                ${sessionScope.userInitial != null ? sessionScope.userInitial : 'M'}
                             </div>
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end">
                             <li class="dropdown-header">
                                 <div class="fw-semibold">${sessionScope.userName != null ? sessionScope.userName :
-                                    'Sales Manager'}</div>
+                                    'Marketing'}</div>
                                 <div class="text-muted small">${sessionScope.userEmail != null ? sessionScope.userEmail
-                                    : 'sales@company.com'}</div>
+                                    : 'marketing@company.com'}</div>
                             </li>
                             <li>
                                 <hr class="dropdown-divider">

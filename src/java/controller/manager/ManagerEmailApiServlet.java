@@ -60,6 +60,9 @@ public class ManagerEmailApiServlet extends HttpServlet {
             case "templateDetail":
                 writeTemplateDetail(out, request);
                 break;
+            case "logDetail":
+                writeLogDetail(out, request);
+                break;
             case "configStatus":
                 writeConfigStatus(out);
                 break;
@@ -168,6 +171,34 @@ public class ManagerEmailApiServlet extends HttpServlet {
             sb.append("}");
         }
         sb.append("]}");
+        out.write(sb.toString());
+    }
+
+    private void writeLogDetail(PrintWriter out, HttpServletRequest request) {
+        int id = parseIntOr(request.getParameter("id"), 0);
+        if (id <= 0) { out.write("{\"error\":\"invalid id\"}"); return; }
+
+        EmailLogDAO dao = new EmailLogDAO();
+        EmailLog l = dao.getById(id);
+        if (l == null) { out.write("{\"error\":\"Không tìm thấy email\"}"); return; }
+
+        StringBuilder sb = new StringBuilder("{");
+        sb.append("\"id\":").append(l.getEmailLogId());
+        sb.append(",\"toEmail\":").append(jsonStr(l.getToEmail()));
+        sb.append(",\"toName\":").append(jsonStr(l.getToName()));
+        sb.append(",\"fromEmail\":").append(jsonStr(l.getFromEmail()));
+        sb.append(",\"fromName\":").append(jsonStr(l.getFromName()));
+        sb.append(",\"ccEmails\":").append(jsonStr(l.getCcEmails()));
+        sb.append(",\"bccEmails\":").append(jsonStr(l.getBccEmails()));
+        sb.append(",\"subject\":").append(jsonStr(l.getSubject()));
+        sb.append(",\"status\":").append(jsonStr(l.getStatus()));
+        sb.append(",\"relatedType\":").append(jsonStr(l.getRelatedType()));
+        sb.append(",\"bodyHtml\":").append(jsonStr(l.getBodyHtml()));
+        sb.append(",\"bodyText\":").append(jsonStr(l.getBodyText()));
+        sb.append(",\"errorMessage\":").append(jsonStr(l.getErrorMessage()));
+        sb.append(",\"createdAt\":").append(jsonStr(l.getCreatedAt() != null ? l.getCreatedAt().toString() : null));
+        sb.append(",\"sentDate\":").append(jsonStr(l.getSentDate() != null ? l.getSentDate().toString() : null));
+        sb.append("}");
         out.write(sb.toString());
     }
 

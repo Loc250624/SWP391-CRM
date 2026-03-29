@@ -5,10 +5,12 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import dao.CustomerDAO;
+import dao.EmailLogDAO;
 import dao.EmailTemplateDAO;
 import dao.LeadDAO;
 import dao.UserDAO;
 import model.Customer;
+import model.EmailLog;
 import model.EmailTemplate;
 import model.Lead;
 import model.Users;
@@ -44,6 +46,18 @@ public class ManagerEmailSendServlet extends HttpServlet {
             return;
         }
 
+        // Load failed email for retry/edit
+        String retryParam = request.getParameter("retry");
+        if (retryParam != null && !retryParam.isEmpty()) {
+            try {
+                int retryLogId = Integer.parseInt(retryParam);
+                EmailLog retryLog = new EmailLogDAO().getById(retryLogId);
+                if (retryLog != null) {
+                    request.setAttribute("retryLog", retryLog);
+                }
+            } catch (NumberFormatException ignored) {}
+        }
+
         // Load templates for dropdown
         List<EmailTemplate> templates = new EmailTemplateDAO().getActiveTemplates();
         request.setAttribute("templates", templates);
@@ -60,7 +74,7 @@ public class ManagerEmailSendServlet extends HttpServlet {
         request.setAttribute("supportUsers", supportUsers);
 
         request.setAttribute("ACTIVE_MENU", "EMAIL_MANAGE");
-        request.setAttribute("pageTitle", "Gửi Email");
+        request.setAttribute("pageTitle", request.getAttribute("retryLog") != null ? "Chỉnh sửa & Gửi lại Email" : "Gửi Email");
         request.setAttribute("CONTENT_PAGE", "/view/manager/email/email-send.jsp");
         request.getRequestDispatcher("/view/manager/layout/layout-manager.jsp").forward(request, response);
     }

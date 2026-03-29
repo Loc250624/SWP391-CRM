@@ -76,13 +76,6 @@ public class ManagerTaskFormServlet extends HttpServlet {
             request.setAttribute("formAction", "create");
         }
 
-        int departmentId = currentUser.getDepartmentId();
-        List<Users> teamMembers  = userDAO.getUsersByDepartment(departmentId);
-        List<Users> salesForAssign = new ArrayList<>();
-        for (Users u : teamMembers) {
-            if (u.getUserId() != currentUser.getUserId()) salesForAssign.add(u);
-        }
-
         List<Integer> existingDepIds = TaskDAO.parseDependencyIds(task.getDescription());
 
         // Handle leadId param (from lead-list page redirect)
@@ -122,7 +115,6 @@ public class ManagerTaskFormServlet extends HttpServlet {
         request.setAttribute("task",             task);
         request.setAttribute("allUsers",         salesUsers);
         request.setAttribute("supportUsers",     supportUsers);
-        request.setAttribute("salesForAssign",   salesForAssign);
         request.setAttribute("leads",            leadDAO.getAllLeads());
         request.setAttribute("customers",        customerDAO.getAllCustomers());
         request.setAttribute("opportunities",    new OpportunityDAO().getAllOpportunities());
@@ -273,7 +265,6 @@ public class ManagerTaskFormServlet extends HttpServlet {
             if ("create".equals(formAction)) {
 
                 String assignType   = request.getParameter("assignType");
-                List<Users> team    = userDAO.getUsersByDepartment(currentUser.getDepartmentId());
                 List<Integer> mainIds    = new ArrayList<>();
                 List<Integer> supportIds = new ArrayList<>();
 
@@ -541,8 +532,4 @@ public class ManagerTaskFormServlet extends HttpServlet {
         }
     }
 
-    private boolean isInTeam(int userId, List<Users> team) {
-        for (Users u : team) if (u.getUserId() == userId) return true;
-        return false;
-    }
 }

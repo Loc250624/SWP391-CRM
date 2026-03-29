@@ -6,13 +6,13 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
+import java.util.Map;
 import model.Users;
 
 @WebServlet(name = "ManagerPerformanceServlet", urlPatterns = {"/manager/performance"})
@@ -37,16 +37,14 @@ public class ManagerPerformanceServlet extends HttpServlet {
             return;
         }
 
-        // All dept members (include manager)
+        // All members (all users in system)
         List<Users> allUsers = userDAO.getAllUsers();
         List<Users> deptMembersList = new ArrayList<>();
         List<Integer> allMemberIds  = new ArrayList<>();
 
         for (Users user : allUsers) {
-            if (user.getDepartmentId() == currentUser.getDepartmentId()) {
-                deptMembersList.add(user);
-                allMemberIds.add(user.getUserId());
-            }
+            deptMembersList.add(user);
+            allMemberIds.add(user.getUserId());
         }
 
         TaskDAO taskDAO = new TaskDAO();
@@ -67,9 +65,6 @@ public class ManagerPerformanceServlet extends HttpServlet {
                 m -> -((Number) m.getOrDefault("productivityScore", 0.0)).doubleValue()
         ));
 
-        // SLA stats for department
-        Map<String, Integer> slaStats = taskDAO.getSLAStatsByMemberIds(allMemberIds);
-
         // Dept-wide averages
         double avgCompletionRate = performanceList.stream()
                 .mapToDouble(m -> ((Number) m.getOrDefault("completionRate", 0.0)).doubleValue())
@@ -79,7 +74,6 @@ public class ManagerPerformanceServlet extends HttpServlet {
                 .average().orElse(0.0);
 
         request.setAttribute("performanceList",    performanceList);
-        request.setAttribute("slaStats",           slaStats);
         request.setAttribute("avgCompletionRate",  avgCompletionRate);
         request.setAttribute("avgProductivity",    avgProductivity);
         request.setAttribute("deptMembers",        deptMembersList);

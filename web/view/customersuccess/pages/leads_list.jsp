@@ -8,7 +8,14 @@
     .form-input-custom { border: none; border-bottom: 2px solid #e2e8f0; border-radius: 0; padding: 8px 0; background: transparent; transition: all 0.3s; }
     .form-input-custom:focus { box-shadow: none; border-bottom-color: #3b82f6; outline: none; }
     .table-hover tbody tr:hover { background-color: #f8fafc; cursor: pointer; }
+
+    /* CSS cho Select2 (Làm đẹp ô chọn khóa học) */
+    .select2-container--bootstrap-5 .select2-selection { border: 1px solid #dee2e6; border-radius: 0.375rem; padding: 0.375rem 0.75rem; }
+    .select2-container--bootstrap-5 .select2-selection--multiple .select2-selection__choice { background-color: #e0f2fe; color: #1e40af; border: 1px solid #bae6fd; font-size: 13px; margin-top: 4px;}
 </style>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h5 class="fw-bold text-dark m-0"><i class="bi bi-person-plus-fill me-2 text-primary"></i>Danh sách Leads</h5>
@@ -94,6 +101,13 @@
                     <input type="hidden" name="status" id="rpt_Status" value="Completed">
 
                     <div class="row px-1">
+                        <div class="col-12 mb-4 p-3 bg-light rounded-3 border">
+                            <label class="modal-label text-primary"><i class="bi bi-cart-plus me-1"></i>Đăng ký khóa học (Chuyển đổi thành Khách hàng)</label>
+                            <p class="text-muted mb-2" style="font-size: 11px;">* Bỏ trống nếu chỉ tạo báo cáo chăm sóc bình thường.</p>
+                            <select class="form-select" name="courseIds" id="courseSelect" multiple="multiple" style="width: 100%;">
+                                </select>
+                        </div>
+
                         <div class="col-12 mb-4">
                             <label class="modal-label">Tiêu đề báo cáo</label>
                             <input type="text" name="subject" class="form-control form-input-custom" placeholder="Nhập tiêu đề phiếu..." required>
@@ -119,28 +133,106 @@
 </div>
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
 <script>
-    // Hàm tìm kiếm Lead
-    function filterByPhone() {
-        let input = document.getElementById("searchPhone").value.toLowerCase();
-        let rows = document.querySelectorAll("#leadsTable tbody tr");
-        rows.forEach(row => {
-            let phone = row.querySelector(".phone-cell").textContent.toLowerCase();
-            row.style.display = phone.includes(input) ? "" : "none";
+    // --- KHỞI TẠO SELECT2 ---
+    $(document).ready(function() {
+        $('#courseSelect').select2({
+            theme: 'bootstrap-5',
+            placeholder: "🔍 Tìm và chọn khóa học khách muốn mua...",
+            allowClear: true,
+            dropdownParent: $('#reportModal') // Rất quan trọng để hiển thị đúng trong Bootstrap Modal
         });
+    });
+
+    // --- TÌM KIẾM ---
+    function filterByPhone() {
+        // 1. Lấy giá trị thô người dùng nhập
+        let rawInput = document.getElementById("searchPhone").value;
+        
+        // Dùng Regex xóa sạch chữ cái, khoảng trắng, chỉ giữ lại các con số
+        let searchNumber = rawInput.replace(/\D/g, ''); 
+
+        // 2. Lấy danh sách các dòng trong bảng
+        let rows = document.querySelectorAll("#leadsTable tbody tr:not(#noResultRow)");
+        let visibleCount = 0;
+
+        rows.forEach(row => {
+            let phoneCell = row.querySelector(".phone-cell");
+            // Cũng xóa sạch ký tự thừa trong SĐT của bảng để so sánh cho chuẩn
+            let phoneText = phoneCell ? phoneCell.textContent.replace(/\D/g, '') : "";
+
+            // Nếu ô tìm kiếm trống HOẶC tìm thấy số khớp -> Hiện
+            if (searchNumber === "" || phoneText.includes(searchNumber)) {
+                row.style.display = "";
+                visibleCount++;
+            } else {
+                row.style.display = "none"; // Không khớp -> Ẩn
+            }
+        });
+
+        // 3. Xử lý thông báo "Không tìm thấy" mượt mà
+        let tbody = document.querySelector("#leadsTable tbody");
+        let noResultRow = document.getElementById("noResultRow");
+
+        if (visibleCount === 0) {
+            let errorMsg = '<td colspan="10" class="text-center py-5 text-muted">' + 
+                           '<i class="bi bi-search fs-2 d-block mb-2 opacity-50"></i>' + 
+                           'Không tìm thấy số điện thoại nào khớp với "<strong>' + rawInput + '</strong>"</td>';
+                           
+            if (!noResultRow) {
+                let tr = document.createElement("tr");
+                tr.id = "noResultRow";
+                tr.innerHTML = errorMsg;
+                tbody.appendChild(tr);
+            } else {
+                noResultRow.style.display = "";
+                noResultRow.innerHTML = errorMsg;
+            }
+        } else {
+            // Có kết quả thì giấu dòng báo lỗi đi
+            if (noResultRow) noResultRow.style.display = "none";
+        }
     }
 
-    // Mở Modal và gán dữ liệu Lead
+    // --- MỞ MODAL & GỌI AJAX LẤY KHÓA HỌC ---
     function openReportModal(id, code, name, type) {
         document.getElementById("rpt_Id").value = id;
         document.getElementById("rpt_Type").value = type; // Nhận 'Lead'
         document.getElementById("rpt_Code").innerText = code;
         document.getElementById("rpt_Name").innerText = name;
         document.getElementById("reportForm").reset(); 
+        
+        // Làm trống Select2 mỗi lần mở Modal
+        $('#courseSelect').empty().trigger("change");
+
+        // Gọi AJAX lấy danh sách khóa học (Dùng chung API với Customer)
+        $.ajax({
+            url: '${pageContext.request.contextPath}/support/available-courses', 
+            type: 'GET',
+            data: { id: id, type: type },
+            dataType: 'json',
+            success: function(courses) {
+                if(courses && courses.length > 0) {
+                    courses.forEach(function(course) {
+                        let priceFormatted = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(course.price);
+                        let optionText = course.courseName + ' (' + priceFormatted + ')';
+                        let newOption = new Option(optionText, course.courseId, false, false);
+                        $('#courseSelect').append(newOption);
+                    });
+                    $('#courseSelect').trigger('change');
+                }
+            },
+            error: function() {
+                console.log("Đã có lỗi xảy ra khi tải danh sách khóa học!");
+            }
+        });
+
         new bootstrap.Modal(document.getElementById('reportModal')).show();
     }
 
-    // Các hàm xử lý Nút bấm đồng bộ với Customer
+    // --- XỬ LÝ NÚT BẤM LƯU ---
     function submitReport() {
         const subject = $("input[name='subject']").val();
         if(!subject) { alert("Vui lòng nhập tiêu đề!"); return; }
@@ -148,32 +240,43 @@
         executeSubmit();
     }
 
-    function addToQueue() {
+   function addToQueue() {
         const subject = $("input[name='subject']").val();
-        if(!subject) { alert("Vui lòng nhập tiêu đề!"); return; }
-        document.getElementById("rpt_Status").value = "Pending"; 
+        if (!subject) { alert("Vui lòng nhập tiêu đề!"); return; }
+
+        // 👉 THÊM ĐOẠN NÀY: Chặn không cho đưa vào hàng chờ nếu có khóa học
+        let courseCount = $('#courseSelect').val().length;
+        if (courseCount > 0) {
+            alert("⚠️ LỖI LOGIC: Khách đã chốt khóa học thì bạn phải bấm [Lưu báo cáo] để hoàn tất.\n\nNút [Thêm vào hàng chờ] chỉ dành cho khách chưa mua và cần gọi lại sau!");
+            return; // Dừng lại ngay lập tức
+        }
+
+        document.getElementById("rpt_Status").value = "Pending";
         executeSubmit();
     }
 
-    // FIX LỖI ĐƠ GIAO DIỆN: Dùng $.post serialize form và hiển thị Alert chuẩn
+    // --- XỬ LÝ LƯU (AJAX SUBMIT) & ALERT ---
     function executeSubmit() {
-        const formData = $('#reportForm').serialize();
+        const formData = $('#reportForm').serialize(); // Bao gồm luôn mảng 'courseIds' nếu có chọn
         const status = document.getElementById("rpt_Status").value;
         const subject = $("input[name='subject']").val();
 
         $.post('${pageContext.request.contextPath}/support/activities', formData, function (response) {
             if (response.trim() === "success") {
-                // Đóng Modal an toàn
                 const modalElement = document.getElementById('reportModal');
                 bootstrap.Modal.getInstance(modalElement).hide();
 
-                // Tạo thông báo Alert thành công
                 let alertTitle = (status === "Pending") ? "Đã vào hàng chờ!" : "Thành công!";
                 let alertColor = (status === "Pending") ? "#ffc107" : "#198754";
                 let icon = (status === "Pending") ? "bi-clock-history" : "bi-check-circle-fill";
+                
+                // Hiển thị thông báo cực VIP nếu chốt sale thành công
+                let courseCount = $('#courseSelect').val().length;
+                let upsaleMsg = (courseCount > 0) ? "<br><b>🎉 Chốt Sale thành công!</b> Khách hàng đã được đăng ký " + courseCount + " khóa và tự động chuyển sang Danh sách Khách hàng." : "";
+
                 let alertMsg = (status === "Pending") 
                     ? "Báo cáo \"" + subject + "\" đã chuyển vào hàng chờ." 
-                    : "Báo cáo \"" + subject + "\" đã được lưu vào lịch sử của Lead.";
+                    : "Báo cáo \"" + subject + "\" đã được lưu." + upsaleMsg;
 
                 const alertHtml = 
                     '<div class="alert alert-dismissible fade show shadow-sm border-0 mb-4" role="alert" ' +
@@ -183,9 +286,11 @@
                     '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>' +
                     '</div>';
                 
-                // Hiển thị ra màn hình
                 $('#liveAlertPlaceholder').html(alertHtml);
                 window.scrollTo({top: 0, behavior: 'smooth'});
+                
+                // Tự động load lại trang sau 2.5s để cập nhật biến mất Lead nếu đã chuyển đổi
+                setTimeout(function(){ location.reload(); }, 2500);
             } else {
                 alert("Lỗi: " + response);
             }

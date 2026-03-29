@@ -2,7 +2,9 @@ package controller.sale;
 
 import dao.CustomerDAO;
 import dao.CustomerTagDAO;
+import dao.EnrollmentDAO;
 import dao.LeadSourceDAO;
+import dao.QuotationDAO;
 import enums.CustomerSegment;
 import enums.CustomerStatus;
 import java.io.IOException;
@@ -10,6 +12,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -17,6 +20,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import util.SessionHelper;
 import model.Customer;
+import model.CustomerEnrollment;
 import model.CustomerTag;
 import model.LeadSource;
 import util.AuditUtil;
@@ -65,6 +69,11 @@ public class SaleCustomerFormServlet extends HttpServlet {
                 // Load assigned tags for this customer
                 List<Integer> assignedTagIds = customerTagDAO.getTagIdsByCustomerId(customer.getCustomerId());
                 request.setAttribute("assignedTagIds", assignedTagIds);
+
+                // Load existing enrollments for edit
+                EnrollmentDAO enrollmentDAO = new EnrollmentDAO();
+                List<CustomerEnrollment> enrollments = enrollmentDAO.getEnrollmentsByCustomerId(customer.getCustomerId());
+                request.setAttribute("enrollments", enrollments);
             } catch (NumberFormatException e) {
                 response.sendRedirect(request.getContextPath() + "/sale/customer/list");
                 return;
@@ -82,6 +91,11 @@ public class SaleCustomerFormServlet extends HttpServlet {
         // Load all active tags
         List<CustomerTag> allTags = customerTagDAO.getAllActiveTags();
         request.setAttribute("allTags", allTags);
+
+        // Load active courses for course picker
+        QuotationDAO quotationDAO = new QuotationDAO();
+        List<Map<String, Object>> courses = quotationDAO.getActiveCourses();
+        request.setAttribute("courses", courses);
 
         request.setAttribute("ACTIVE_MENU", "CUSTOMER_FORM");
         request.setAttribute("pageTitle", customerIdParam != null ? "Edit Customer" : "Create New Customer");
@@ -111,6 +125,7 @@ public class SaleCustomerFormServlet extends HttpServlet {
         String emailOptOutStr = request.getParameter("emailOptOut");
         String smsOptOutStr = request.getParameter("smsOptOut");
         String[] tagIdParams = request.getParameterValues("tagIds");
+        String[] courseIdParams = request.getParameterValues("courseIds");
 
         // Validation
         if (fullName == null || fullName.trim().isEmpty()) {
@@ -120,6 +135,16 @@ public class SaleCustomerFormServlet extends HttpServlet {
         }
         if (fullName.trim().length() > 150) {
             request.setAttribute("error", "Ho ten khong duoc vuot qua 150 ky tu!");
+            doGet(request, response);
+            return;
+        }
+        if (dobStr == null || dobStr.trim().isEmpty()) {
+            request.setAttribute("error", "Ngay sinh la bat buoc!");
+            doGet(request, response);
+            return;
+        }
+        if (gender == null || gender.trim().isEmpty()) {
+            request.setAttribute("error", "Gioi tinh la bat buoc!");
             doGet(request, response);
             return;
         }
@@ -274,6 +299,59 @@ public class SaleCustomerFormServlet extends HttpServlet {
                 }
             }
             customerTagDAO.assignTags(customer.getCustomerId(), tagIds, currentUserId);
+
+            // Save course enrollments (create and edit)
+            if (courseIdParams != null && courseIdParams.length > 0) {
+                EnrollmentDAO enrollmentDAO = new EnrollmentDAO();
+                QuotationDAO quotationDAO2 = new QuotationDAO();
+                List<Map<String, Object>> allCourses = quotationDAO2.getActiveCourses();
+                List<String> courseNames = new ArrayList<>();
+
+                if (isEdit) {
+                    enrollmentDAO.deleteEnrollmentsByCustomerId(customer.getCustomerId());
+                }
+
+                for (String cid : courseIdParams) {
+                    try {
+                        int courseId = Integer.parseInt(cid);
+                        BigDecimal coursePrice = BigDecimal.ZERO;
+                        String cName = "";
+                        for (Map<String, Object> c : allCourses) {
+                            if (((Number) c.get("courseId")).intValue() == courseId) {
+                                coursePrice = (BigDecimal) c.get("price");
+                                cName = (String) c.get("courseName");
+                                break;
+                            }
+                        }
+                        CustomerEnrollment en = new CustomerEnrollment();
+                        en.setCustomerId(customer.getCustomerId());
+                        en.setCourseId(courseId);
+                        en.setEnrolledDate(LocalDate.now());
+                        en.setOriginalPrice(coursePrice);
+                        en.setDiscountAmount(BigDecimal.ZERO);
+                        en.setFinalAmount(coursePrice);
+                        en.setPaymentStatus("Pending");
+                        en.setLearningStatus("Not Started");
+                        en.setProgressPercentage(0);
+                        en.setLessonsCompleted(0);
+                        en.setCreatedBy(currentUserId);
+                        enrollmentDAO.insertEnrollment(en);
+                        if (!cName.isEmpty()) courseNames.add(cName);
+                    } catch (NumberFormatException ignored) {}
+                }
+
+                if (!courseNames.isEmpty()) {
+                    customer.setTotalCourses(courseNames.size());
+                    customer.setPurchasedCourses(String.join(", ", courseNames));
+                    customerDAO.updateCustomer(customer);
+                }
+            } else if (isEdit) {
+                EnrollmentDAO enrollmentDAO = new EnrollmentDAO();
+                enrollmentDAO.deleteEnrollmentsByCustomerId(customer.getCustomerId());
+                customer.setTotalCourses(0);
+                customer.setPurchasedCourses(null);
+                customerDAO.updateCustomer(customer);
+            }
 
             // Notify customer created (only for new)
             if (!isEdit) {

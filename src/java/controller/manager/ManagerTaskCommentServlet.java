@@ -43,6 +43,15 @@ public class ManagerTaskCommentServlet extends HttpServlet {
             return;
         }
 
+        String action = request.getParameter("action");
+
+        // ── DELETE comment ─────────────────────────────────────────────────
+        if ("delete".equals(action)) {
+            handleDelete(request, response, session, currentUser);
+            return;
+        }
+
+        // ── ADD comment (default) ──────────────────────────────────────────
         String taskIdStr = request.getParameter("taskId");
         String content   = request.getParameter("content");
 
@@ -94,6 +103,50 @@ public class ManagerTaskCommentServlet extends HttpServlet {
             session.setAttribute("successMessage", "Đã thêm bình luận");
         } else {
             session.setAttribute("errorMessage", "Thêm bình luận thất bại");
+        }
+
+        response.sendRedirect(request.getContextPath() + "/manager/task/detail?id=" + taskId);
+    }
+
+    private void handleDelete(HttpServletRequest request, HttpServletResponse response,
+                              HttpSession session, Users currentUser)
+            throws IOException {
+
+        String commentIdStr = request.getParameter("commentId");
+        String taskIdStr    = request.getParameter("taskId");
+
+        if (commentIdStr == null || taskIdStr == null) {
+            session.setAttribute("errorMessage", "Thông tin không hợp lệ");
+            response.sendRedirect(request.getContextPath() + "/manager/task/list");
+            return;
+        }
+
+        int taskId;
+        int commentId;
+        try {
+            taskId    = Integer.parseInt(taskIdStr.trim());
+            commentId = Integer.parseInt(commentIdStr.trim());
+        } catch (NumberFormatException e) {
+            session.setAttribute("errorMessage", "ID không hợp lệ");
+            response.sendRedirect(request.getContextPath() + "/manager/task/list");
+            return;
+        }
+
+        TaskCommentDAO commentDAO = new TaskCommentDAO();
+        model.Comment comment = commentDAO.getCommentById(commentId);
+
+        if (comment == null) {
+            session.setAttribute("errorMessage", "Không tìm thấy bình luận");
+            response.sendRedirect(request.getContextPath() + "/manager/task/detail?id=" + taskId);
+            return;
+        }
+
+        // Manager can delete any comment on tasks in their department
+        boolean deleted = commentDAO.deleteComment(commentId);
+        if (deleted) {
+            session.setAttribute("successMessage", "Đã xóa bình luận");
+        } else {
+            session.setAttribute("errorMessage", "Xóa bình luận thất bại");
         }
 
         response.sendRedirect(request.getContextPath() + "/manager/task/detail?id=" + taskId);

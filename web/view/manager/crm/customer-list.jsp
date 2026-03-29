@@ -27,6 +27,9 @@
             <h3 class="mb-1"><i class="bi bi-people-fill me-2 text-success"></i>Quản lý Khách hàng</h3>
             <p class="text-muted mb-0">Quản lý danh sách khách hàng chưa giao và đã giao cho Sales.</p>
         </div>
+        <a href="${pageContext.request.contextPath}/manager/crm/customer/form" class="btn btn-success btn-sm">
+            <i class="bi bi-person-plus me-1"></i>Tạo Customer
+        </a>
     </div>
 
     <%-- Tabs: Chưa giao / Đã giao --%>
@@ -210,6 +213,10 @@
                                                     data-bs-toggle="modal" data-bs-target="#customerModal_${cust.customerId}">
                                                 <i class="bi bi-eye"></i>
                                             </button>
+                                            <a href="${pageContext.request.contextPath}/manager/crm/customer/form?id=${cust.customerId}"
+                                               class="btn btn-sm btn-outline-primary" title="Chỉnh sửa">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
                                             <c:if test="${activeTab != 'assigned'}">
                                                 <a href="${pageContext.request.contextPath}/manager/task/form?action=create&customerId=${cust.customerId}"
                                                    class="btn btn-sm btn-success" title="Giao việc">
@@ -499,7 +506,9 @@
 
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Đóng</button>
+                    <a href="${pageContext.request.contextPath}/manager/crm/customer/form?id=${cust.customerId}"
+                       class="btn btn-primary btn-sm"><i class="bi bi-pencil me-1"></i>Chỉnh sửa</a>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Đóng</button>
                 </div>
             </div>
         </div>
