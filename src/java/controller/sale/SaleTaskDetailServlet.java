@@ -6,6 +6,7 @@ import dao.OpportunityDAO;
 import dao.TaskAssigneeDAO;
 import dao.TaskCommentDAO;
 import dao.TaskDAO;
+import dao.TaskRelationDAO;
 import dao.UserDAO;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -22,6 +23,7 @@ import model.Lead;
 import model.Opportunity;
 import model.Task;
 import model.TaskAssignee;
+import model.TaskRelation;
 import model.Users;
 
 @WebServlet(name = "SaleTaskDetailServlet", urlPatterns = {"/sale/task/detail"})
@@ -104,21 +106,48 @@ public class SaleTaskDetailServlet extends HttpServlet {
                 creator = userDAO.getUserById(task.getCreatedBy());
             }
 
-            // Related object info
+            // Load ALL related objects from task_relations
+            TaskRelationDAO taskRelationDAO = new TaskRelationDAO();
+            List<TaskRelation> allRelations = taskRelationDAO.getByTaskId(taskId);
+
+            List<TaskRelation> objectRelations = new ArrayList<>();
+            for (TaskRelation tr : allRelations) {
+                if (tr.getRelatedType() != null && !"SUBTASK".equals(tr.getRelatedType())) {
+                    objectRelations.add(tr);
+                }
+            }
+
+            LeadDAO leadDAO = new LeadDAO();
+            CustomerDAO customerDAO = new CustomerDAO();
+            List<Lead> relatedLeads = new ArrayList<>();
+            List<Customer> relatedCustomers = new ArrayList<>();
+
+            for (TaskRelation tr : objectRelations) {
+                if ("LEAD".equals(tr.getRelatedType()) && tr.getRelatedId() != null) {
+                    Lead ld = leadDAO.getLeadById(tr.getRelatedId());
+                    if (ld != null) relatedLeads.add(ld);
+                } else if ("CUSTOMER".equals(tr.getRelatedType()) && tr.getRelatedId() != null) {
+                    Customer cust = customerDAO.getCustomerById(tr.getRelatedId());
+                    if (cust != null) relatedCustomers.add(cust);
+                }
+            }
+
+            // Fallback: single related object from task itself
             String relatedObjectName = null;
             Lead relatedLead = null;
             Customer relatedCustomer = null;
-            if (task.getRelatedType() != null && task.getRelatedId() != null) {
+            if (relatedLeads.isEmpty() && relatedCustomers.isEmpty()
+                    && task.getRelatedType() != null && task.getRelatedId() != null) {
                 switch (task.getRelatedType().toUpperCase()) {
                     case "LEAD": {
-                        relatedLead = new LeadDAO().getLeadById(task.getRelatedId());
+                        relatedLead = leadDAO.getLeadById(task.getRelatedId());
                         if (relatedLead != null) {
                             relatedObjectName = relatedLead.getFullName() + " (" + relatedLead.getLeadCode() + ")";
                         }
                         break;
                     }
                     case "CUSTOMER": {
-                        relatedCustomer = new CustomerDAO().getCustomerById(task.getRelatedId());
+                        relatedCustomer = customerDAO.getCustomerById(task.getRelatedId());
                         if (relatedCustomer != null) {
                             relatedObjectName = relatedCustomer.getFullName() + " (" + relatedCustomer.getCustomerCode() + ")";
                         }
@@ -153,6 +182,8 @@ public class SaleTaskDetailServlet extends HttpServlet {
             request.setAttribute("relatedObjectName", relatedObjectName);
             request.setAttribute("relatedLead", relatedLead);
             request.setAttribute("relatedCustomer", relatedCustomer);
+            request.setAttribute("relatedLeads", relatedLeads);
+            request.setAttribute("relatedCustomers", relatedCustomers);
             request.setAttribute("cleanDescription", cleanDescription);
             request.setAttribute("allUsers", allUsers);
             request.setAttribute("comments", comments);
