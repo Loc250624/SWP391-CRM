@@ -683,50 +683,44 @@ public class CustomerDAO extends DBContext {
     }
 
    public List<Customer> getCustomersByCreator(int userId) {
-    List<Customer> list = new ArrayList<>();
-    // SQL V7: Bọc khung Flexbox cho TỪNG khóa học để đồng bộ 100% icon và lề
-    String sql = "SELECT c.*, "
-               + "CASE "
-               + "    WHEN LOWER(c.status) = 'inactive' THEN '<span class=\"text-muted opacity-50\">-</span>' "
-               + "    ELSE COALESCE( "
-               + "        NULLIF((SELECT STRING_AGG( "
-               + "            '<div class=\"d-flex align-items-start gap-2 mb-3\">' "
-               + "            + '<i class=\"bi bi-journal-bookmark-fill text-primary\" style=\"margin-top: 2px;\"></i>' "
-               + "            + '<div class=\"d-flex flex-column gap-1\">' "
-               + "            + '  <span class=\"fw-bold text-dark\" style=\"font-size: 13.5px; line-height: 1.2;\">' + ISNULL(crs.course_name, 'Khóa học chưa xác định') + '</span>' "
-               + "            + '  <span class=\"badge rounded-pill bg-warning text-dark timer shadow-sm\" style=\"font-size: 11px; padding: 4px 10px; width: fit-content;\" data-endtime=\"' + CONVERT(varchar, DATEADD(day, 30, ce.enrolled_date), 120) + '\">' "
-               + "            + '    <i class=\"bi bi-clock-history me-1\"></i> Đang tính...</span>' "
-               + "            + '</div>' "
-               + "            + '</div>', '') "
-               + "            FROM customer_enrollments ce "
-               + "            LEFT JOIN courses crs ON ce.course_id = crs.course_id "
-               + "            WHERE ce.customer_id = c.customer_id), ''), "
-               + "        '<div class=\"d-flex align-items-start gap-2 mb-3\">' "
-               + "        + '<i class=\"bi bi-journal-bookmark-fill text-primary\" style=\"margin-top: 2px;\"></i>' "
-               + "        + '<div class=\"d-flex flex-column gap-1\">' "
-               + "        + '  <span class=\"fw-bold text-dark\" style=\"font-size: 13.5px; line-height: 1.2;\">' + ISNULL(c.purchased_courses, 'Chưa đăng ký') + '</span>' "
-               + "        + '  <span class=\"badge rounded-pill bg-warning text-dark timer shadow-sm\" style=\"font-size: 11px; padding: 4px 10px; width: fit-content;\" data-endtime=\"' + CONVERT(varchar, DATEADD(day, 30, ISNULL(c.created_at, GETDATE())), 120) + '\">' "
-               + "        + '    <i class=\"bi bi-clock-history me-1\"></i> Đang tính...</span>' "
-               + "        + '</div>' "
-               + "        + '</div>' "
-               + "    ) "
-               + "END AS timer_courses "
-               + "FROM customers c "
-               + "WHERE c.created_by = ? "
-               + "ORDER BY c.created_at DESC";
+        List<Customer> list = new ArrayList<>();
+        // SQL V8.1: ĐÃ SỬA LỖI (XÓA COMMENT SQL GÂY LỖI) VÀ TỐI ƯU GIAO DIỆN
+        String sql = "SELECT c.*, "
+                   + "CASE "
+                   + "    WHEN LOWER(c.status) = 'inactive' THEN '<span class=\"text-muted opacity-50\">-</span>' "
+                   + "    ELSE COALESCE( "
+                   + "        NULLIF((SELECT STRING_AGG( "
+                   + "            '<div class=\"d-flex align-items-start gap-2 mb-3\">' "
+                   + "            + '<i class=\"bi bi-journal-bookmark-fill text-primary\" style=\"margin-top: 2px;\"></i>' "
+                   + "            + '<div class=\"d-flex flex-column gap-1\">' "
+                   + "            + '  <span class=\"fw-bold text-dark\" style=\"font-size: 13.5px; line-height: 1.2;\">' + ISNULL(crs.course_name, 'Khóa học chưa xác định') + '</span>' "
+                   + "            + '  <span class=\"badge rounded-pill bg-warning text-dark timer shadow-sm\" style=\"font-size: 11px; padding: 4px 10px; width: fit-content;\" data-endtime=\"' + CONVERT(varchar, DATEADD(day, 30, ce.enrolled_date), 120) + '\">' "
+                   + "            + '    <i class=\"bi bi-clock-history me-1\"></i> Đang tính...</span>' "
+                   + "            + '</div>' "
+                   + "            + '</div>', '') "
+                   + "            FROM customer_enrollments ce "
+                   + "            LEFT JOIN courses crs ON ce.course_id = crs.course_id "
+                   + "            WHERE ce.customer_id = c.customer_id "
+                   + "            AND DATEADD(day, 30, ce.enrolled_date) > GETDATE()), ''), "
+                   + "        '<span class=\"text-muted fst-italic small\">Chưa đăng ký</span>' "
+                   + "    ) "
+                   + "END AS timer_courses "
+                   + "FROM customers c "
+                   + "WHERE c.created_by = ? "
+                   + "ORDER BY c.created_at DESC";
 
-    try (PreparedStatement st = connection.prepareStatement(sql)) {
-        st.setInt(1, userId);
-        try (ResultSet rs = st.executeQuery()) {
-            while (rs.next()) {
-                Customer c = mapResultSetToCustomer(rs);
-                c.setPurchasedCourses(rs.getString("timer_courses"));
-                list.add(c);
+        try (PreparedStatement st = connection.prepareStatement(sql)) {
+            st.setInt(1, userId);
+            try (ResultSet rs = st.executeQuery()) {
+                while (rs.next()) {
+                    Customer c = mapResultSetToCustomer(rs);
+                    c.setPurchasedCourses(rs.getString("timer_courses"));
+                    list.add(c);
+                }
             }
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
-    } catch (SQLException e) {
-        e.printStackTrace();
+        return list;
     }
-    return list;
-}
 }

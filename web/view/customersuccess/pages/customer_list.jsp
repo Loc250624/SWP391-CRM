@@ -246,292 +246,343 @@
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
 <script>
-                    let showOnlyExpiring = false;
+    let showOnlyExpiring = false;
 
-                    $(document).ready(function () {
-                        $('#courseSelect').select2({
-                            theme: 'bootstrap-5',
-                            placeholder: "🔍 Tìm và chọn khóa học khách muốn mua...",
-                            allowClear: true,
-                            dropdownParent: $('#reportModal')
-                        });
-                    });
+    $(document).ready(function () {
+        $('#courseSelect').select2({
+            theme: 'bootstrap-5',
+            placeholder: "🔍 Tìm và chọn khóa học khách muốn mua...",
+            allowClear: true,
+            dropdownParent: $('#reportModal')
+        });
+    });
 
-                    function toggleExpiringFilter() {
-                        showOnlyExpiring = !showOnlyExpiring;
-                        let btn = document.getElementById('btnExpiringFilter');
+    function toggleExpiringFilter() {
+        showOnlyExpiring = !showOnlyExpiring;
+        let btn = document.getElementById('btnExpiringFilter');
 
-                        if (showOnlyExpiring) {
-                            btn.classList.remove('btn-outline-warning');
-                            btn.classList.add('btn-warning');
-                        } else {
-                            btn.classList.remove('btn-warning');
-                            btn.classList.add('btn-outline-warning');
-                        }
-                        applyFilters();
-                    }
+        if (showOnlyExpiring) {
+            btn.classList.remove('btn-outline-warning');
+            btn.classList.add('btn-warning');
+        } else {
+            btn.classList.remove('btn-warning');
+            btn.classList.add('btn-outline-warning');
+        }
+        applyFilters();
+    }
 
-                    function applyFilters() {
-                        // 1. ÉP KIỂU NGAY TẠI Ô INPUT: Tự động xóa sạch chữ cái và khoảng trắng khi vừa gõ
-                        let inputElement = document.getElementById("searchPhone");
-                        inputElement.value = inputElement.value.replace(/\D/g, ''); // Gõ chữ vào là bay màu ngay lập tức
+    function applyFilters() {
+        // 1. ÉP KIỂU NGAY TẠI Ô INPUT: Tự động xóa sạch chữ cái và khoảng trắng khi vừa gõ
+        let inputElement = document.getElementById("searchPhone");
+        inputElement.value = inputElement.value.replace(/\D/g, ''); // Gõ chữ vào là bay màu ngay lập tức
 
-                        let searchNumber = inputElement.value; // Lúc này chắc chắn 100% chỉ có số hoặc rỗng
+        let searchNumber = inputElement.value; // Lúc này chắc chắn 100% chỉ có số hoặc rỗng
+        let rows = document.querySelectorAll("#customerTable tbody tr:not(#noResultRow)");
+        let now = new Date().getTime();
+        let threeDaysInMs = 3 * 24 * 60 * 60 * 1000;
 
-                        let rows = document.querySelectorAll("#customerTable tbody tr:not(#noResultRow)");
+        // Ẩn/hiện tiêu đề cột Chi tiết
+        let thDetail = document.getElementById("thDetail");
+        if (showOnlyExpiring) {
+            if (thDetail) thDetail.style.display = 'none';
+        } else {
+            if (thDetail) thDetail.style.display = '';
+        }
 
-                        let now = new Date().getTime();
-                        let threeDaysInMs = 3 * 24 * 60 * 60 * 1000;
+        let visibleCount = 0;
 
-                        // Ẩn/hiện tiêu đề cột Chi tiết
-                        let thDetail = document.getElementById("thDetail");
-                        if (showOnlyExpiring) {
-                            if (thDetail)
-                                thDetail.style.display = 'none';
-                        } else {
-                            if (thDetail)
-                                thDetail.style.display = '';
-                        }
+        rows.forEach(row => {
+            let phoneCell = row.querySelector(".phone-cell");
+            let phoneText = phoneCell ? phoneCell.textContent.replace(/\D/g, '') : "";
 
-                        let visibleCount = 0;
+            // 2. LOGIC TÌM KIẾM MỚI
+            let matchText = false;
+            if (searchNumber === "") {
+                matchText = true;
+            } else {
+                if (phoneText.includes(searchNumber)) {
+                    matchText = true;
+                }
+            }
 
-                        rows.forEach(row => {
-                            let phoneCell = row.querySelector(".phone-cell");
-                            let phoneText = phoneCell ? phoneCell.textContent.replace(/\D/g, '') : "";
-
-                            // 2. LOGIC TÌM KIẾM MỚI
-                            let matchText = false;
-                            if (searchNumber === "") {
-                                // Nếu ô input không có số nào (rỗng) -> Hiện lại toàn bộ danh sách
-                                matchText = true;
-                            } else {
-                                // Nếu có số -> Mới đem đi dò
-                                if (phoneText.includes(searchNumber)) {
-                                    matchText = true;
-                                }
-                            }
-
-                            // Logic lọc sắp hết hạn
-                            let matchExpiring = true;
-                            if (showOnlyExpiring) {
-                                matchExpiring = false;
-                                let timers = row.querySelectorAll('.timer');
-                                timers.forEach(timer => {
-                                    let endTimeStr = timer.getAttribute('data-endtime');
-                                    if (endTimeStr) {
-                                        let endTime = new Date(endTimeStr.replace(' ', 'T')).getTime();
-                                        let distance = endTime - now;
-                                        if (distance > 0 && distance <= threeDaysInMs) {
-                                            matchExpiring = true;
-                                        }
-                                    }
-                                });
-                            }
-
-                            // 3. Hiển thị và tùy biến nút bấm
-                            if (matchText && matchExpiring) {
-                                row.style.display = "";
-                                visibleCount++;
-
-                                if (showOnlyExpiring) {
-                                    if (row.querySelector('.normal-actions'))
-                                        row.querySelector('.normal-actions').style.display = 'none';
-                                    if (row.querySelector('.expiring-actions'))
-                                        row.querySelector('.expiring-actions').style.display = 'block';
-                                    if (row.querySelector('.detail-btn-cell'))
-                                        row.querySelector('.detail-btn-cell').style.display = 'none';
-                                } else {
-                                    if (row.querySelector('.normal-actions'))
-                                        row.querySelector('.normal-actions').style.display = 'flex';
-                                    if (row.querySelector('.expiring-actions'))
-                                        row.querySelector('.expiring-actions').style.display = 'none';
-                                    if (row.querySelector('.detail-btn-cell'))
-                                        row.querySelector('.detail-btn-cell').style.display = '';
-                                }
-                            } else {
-                                row.style.display = "none";
-                            }
-                        });
-
-                        // 4. XỬ LÝ DÒNG THÔNG BÁO "KHÔNG TÌM THẤY"
-                        let tbody = document.querySelector("#customerTable tbody");
-                        let noResultRow = document.getElementById("noResultRow");
-
-                        if (visibleCount === 0 && searchNumber !== "") {
-                            let errorMsg = '<td colspan="10" class="text-center py-5 text-muted">' +
-                                    '<i class="bi bi-search fs-2 d-block mb-2 opacity-50"></i>' +
-                                    'Không tìm thấy số điện thoại nào chứa "<strong>' + searchNumber + '</strong>"</td>';
-
-                            if (!noResultRow) {
-                                let tr = document.createElement("tr");
-                                tr.id = "noResultRow";
-                                tr.innerHTML = errorMsg;
-                                tbody.appendChild(tr);
-                            } else {
-                                noResultRow.style.display = "";
-                                noResultRow.innerHTML = errorMsg;
-                            }
-                        } else {
-                            if (noResultRow)
-                                noResultRow.style.display = "none";
-                        }
-                    }
-
-                    // ĐÃ KHÔI PHỤC LẠI HÀM XEM CHI TIẾT
-                    function showDetail(code, name, email, phone, gender, addr, city, segment, spent, status, notes) {
-                        document.getElementById("mCode").innerText = code;
-                        document.getElementById("mName").innerText = name;
-                        document.getElementById("mEmail").innerText = email;
-                        document.getElementById("mPhone").innerText = phone;
-                        document.getElementById("mGender").innerText = gender;
-                        document.getElementById("mSegment").innerText = segment;
-
-                        let formattedSpent = new Intl.NumberFormat('vi-VN', {style: 'currency', currency: 'VND'}).format(spent);
-                        document.getElementById("mSpent").innerText = formattedSpent;
-                        document.getElementById("mStatus").innerText = status;
-                        document.getElementById("mNotes").innerText = notes && notes !== 'null' ? notes : "Không có ghi chú";
-
-                        new bootstrap.Modal(document.getElementById('detailModal')).show();
-                    }
-
-                    function openReportModal(id, code, name, type) {
-                        document.getElementById("rpt_Id").value = id;
-                        document.getElementById("rpt_Type").value = type;
-                        document.getElementById("rpt_Code").innerText = code;
-                        document.getElementById("rpt_Name").innerText = name;
-                        document.getElementById("reportForm").reset();
-
-                        $('#courseSelect').empty().trigger("change");
-
-                        $.ajax({
-                            url: '${pageContext.request.contextPath}/support/available-courses',
-                            type: 'GET',
-                            data: {id: id, type: type},
-                            dataType: 'json',
-                            success: function (courses) {
-                                if (courses && courses.length > 0) {
-                                    courses.forEach(function (course) {
-                                        let priceFormatted = new Intl.NumberFormat('vi-VN', {style: 'currency', currency: 'VND'}).format(course.price);
-                                        let optionText = course.courseName + ' (' + priceFormatted + ')';
-                                        $('#courseSelect').append(new Option(optionText, course.courseId, false, false));
-                                    });
-                                    $('#courseSelect').trigger('change');
-                                }
-                            },
-                            error: function (xhr, status, error) {
-                                alert("⚠️ Hệ thống không tải được khóa học!\nMã trạng thái: " + xhr.status + "\nLỗi: " + error);
-                                console.log("Chi tiết lỗi:", xhr.responseText);
-                            }
-                        });
-
-                        new bootstrap.Modal(document.getElementById('reportModal')).show();
-                    }
-
-                    function submitReport() {
-                        const subject = $("input[name='subject']").val();
-                        if (!subject) {
-                            alert("Vui lòng nhập tiêu đề!");
-                            return;
-                        }
-                        document.getElementById("rpt_Status").value = "Completed";
-                        executeSubmit();
-                    }
-
-                    function addToQueue() {
-                        const subject = $("input[name='subject']").val();
-                        if (!subject) {
-                            alert("Vui lòng nhập tiêu đề!");
-                            return;
-                        }
-
-                        let courseCount = $('#courseSelect').val().length;
-                        if (courseCount > 0) {
-                            alert("⚠️ LỖI LOGIC: Khách đã chốt khóa học thì bạn phải bấm [Lưu báo cáo] để hoàn tất.\n\nNút [Thêm vào hàng chờ] chỉ dành cho khách chưa mua và cần gọi lại sau!");
-                            return;
-                        }
-
-                        document.getElementById("rpt_Status").value = "Pending";
-                        executeSubmit();
-                    }
-
-                    function executeSubmit() {
-                        const formData = $('#reportForm').serialize();
-                        const status = document.getElementById("rpt_Status").value;
-                        const subject = $("input[name='subject']").val();
-
-                        $.post('${pageContext.request.contextPath}/support/activities', formData, function (response) {
-                            if (response.trim() === "success") {
-                                const modalElement = document.getElementById('reportModal');
-                                bootstrap.Modal.getInstance(modalElement).hide();
-
-                                let alertTitle = (status === "Pending") ? "Đã vào hàng chờ!" : "Thành công!";
-                                let alertColor = (status === "Pending") ? "#ffc107" : "#198754";
-                                let icon = (status === "Pending") ? "bi-clock-history" : "bi-check-circle-fill";
-
-                                let courseCount = $('#courseSelect').val().length;
-                                let upsaleMsg = (courseCount > 0) ? " và đăng ký " + courseCount + " khóa học mới" : "";
-
-                                let alertMsg = (status === "Pending")
-                                        ? "Báo cáo \"" + subject + "\" đã chuyển vào hàng chờ."
-                                        : "Báo cáo \"" + subject + "\"" + upsaleMsg + " đã được lưu vào lịch sử.";
-
-                                const alertHtml =
-                                        '<div class="alert alert-dismissible fade show shadow-sm border-0 mb-4" role="alert" ' +
-                                        'style="border-left: 5px solid ' + alertColor + ' !important; background-color: white;">' +
-                                        '<i class="bi ' + icon + ' me-2" style="color: ' + alertColor + '"></i>' +
-                                        '<strong style="color: ' + alertColor + '">' + alertTitle + '</strong> ' + alertMsg +
-                                        '<button type="button" class="btn-close" data-bs-alert="alert"></button>' +
-                                        '</div>';
-
-                                $('#liveAlertPlaceholder').html(alertHtml);
-                                window.scrollTo({top: 0, behavior: 'smooth'});
-
-                                setTimeout(function () {
-                                    location.reload();
-                                }, 2000);
-                            } else {
-                                alert("Lỗi: " + response);
-                            }
-                        }).fail(function () {
-                            alert("Không thể kết nối với máy chủ.");
-                        });
-                    }
-
-                    function startCourseTimers() {
-                        const timers = document.querySelectorAll('.timer');
-                        timers.forEach(function (el) {
-                            let endTimeStr = el.getAttribute('data-endtime');
-                            if (!endTimeStr)
-                                return;
-
+            // Logic lọc sắp hết hạn (Bỏ qua khóa đã tàng hình)
+            let matchExpiring = true;
+            if (showOnlyExpiring) {
+                matchExpiring = false;
+                let timers = row.querySelectorAll('.timer');
+                timers.forEach(timer => {
+                    // Kiểm tra xem thẻ cha (chứa tên khóa học và đồng hồ) có đang bị ẩn (display: none) hay không
+                    // Nếu đã bị ẩn thì KHÔNG xét là sắp hết hạn nữa
+                    if (timer.parentElement && timer.parentElement.style.display !== 'none') {
+                        let endTimeStr = timer.getAttribute('data-endtime');
+                        if (endTimeStr) {
                             let endTime = new Date(endTimeStr.replace(' ', 'T')).getTime();
-                            let interval = setInterval(function () {
-                                let now = new Date().getTime();
-                                let distance = endTime - now;
+                            let distance = endTime - now;
+                            if (distance > 0 && distance <= threeDaysInMs) {
+                                matchExpiring = true;
+                            }
+                        }
+                    }
+                });
+            }
 
-                                if (distance <= 0) {
-                                    clearInterval(interval);
-                                    el.className = "badge bg-danger text-white ms-1 shadow-sm";
-                                    el.innerHTML = '<i class="bi bi-exclamation-triangle-fill"></i> Đã hết hạn';
-                                    return;
-                                }
+            // 3. Hiển thị và tùy biến nút bấm
+            if (matchText && matchExpiring) {
+                row.style.display = "";
+                visibleCount++;
 
-                                let days = Math.floor(distance / (1000 * 60 * 60 * 24));
-                                let hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                                let minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-                                let seconds = Math.floor((distance % (1000 * 60)) / 1000);
+                if (showOnlyExpiring) {
+                    if (row.querySelector('.normal-actions')) row.querySelector('.normal-actions').style.display = 'none';
+                    if (row.querySelector('.expiring-actions')) row.querySelector('.expiring-actions').style.display = 'block';
+                    if (row.querySelector('.detail-btn-cell')) row.querySelector('.detail-btn-cell').style.display = 'none';
+                } else {
+                    if (row.querySelector('.normal-actions')) row.querySelector('.normal-actions').style.display = 'flex';
+                    if (row.querySelector('.expiring-actions')) row.querySelector('.expiring-actions').style.display = 'none';
+                    if (row.querySelector('.detail-btn-cell')) row.querySelector('.detail-btn-cell').style.display = '';
+                }
+            } else {
+                row.style.display = "none";
+            }
+        });
 
-                                if (days > 0) {
-                                    el.innerHTML = '<i class="bi bi-clock-history"></i> Còn ' + days + ' ngày ' + hours + ' giờ';
-                                } else {
-                                    el.className = "badge bg-danger text-white ms-1 shadow-sm";
-                                    el.innerHTML = '<i class="bi bi-alarm-fill"></i> ' + hours + 'g ' + minutes + 'p ' + seconds + 's';
-                                }
-                            }, 1000);
-                        });
+        // 4. XỬ LÝ DÒNG THÔNG BÁO "KHÔNG TÌM THẤY"
+        let tbody = document.querySelector("#customerTable tbody");
+        let noResultRow = document.getElementById("noResultRow");
+
+        if (visibleCount === 0 && searchNumber !== "") {
+            let errorMsg = '<td colspan="10" class="text-center py-5 text-muted">' +
+                '<i class="bi bi-search fs-2 d-block mb-2 opacity-50"></i>' +
+                'Không tìm thấy số điện thoại nào chứa "<strong>' + searchNumber + '</strong>"</td>';
+
+            if (!noResultRow) {
+                let tr = document.createElement("tr");
+                tr.id = "noResultRow";
+                tr.innerHTML = errorMsg;
+                tbody.appendChild(tr);
+            } else {
+                noResultRow.style.display = "";
+                noResultRow.innerHTML = errorMsg;
+            }
+        } else {
+            if (noResultRow) noResultRow.style.display = "none";
+        }
+    }
+
+    // ĐÃ KHÔI PHỤC LẠI HÀM XEM CHI TIẾT
+    function showDetail(code, name, email, phone, gender, addr, city, segment, spent, status, notes) {
+        document.getElementById("mCode").innerText = code;
+        document.getElementById("mName").innerText = name;
+        document.getElementById("mEmail").innerText = email;
+        document.getElementById("mPhone").innerText = phone;
+        document.getElementById("mGender").innerText = gender;
+        document.getElementById("mSegment").innerText = segment;
+
+        let formattedSpent = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(spent);
+        document.getElementById("mSpent").innerText = formattedSpent;
+        document.getElementById("mStatus").innerText = status;
+        document.getElementById("mNotes").innerText = notes && notes !== 'null' ? notes : "Không có ghi chú";
+
+        new bootstrap.Modal(document.getElementById('detailModal')).show();
+    }
+
+    function openReportModal(id, code, name, type) {
+        document.getElementById("rpt_Id").value = id;
+        document.getElementById("rpt_Type").value = type;
+        document.getElementById("rpt_Code").innerText = code;
+        document.getElementById("rpt_Name").innerText = name;
+        document.getElementById("reportForm").reset();
+
+        $('#courseSelect').empty().trigger("change");
+
+        $.ajax({
+            url: '${pageContext.request.contextPath}/support/available-courses',
+            type: 'GET',
+            data: { id: id, type: type },
+            dataType: 'json',
+            success: function (courses) {
+                if (courses && courses.length > 0) {
+                    courses.forEach(function (course) {
+                        let priceFormatted = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(course.price);
+                        let optionText = course.courseName + ' (' + priceFormatted + ')';
+                        $('#courseSelect').append(new Option(optionText, course.courseId, false, false));
+                    });
+                    $('#courseSelect').trigger('change');
+                }
+            },
+            error: function (xhr, status, error) {
+                alert("⚠️ Hệ thống không tải được khóa học!\nMã trạng thái: " + xhr.status + "\nLỗi: " + error);
+                console.log("Chi tiết lỗi:", xhr.responseText);
+            }
+        });
+
+        new bootstrap.Modal(document.getElementById('reportModal')).show();
+    }
+
+    function submitReport() {
+        const subject = $("input[name='subject']").val();
+        if (!subject) {
+            alert("Vui lòng nhập tiêu đề!");
+            return;
+        }
+        document.getElementById("rpt_Status").value = "Completed";
+        executeSubmit();
+    }
+
+    function addToQueue() {
+        const subject = $("input[name='subject']").val();
+        if (!subject) {
+            alert("Vui lòng nhập tiêu đề!");
+            return;
+        }
+
+        let courseCount = $('#courseSelect').val().length;
+        if (courseCount > 0) {
+            alert("⚠️ LỖI LOGIC: Khách đã chốt khóa học thì bạn phải bấm [Lưu báo cáo] để hoàn tất.\n\nNút [Thêm vào hàng chờ] chỉ dành cho khách chưa mua và cần gọi lại sau!");
+            return;
+        }
+
+        document.getElementById("rpt_Status").value = "Pending";
+        executeSubmit();
+    }
+
+    function executeSubmit() {
+        const formData = $('#reportForm').serialize();
+        const status = document.getElementById("rpt_Status").value;
+        const subject = $("input[name='subject']").val();
+
+        $.post('${pageContext.request.contextPath}/support/activities', formData, function (response) {
+            if (response.trim() === "success") {
+                const modalElement = document.getElementById('reportModal');
+                bootstrap.Modal.getInstance(modalElement).hide();
+
+                let alertTitle = (status === "Pending") ? "Đã vào hàng chờ!" : "Thành công!";
+                let alertColor = (status === "Pending") ? "#ffc107" : "#198754";
+                let icon = (status === "Pending") ? "bi-clock-history" : "bi-check-circle-fill";
+
+                let courseCount = $('#courseSelect').val().length;
+                let upsaleMsg = (courseCount > 0) ? " và đăng ký " + courseCount + " khóa học mới" : "";
+
+                let alertMsg = (status === "Pending")
+                    ? "Báo cáo \"" + subject + "\" đã chuyển vào hàng chờ."
+                    : "Báo cáo \"" + subject + "\"" + upsaleMsg + " đã được lưu vào lịch sử.";
+
+                const alertHtml =
+                    '<div class="alert alert-dismissible fade show shadow-sm border-0 mb-4" role="alert" ' +
+                    'style="border-left: 5px solid ' + alertColor + ' !important; background-color: white;">' +
+                    '<i class="bi ' + icon + ' me-2" style="color: ' + alertColor + '"></i>' +
+                    '<strong style="color: ' + alertColor + '">' + alertTitle + '</strong> ' + alertMsg +
+                    '<button type="button" class="btn-close" data-bs-alert="alert"></button>' +
+                    '</div>';
+
+                $('#liveAlertPlaceholder').html(alertHtml);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+
+                setTimeout(function () {
+                    location.reload();
+                }, 2000);
+            } else {
+                alert("Lỗi: " + response);
+            }
+        }).fail(function () {
+            alert("Không thể kết nối với máy chủ.");
+        });
+    }
+
+ function startCourseTimers() {
+        const timers = document.querySelectorAll('.timer');
+
+        timers.forEach(function (el) {
+            // VÒNG BẢO VỆ CHỐNG SẬP (Try...Catch)
+            try {
+                // HÀM ẨN KHÓA HỌC AN TOÀN
+                function hideCourse() {
+                    let parent = el.parentElement;
+                    
+                    // Ẩn tên khóa học và đồng hồ
+                    if (parent && !parent.classList.contains('course-column-wrapper')) {
+                        parent.style.display = "none";
+                    } else {
+                        el.style.display = "none";
+                        // Nếu backend không bọc thẻ div, thử xóa chữ đứng trước nó
+                        if (el.previousSibling && el.previousSibling.nodeType === Node.TEXT_NODE) {
+                            el.previousSibling.textContent = "";
+                        }
+                        if (el.previousElementSibling && el.previousElementSibling.tagName === 'I') {
+                             el.previousElementSibling.style.display = "none";
+                        }
                     }
 
-                    document.addEventListener("DOMContentLoaded", function () {
-                        startCourseTimers();
-                    });
+                    // Kiểm tra xem cột này còn khóa nào đang học không
+                    let wrapper = el.closest('.course-column-wrapper');
+                    if (wrapper) {
+                        let activeTimers = Array.from(wrapper.querySelectorAll('.timer')).filter(t => 
+                            t.style.display !== 'none' && (!t.parentElement || t.parentElement.style.display !== 'none')
+                        );
+                        // Nếu không còn khóa nào thì hiện chữ "Chưa đăng ký"
+                        if (activeTimers.length === 0) {
+                            wrapper.innerHTML = '<span class="text-muted fst-italic small">Chưa đăng ký</span>';
+                        }
+                    }
+                }
+
+                let endTimeStr = el.getAttribute('data-endtime');
+                
+                // 1. DỮ LIỆU RỖNG VÀ LỖI -> ẨN LUÔN
+                if (!endTimeStr || endTimeStr.trim() === "" || endTimeStr === "null") {
+                    hideCourse();
+                    return;
+                }
+
+                // 2. ÉP CHUẨN ĐỊNH DẠNG QUỐC TẾ (Chống lỗi trình duyệt)
+                let safeDateStr = endTimeStr.split('.')[0].replace(/-/g, '/').replace('T', ' ');
+                let endTime = new Date(safeDateStr).getTime();
+
+                if (isNaN(endTime)) {
+                    hideCourse();
+                    return;
+                }
+
+                // 3. TÍNH TOÁN THỜI GIAN
+                function updateClock() {
+                    let distance = endTime - new Date().getTime();
+                    
+                    // HẾT HẠN -> ẨN LUÔN
+                    if (distance <= 0) {
+                        hideCourse();
+                        return true; 
+                    }
+
+                    // CÒN HẠN -> HIỂN THỊ ĐỒNG HỒ
+                    let days = Math.floor(distance / (1000 * 60 * 60 * 24));
+                    let hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                    let minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                    let seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+                    if (days > 0) {
+                        el.innerHTML = '<i class="bi bi-clock-history"></i> Còn ' + days + ' ngày ' + hours + ' giờ';
+                    } else {
+                        el.className = "badge bg-danger text-white ms-1 shadow-sm timer";
+                        el.innerHTML = '<i class="bi bi-alarm-fill"></i> ' + hours + 'g ' + minutes + 'p ' + seconds + 's';
+                    }
+                    return false;
+                }
+
+                // Chạy ngay lập tức lần đầu
+                if (!updateClock()) {
+                    // Nếu còn hạn mới chạy đếm lùi
+                    let interval = setInterval(function () {
+                        if (updateClock()) clearInterval(interval);
+                    }, 1000);
+                }
+                
+            } catch (err) {
+                // NẾU CÓ LỖI BẤT NGỜ -> ẨN LUÔN KHÓA HỌC CHO SẠCH SẼ
+                console.error("Lỗi JS:", err);
+                el.style.display = "none"; 
+            }
+        });
+    }
+    document.addEventListener("DOMContentLoaded", function () {
+        startCourseTimers();
+    });
 </script>
