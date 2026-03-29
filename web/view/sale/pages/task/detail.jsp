@@ -169,31 +169,82 @@
                 </div>
             </div>
 
-            <!-- Related Object -->
-            <c:if test="${not empty relatedObjectName}">
+            <!-- Related Objects -->
+            <c:if test="${not empty relatedLeads || not empty relatedCustomers || not empty relatedObjectName}">
                 <div class="card mb-4">
                     <div class="card-header bg-white">
                         <h6 class="mb-0"><i class="bi bi-link-45deg me-2"></i>Đối tượng liên kết</h6>
                     </div>
                     <div class="card-body">
-                        <div class="d-flex align-items-center justify-content-between">
-                            <div class="d-flex align-items-center gap-2">
-                                <div class="${task.relatedType == 'LEAD' || task.relatedType == 'Lead' ? 'bg-primary' : 'bg-success'} bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center"
-                                     style="width:40px;height:40px;">
-                                    <i class="bi ${task.relatedType == 'LEAD' || task.relatedType == 'Lead' ? 'bi-person-lines-fill text-primary' : 'bi-people-fill text-success'}"></i>
+                        <%-- Lead list --%>
+                        <c:forEach var="ld" items="${relatedLeads}" varStatus="ls">
+                            <div class="d-flex align-items-center justify-content-between ${!ls.last || not empty relatedCustomers ? 'mb-3 pb-3 border-bottom' : ''}">
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center"
+                                         style="width:40px;height:40px;">
+                                        <i class="bi bi-person-lines-fill text-primary"></i>
+                                    </div>
+                                    <div>
+                                        <div class="fw-semibold">${fn:escapeXml(ld.fullName)}</div>
+                                        <small class="text-muted">${ld.leadCode} · ${not empty ld.phone ? ld.phone : ld.email}</small>
+                                    </div>
                                 </div>
-                                <div>
-                                    <div class="fw-semibold">${relatedObjectName}</div>
-                                    <small class="text-muted">${task.relatedType}</small>
+                                <div class="d-flex align-items-center gap-2">
+                                    <c:choose>
+                                        <c:when test="${ld.status == 'New'}"><span class="badge bg-secondary">${ld.status}</span></c:when>
+                                        <c:when test="${ld.status == 'Assigned'}"><span class="badge bg-primary">${ld.status}</span></c:when>
+                                        <c:when test="${ld.status == 'Working'}"><span class="badge bg-info">${ld.status}</span></c:when>
+                                        <c:when test="${ld.status == 'Converted'}"><span class="badge bg-success">${ld.status}</span></c:when>
+                                        <c:otherwise><span class="badge bg-secondary">${ld.status}</span></c:otherwise>
+                                    </c:choose>
+                                    <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#leadModal-${ld.leadId}">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
                                 </div>
                             </div>
-                            <c:if test="${not empty relatedLead || not empty relatedCustomer}">
-                                <button type="button" class="btn btn-sm ${not empty relatedLead ? 'btn-outline-primary' : 'btn-outline-success'}"
-                                        data-bs-toggle="modal" data-bs-target="#relatedObjectModal">
-                                    <i class="bi bi-eye me-1"></i>Chi tiết
-                                </button>
-                            </c:if>
-                        </div>
+                        </c:forEach>
+                        <%-- Customer list --%>
+                        <c:forEach var="cust" items="${relatedCustomers}" varStatus="cs">
+                            <div class="d-flex align-items-center justify-content-between ${!cs.last ? 'mb-3 pb-3 border-bottom' : ''}">
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="bg-success bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center"
+                                         style="width:40px;height:40px;">
+                                        <i class="bi bi-people-fill text-success"></i>
+                                    </div>
+                                    <div>
+                                        <div class="fw-semibold">${fn:escapeXml(cust.fullName)}</div>
+                                        <small class="text-muted">${cust.customerCode} · ${not empty cust.phone ? cust.phone : cust.email}</small>
+                                    </div>
+                                </div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <c:if test="${not empty cust.status}"><span class="badge bg-success">${cust.status}</span></c:if>
+                                    <button type="button" class="btn btn-sm btn-outline-success" data-bs-toggle="modal" data-bs-target="#custModal-${cust.customerId}">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </c:forEach>
+                        <%-- Single related object fallback --%>
+                        <c:if test="${empty relatedLeads && empty relatedCustomers && not empty relatedObjectName}">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="${task.relatedType == 'LEAD' || task.relatedType == 'Lead' ? 'bg-primary' : 'bg-success'} bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center"
+                                         style="width:40px;height:40px;">
+                                        <i class="bi ${task.relatedType == 'LEAD' || task.relatedType == 'Lead' ? 'bi-person-lines-fill text-primary' : 'bi-people-fill text-success'}"></i>
+                                    </div>
+                                    <div>
+                                        <div class="fw-semibold">${relatedObjectName}</div>
+                                        <small class="text-muted">${task.relatedType}</small>
+                                    </div>
+                                </div>
+                                <c:if test="${not empty relatedLead || not empty relatedCustomer}">
+                                    <button type="button" class="btn btn-sm ${not empty relatedLead ? 'btn-outline-primary' : 'btn-outline-success'}"
+                                            data-bs-toggle="modal" data-bs-target="#relatedObjectModal">
+                                        <i class="bi bi-eye me-1"></i>Chi tiết
+                                    </button>
+                                </c:if>
+                            </div>
+                        </c:if>
                     </div>
                 </div>
             </c:if>
@@ -359,8 +410,231 @@
     </div>
 </div>
 
-<%-- ═══════════════ Lead Detail Modal ═══════════════ --%>
-<c:if test="${not empty relatedLead}">
+<%-- ═══════════════ Lead Detail Modals (multiple) ═══════════════ --%>
+<c:forEach var="ld" items="${relatedLeads}">
+    <div class="modal fade" id="leadModal-${ld.leadId}" tabindex="-1" aria-labelledby="leadModalLabel-${ld.leadId}" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header bg-primary bg-opacity-10">
+                    <h5 class="modal-title" id="leadModalLabel-${ld.leadId}">
+                        <i class="bi bi-person-lines-fill text-primary me-2"></i>Chi tiết Lead
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small mb-0">Mã Lead</label>
+                            <div class="fw-semibold">${fn:escapeXml(ld.leadCode)}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small mb-0">Họ tên</label>
+                            <div class="fw-semibold">${fn:escapeXml(ld.fullName)}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small mb-0">Email</label>
+                            <div>${not empty ld.email ? fn:escapeXml(ld.email) : '<span class="text-muted fst-italic">Chưa có</span>'}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small mb-0">Số điện thoại</label>
+                            <div>${not empty ld.phone ? fn:escapeXml(ld.phone) : '<span class="text-muted fst-italic">Chưa có</span>'}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small mb-0">Chức danh</label>
+                            <div>${not empty ld.jobTitle ? fn:escapeXml(ld.jobTitle) : '<span class="text-muted fst-italic">Chưa có</span>'}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small mb-0">Công ty</label>
+                            <div>${not empty ld.companyName ? fn:escapeXml(ld.companyName) : '<span class="text-muted fst-italic">Chưa có</span>'}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small mb-0">Sở thích / Quan tâm</label>
+                            <div>${not empty ld.interests ? fn:escapeXml(ld.interests) : '<span class="text-muted fst-italic">Chưa có</span>'}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small mb-0">Trạng thái</label>
+                            <div>
+                                <c:choose>
+                                    <c:when test="${ld.status == 'New'}"><span class="badge bg-secondary">${ld.status}</span></c:when>
+                                    <c:when test="${ld.status == 'Assigned'}"><span class="badge bg-primary">${ld.status}</span></c:when>
+                                    <c:when test="${ld.status == 'Working'}"><span class="badge bg-info">${ld.status}</span></c:when>
+                                    <c:when test="${ld.status == 'Converted'}"><span class="badge bg-success">${ld.status}</span></c:when>
+                                    <c:otherwise><span class="badge bg-secondary">${ld.status}</span></c:otherwise>
+                                </c:choose>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small mb-0">Đánh giá (Rating)</label>
+                            <div>${not empty ld.rating ? ld.rating : '<span class="text-muted fst-italic">Chưa có</span>'}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small mb-0">Điểm Lead</label>
+                            <div>${ld.leadScore != null ? ld.leadScore : '<span class="text-muted fst-italic">Chưa có</span>'}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small mb-0">Chuyển đổi</label>
+                            <div>
+                                <c:choose>
+                                    <c:when test="${ld.isConverted}"><span class="badge bg-success">Đã chuyển đổi</span></c:when>
+                                    <c:otherwise><span class="badge bg-warning text-dark">Chưa chuyển đổi</span></c:otherwise>
+                                </c:choose>
+                            </div>
+                        </div>
+                        <c:if test="${ld.isConverted && ld.convertedAt != null}">
+                            <div class="col-md-6">
+                                <label class="form-label text-muted small mb-0">Ngày chuyển đổi</label>
+                                <div>${fn:substring(ld.convertedAt, 8, 10)}/${fn:substring(ld.convertedAt, 5, 7)}/${fn:substring(ld.convertedAt, 0, 4)}</div>
+                            </div>
+                        </c:if>
+                        <div class="col-12">
+                            <label class="form-label text-muted small mb-0">Ghi chú</label>
+                            <div class="bg-light rounded p-2">${not empty ld.notes ? fn:escapeXml(ld.notes) : '<span class="text-muted fst-italic">Không có ghi chú</span>'}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small mb-0">Ngày tạo</label>
+                            <div class="small text-muted">
+                                <c:if test="${ld.createdAt != null}">${fn:substring(ld.createdAt, 8, 10)}/${fn:substring(ld.createdAt, 5, 7)}/${fn:substring(ld.createdAt, 0, 4)} ${fn:substring(ld.createdAt, 11, 16)}</c:if>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small mb-0">Cập nhật lần cuối</label>
+                            <div class="small text-muted">
+                                <c:if test="${ld.updatedAt != null}">${fn:substring(ld.updatedAt, 8, 10)}/${fn:substring(ld.updatedAt, 5, 7)}/${fn:substring(ld.updatedAt, 0, 4)} ${fn:substring(ld.updatedAt, 11, 16)}</c:if>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</c:forEach>
+
+<%-- ═══════════════ Customer Detail Modals (multiple) ═══════════════ --%>
+<c:forEach var="cust" items="${relatedCustomers}">
+    <div class="modal fade" id="custModal-${cust.customerId}" tabindex="-1" aria-labelledby="custModalLabel-${cust.customerId}" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header bg-success bg-opacity-10">
+                    <h5 class="modal-title" id="custModalLabel-${cust.customerId}">
+                        <i class="bi bi-people-fill text-success me-2"></i>Chi tiết Khách hàng
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small mb-0">Mã KH</label>
+                            <div class="fw-semibold">${fn:escapeXml(cust.customerCode)}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small mb-0">Họ tên</label>
+                            <div class="fw-semibold">${fn:escapeXml(cust.fullName)}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small mb-0">Email</label>
+                            <div>${not empty cust.email ? fn:escapeXml(cust.email) : '<span class="text-muted fst-italic">Chưa có</span>'}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small mb-0">Số điện thoại</label>
+                            <div>${not empty cust.phone ? fn:escapeXml(cust.phone) : '<span class="text-muted fst-italic">Chưa có</span>'}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small mb-0">Ngày sinh</label>
+                            <div>
+                                <c:choose>
+                                    <c:when test="${cust.dateOfBirth != null}">${fn:substring(cust.dateOfBirth, 8, 10)}/${fn:substring(cust.dateOfBirth, 5, 7)}/${fn:substring(cust.dateOfBirth, 0, 4)}</c:when>
+                                    <c:otherwise><span class="text-muted fst-italic">Chưa có</span></c:otherwise>
+                                </c:choose>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small mb-0">Giới tính</label>
+                            <div>
+                                <c:choose>
+                                    <c:when test="${cust.gender == 'Male'}">Nam</c:when>
+                                    <c:when test="${cust.gender == 'Female'}">Nữ</c:when>
+                                    <c:when test="${not empty cust.gender}">${cust.gender}</c:when>
+                                    <c:otherwise><span class="text-muted fst-italic">Chưa có</span></c:otherwise>
+                                </c:choose>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small mb-0">Địa chỉ</label>
+                            <div>${not empty cust.address ? fn:escapeXml(cust.address) : '<span class="text-muted fst-italic">Chưa có</span>'}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small mb-0">Thành phố</label>
+                            <div>${not empty cust.city ? fn:escapeXml(cust.city) : '<span class="text-muted fst-italic">Chưa có</span>'}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small mb-0">Phân khúc</label>
+                            <div>${not empty cust.customerSegment ? cust.customerSegment : '<span class="text-muted fst-italic">Chưa có</span>'}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small mb-0">Trạng thái</label>
+                            <div><c:if test="${not empty cust.status}"><span class="badge bg-success">${cust.status}</span></c:if></div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small mb-0">Tổng khóa học</label>
+                            <div>${cust.totalCourses != null ? cust.totalCourses : 0}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small mb-0">Tổng chi tiêu</label>
+                            <div class="fw-semibold text-success">${cust.totalSpent != null ? cust.totalSpent : 0} VNĐ</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small mb-0">Điểm sức khỏe</label>
+                            <div>
+                                <c:choose>
+                                    <c:when test="${cust.healthScore != null && cust.healthScore >= 80}"><span class="badge bg-success">${cust.healthScore}</span></c:when>
+                                    <c:when test="${cust.healthScore != null && cust.healthScore >= 50}"><span class="badge bg-warning text-dark">${cust.healthScore}</span></c:when>
+                                    <c:when test="${cust.healthScore != null}"><span class="badge bg-danger">${cust.healthScore}</span></c:when>
+                                    <c:otherwise><span class="text-muted fst-italic">N/A</span></c:otherwise>
+                                </c:choose>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small mb-0">Điểm hài lòng</label>
+                            <div>
+                                <c:choose>
+                                    <c:when test="${cust.satisfactionScore != null && cust.satisfactionScore >= 80}"><span class="badge bg-success">${cust.satisfactionScore}</span></c:when>
+                                    <c:when test="${cust.satisfactionScore != null && cust.satisfactionScore >= 50}"><span class="badge bg-warning text-dark">${cust.satisfactionScore}</span></c:when>
+                                    <c:when test="${cust.satisfactionScore != null}"><span class="badge bg-danger">${cust.satisfactionScore}</span></c:when>
+                                    <c:otherwise><span class="text-muted fst-italic">N/A</span></c:otherwise>
+                                </c:choose>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label text-muted small mb-0">Ghi chú</label>
+                            <div class="bg-light rounded p-2">${not empty cust.notes ? fn:escapeXml(cust.notes) : '<span class="text-muted fst-italic">Không có ghi chú</span>'}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small mb-0">Ngày tạo</label>
+                            <div class="small text-muted">
+                                <c:if test="${cust.createdAt != null}">${fn:substring(cust.createdAt, 8, 10)}/${fn:substring(cust.createdAt, 5, 7)}/${fn:substring(cust.createdAt, 0, 4)} ${fn:substring(cust.createdAt, 11, 16)}</c:if>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small mb-0">Cập nhật lần cuối</label>
+                            <div class="small text-muted">
+                                <c:if test="${cust.updatedAt != null}">${fn:substring(cust.updatedAt, 8, 10)}/${fn:substring(cust.updatedAt, 5, 7)}/${fn:substring(cust.updatedAt, 0, 4)} ${fn:substring(cust.updatedAt, 11, 16)}</c:if>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</c:forEach>
+
+<%-- ═══════════════ Single Lead Fallback Modal ═══════════════ --%>
+<c:if test="${empty relatedLeads && not empty relatedLead}">
     <div class="modal fade" id="relatedObjectModal" tabindex="-1" aria-labelledby="relatedObjectModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-scrollable">
             <div class="modal-content">
@@ -397,10 +671,6 @@
                             <div>${not empty relatedLead.companyName ? fn:escapeXml(relatedLead.companyName) : '<span class="text-muted fst-italic">Chưa có</span>'}</div>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label text-muted small mb-0">Sở thích / Quan tâm</label>
-                            <div>${not empty relatedLead.interests ? fn:escapeXml(relatedLead.interests) : '<span class="text-muted fst-italic">Chưa có</span>'}</div>
-                        </div>
-                        <div class="col-md-6">
                             <label class="form-label text-muted small mb-0">Trạng thái</label>
                             <div>
                                 <c:choose>
@@ -413,43 +683,8 @@
                             </div>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label text-muted small mb-0">Đánh giá (Rating)</label>
-                            <div>${not empty relatedLead.rating ? relatedLead.rating : '<span class="text-muted fst-italic">Chưa có</span>'}</div>
-                        </div>
-                        <div class="col-md-6">
                             <label class="form-label text-muted small mb-0">Điểm Lead</label>
                             <div>${relatedLead.leadScore != null ? relatedLead.leadScore : '<span class="text-muted fst-italic">Chưa có</span>'}</div>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label text-muted small mb-0">Chuyển đổi</label>
-                            <div>
-                                <c:choose>
-                                    <c:when test="${relatedLead.isConverted}"><span class="badge bg-success">Đã chuyển đổi</span></c:when>
-                                    <c:otherwise><span class="badge bg-warning text-dark">Chưa chuyển đổi</span></c:otherwise>
-                                </c:choose>
-                            </div>
-                        </div>
-                        <c:if test="${relatedLead.isConverted && relatedLead.convertedAt != null}">
-                            <div class="col-md-6">
-                                <label class="form-label text-muted small mb-0">Ngày chuyển đổi</label>
-                                <div>${fn:substring(relatedLead.convertedAt, 8, 10)}/${fn:substring(relatedLead.convertedAt, 5, 7)}/${fn:substring(relatedLead.convertedAt, 0, 4)}</div>
-                            </div>
-                        </c:if>
-                        <div class="col-12">
-                            <label class="form-label text-muted small mb-0">Ghi chú</label>
-                            <div class="bg-light rounded p-2">${not empty relatedLead.notes ? fn:escapeXml(relatedLead.notes) : '<span class="text-muted fst-italic">Không có ghi chú</span>'}</div>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label text-muted small mb-0">Ngày tạo</label>
-                            <div class="small text-muted">
-                                <c:if test="${relatedLead.createdAt != null}">${fn:substring(relatedLead.createdAt, 8, 10)}/${fn:substring(relatedLead.createdAt, 5, 7)}/${fn:substring(relatedLead.createdAt, 0, 4)} ${fn:substring(relatedLead.createdAt, 11, 16)}</c:if>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label text-muted small mb-0">Cập nhật lần cuối</label>
-                            <div class="small text-muted">
-                                <c:if test="${relatedLead.updatedAt != null}">${fn:substring(relatedLead.updatedAt, 8, 10)}/${fn:substring(relatedLead.updatedAt, 5, 7)}/${fn:substring(relatedLead.updatedAt, 0, 4)} ${fn:substring(relatedLead.updatedAt, 11, 16)}</c:if>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -461,8 +696,8 @@
     </div>
 </c:if>
 
-<%-- ═══════════════ Customer Detail Modal ═══════════════ --%>
-<c:if test="${not empty relatedCustomer}">
+<%-- ═══════════════ Single Customer Fallback Modal ═══════════════ --%>
+<c:if test="${empty relatedCustomers && not empty relatedCustomer}">
     <div class="modal fade" id="relatedObjectModal" tabindex="-1" aria-labelledby="relatedObjectModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-scrollable">
             <div class="modal-content">
@@ -491,86 +726,12 @@
                             <div>${not empty relatedCustomer.phone ? fn:escapeXml(relatedCustomer.phone) : '<span class="text-muted fst-italic">Chưa có</span>'}</div>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label text-muted small mb-0">Ngày sinh</label>
-                            <div>
-                                <c:choose>
-                                    <c:when test="${relatedCustomer.dateOfBirth != null}">${fn:substring(relatedCustomer.dateOfBirth, 8, 10)}/${fn:substring(relatedCustomer.dateOfBirth, 5, 7)}/${fn:substring(relatedCustomer.dateOfBirth, 0, 4)}</c:when>
-                                    <c:otherwise><span class="text-muted fst-italic">Chưa có</span></c:otherwise>
-                                </c:choose>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label text-muted small mb-0">Giới tính</label>
-                            <div>
-                                <c:choose>
-                                    <c:when test="${relatedCustomer.gender == 'Male'}">Nam</c:when>
-                                    <c:when test="${relatedCustomer.gender == 'Female'}">Nữ</c:when>
-                                    <c:when test="${not empty relatedCustomer.gender}">${relatedCustomer.gender}</c:when>
-                                    <c:otherwise><span class="text-muted fst-italic">Chưa có</span></c:otherwise>
-                                </c:choose>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label text-muted small mb-0">Địa chỉ</label>
-                            <div>${not empty relatedCustomer.address ? fn:escapeXml(relatedCustomer.address) : '<span class="text-muted fst-italic">Chưa có</span>'}</div>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label text-muted small mb-0">Thành phố</label>
-                            <div>${not empty relatedCustomer.city ? fn:escapeXml(relatedCustomer.city) : '<span class="text-muted fst-italic">Chưa có</span>'}</div>
-                        </div>
-                        <div class="col-md-6">
                             <label class="form-label text-muted small mb-0">Phân khúc</label>
                             <div>${not empty relatedCustomer.customerSegment ? relatedCustomer.customerSegment : '<span class="text-muted fst-italic">Chưa có</span>'}</div>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label text-muted small mb-0">Trạng thái</label>
                             <div><c:if test="${not empty relatedCustomer.status}"><span class="badge bg-success">${relatedCustomer.status}</span></c:if></div>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label text-muted small mb-0">Tổng khóa học</label>
-                            <div>${relatedCustomer.totalCourses != null ? relatedCustomer.totalCourses : 0}</div>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label text-muted small mb-0">Tổng chi tiêu</label>
-                            <div class="fw-semibold text-success">${relatedCustomer.totalSpent != null ? relatedCustomer.totalSpent : 0} VNĐ</div>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label text-muted small mb-0">Điểm sức khỏe</label>
-                            <div>
-                                <c:choose>
-                                    <c:when test="${relatedCustomer.healthScore != null && relatedCustomer.healthScore >= 80}"><span class="badge bg-success">${relatedCustomer.healthScore}</span></c:when>
-                                    <c:when test="${relatedCustomer.healthScore != null && relatedCustomer.healthScore >= 50}"><span class="badge bg-warning text-dark">${relatedCustomer.healthScore}</span></c:when>
-                                    <c:when test="${relatedCustomer.healthScore != null}"><span class="badge bg-danger">${relatedCustomer.healthScore}</span></c:when>
-                                    <c:otherwise><span class="text-muted fst-italic">N/A</span></c:otherwise>
-                                </c:choose>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label text-muted small mb-0">Điểm hài lòng</label>
-                            <div>
-                                <c:choose>
-                                    <c:when test="${relatedCustomer.satisfactionScore != null && relatedCustomer.satisfactionScore >= 80}"><span class="badge bg-success">${relatedCustomer.satisfactionScore}</span></c:when>
-                                    <c:when test="${relatedCustomer.satisfactionScore != null && relatedCustomer.satisfactionScore >= 50}"><span class="badge bg-warning text-dark">${relatedCustomer.satisfactionScore}</span></c:when>
-                                    <c:when test="${relatedCustomer.satisfactionScore != null}"><span class="badge bg-danger">${relatedCustomer.satisfactionScore}</span></c:when>
-                                    <c:otherwise><span class="text-muted fst-italic">N/A</span></c:otherwise>
-                                </c:choose>
-                            </div>
-                        </div>
-                        <div class="col-12">
-                            <label class="form-label text-muted small mb-0">Ghi chú</label>
-                            <div class="bg-light rounded p-2">${not empty relatedCustomer.notes ? fn:escapeXml(relatedCustomer.notes) : '<span class="text-muted fst-italic">Không có ghi chú</span>'}</div>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label text-muted small mb-0">Ngày tạo</label>
-                            <div class="small text-muted">
-                                <c:if test="${relatedCustomer.createdAt != null}">${fn:substring(relatedCustomer.createdAt, 8, 10)}/${fn:substring(relatedCustomer.createdAt, 5, 7)}/${fn:substring(relatedCustomer.createdAt, 0, 4)} ${fn:substring(relatedCustomer.createdAt, 11, 16)}</c:if>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label text-muted small mb-0">Cập nhật lần cuối</label>
-                            <div class="small text-muted">
-                                <c:if test="${relatedCustomer.updatedAt != null}">${fn:substring(relatedCustomer.updatedAt, 8, 10)}/${fn:substring(relatedCustomer.updatedAt, 5, 7)}/${fn:substring(relatedCustomer.updatedAt, 0, 4)} ${fn:substring(relatedCustomer.updatedAt, 11, 16)}</c:if>
-                            </div>
                         </div>
                     </div>
                 </div>

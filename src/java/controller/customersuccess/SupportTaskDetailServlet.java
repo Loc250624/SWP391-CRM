@@ -1,10 +1,13 @@
 package controller.customersuccess;
 
 import dao.CustomerDAO;
+import dao.TaskAssigneeDAO;
 import dao.TaskCommentDAO;
 import dao.TaskDAO;
+import dao.TaskRelationDAO;
 import dao.UserDAO;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -15,6 +18,8 @@ import jakarta.servlet.http.HttpSession;
 import model.Comment;
 import model.Customer;
 import model.Task;
+import model.TaskAssignee;
+import model.TaskRelation;
 import model.Users;
 
 @WebServlet(name = "SupportTaskDetailServlet", urlPatterns = {"/support/task/detail"})
@@ -57,10 +62,35 @@ public class SupportTaskDetailServlet extends HttpServlet {
             }
 
             // Support can only view tasks assigned to them
-            if (task.getAssignedTo() == null || task.getAssignedTo() != currentUser.getUserId()) {
+            TaskAssigneeDAO taskAssigneeDAO = new TaskAssigneeDAO();
+            List<TaskAssignee> assigneeList = taskAssigneeDAO.getByTaskId(taskId);
+            boolean isAssignee = false;
+            for (TaskAssignee ta : assigneeList) {
+                if (ta.getUserId() == currentUser.getUserId()) {
+                    isAssignee = true;
+                    break;
+                }
+            }
+            if (!isAssignee && task.getAssignedTo() != null
+                    && task.getAssignedTo() == currentUser.getUserId()) {
+                isAssignee = true;
+            }
+            if (!isAssignee) {
                 session.setAttribute("errorMessage", "Bạn không có quyền xem công việc này");
                 response.sendRedirect(request.getContextPath() + "/support/task/list");
                 return;
+            }
+
+            // Group task members
+            boolean isGroupTask = assigneeList.size() > 1;
+            List<Users> groupMembers = new ArrayList<>();
+            if (isGroupTask) {
+                for (TaskAssignee ta : assigneeList) {
+                    Users member = userDAO.getUserById(ta.getUserId());
+                    if (member != null) {
+                        groupMembers.add(member);
+                    }
+                }
             }
 
             // Get creator info
@@ -69,13 +99,34 @@ public class SupportTaskDetailServlet extends HttpServlet {
                 creator = userDAO.getUserById(task.getCreatedBy());
             }
 
-            // Get related object info (CS only links to Customer)
+            // Load ALL related objects from task_relations
+            TaskRelationDAO taskRelationDAO = new TaskRelationDAO();
+            List<TaskRelation> allRelations = taskRelationDAO.getByTaskId(taskId);
+
+            List<TaskRelation> objectRelations = new ArrayList<>();
+            for (TaskRelation tr : allRelations) {
+                if (tr.getRelatedType() != null && !"SUBTASK".equals(tr.getRelatedType())) {
+                    objectRelations.add(tr);
+                }
+            }
+
+            CustomerDAO customerDAO = new CustomerDAO();
+            List<Customer> relatedCustomers = new ArrayList<>();
+            for (TaskRelation tr : objectRelations) {
+                if ("CUSTOMER".equals(tr.getRelatedType()) && tr.getRelatedId() != null) {
+                    Customer cust = customerDAO.getCustomerById(tr.getRelatedId());
+                    if (cust != null) relatedCustomers.add(cust);
+                }
+            }
+
+            // Fallback: single related object from task itself
             String relatedObjectName = null;
             Customer relatedCustomer = null;
-            if (task.getRelatedType() != null && task.getRelatedId() != null) {
+            if (relatedCustomers.isEmpty()
+                    && task.getRelatedType() != null && task.getRelatedId() != null) {
                 String rt = task.getRelatedType().toUpperCase();
                 if ("CUSTOMER".equals(rt)) {
-                    relatedCustomer = new CustomerDAO().getCustomerById(task.getRelatedId());
+                    relatedCustomer = customerDAO.getCustomerById(task.getRelatedId());
                     if (relatedCustomer != null) {
                         relatedObjectName = relatedCustomer.getFullName() + " (" + relatedCustomer.getCustomerCode() + ")";
                     }
@@ -88,8 +139,12 @@ public class SupportTaskDetailServlet extends HttpServlet {
 
             request.setAttribute("task", task);
             request.setAttribute("creator", creator);
+            request.setAttribute("isGroupTask", isGroupTask);
+            request.setAttribute("groupMembers", groupMembers);
+            request.setAttribute("assigneeList", assigneeList);
             request.setAttribute("relatedObjectName", relatedObjectName);
             request.setAttribute("relatedCustomer", relatedCustomer);
+            request.setAttribute("relatedCustomers", relatedCustomers);
             request.setAttribute("comments", comments);
             request.setAttribute("allUsers", allUsers);
 
