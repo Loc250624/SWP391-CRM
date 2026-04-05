@@ -49,39 +49,15 @@ public class ManagerTaskFormServlet extends HttpServlet {
             return;
         }
 
-        String action   = request.getParameter("action");
         TaskDAO taskDAO = new TaskDAO();
-        Task task       = null;
-
-        if ("edit".equals(action)) {
-            String taskIdStr = request.getParameter("id");
-            if (taskIdStr == null || taskIdStr.isEmpty()) {
-                session.setAttribute("errorMessage", "ID công việc không hợp lệ");
-                response.sendRedirect(request.getContextPath() + "/manager/task/list");
-                return;
-            }
-            try {
-                task = taskDAO.getTaskById(Integer.parseInt(taskIdStr));
-                if (task == null) throw new Exception();
-            } catch (Exception e) {
-                session.setAttribute("errorMessage", "Không tìm thấy công việc");
-                response.sendRedirect(request.getContextPath() + "/manager/task/list");
-                return;
-            }
-            request.setAttribute("pageTitle",  "Chỉnh sửa Công việc");
-            request.setAttribute("formAction", "edit");
-        } else {
-            task = new Task();
-            request.setAttribute("pageTitle",  "Tạo Công việc mới");
-            request.setAttribute("formAction", "create");
-        }
-
-        List<Integer> existingDepIds = TaskDAO.parseDependencyIds(task.getDescription());
+        Task task       = new Task();
+        request.setAttribute("pageTitle",  "Tạo Công việc mới");
+        request.setAttribute("formAction", "create");
 
         // Handle leadId param (from lead-list page redirect)
         LeadDAO leadDAO = new LeadDAO();
         String leadIdStr = request.getParameter("leadId");
-        if (leadIdStr != null && !leadIdStr.trim().isEmpty() && !"edit".equals(action)) {
+        if (leadIdStr != null && !leadIdStr.trim().isEmpty()) {
             try {
                 int leadId = Integer.parseInt(leadIdStr.trim());
                 Lead linkedLead = leadDAO.getLeadById(leadId);
@@ -94,7 +70,7 @@ public class ManagerTaskFormServlet extends HttpServlet {
         // Handle customerId param (from customer-list page redirect)
         CustomerDAO customerDAO = new CustomerDAO();
         String customerIdStr = request.getParameter("customerId");
-        if (customerIdStr != null && !customerIdStr.trim().isEmpty() && !"edit".equals(action)) {
+        if (customerIdStr != null && !customerIdStr.trim().isEmpty()) {
             try {
                 int customerId = Integer.parseInt(customerIdStr.trim());
                 Customer linkedCustomer = customerDAO.getCustomerById(customerId);
@@ -120,10 +96,6 @@ public class ManagerTaskFormServlet extends HttpServlet {
         request.setAttribute("opportunities",    new OpportunityDAO().getAllOpportunities());
         request.setAttribute("taskStatusValues", TaskStatus.values());
         request.setAttribute("priorityValues",   Priority.values());
-        request.setAttribute("existingDepIds",   existingDepIds);
-        request.setAttribute("existingDepTasks", existingDepIds.isEmpty()
-                ? new ArrayList<>() : taskDAO.getTasksByIds(existingDepIds));
-        request.setAttribute("cleanDescription", TaskDAO.getCleanDescription(task.getDescription()));
 
         request.setAttribute("ACTIVE_MENU",  "TASK_FORM");
         request.setAttribute("CONTENT_PAGE", "/view/manager/task/task-form.jsp");
@@ -152,11 +124,7 @@ public class ManagerTaskFormServlet extends HttpServlet {
         }
 
         String formAction = request.getParameter("formAction");
-        String taskIdStr  = request.getParameter("taskId");
-
-        String errorBase = "edit".equals(formAction) && taskIdStr != null && !taskIdStr.isEmpty()
-                ? request.getContextPath() + "/manager/task/form?action=edit&id=" + taskIdStr.trim()
-                : request.getContextPath() + "/manager/task/form?action=create";
+        String errorBase = request.getContextPath() + "/manager/task/form?action=create";
 
         try {
             String title       = request.getParameter("title");
@@ -440,85 +408,6 @@ public class ManagerTaskFormServlet extends HttpServlet {
                 String redirectTaskType = (mainIds.size() + supportIds.size()) > 1 ? "team" : "personal";
                 response.sendRedirect(request.getContextPath() + "/manager/task/list?taskType=" + redirectTaskType + "&view=" + redirectView);
 
-
-            } else if ("edit".equals(formAction)) {
-
-                if (taskIdStr == null || taskIdStr.trim().isEmpty()) {
-                    session.setAttribute("errorMessage", "ID không hợp lệ");
-                    response.sendRedirect(request.getContextPath() + "/manager/task/list"); return;
-                }
-                int taskId;
-                try { taskId = Integer.parseInt(taskIdStr.trim()); }
-                catch (NumberFormatException e) {
-                    session.setAttribute("errorMessage", "ID không hợp lệ");
-                    response.sendRedirect(request.getContextPath() + "/manager/task/list"); return;
-                }
-
-                Task task = taskDAO.getTaskById(taskId);
-                if (task == null) {
-                    session.setAttribute("errorMessage", "Không tìm thấy công việc");
-                    response.sendRedirect(request.getContextPath() + "/manager/task/list"); return;
-                }
-
-                // Assignee
-                String aStr = request.getParameter("assignedTo");
-                if (aStr == null || aStr.trim().isEmpty()) {
-                    session.setAttribute("errorMessage", "Chọn người thực hiện");
-                    response.sendRedirect(errorBase); return;
-                }
-                int assignedTo;
-                try { assignedTo = Integer.parseInt(aStr.trim()); }
-                catch (NumberFormatException e) {
-                    session.setAttribute("errorMessage", "Người thực hiện không hợp lệ");
-                    response.sendRedirect(errorBase); return;
-                }
-                if (userDAO.getUserById(assignedTo) == null) {
-                    session.setAttribute("errorMessage", "Người thực hiện không tồn tại");
-                    response.sendRedirect(errorBase); return;
-                }
-
-                // Status (edit mode: manager được phép thay đổi thủ công)
-                String statusStr = request.getParameter("status");
-                int status;
-                try { status = TaskStatus.valueOf(statusStr).ordinal(); }
-                catch (Exception e) {
-                    session.setAttribute("errorMessage", "Trạng thái không hợp lệ");
-                    response.sendRedirect(errorBase); return;
-                }
-
-                // Dependencies
-                String depParam = request.getParameter("dependencyIds");
-                List<Integer> depIds = new ArrayList<>();
-                if (depParam != null && !depParam.trim().isEmpty()) {
-                    for (String part : depParam.split(",")) {
-                        try { depIds.add(Integer.parseInt(part.trim())); }
-                        catch (NumberFormatException ignored) {}
-                    }
-                }
-                String finalDesc = TaskDAO.setDependencyIds(
-                        description != null ? description.trim() : "", depIds);
-
-                task.setTitle(title.trim());
-                task.setDescription(finalDesc);
-                task.setAssignedTo(assignedTo);
-                task.setDueDate(dueDate);
-                task.setPriority(priority);
-                task.setStatus(status);
-                task.setRelatedType(relatedType);
-                task.setRelatedId(relatedId);
-                task.setReminderAt(dueDate.minusHours(24));
-
-                if (taskDAO.updateTask(task)) {
-                    AuditUtil.logUpdate(request, currentUser.getUserId(), "Task", taskId,
-                            null,
-                            "title=" + title.trim() + ", priority=" + priorityStr
-                            + ", status=" + request.getParameter("status") + ", assignedTo=" + assignedTo);
-                    session.setAttribute("successMessage", "Cập nhật công việc thành công");
-                    response.sendRedirect(request.getContextPath() + "/manager/task/detail?id=" + taskId);
-                } else {
-                    session.setAttribute("errorMessage", "Cập nhật thất bại");
-                    response.sendRedirect(errorBase);
-                }
 
             } else {
                 session.setAttribute("errorMessage", "Thao tác không hợp lệ");
