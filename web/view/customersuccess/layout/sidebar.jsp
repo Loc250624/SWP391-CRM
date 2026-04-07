@@ -94,13 +94,6 @@
                         <span>Công việc của tôi</span>
                     </a>
                 </li>
-                <li class="nav-item mb-1">
-                    <a href="${pageContext.request.contextPath}/support/task/calendar"
-                       class="nav-link rounded-2 d-flex align-items-center gap-2 py-2 px-3 ${pageTitle == 'Lịch Công việc' ? 'active bg-primary text-white' : 'text-body-secondary'}">
-                        <i class="bi bi-calendar3"></i>
-                        <span>Lịch công việc</span>
-                    </a>
-                </li>
             </ul>
         </div>
 

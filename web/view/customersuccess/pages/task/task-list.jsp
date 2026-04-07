@@ -153,9 +153,6 @@
             <h3 class="mb-1"><i class="bi bi-kanban me-2"></i>Công việc của tôi</h3>
             <p class="text-muted mb-0">Kéo thả để cập nhật trạng thái</p>
         </div>
-        <a href="${pageContext.request.contextPath}/support/task/calendar" class="btn btn-outline-primary">
-            <i class="bi bi-calendar3 me-2"></i>Xem lịch
-        </a>
     </div>
 
     <!-- Tabs -->

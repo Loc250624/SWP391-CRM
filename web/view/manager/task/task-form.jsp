@@ -13,9 +13,7 @@
             <li class="breadcrumb-item">
                 <a href="${pageContext.request.contextPath}/manager/task/list">Công việc</a>
             </li>
-            <li class="breadcrumb-item active">
-                ${formAction == 'edit' ? 'Chỉnh sửa' : 'Tạo mới'}
-            </li>
+            <li class="breadcrumb-item active">Tạo mới</li>
         </ol>
     </nav>
 
@@ -37,44 +35,33 @@
 
     <div class="d-flex justify-content-between align-items-center mb-2">
         <h3 class="mb-0">
-            <i class="bi bi-${formAction == 'edit' ? 'pencil-square' : 'plus-circle'} me-2"></i>
-            ${formAction == 'edit' ? 'Chỉnh sửa Công việc' : 'Tạo Công việc mới'}
+            <i class="bi bi-plus-circle me-2"></i>Tạo Công việc mới
         </h3>
-        <c:if test="${formAction != 'edit'}">
-            <span class="badge bg-success fs-6">
-                <i class="bi bi-play-circle me-1"></i>Trạng thái: Đang thực hiện (tự động)
-            </span>
-        </c:if>
+        <span class="badge bg-success fs-6">
+            <i class="bi bi-play-circle me-1"></i>Trạng thái: Đang thực hiện (tự động)
+        </span>
     </div>
 
-    <%-- ══════ Task Type Tabs (create mode) ══════ --%>
-    <c:if test="${formAction != 'edit'}">
-        <ul class="nav nav-tabs mb-4" role="tablist">
-            <li class="nav-item">
-                <a class="nav-link active" href="javascript:void(0)" id="tabLead" onclick="toggleTaskType('LEAD')">
-                    <i class="bi bi-person-lines-fill me-1"></i>Lead
-                    <span class="badge bg-primary ms-1" id="tabLeadBadge">Sales</span>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="javascript:void(0)" id="tabCustomer" onclick="toggleTaskType('CUSTOMER')">
-                    <i class="bi bi-people-fill me-1"></i>Customer
-                    <span class="badge bg-secondary ms-1" id="tabCustomerBadge">Support</span>
-                </a>
-            </li>
-        </ul>
-    </c:if>
+    <%-- ══════ Task Type Tabs ══════ --%>
+    <ul class="nav nav-tabs mb-4" role="tablist">
+        <li class="nav-item">
+            <a class="nav-link active" href="javascript:void(0)" id="tabLead" onclick="toggleTaskType('LEAD')">
+                <i class="bi bi-person-lines-fill me-1"></i>Lead
+                <span class="badge bg-primary ms-1" id="tabLeadBadge">Sales</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="javascript:void(0)" id="tabCustomer" onclick="toggleTaskType('CUSTOMER')">
+                <i class="bi bi-people-fill me-1"></i>Customer
+                <span class="badge bg-secondary ms-1" id="tabCustomerBadge">Support</span>
+            </a>
+        </li>
+    </ul>
 
     <form action="${pageContext.request.contextPath}/manager/task/form"
           method="post" id="taskForm" novalidate>
-        <input type="hidden" name="formAction" value="${formAction}">
-        <c:if test="${formAction == 'edit'}">
-            <input type="hidden" name="taskId" value="${task.taskId}">
-        </c:if>
-        <%-- Status: editable for edit; always IN_PROGRESS for create --%>
-        <c:if test="${formAction != 'edit'}">
-            <input type="hidden" name="status" value="IN_PROGRESS">
-        </c:if>
+        <input type="hidden" name="formAction" value="create">
+        <input type="hidden" name="status" value="IN_PROGRESS">
 
     <div class="row">
         <!-- ═══════════════════ Main Form ═══════════════════ -->
@@ -106,7 +93,7 @@
 
                         <%-- ── Priority + Due Date row ───────────────────────── --%>
                         <div class="row g-3 mb-3">
-                            <div class="col-md-${formAction == 'edit' ? '4' : '6'}">
+                            <div class="col-md-6">
                                 <label for="priority" class="form-label fw-bold">
                                     Ưu tiên <span class="text-danger">*</span>
                                 </label>
@@ -121,25 +108,7 @@
                                 </select>
                             </div>
 
-                            <%-- Status: only shown in edit mode --%>
-                            <c:if test="${formAction == 'edit'}">
-                                <div class="col-md-4">
-                                    <label for="status" class="form-label fw-bold">
-                                        Trạng thái <span class="text-danger">*</span>
-                                    </label>
-                                    <select class="form-select" id="status" name="status" required>
-                                        <c:forEach var="s" items="${taskStatusValues}">
-                                            <option value="${s.name()}"
-                                                    ${task.statusName == s.name() ? 'selected' : ''}
-                                                    ${empty task.statusName && s.name() == 'IN_PROGRESS' ? 'selected' : ''}>
-                                                ${s.vietnamese}
-                                            </option>
-                                        </c:forEach>
-                                    </select>
-                                </div>
-                            </c:if>
-
-                            <div class="col-md-${formAction == 'edit' ? '4' : '6'}">
+                            <div class="col-md-6">
                                 <label for="dueDate" class="form-label fw-bold">
                                     Hạn chót <span class="text-danger">*</span>
                                 </label>
@@ -150,141 +119,23 @@
                             </div>
                         </div>
 
-                        <%-- ════════════════════════════════════════════════════
-                             ASSIGN SECTION (edit mode only — in main form)
-                             Create mode: assign section is in sidebar
-                             ════════════════════════════════════════════════════ --%>
-                        <c:if test="${formAction == 'edit'}">
-                            <div class="card border-primary border-opacity-25 mb-4">
-                                <div class="card-header bg-primary bg-opacity-10">
-                                    <h6 class="mb-0"><i class="bi bi-person-check me-2"></i>Phân công</h6>
-                                </div>
-                                <div class="card-body">
-                                    <label class="form-label fw-semibold">
-                                        Người thực hiện
-                                    </label>
-                                    <input type="hidden" name="assignedTo" value="${task.assignedTo}">
-                                    <select class="form-select" disabled>
-                                        <c:forEach var="user" items="${allUsers}">
-                                            <c:if test="${task.assignedTo == user.userId}">
-                                                <option selected>${user.firstName} ${user.lastName}</option>
-                                            </c:if>
-                                        </c:forEach>
-                                    </select>
-                                    <div class="form-text text-muted">Không thể thay đổi người thực hiện khi chỉnh sửa</div>
-                                </div>
-                            </div>
-                        </c:if>
-
-                        <%-- ════════════════════════════════════════════════════
-                             RELATED OBJECT (edit mode only — keeps old dropdown)
-                             Create mode uses sidebar lead picker or linkedLead
-                             ════════════════════════════════════════════════════ --%>
-                        <c:if test="${formAction == 'edit'}">
-                            <div class="card bg-light border-0 mb-4">
-                                <div class="card-body">
-                                    <h6 class="mb-3">
-                                        <i class="bi bi-link-45deg me-1"></i>Liên kết đối tượng (tùy chọn)
-                                    </h6>
-                                    <input type="hidden" name="relatedType" id="relatedType">
-                                    <c:set var="initRelatedValue" value=""/>
-                                    <c:if test="${(task.relatedType == 'LEAD' || task.relatedType == 'Lead') && task.relatedId != null}">
-                                        <c:set var="initRelatedValue" value="LEAD_${task.relatedId}"/>
-                                    </c:if>
-                                    <c:if test="${(task.relatedType == 'CUSTOMER' || task.relatedType == 'Customer') && task.relatedId != null}">
-                                        <c:set var="initRelatedValue" value="CUSTOMER_${task.relatedId}"/>
-                                    </c:if>
-                                    <c:if test="${(task.relatedType == 'OPPORTUNITY' || task.relatedType == 'Opportunity') && task.relatedId != null}">
-                                        <c:set var="initRelatedValue" value="OPPORTUNITY_${task.relatedId}"/>
-                                    </c:if>
-                                    <select class="form-select mb-3" id="relatedObject" name="relatedId">
-                                        <option value="">-- Không liên kết --</option>
-                                        <optgroup label="Lead">
-                                            <c:forEach var="l" items="${leads}">
-                                                <option value="LEAD_${l.leadId}"
-                                                        ${initRelatedValue == 'LEAD_'.concat(l.leadId) ? 'selected' : ''}>
-                                                    ${fn:escapeXml(l.fullName)} (${l.leadCode})
-                                                </option>
-                                            </c:forEach>
-                                        </optgroup>
-                                        <optgroup label="Khách hàng">
-                                            <c:forEach var="c" items="${customers}">
-                                                <option value="CUSTOMER_${c.customerId}"
-                                                        ${initRelatedValue == 'CUSTOMER_'.concat(c.customerId) ? 'selected' : ''}>
-                                                    ${fn:escapeXml(c.fullName)} (${c.customerCode})
-                                                </option>
-                                            </c:forEach>
-                                        </optgroup>
-                                        <optgroup label="Cơ hội">
-                                            <c:forEach var="o" items="${opportunities}">
-                                                <option value="OPPORTUNITY_${o.opportunityId}"
-                                                        ${initRelatedValue == 'OPPORTUNITY_'.concat(o.opportunityId) ? 'selected' : ''}>
-                                                    ${fn:escapeXml(o.opportunityName)} (${o.opportunityCode})
-                                                </option>
-                                            </c:forEach>
-                                        </optgroup>
-                                    </select>
-                                </div>
-                            </div>
-                        </c:if>
 
                         <%-- Hidden field for linked lead from lead-list page --%>
-                        <c:if test="${formAction != 'edit' && not empty linkedLead}">
+                        <c:if test="${not empty linkedLead}">
                             <input type="hidden" name="selectedLeads" value="${linkedLead.leadId}">
                         </c:if>
 
                         <%-- Hidden field for linked customer from customer-list page --%>
-                        <c:if test="${formAction != 'edit' && not empty linkedCustomer}">
+                        <c:if test="${not empty linkedCustomer}">
                             <input type="hidden" name="selectedCustomers" value="${linkedCustomer.customerId}">
-                        </c:if>
-
-                        <%-- ── Task Dependencies (edit mode only) ──────────── --%>
-                        <c:if test="${formAction == 'edit'}">
-                            <div class="card border-warning border-opacity-50 mb-4">
-                                <div class="card-header bg-warning bg-opacity-10">
-                                    <h6 class="mb-0"><i class="bi bi-lock me-2"></i>Công việc phụ thuộc (tùy chọn)</h6>
-                                </div>
-                                <div class="card-body">
-                                    <p class="text-muted small mb-2">
-                                        Công việc này sẽ bị chặn cho đến khi tất cả công việc phụ thuộc hoàn thành.
-                                    </p>
-                                    <c:if test="${not empty existingDepTasks}">
-                                        <div class="mb-2">
-                                            <small class="text-muted">Hiện tại phụ thuộc vào:</small>
-                                            <div class="d-flex flex-wrap gap-1 mt-1">
-                                                <c:forEach var="dep" items="${existingDepTasks}">
-                                                    <span class="badge ${dep.statusName == 'COMPLETED' ? 'bg-success' : 'bg-secondary'}">
-                                                        #${dep.taskId} ${dep.taskCode}
-                                                        <c:if test="${dep.statusName != 'COMPLETED'}"> ⚠</c:if>
-                                                    </span>
-                                                </c:forEach>
-                                            </div>
-                                        </div>
-                                    </c:if>
-                                    <label for="dependencyIds" class="form-label small fw-bold">
-                                        ID công việc phụ thuộc (cách nhau bởi dấu phẩy):
-                                    </label>
-                                    <c:set var="depIdsStr" value=""/>
-                                    <c:forEach var="depId" items="${existingDepIds}" varStatus="st">
-                                        <c:set var="depIdsStr" value="${depIdsStr}${st.first ? '' : ','}${depId}"/>
-                                    </c:forEach>
-                                    <input type="text" class="form-control" id="dependencyIds"
-                                           name="dependencyIds" value="${depIdsStr}"
-                                           placeholder="Ví dụ: 5,12,23 — để trống nếu không phụ thuộc">
-                                    <small class="text-muted">Nhập task_id của các công việc phải hoàn thành trước.</small>
-                                </div>
-                            </div>
                         </c:if>
 
                         <%-- ── Submit buttons ─────────────────────────────── --%>
                         <div class="d-flex gap-2 pt-2">
                             <button type="submit" class="btn btn-success">
-                                <i class="bi bi-check-circle me-2"></i>
-                                ${formAction == 'edit' ? 'Lưu thay đổi' : 'Tạo công việc'}
+                                <i class="bi bi-check-circle me-2"></i>Tạo công việc
                             </button>
-                            <a href="${formAction == 'edit'
-                                       ? pageContext.request.contextPath.concat('/manager/task/detail?id=').concat(task.taskId)
-                                       : pageContext.request.contextPath.concat('/manager/task/list')}"
+                            <a href="${pageContext.request.contextPath}/manager/task/list"
                                class="btn btn-outline-secondary">
                                 <i class="bi bi-x-circle me-2"></i>Hủy
                             </a>
@@ -297,8 +148,7 @@
         <!-- ═══════════════════ Sidebar ═══════════════════ -->
         <div class="col-lg-4">
 
-            <c:if test="${formAction != 'edit'}">
-                <%-- ══════ 1. Phân công (create mode — in sidebar) ══════ --%>
+                <%-- ══════ 1. Phân công ══════ --%>
                 <div class="card border-primary border-opacity-25 mb-3">
                     <div class="card-header bg-primary bg-opacity-10 py-2">
                         <h6 class="mb-0"><i class="bi bi-person-check me-2"></i>Phân công</h6>
@@ -465,35 +315,13 @@
                         </ul>
                     </div>
                 </div>
-            </c:if>
 
-            <%-- Edit mode: creation info card --%>
-            <c:if test="${formAction == 'edit' && task.createdAt != null}">
-                <div class="card shadow-sm">
-                    <div class="card-header bg-white">
-                        <h6 class="mb-0">Thông tin tạo</h6>
-                    </div>
-                    <div class="card-body small">
-                        <div class="mb-2">
-                            <span class="text-muted d-block">Tạo lúc</span>
-                            <strong>${fn:substring(task.createdAt, 8, 10)}/${fn:substring(task.createdAt, 5, 7)}/${fn:substring(task.createdAt, 0, 4)}</strong>
-                        </div>
-                        <c:if test="${task.updatedAt != null}">
-                            <div>
-                                <span class="text-muted d-block">Cập nhật lúc</span>
-                                <strong>${fn:substring(task.updatedAt, 8, 10)}/${fn:substring(task.updatedAt, 5, 7)}/${fn:substring(task.updatedAt, 0, 4)}</strong>
-                            </div>
-                        </c:if>
-                    </div>
-                </div>
-            </c:if>
         </div>
     </div>
     </form>
 </div>
 
 <%-- ═══════════════════ Assignee Picker Modal ═══════════════════ --%>
-<c:if test="${formAction != 'edit'}">
 <div class="modal fade" id="assigneePickerModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -561,10 +389,8 @@
         </div>
     </div>
 </div>
-</c:if>
 
-<%-- ═══════════════════ Object Picker Modal (Lead + Customer tabs) ═══════════════════ --%>
-<c:if test="${formAction != 'edit'}">
+<%-- ══════════════��════ Object Picker Modal (Lead + Customer tabs) ═══════════════════ --%>
 <div class="modal fade" id="objectPickerModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -675,9 +501,8 @@
         </div>
     </div>
 </div>
-</c:if>
 
-<!-- Select2 JS (for edit mode) -->
+<!-- Select2 JS -->
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
@@ -688,43 +513,14 @@ var _currentTaskType = '${not empty linkedCustomer ? "CUSTOMER" : "LEAD"}';
 $(document).ready(function () {
 
     var CTX     = '${pageContext.request.contextPath}';
-    var IS_EDIT = '${formAction}' === 'edit';
 
-    // ── Due-date minimum (create mode) ───────────────────────────────────
+    // ── Due-date minimum ─────────────────────────────────────────────────
     var dueDateInput = document.getElementById('dueDate');
-    if (dueDateInput && !IS_EDIT) {
+    if (dueDateInput) {
         var today = new Date();
         dueDateInput.min = today.getFullYear() + '-'
             + String(today.getMonth() + 1).padStart(2, '0') + '-'
             + String(today.getDate()).padStart(2, '0');
-    }
-
-    // ── Select2 on related-object dropdown (edit mode only) ──────────────
-    if (IS_EDIT && document.getElementById('relatedObject')) {
-        $('#relatedObject').select2({
-            theme: 'bootstrap-5',
-            placeholder: '-- Không liên kết --',
-            allowClear: true,
-            width: '100%'
-        });
-
-        var relTypeInput = document.getElementById('relatedType');
-        var TYPE_MAP = { 'LEAD': 'LEAD', 'CUSTOMER': 'CUSTOMER', 'OPPORTUNITY': 'OPPORTUNITY' };
-
-        function parseRelatedValue(val) {
-            if (!val) return { prefix: '', id: '' };
-            var idx = val.indexOf('_');
-            if (idx <= 0 || idx === val.length - 1) return { prefix: '', id: '' };
-            return { prefix: val.substring(0, idx), id: val.substring(idx + 1) };
-        }
-
-        function onRelatedChange(val) {
-            var parsed = parseRelatedValue(val);
-            if (relTypeInput) relTypeInput.value = TYPE_MAP[parsed.prefix] || '';
-        }
-
-        $('#relatedObject').on('change', function() { onRelatedChange(this.value); });
-        onRelatedChange($('#relatedObject').val() || '');
     }
 
     // ── Task type toggle (create mode only) ────────────────────────────
@@ -831,12 +627,6 @@ $(document).ready(function () {
 
     // ── Form submit validation ────────────────────────────────────────────
     document.getElementById('taskForm').addEventListener('submit', function(e) {
-        if (IS_EDIT) {
-            if (!this.checkValidity()) { e.preventDefault(); e.stopPropagation(); }
-            this.classList.add('was-validated');
-            return;
-        }
-
         var assignType = document.querySelector('[name="assignType"]:checked')
                          ? document.querySelector('[name="assignType"]:checked').value : 'INDIVIDUAL';
 
