@@ -7,20 +7,20 @@ public class Users {
     private int userId;
     private String employeeCode;
     private String email;
-    private String passwordHash;
+    private String passwordHash; 
     private String firstName;
     private String lastName;
     private String phone;
     private String avatarUrl;
-    private Integer departmentId;
+    private int departmentId;
     private String status;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
+    private LocalDateTime createdAt; 
+    private LocalDateTime updatedAt; 
 
     public Users() {
     }
 
-    public Users(int userId, String employeeCode, String email, String passwordHash, String firstName, String lastName, String phone, String avatarUrl, Integer departmentId, String status, LocalDateTime createdAt, LocalDateTime updatedAt) {
+    public Users(int userId, String employeeCode, String email, String passwordHash, String firstName, String lastName, String phone, String avatarUrl, int departmentId, String status, LocalDateTime createdAt, LocalDateTime updatedAt) {
         this.userId = userId;
         this.employeeCode = employeeCode;
         this.email = email;
@@ -83,16 +83,6 @@ public class Users {
         this.lastName = lastName;
     }
 
-    public String getFullName() {
-        String ho = lastName != null ? lastName.trim() : "";
-        String ten = firstName != null ? firstName.trim() : "";
-        String ketQua = (ho + " " + ten).trim();
-        if (ketQua.isEmpty()) {
-            return email != null ? email : "";
-        }
-        return ketQua;
-    }
-
     public String getPhone() {
         return phone;
     }
@@ -109,11 +99,11 @@ public class Users {
         this.avatarUrl = avatarUrl;
     }
 
-    public Integer getDepartmentId() {
+    public int getDepartmentId() {
         return departmentId;
     }
 
-    public void setDepartmentId(Integer departmentId) {
+    public void setDepartmentId(int departmentId) {
         this.departmentId = departmentId;
     }
 
@@ -140,5 +130,6 @@ public class Users {
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
     }
-
+    
+    
 }

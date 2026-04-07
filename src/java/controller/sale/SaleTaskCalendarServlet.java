@@ -1,12 +1,7 @@
 package controller.sale;
 
 import dao.TaskDAO;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.HttpServlet;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
+import dao.UserDAO;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.YearMonth;
@@ -14,83 +9,92 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import model.Task;
 import model.Users;
 
 @WebServlet(name = "SaleTaskCalendarServlet", urlPatterns = {"/sale/task/calendar"})
 public class SaleTaskCalendarServlet extends HttpServlet {
 
-    // Bật/tắt bỏ qua đăng nhập khi test nhanh
-    private static final boolean BO_QUA_DANG_NHAP = true;
-
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        response.setContentType("text/html;charset=UTF-8");
-        HttpSession session = request.getSession();
-        Users user = (Users) session.getAttribute("user");
 
-        if (BO_QUA_DANG_NHAP && user == null) {
-            Users nguoiDungTam = new Users();
-            nguoiDungTam.setUserId(1);
-            nguoiDungTam.setDepartmentId(2);
-            session.setAttribute("user", nguoiDungTam);
-            user = nguoiDungTam;
-        }
-
-        if (user == null) {
-            response.sendRedirect(request.getContextPath() + "/login.jsp");
+        HttpSession session = request.getSession(false);
+        if (session == null || session.getAttribute("user") == null) {
+            response.sendRedirect(request.getContextPath() + "/login");
             return;
         }
 
-        int thang = LocalDate.now().getMonthValue();
-        int nam = LocalDate.now().getYear();
-        String thangParam = request.getParameter("month");
-        String namParam = request.getParameter("year");
-        String view = request.getParameter("view");
+        Users currentUser = (Users) session.getAttribute("user");
+        UserDAO userDAO = new UserDAO();
+        String roleCode = userDAO.getRoleCodeByUserId(currentUser.getUserId());
+
+        if (!"SALES".equals(roleCode)) {
+            response.sendRedirect(request.getContextPath() + "/error/403.jsp");
+            return;
+        }
+
+        LocalDate today = LocalDate.now();
+        int year = today.getYear();
+        int month = today.getMonthValue();
 
         try {
-            if (thangParam != null) {
-                thang = Integer.parseInt(thangParam);
+            String yearParam = request.getParameter("year");
+            String monthParam = request.getParameter("month");
+            if (yearParam != null && !yearParam.isEmpty()) {
+                int parsedYear = Integer.parseInt(yearParam);
+                if (parsedYear >= 2000 && parsedYear <= 2100) {
+                    year = parsedYear;
+                }
             }
-            if (namParam != null) {
-                nam = Integer.parseInt(namParam);
+            if (monthParam != null && !monthParam.isEmpty()) {
+                month = Integer.parseInt(monthParam);
+                if (month < 1) month = 1;
+                if (month > 12) month = 12;
             }
         } catch (NumberFormatException e) {
-            thang = LocalDate.now().getMonthValue();
-            nam = LocalDate.now().getYear();
+            // Use defaults
         }
-
-        YearMonth ym = YearMonth.of(nam, thang);
-        LocalDate tuNgay = ym.atDay(1);
-        LocalDate denNgay = ym.atEndOfMonth();
 
         TaskDAO taskDAO = new TaskDAO();
-        List<Task> danhSachGoc;
-        if ("team".equals(view)) {
-            danhSachGoc = taskDAO.getTasksByDepartment(user.getDepartmentId());
-            request.setAttribute("viewType", "team");
-        } else {
-            danhSachGoc = taskDAO.getTasksByAssignee(user.getUserId());
-            request.setAttribute("viewType", "personal");
-        }
+        List<Task> tasks = taskDAO.getTasksForCalendar(year, month, currentUser.getUserId(), null);
 
-        Map<LocalDate, List<Task>> mapTheoNgay = new HashMap<>();
-        for (Task t : danhSachGoc) {
-            if (t.getDueDate() == null) {
-                continue;
-            }
-            LocalDate han = t.getDueDate().toLocalDate();
-            if ((han.isEqual(tuNgay) || han.isAfter(tuNgay)) && (han.isEqual(denNgay) || han.isBefore(denNgay))) {
-                mapTheoNgay.computeIfAbsent(han, k -> new ArrayList<>()).add(t);
+        // Group tasks by day of month
+        Map<Integer, List<Task>> tasksByDate = new HashMap<>();
+        for (Task task : tasks) {
+            if (task.getDueDate() != null) {
+                int day = task.getDueDate().getDayOfMonth();
+                tasksByDate.computeIfAbsent(day, k -> new ArrayList<>()).add(task);
             }
         }
 
-        request.setAttribute("month", thang);
-        request.setAttribute("year", nam);
-        request.setAttribute("startDate", tuNgay);
-        request.setAttribute("endDate", denNgay);
-        request.setAttribute("taskByDate", mapTheoNgay);
-        request.getRequestDispatcher("/view/sale/pages/task/calendar.jsp").forward(request, response);
+        YearMonth yearMonth = YearMonth.of(year, month);
+        int daysInMonth = yearMonth.lengthOfMonth();
+        LocalDate firstDay = yearMonth.atDay(1);
+        int firstDayOfWeek = firstDay.getDayOfWeek().getValue(); // 1=Mon, 7=Sun
+
+        YearMonth previousMonth = yearMonth.minusMonths(1);
+        YearMonth nextMonth = yearMonth.plusMonths(1);
+
+        request.setAttribute("tasksByDate", tasksByDate);
+        request.setAttribute("year", year);
+        request.setAttribute("month", month);
+        request.setAttribute("daysInMonth", daysInMonth);
+        request.setAttribute("firstDayOfWeek", firstDayOfWeek);
+        request.setAttribute("previousYear", previousMonth.getYear());
+        request.setAttribute("previousMonth", previousMonth.getMonthValue());
+        request.setAttribute("nextYear", nextMonth.getYear());
+        request.setAttribute("nextMonth", nextMonth.getMonthValue());
+
+        request.setAttribute("ACTIVE_MENU", "TASK_LIST");
+        request.setAttribute("pageTitle", "Lịch Công việc");
+        request.setAttribute("CONTENT_PAGE", "/view/sale/pages/task/calendar.jsp");
+        request.getRequestDispatcher("/view/sale/layout/layout.jsp").forward(request, response);
     }
 }

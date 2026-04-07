@@ -24,14 +24,14 @@ public class OpportunityDAO extends DBContext {
         String sql = "SELECT * FROM opportunities ORDER BY created_at DESC";
 
         try {
-            PreparedStatement stmt = getConnection().prepareStatement(sql);
+            PreparedStatement stmt = connection.prepareStatement(sql);
             ResultSet rs = stmt.executeQuery();
 
             while (rs.next()) {
                 Opportunity opp = extractOpportunityFromResultSet(rs);
                 opportunities.add(opp);
             }
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
         }
 
@@ -47,7 +47,7 @@ public class OpportunityDAO extends DBContext {
         String sql = "SELECT * FROM opportunities WHERE owner_id = ? OR created_by = ? ORDER BY created_at DESC";
 
         try {
-            PreparedStatement stmt = getConnection().prepareStatement(sql);
+            PreparedStatement stmt = connection.prepareStatement(sql);
             stmt.setInt(1, userId);
             stmt.setInt(2, userId);
 
@@ -56,7 +56,7 @@ public class OpportunityDAO extends DBContext {
                 Opportunity opp = extractOpportunityFromResultSet(rs);
                 opportunities.add(opp);
             }
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
         }
 
@@ -70,14 +70,14 @@ public class OpportunityDAO extends DBContext {
         String sql = "SELECT * FROM opportunities WHERE opportunity_id = ?";
 
         try {
-            PreparedStatement stmt = getConnection().prepareStatement(sql);
+            PreparedStatement stmt = connection.prepareStatement(sql);
             stmt.setInt(1, opportunityId);
 
             ResultSet rs = stmt.executeQuery();
             if (rs.next()) {
                 return extractOpportunityFromResultSet(rs);
             }
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
         }
 
@@ -92,7 +92,7 @@ public class OpportunityDAO extends DBContext {
         String sql = "SELECT * FROM opportunities WHERE pipeline_id = ? ORDER BY created_at DESC";
 
         try {
-            PreparedStatement stmt = getConnection().prepareStatement(sql);
+            PreparedStatement stmt = connection.prepareStatement(sql);
             stmt.setInt(1, pipelineId);
 
             ResultSet rs = stmt.executeQuery();
@@ -100,7 +100,7 @@ public class OpportunityDAO extends DBContext {
                 Opportunity opp = extractOpportunityFromResultSet(rs);
                 opportunities.add(opp);
             }
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
         }
 
@@ -117,7 +117,7 @@ public class OpportunityDAO extends DBContext {
                 + "ORDER BY created_at DESC";
 
         try {
-            PreparedStatement stmt = getConnection().prepareStatement(sql);
+            PreparedStatement stmt = connection.prepareStatement(sql);
             stmt.setInt(1, pipelineId);
             stmt.setInt(2, userId);
             stmt.setInt(3, userId);
@@ -127,7 +127,7 @@ public class OpportunityDAO extends DBContext {
                 Opportunity opp = extractOpportunityFromResultSet(rs);
                 opportunities.add(opp);
             }
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
         }
 
@@ -142,7 +142,7 @@ public class OpportunityDAO extends DBContext {
         String sql = "SELECT * FROM opportunities WHERE stage_id = ? ORDER BY created_at DESC";
 
         try {
-            PreparedStatement stmt = getConnection().prepareStatement(sql);
+            PreparedStatement stmt = connection.prepareStatement(sql);
             stmt.setInt(1, stageId);
 
             ResultSet rs = stmt.executeQuery();
@@ -150,7 +150,7 @@ public class OpportunityDAO extends DBContext {
                 Opportunity opp = extractOpportunityFromResultSet(rs);
                 opportunities.add(opp);
             }
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
         }
 
@@ -167,7 +167,7 @@ public class OpportunityDAO extends DBContext {
                 + "ORDER BY created_at DESC";
 
         try {
-            PreparedStatement stmt = getConnection().prepareStatement(sql);
+            PreparedStatement stmt = connection.prepareStatement(sql);
             stmt.setInt(1, stageId);
             stmt.setInt(2, userId);
             stmt.setInt(3, userId);
@@ -177,7 +177,7 @@ public class OpportunityDAO extends DBContext {
                 Opportunity opp = extractOpportunityFromResultSet(rs);
                 opportunities.add(opp);
             }
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
         }
 
@@ -200,7 +200,7 @@ public class OpportunityDAO extends DBContext {
                 opp.setOpportunityCode(generateOpportunityCode());
             }
 
-            PreparedStatement stmt = getConnection().prepareStatement(sql);
+            PreparedStatement stmt = connection.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS);
             stmt.setString(1, opp.getOpportunityCode());
             stmt.setString(2, opp.getOpportunityName());
             setNullableInt(stmt, 3, opp.getLeadId());
@@ -220,9 +220,15 @@ public class OpportunityDAO extends DBContext {
             setNullableInt(stmt, 17, opp.getCreatedBy());
 
             int rowsAffected = stmt.executeUpdate();
+            if (rowsAffected > 0) {
+                ResultSet generatedKeys = stmt.getGeneratedKeys();
+                if (generatedKeys.next()) {
+                    opp.setOpportunityId(generatedKeys.getInt(1));
+                }
+            }
             return rowsAffected > 0;
 
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
             return false;
         }
@@ -240,7 +246,7 @@ public class OpportunityDAO extends DBContext {
                 + "WHERE opportunity_id = ?";
 
         try {
-            PreparedStatement stmt = getConnection().prepareStatement(sql);
+            PreparedStatement stmt = connection.prepareStatement(sql);
             stmt.setString(1, opp.getOpportunityName());
             setNullableInt(stmt, 2, opp.getLeadId());
             setNullableInt(stmt, 3, opp.getCustomerId());
@@ -261,7 +267,7 @@ public class OpportunityDAO extends DBContext {
             int rowsAffected = stmt.executeUpdate();
             return rowsAffected > 0;
 
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
             return false;
         }
@@ -274,13 +280,13 @@ public class OpportunityDAO extends DBContext {
         String sql = "DELETE FROM opportunities WHERE opportunity_id = ?";
 
         try {
-            PreparedStatement stmt = getConnection().prepareStatement(sql);
+            PreparedStatement stmt = connection.prepareStatement(sql);
             stmt.setInt(1, opportunityId);
 
             int rowsAffected = stmt.executeUpdate();
             return rowsAffected > 0;
 
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
             return false;
         }
@@ -294,7 +300,7 @@ public class OpportunityDAO extends DBContext {
                 + "FROM opportunities WHERE opportunity_code LIKE 'OPP-%'";
 
         try {
-            PreparedStatement stmt = getConnection().prepareStatement(sql);
+            PreparedStatement stmt = connection.prepareStatement(sql);
             ResultSet rs = stmt.executeQuery();
 
             if (rs.next()) {
@@ -305,7 +311,7 @@ public class OpportunityDAO extends DBContext {
                 return "OPP-000001";
             }
 
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
             // Return default code if error
             return "OPP-" + System.currentTimeMillis();
@@ -319,14 +325,14 @@ public class OpportunityDAO extends DBContext {
         String sql = "SELECT COUNT(*) AS total FROM opportunities WHERE status = ?";
 
         try {
-            PreparedStatement stmt = getConnection().prepareStatement(sql);
+            PreparedStatement stmt = connection.prepareStatement(sql);
             stmt.setString(1, status);
 
             ResultSet rs = stmt.executeQuery();
             if (rs.next()) {
                 return rs.getInt("total");
             }
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
         }
 
@@ -340,25 +346,47 @@ public class OpportunityDAO extends DBContext {
         String sql = "SELECT ISNULL(SUM(estimated_value), 0) AS total_value FROM opportunities WHERE status = ?";
 
         try {
-            PreparedStatement stmt = getConnection().prepareStatement(sql);
+            PreparedStatement stmt = connection.prepareStatement(sql);
             stmt.setString(1, status);
 
             ResultSet rs = stmt.executeQuery();
             if (rs.next()) {
                 return rs.getBigDecimal("total_value");
             }
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
         }
 
         return BigDecimal.ZERO;
     }
 
+    /**
+     * Get opportunities by lead ID
+     */
+    public List<Opportunity> getOpportunitiesByLeadId(int leadId) {
+        List<Opportunity> opportunities = new ArrayList<>();
+        String sql = "SELECT * FROM opportunities WHERE lead_id = ? ORDER BY created_at DESC";
+
+        try {
+            PreparedStatement stmt = connection.prepareStatement(sql);
+            stmt.setInt(1, leadId);
+
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                opportunities.add(extractOpportunityFromResultSet(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return opportunities;
+    }
+
     // ===== HELPER METHODS =====
     /**
      * Extract Opportunity object from ResultSet
      */
-    private Opportunity extractOpportunityFromResultSet(ResultSet rs) throws Exception {
+    private Opportunity extractOpportunityFromResultSet(ResultSet rs) throws SQLException {
         Opportunity opp = new Opportunity();
 
         opp.setOpportunityId(rs.getInt("opportunity_id"));
@@ -388,7 +416,7 @@ public class OpportunityDAO extends DBContext {
     /**
      * Set nullable integer parameter
      */
-    private void setNullableInt(PreparedStatement stmt, int index, Integer value) throws Exception {
+    private void setNullableInt(PreparedStatement stmt, int index, Integer value) throws SQLException {
         if (value == null) {
             stmt.setNull(index, Types.INTEGER);
         } else {
@@ -399,7 +427,7 @@ public class OpportunityDAO extends DBContext {
     /**
      * Set nullable date parameter
      */
-    private void setNullableDate(PreparedStatement stmt, int index, LocalDate value) throws Exception {
+    private void setNullableDate(PreparedStatement stmt, int index, LocalDate value) throws SQLException {
         if (value == null) {
             stmt.setNull(index, Types.DATE);
         } else {
@@ -410,7 +438,7 @@ public class OpportunityDAO extends DBContext {
     /**
      * Get nullable integer from ResultSet
      */
-    private Integer getNullableInt(ResultSet rs, String columnName) throws Exception {
+    private Integer getNullableInt(ResultSet rs, String columnName) throws SQLException {
         int value = rs.getInt(columnName);
         return rs.wasNull() ? null : value;
     }
@@ -418,7 +446,7 @@ public class OpportunityDAO extends DBContext {
     /**
      * Get nullable LocalDate from ResultSet
      */
-    private LocalDate getNullableLocalDate(ResultSet rs, String columnName) throws Exception {
+    private LocalDate getNullableLocalDate(ResultSet rs, String columnName) throws SQLException {
         Date date = rs.getDate(columnName);
         return date != null ? date.toLocalDate() : null;
     }
@@ -426,7 +454,7 @@ public class OpportunityDAO extends DBContext {
     /**
      * Get nullable LocalDateTime from ResultSet
      */
-    private LocalDateTime getNullableLocalDateTime(ResultSet rs, String columnName) throws Exception {
+    private LocalDateTime getNullableLocalDateTime(ResultSet rs, String columnName) throws SQLException {
         Timestamp timestamp = rs.getTimestamp(columnName);
         return timestamp != null ? timestamp.toLocalDateTime() : null;
     }

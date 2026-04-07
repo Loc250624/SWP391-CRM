@@ -2,11 +2,11 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/JSP_Servlet/Servlet.java to edit this template
  */
-
 package controller.sale;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import dao.ActivityDAO;
 import dao.CampaignDAO;
 import dao.LeadDAO;
 import dao.LeadSourceDAO;
@@ -18,10 +18,12 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
+import util.SessionHelper;
+import model.Activity;
 import model.Campaign;
 import model.Lead;
 import model.LeadSource;
+import java.util.List;
 
 @WebServlet(name = "SaleLeadDetailServlet", urlPatterns = {"/sale/lead/detail"})
 public class SaleLeadDetailServlet extends HttpServlet {
@@ -45,15 +47,10 @@ public class SaleLeadDetailServlet extends HttpServlet {
         try {
             int leadId = Integer.parseInt(leadIdParam);
 
-            // Get current user for permission check
-            Integer currentUserId = 1;
-            HttpSession session = request.getSession(false);
-            if (session != null && session.getAttribute("userId") != null) {
-                try {
-                    currentUserId = (Integer) session.getAttribute("userId");
-                } catch (Exception e) {
-                    // Use default
-                }
+            Integer currentUserId = SessionHelper.getLoggedInUserId(request);
+            if (currentUserId == null) {
+                response.sendRedirect(request.getContextPath() + "/login");
+                return;
             }
 
             // Get lead
@@ -105,10 +102,27 @@ public class SaleLeadDetailServlet extends HttpServlet {
                 out.flush();
 
             } else {
-                // Regular page view (not used for now, but kept for future)
+                // Regular page view
+                // Get related data
+                LeadSource source = null;
+                Campaign campaign = null;
+                if (lead.getSourceId() != null) {
+                    source = leadSourceDAO.getSourceById(lead.getSourceId());
+                }
+                if (lead.getCampaignId() != null) {
+                    campaign = campaignDAO.getCampaignById(lead.getCampaignId());
+                }
+
+                // Load activities for this lead
+                ActivityDAO actDAO = new ActivityDAO();
+                List<Activity> leadActivities = actDAO.getActivitiesByRelatedEntity(leadId, "Lead");
+                request.setAttribute("activities", leadActivities);
+
                 request.setAttribute("lead", lead);
+                request.setAttribute("sourceName", source != null ? source.getSourceName() : null);
+                request.setAttribute("campaignName", campaign != null ? campaign.getCampaignName() : null);
                 request.setAttribute("ACTIVE_MENU", "LEAD_LIST");
-                request.setAttribute("pageTitle", "Lead Detail");
+                request.setAttribute("pageTitle", "Lead Detail - " + lead.getFullName());
                 request.setAttribute("CONTENT_PAGE", "/view/sale/pages/lead/detail.jsp");
                 request.getRequestDispatcher("/view/sale/layout/layout.jsp").forward(request, response);
             }
@@ -125,6 +139,7 @@ public class SaleLeadDetailServlet extends HttpServlet {
 
     // Inner class for JSON response
     private static class LeadDetailResponse {
+
         public Lead lead;
         public String sourceName;
         public String campaignName;
@@ -132,6 +147,7 @@ public class SaleLeadDetailServlet extends HttpServlet {
 
     // Custom adapter for LocalDateTime
     private static class LocalDateTimeAdapter extends com.google.gson.TypeAdapter<LocalDateTime> {
+
         @Override
         public void write(com.google.gson.stream.JsonWriter out, LocalDateTime value) throws IOException {
             if (value == null) {

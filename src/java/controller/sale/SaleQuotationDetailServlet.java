@@ -1,80 +1,151 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/JSP_Servlet/Servlet.java to edit this template
- */
-
 package controller.sale;
 
+import dao.CustomerDAO;
+import dao.LeadDAO;
+import dao.OpportunityDAO;
+import dao.QuotationDAO;
+import dao.UserDAO;
+import model.Customer;
+import model.Lead;
+import model.Opportunity;
+import model.Quotation;
+import model.Users;
 import java.io.IOException;
-import java.io.PrintWriter;
+import java.util.List;
+import java.util.Map;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import util.SessionHelper;
 
-
-@WebServlet(name="SaleQuotationDetailServlet", urlPatterns={"/sale/quotation/detail"})
+@WebServlet(name = "SaleQuotationDetailServlet", urlPatterns = {"/sale/quotation/detail"})
 public class SaleQuotationDetailServlet extends HttpServlet {
-   
-    /** 
-     * Processes requests for both HTTP <code>GET</code> and <code>POST</code> methods.
-     * @param request servlet request
-     * @param response servlet response
-     * @throws ServletException if a servlet-specific error occurs
-     * @throws IOException if an I/O error occurs
-     */
-    protected void processRequest(HttpServletRequest request, HttpServletResponse response)
-    throws ServletException, IOException {
-        response.setContentType("text/html;charset=UTF-8");
-        try (PrintWriter out = response.getWriter()) {
-            /* TODO output your page here. You may use following sample code. */
-            out.println("<!DOCTYPE html>");
-            out.println("<html>");
-            out.println("<head>");
-            out.println("<title>Servlet SaleQuotationDetailServlet</title>");  
-            out.println("</head>");
-            out.println("<body>");
-            out.println("<h1>Servlet SaleQuotationDetailServlet at " + request.getContextPath () + "</h1>");
-            out.println("</body>");
-            out.println("</html>");
-        }
-    } 
 
-    // <editor-fold defaultstate="collapsed" desc="HttpServlet methods. Click on the + sign on the left to edit the code.">
-    /** 
-     * Handles the HTTP <code>GET</code> method.
-     * @param request servlet request
-     * @param response servlet response
-     * @throws ServletException if a servlet-specific error occurs
-     * @throws IOException if an I/O error occurs
-     */
+    private final QuotationDAO quotationDAO = new QuotationDAO();
+    private final OpportunityDAO oppDAO = new OpportunityDAO();
+    private final CustomerDAO customerDAO = new CustomerDAO();
+    private final LeadDAO leadDAO = new LeadDAO();
+    private final UserDAO userDAO = new UserDAO();
+
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
-    throws ServletException, IOException {
-        processRequest(request, response);
-    } 
+            throws ServletException, IOException {
 
-    /** 
-     * Handles the HTTP <code>POST</code> method.
-     * @param request servlet request
-     * @param response servlet response
-     * @throws ServletException if a servlet-specific error occurs
-     * @throws IOException if an I/O error occurs
-     */
-    @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response)
-    throws ServletException, IOException {
-        processRequest(request, response);
+        Integer currentUserId = SessionHelper.getLoggedInUserId(request);
+        if (currentUserId == null) {
+            response.sendRedirect(request.getContextPath() + "/login");
+            return;
+        }
+
+        String idParam = request.getParameter("id");
+        if (idParam == null || idParam.isEmpty()) {
+            response.sendRedirect(request.getContextPath() + "/sale/quotation/list");
+            return;
+        }
+
+        try {
+            int quotationId = Integer.parseInt(idParam);
+            Quotation quotation = quotationDAO.getQuotationById(quotationId);
+
+            if (quotation == null) {
+                response.sendRedirect(request.getContextPath() + "/sale/quotation/list");
+                return;
+            }
+
+            // Load items
+            List<Map<String, Object>> items = quotationDAO.getItemsByQuotationId(quotationId);
+            request.setAttribute("items", items);
+
+            // Load versions
+            List<Map<String, Object>> versions = quotationDAO.getVersionsByQuotationId(quotationId);
+            request.setAttribute("versions", versions);
+
+            // Load tracking logs
+            List<Map<String, Object>> trackingLogs = quotationDAO.getTrackingLogsByQuotationId(quotationId);
+            request.setAttribute("trackingLogs", trackingLogs);
+
+            // Load linked opportunity name
+            if (quotation.getOpportunityId() != null) {
+                Opportunity opp = oppDAO.getOpportunityById(quotation.getOpportunityId());
+                if (opp != null) {
+                    request.setAttribute("linkedOpp", opp);
+                }
+            }
+
+            // Load linked lead name
+            if (quotation.getLeadId() != null) {
+                Lead lead = leadDAO.getLeadById(quotation.getLeadId());
+                if (lead != null) {
+                    request.setAttribute("linkedLead", lead);
+                }
+            }
+
+            // Load linked customer name
+            if (quotation.getCustomerId() != null) {
+                Customer customer = customerDAO.getCustomerById(quotation.getCustomerId());
+                if (customer != null) {
+                    request.setAttribute("linkedCustomer", customer);
+                }
+            }
+
+            // Load approvedBy user name
+            if (quotation.getApprovedBy() != null) {
+                Users approver = userDAO.getUserById(quotation.getApprovedBy());
+                if (approver != null) {
+                    request.setAttribute("approverName", approver.getFirstName() + " " + approver.getLastName());
+                }
+            }
+
+            // Load sentBy user name
+            if (quotation.getSentBy() != null) {
+                Users sender = userDAO.getUserById(quotation.getSentBy());
+                if (sender != null) {
+                    request.setAttribute("senderName", sender.getFirstName() + " " + sender.getLastName());
+                }
+            }
+
+            // Load createdBy user name
+            if (quotation.getCreatedBy() != null) {
+                Users creator = userDAO.getUserById(quotation.getCreatedBy());
+                if (creator != null) {
+                    request.setAttribute("creatorName", creator.getFirstName() + " " + creator.getLastName());
+                }
+            }
+
+            // Insert tracking log for viewing
+            String ip = request.getRemoteAddr();
+            String ua = request.getHeader("User-Agent");
+            String deviceType = parseDeviceType(ua);
+            String browser = parseBrowser(ua);
+            quotationDAO.insertTrackingLog(quotationId, "VIEWED", ip, ua, deviceType, browser);
+
+            request.setAttribute("quotation", quotation);
+            request.setAttribute("ACTIVE_MENU", "QUOT_LIST");
+            request.setAttribute("pageTitle", "Chi tiet Bao gia - " + quotation.getQuotationCode());
+            request.setAttribute("CONTENT_PAGE", "/view/sale/pages/quotation/detail.jsp");
+            request.getRequestDispatcher("/view/sale/layout/layout.jsp").forward(request, response);
+
+        } catch (NumberFormatException e) {
+            response.sendRedirect(request.getContextPath() + "/sale/quotation/list");
+        }
     }
 
-    /** 
-     * Returns a short description of the servlet.
-     * @return a String containing servlet description
-     */
-    @Override
-    public String getServletInfo() {
-        return "Short description";
-    }// </editor-fold>
+    private String parseDeviceType(String ua) {
+        if (ua == null) return "Unknown";
+        String lower = ua.toLowerCase();
+        if (lower.contains("mobile") || lower.contains("android") || lower.contains("iphone")) return "Mobile";
+        if (lower.contains("tablet") || lower.contains("ipad")) return "Tablet";
+        return "Desktop";
+    }
 
+    private String parseBrowser(String ua) {
+        if (ua == null) return "Unknown";
+        if (ua.contains("Edg/")) return "Edge";
+        if (ua.contains("Chrome/")) return "Chrome";
+        if (ua.contains("Firefox/")) return "Firefox";
+        if (ua.contains("Safari/") && !ua.contains("Chrome")) return "Safari";
+        return "Other";
+    }
 }

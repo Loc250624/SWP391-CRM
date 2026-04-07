@@ -1,197 +1,345 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ page contentType="text/html;charset=UTF-8" %>
 
-<style>
-    .header-container {
-        background: white;
-        border-bottom: 1px solid #e2e8f0;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-    }
-    
-    .search-box {
-        position: relative;
-    }
-    
-    .search-input {
-        padding: 0.5rem 1rem 0.5rem 2.5rem;
-        border: 1px solid #e2e8f0;
-        border-radius: 0.5rem;
-        width: 30rem;
-        font-size: 0.875rem;
-        transition: all 0.2s;
-    }
-    
-    .search-input:focus {
-        outline: none;
-        border-color: #60a5fa;
-        box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1);
-    }
-    
-    .search-icon {
-        position: absolute;
-        left: 0.75rem;
-        top: 50%;
-        transform: translateY(-50%);
-        color: #94a3b8;
-        width: 1.125rem;
-        height: 1.125rem;
-    }
-    
-    .header-action {
-        position: relative;
-        padding: 0.5rem;
-        border-radius: 0.5rem;
-        color: #64748b;
-        transition: all 0.15s;
-        cursor: pointer;
-    }
-    
-    .header-action:hover {
-        background: #f1f5f9;
-        color: #3b82f6;
-    }
-    
-    .notification-badge {
-        position: absolute;
-        top: 0.25rem;
-        right: 0.25rem;
-        background: linear-gradient(135deg, #fb923c, #f97316);
-        color: white;
-        font-size: 0.625rem;
-        font-weight: 700;
-        padding: 0.125rem 0.375rem;
-        border-radius: 0.75rem;
-        min-width: 1.125rem;
-        text-align: center;
-    }
-    
-    .user-avatar {
-        width: 2rem;
-        height: 2rem;
-        border-radius: 0.5rem;
-        background: linear-gradient(135deg, #60a5fa, #3b82f6);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-weight: 600;
-        font-size: 0.875rem;
-        cursor: pointer;
-        border: 2px solid #e2e8f0;
-        transition: all 0.2s;
-    }
-    
-    .user-avatar:hover {
-        border-color: #60a5fa;
-        box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1);
-    }
-    
-    .breadcrumb {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        font-size: 0.875rem;
-    }
-    
-    .breadcrumb-item {
-        color: #64748b;
-    }
-    
-    .breadcrumb-item.active {
-        color: #1e293b;
-        font-weight: 500;
-    }
-    
-    .breadcrumb-separator {
-        color: #cbd5e1;
-    }
-    
-    .quick-action-btn {
-        padding: 0.5rem 1rem;
-        background: linear-gradient(135deg, #60a5fa, #3b82f6);
-        color: white;
-        border: none;
-        border-radius: 0.5rem;
-        font-size: 0.875rem;
-        font-weight: 500;
-        cursor: pointer;
-        transition: all 0.15s;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-    
-    .quick-action-btn:hover {
-        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-        transform: translateY(-1px);
-    }
-</style>
-
-<header class="header-container" style="position: fixed; top: 0; left: 16rem; right: 0; z-index: 40; height: 4rem;">
-    <div style="display: flex; align-items: center; justify-content: space-between; height: 100%; padding: 0 1.5rem;">
+<!-- Header -->
+<header class="navbar navbar-expand bg-white border-bottom shadow-sm position-fixed" style="left: 260px; right: 0; top: 0; height: 64px; z-index: 1020;">
+    <div class="container-fluid px-4">
         
-        <!-- Left: Breadcrumb & Page Title -->
-        <div style="display: flex; flex-direction: column; gap: 0.25rem;">
-            <div class="breadcrumb">
-                <span class="breadcrumb-item">Sales Pipeline</span>
-                <span class="breadcrumb-separator">/</span>
-                <span class="breadcrumb-item active">${pageTitle != null ? pageTitle : 'Dashboard'}</span>
-            </div>
-        </div>
+        <!-- Left: Breadcrumb -->
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item">
+                    <a href="${pageContext.request.contextPath}/sale/dashboard" class="text-decoration-none text-muted">
+                        <i class="bi bi-house-door me-1"></i>Sales Pipeline
+                    </a>
+                </li>
+                <li class="breadcrumb-item active" aria-current="page">
+                    ${pageTitle != null ? pageTitle : 'Dashboard'}
+                </li>
+            </ol>
+        </nav>
         
         <!-- Center: Search -->
-        <div class="search-box">
-            <svg class="search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-            </svg>
-            <input type="text" class="search-input" placeholder="Tìm kiếm opportunity, khách hàng...">
-        </div>
+        <form class="d-none d-lg-flex mx-4" style="width: 400px;">
+            <div class="input-group">
+                <span class="input-group-text bg-light border-end-0">
+                    <i class="bi bi-search text-muted"></i>
+                </span>
+                <input type="text" class="form-control bg-light border-start-0" 
+                       placeholder="Tìm kiếm opportunity, khách hàng...">
+            </div>
+        </form>
         
         <!-- Right: Actions -->
-        <div style="display: flex; align-items: center; gap: 1rem;">
+        <div class="d-flex align-items-center gap-2">
             
-            <!-- Notifications -->
-            <div class="header-action">
-                <svg style="width: 1.25rem; height: 1.25rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
-                </svg>
-                <span class="notification-badge">5</span>
-            </div>
-            
-            <!-- Tasks -->
-            <div class="header-action">
-                <svg style="width: 1.25rem; height: 1.25rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
-                </svg>
-            </div>
-            
-            <!-- Messages -->
-            <div class="header-action">
-                <svg style="width: 1.25rem; height: 1.25rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
-                </svg>
-                <span class="notification-badge">2</span>
+            <!-- Quick Add Button -->
+            <div class="dropdown">
+                <button class="btn btn-primary btn-sm dropdown-toggle d-flex align-items-center gap-1" 
+                        type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-plus-lg"></i>
+                    <span class="d-none d-md-inline">Tạo mới</span>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li>
+                        <a class="dropdown-item" href="${pageContext.request.contextPath}/sale/opportunity/form">
+                            <i class="bi bi-lightning me-2 text-warning"></i>Opportunity
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" href="${pageContext.request.contextPath}/sale/quotation/create">
+                            <i class="bi bi-file-earmark-text me-2 text-info"></i>Báo giá
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" href="${pageContext.request.contextPath}/sale/proposal/create">
+                            <i class="bi bi-file-earmark-richtext me-2 text-success"></i>Proposal
+                        </a>
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <a class="dropdown-item" href="${pageContext.request.contextPath}/sale/activity/log">
+                            <i class="bi bi-journal-plus me-2 text-secondary"></i>Ghi nhận hoạt động
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" href="${pageContext.request.contextPath}/sale/task/create">
+                            <i class="bi bi-check2-square me-2 text-primary"></i>Task mới
+                        </a>
+                    </li>
+                </ul>
             </div>
             
             <!-- Divider -->
-            <div style="width: 1px; height: 2rem; background: #e2e8f0;"></div>
+            <div class="vr mx-2 d-none d-md-block"></div>
+            
+            <!-- Notifications -->
+            <div class="dropdown" id="notifDropdown">
+                <button class="btn btn-light btn-sm position-relative" type="button"
+                        data-bs-toggle="dropdown" aria-expanded="false" onclick="saleNotif.load()">
+                    <i class="bi bi-bell"></i>
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                          style="font-size: 10px;" id="notiCount"></span>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end shadow" style="width: 370px; max-height: 480px; overflow-y: auto;">
+                    <li class="dropdown-header d-flex justify-content-between align-items-center">
+                        <span class="fw-semibold">Thông báo</span>
+                        <a href="javascript:void(0)" class="text-decoration-none small" onclick="saleNotif.markAllRead()">Đánh dấu đã đọc</a>
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li id="notifList">
+                        <div class="text-center py-3 text-muted small">Đang tải...</div>
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <a class="dropdown-item text-center small text-primary"
+                           href="${pageContext.request.contextPath}/sale/notifications">
+                            Xem tất cả thông báo
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            
+            <!-- Tasks -->
+            <div class="dropdown">
+                <button class="btn btn-light btn-sm position-relative" type="button" 
+                        data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-check2-square"></i>
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-primary" style="font-size: 10px;">
+                        3
+                    </span>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end" style="width: 300px;">
+                    <li class="dropdown-header d-flex justify-content-between align-items-center">
+                        <span class="fw-semibold">Task của tôi</span>
+                        <a href="${pageContext.request.contextPath}/sale/task/list" class="text-decoration-none small">Xem tất cả</a>
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <a class="dropdown-item d-flex gap-2 py-2" href="#">
+                            <i class="bi bi-circle text-danger"></i>
+                            <div class="flex-grow-1">
+                                <div class="small fw-medium">Gọi lại khách hàng ABC</div>
+                                <div class="text-muted" style="font-size: 11px;">
+                                    <i class="bi bi-clock me-1"></i>Hôm nay, 14:00
+                                </div>
+                            </div>
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item d-flex gap-2 py-2" href="#">
+                            <i class="bi bi-circle text-warning"></i>
+                            <div class="flex-grow-1">
+                                <div class="small fw-medium">Gửi báo giá cho XYZ Corp</div>
+                                <div class="text-muted" style="font-size: 11px;">
+                                    <i class="bi bi-clock me-1"></i>Hôm nay, 16:00
+                                </div>
+                            </div>
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item d-flex gap-2 py-2" href="#">
+                            <i class="bi bi-circle text-info"></i>
+                            <div class="flex-grow-1">
+                                <div class="small fw-medium">Follow up Opportunity #OPP-0030</div>
+                                <div class="text-muted" style="font-size: 11px;">
+                                    <i class="bi bi-clock me-1"></i>Ngày mai, 09:00
+                                </div>
+                            </div>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            
+            <!-- Messages -->
+            <button class="btn btn-light btn-sm position-relative" type="button">
+                <i class="bi bi-chat-dots"></i>
+                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-success" style="font-size: 10px;">
+                    2
+                </span>
+            </button>
+            
+            <!-- Divider -->
+            <div class="vr mx-2"></div>
             
             <!-- User Profile -->
-            <div style="display: flex; align-items: center; gap: 0.75rem;">
-                <div style="text-align: right;">
-                    <div style="font-size: 0.875rem; font-weight: 500; color: #1e293b;">
-                        ${sessionScope.userName != null ? sessionScope.userName : 'Sales Manager'}
+            <div class="dropdown">
+                <button class="btn btn-light btn-sm d-flex align-items-center gap-2 px-2" 
+                        type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <div class="d-none d-md-block text-end">
+                        <div class="small fw-medium lh-sm">
+                            ${sessionScope.userName != null ? sessionScope.userName : 'Sales Manager'}
+                        </div>
+                        <div class="text-muted" style="font-size: 11px;">Sales Team</div>
                     </div>
-                    <div style="font-size: 0.75rem; color: #64748b;">
-                        Sales Team
+                    <div class="bg-primary text-white rounded d-flex align-items-center justify-content-center" 
+                         style="width: 36px; height: 36px; font-size: 14px; font-weight: 600;">
+                        ${sessionScope.userInitial != null ? sessionScope.userInitial : 'SM'}
                     </div>
-                </div>
-                <div class="user-avatar">
-                    ${sessionScope.userInitial != null ? sessionScope.userInitial : 'SM'}
-                </div>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li class="dropdown-header">
+                        <div class="fw-semibold">${sessionScope.userName != null ? sessionScope.userName : 'Sales Manager'}</div>
+                        <div class="text-muted small">${sessionScope.userEmail != null ? sessionScope.userEmail : 'sales@company.com'}</div>
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <a class="dropdown-item" href="#">
+                            <i class="bi bi-person me-2"></i>Hồ sơ cá nhân
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" href="#">
+                            <i class="bi bi-gear me-2"></i>Cài đặt
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" href="#">
+                            <i class="bi bi-question-circle me-2"></i>Trợ giúp
+                        </a>
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <a class="dropdown-item text-danger" href="${pageContext.request.contextPath}/logout">
+                            <i class="bi bi-box-arrow-right me-2"></i>Đăng xuất
+                        </a>
+                    </li>
+                </ul>
             </div>
             
         </div>
-        
     </div>
 </header>
+
+<script>
+var saleNotif = (function () {
+    var API = '${pageContext.request.contextPath}/sale/notifications';
+    var pollInterval = 30000;
+    var timer = null;
+
+    function iconFor(type) {
+        switch (type) {
+            case 'TASK_ASSIGNED':       return {icon: 'bi-check2-square', bg: 'success'};
+            case 'TASK_COMPLETED':      return {icon: 'bi-check-circle', bg: 'success'};
+            case 'TASK_OVERDUE':        return {icon: 'bi-exclamation-triangle', bg: 'danger'};
+            case 'TASK_REMINDER':       return {icon: 'bi-alarm', bg: 'warning'};
+            case 'TASK_STATUS_CHANGED': return {icon: 'bi-arrow-repeat', bg: 'info'};
+            case 'TASK_COMMENT':        return {icon: 'bi-chat-left-text', bg: 'primary'};
+            case 'LEAD_ASSIGNED':       return {icon: 'bi-person-plus', bg: 'primary'};
+            case 'LEAD_CONVERTED':      return {icon: 'bi-arrow-up-circle', bg: 'success'};
+            case 'LEAD_STATUS_CHANGED': return {icon: 'bi-arrow-left-right', bg: 'info'};
+            case 'CUSTOMER_CREATED':    return {icon: 'bi-person-check', bg: 'success'};
+            case 'OPPORTUNITY_CREATED': return {icon: 'bi-star', bg: 'primary'};
+            case 'OPPORTUNITY_STAGE_CHANGED': return {icon: 'bi-signpost-split', bg: 'info'};
+            case 'OPPORTUNITY_WON':     return {icon: 'bi-trophy', bg: 'success'};
+            case 'OPPORTUNITY_LOST':    return {icon: 'bi-x-circle', bg: 'danger'};
+            case 'QUOTATION_SENT':      return {icon: 'bi-send', bg: 'primary'};
+            case 'QUOTATION_APPROVED':  return {icon: 'bi-check-circle', bg: 'success'};
+            case 'QUOTATION_REJECTED':  return {icon: 'bi-x-octagon', bg: 'danger'};
+            case 'QUOTATION_EXPIRING':  return {icon: 'bi-hourglass-split', bg: 'warning'};
+            case 'MANAGER_BROADCAST':   return {icon: 'bi-megaphone', bg: 'warning'};
+            case 'SYSTEM_ANNOUNCEMENT': return {icon: 'bi-info-circle', bg: 'secondary'};
+            default:                    return {icon: 'bi-bell', bg: 'secondary'};
+        }
+    }
+
+    function timeAgo(isoStr) {
+        if (!isoStr) return '';
+        var d = new Date(isoStr.replace('T', ' '));
+        var now = new Date();
+        var diff = Math.floor((now - d) / 1000);
+        if (diff < 60)    return 'Vừa xong';
+        if (diff < 3600)  return Math.floor(diff / 60) + ' phút trước';
+        if (diff < 86400) return Math.floor(diff / 3600) + ' giờ trước';
+        return Math.floor(diff / 86400) + ' ngày trước';
+    }
+
+    function updateBadge(count) {
+        var el = document.getElementById('notiCount');
+        if (!el) return;
+        if (count > 0) {
+            el.textContent = count > 99 ? '99+' : count;
+            el.style.display = '';
+        } else {
+            el.textContent = '';
+            el.style.display = 'none';
+        }
+    }
+
+    function renderList(data) {
+        var container = document.getElementById('notifList');
+        if (!container) return;
+
+        updateBadge(data.unreadCount);
+
+        if (!data.notifications || data.notifications.length === 0) {
+            container.innerHTML = '<div class="text-center py-3 text-muted small">Không có thông báo</div>';
+            return;
+        }
+
+        var html = '';
+        for (var i = 0; i < data.notifications.length; i++) {
+            var n = data.notifications[i];
+            var ic = iconFor(n.type);
+            var unreadClass = n.isRead ? '' : 'bg-light';
+            var rawUrl = n.actionUrl || '';
+            var url = rawUrl
+                ? '${pageContext.request.contextPath}/sale' + rawUrl
+                : 'javascript:void(0)';
+
+            html += '<a class="dropdown-item d-flex gap-2 py-2 ' + unreadClass + '" '
+                  + 'href="' + url + '" onclick="saleNotif.markRead(' + n.id + ')">'
+                  + '<div class="bg-' + ic.bg + ' bg-opacity-10 rounded p-2 flex-shrink-0">'
+                  + '<i class="bi ' + ic.icon + ' text-' + ic.bg + '"></i></div>'
+                  + '<div class="flex-grow-1">'
+                  + '<div class="small fw-medium">' + (n.title || '') + '</div>'
+                  + '<div class="text-muted text-truncate" style="font-size:11px;max-width:260px;">'
+                  + (n.summary || '') + '</div>'
+                  + '<div class="text-muted" style="font-size:10px;">' + timeAgo(n.createdAt) + '</div>'
+                  + '</div>';
+            if (!n.isRead) html += '<span class="bg-primary rounded-circle flex-shrink-0" style="width:8px;height:8px;margin-top:6px;"></span>';
+            html += '</a>';
+        }
+        container.innerHTML = html;
+    }
+
+    function fetchCount() {
+        fetch(API + '?action=count')
+            .then(function (r) { return r.json(); })
+            .then(function (d) { updateBadge(d.unreadCount); })
+            .catch(function () {});
+    }
+
+    function load() {
+        var container = document.getElementById('notifList');
+        if (container) container.innerHTML = '<div class="text-center py-3 text-muted small">Đang tải...</div>';
+        fetch(API + '?action=list&limit=15')
+            .then(function (r) { return r.json(); })
+            .then(function (d) { renderList(d); })
+            .catch(function () {
+                if (container) container.innerHTML = '<div class="text-center py-3 text-danger small">Lỗi tải thông báo</div>';
+            });
+    }
+
+    function markRead(notifId) {
+        fetch(API + '?action=markRead&notificationId=' + notifId, {method: 'POST'})
+            .then(function () { fetchCount(); })
+            .catch(function () {});
+    }
+
+    function markAllRead() {
+        fetch(API + '?action=markAllRead', {method: 'POST'})
+            .then(function () { load(); })
+            .catch(function () {});
+    }
+
+    function startPolling() {
+        fetchCount();
+        timer = setInterval(fetchCount, pollInterval);
+    }
+
+    document.addEventListener('DOMContentLoaded', startPolling);
+
+    return {load: load, markRead: markRead, markAllRead: markAllRead};
+})();
+</script>

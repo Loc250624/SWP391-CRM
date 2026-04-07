@@ -1,0 +1,154 @@
+package controller.manager;
+
+import dao.TaskAssigneeDAO;
+import dao.TaskCommentDAO;
+import dao.TaskDAO;
+import dao.UserDAO;
+import java.io.IOException;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
+import model.Task;
+import model.Users;
+
+/**
+ * POST /manager/task/comment
+ * Params: taskId (int), content (String)
+ * Adds a comment/note to the task activity log.
+ */
+@WebServlet(name = "ManagerTaskCommentServlet", urlPatterns = {"/manager/task/comment"})
+public class ManagerTaskCommentServlet extends HttpServlet {
+
+    @Override
+    protected void doPost(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+
+        request.setCharacterEncoding("UTF-8");
+
+        HttpSession session = request.getSession(false);
+        if (session == null || session.getAttribute("user") == null) {
+            response.sendRedirect(request.getContextPath() + "/login");
+            return;
+        }
+
+        Users currentUser = (Users) session.getAttribute("user");
+        UserDAO userDAO = new UserDAO();
+        String roleCode = userDAO.getRoleCodeByUserId(currentUser.getUserId());
+
+        if (!"MANAGER".equals(roleCode)) {
+            response.sendRedirect(request.getContextPath() + "/error/403.jsp");
+            return;
+        }
+
+        String action = request.getParameter("action");
+
+        // ── DELETE comment ─────────────────────────────────────────────────
+        if ("delete".equals(action)) {
+            handleDelete(request, response, session, currentUser);
+            return;
+        }
+
+        // ── ADD comment (default) ──────────────────────────────────────────
+        String taskIdStr = request.getParameter("taskId");
+        String content   = request.getParameter("content");
+
+        if (taskIdStr == null || taskIdStr.trim().isEmpty()) {
+            session.setAttribute("errorMessage", "ID công việc không hợp lệ");
+            response.sendRedirect(request.getContextPath() + "/manager/task/list");
+            return;
+        }
+
+        if (content == null || content.trim().isEmpty()) {
+            int taskId;
+            try { taskId = Integer.parseInt(taskIdStr.trim()); }
+            catch (NumberFormatException e) { taskId = 0; }
+            session.setAttribute("errorMessage", "Nội dung bình luận không được để trống");
+            response.sendRedirect(request.getContextPath() + "/manager/task/detail?id=" + taskId);
+            return;
+        }
+
+        int taskId;
+        try {
+            taskId = Integer.parseInt(taskIdStr.trim());
+        } catch (NumberFormatException e) {
+            session.setAttribute("errorMessage", "ID công việc không hợp lệ");
+            response.sendRedirect(request.getContextPath() + "/manager/task/list");
+            return;
+        }
+
+        Task task = new TaskDAO().getTaskById(taskId);
+        if (task == null) {
+            session.setAttribute("errorMessage", "Không tìm thấy công việc");
+            response.sendRedirect(request.getContextPath() + "/manager/task/list");
+            return;
+        }
+
+        boolean ok = new TaskCommentDAO().insertComment(taskId, currentUser.getUserId(), content.trim());
+        if (ok) {
+            // Thong bao cho assignees + creator (tru nguoi comment)
+            java.util.List<Integer> notifyIds = new java.util.ArrayList<>();
+            for (model.TaskAssignee ta : new TaskAssigneeDAO().getByTaskId(taskId)) {
+                if (!notifyIds.contains(ta.getUserId())) notifyIds.add(ta.getUserId());
+            }
+            if (task.getCreatedBy() != null && !notifyIds.contains(task.getCreatedBy())) {
+                notifyIds.add(task.getCreatedBy());
+            }
+            util.NotificationUtil.notifyTaskComment(
+                    taskId, task.getTaskCode(), task.getTitle(),
+                    currentUser.getUserId(), notifyIds);
+
+            session.setAttribute("successMessage", "Đã thêm bình luận");
+        } else {
+            session.setAttribute("errorMessage", "Thêm bình luận thất bại");
+        }
+
+        response.sendRedirect(request.getContextPath() + "/manager/task/detail?id=" + taskId);
+    }
+
+    private void handleDelete(HttpServletRequest request, HttpServletResponse response,
+                              HttpSession session, Users currentUser)
+            throws IOException {
+
+        String commentIdStr = request.getParameter("commentId");
+        String taskIdStr    = request.getParameter("taskId");
+
+        if (commentIdStr == null || taskIdStr == null) {
+            session.setAttribute("errorMessage", "Thông tin không hợp lệ");
+            response.sendRedirect(request.getContextPath() + "/manager/task/list");
+            return;
+        }
+
+        int taskId;
+        int commentId;
+        try {
+            taskId    = Integer.parseInt(taskIdStr.trim());
+            commentId = Integer.parseInt(commentIdStr.trim());
+        } catch (NumberFormatException e) {
+            session.setAttribute("errorMessage", "ID không hợp lệ");
+            response.sendRedirect(request.getContextPath() + "/manager/task/list");
+            return;
+        }
+
+        TaskCommentDAO commentDAO = new TaskCommentDAO();
+        model.Comment comment = commentDAO.getCommentById(commentId);
+
+        if (comment == null) {
+            session.setAttribute("errorMessage", "Không tìm thấy bình luận");
+            response.sendRedirect(request.getContextPath() + "/manager/task/detail?id=" + taskId);
+            return;
+        }
+
+        // Manager can delete any comment on tasks in their department
+        boolean deleted = commentDAO.deleteComment(commentId);
+        if (deleted) {
+            session.setAttribute("successMessage", "Đã xóa bình luận");
+        } else {
+            session.setAttribute("errorMessage", "Xóa bình luận thất bại");
+        }
+
+        response.sendRedirect(request.getContextPath() + "/manager/task/detail?id=" + taskId);
+    }
+}

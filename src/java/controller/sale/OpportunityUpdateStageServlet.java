@@ -1,7 +1,10 @@
 package controller.sale;
 
 import dao.OpportunityDAO;
+import dao.OpportunityHistoryDAO;
+import dao.PipelineStageDAO;
 import model.Opportunity;
+import model.PipelineStage;
 import java.io.IOException;
 import java.io.PrintWriter;
 import jakarta.servlet.ServletException;
@@ -9,11 +12,14 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import util.SessionHelper;
 
 @WebServlet(name = "OpportunityUpdateStageServlet", urlPatterns = {"/sale/opportunity/updateStage"})
 public class OpportunityUpdateStageServlet extends HttpServlet {
 
     private OpportunityDAO opportunityDAO = new OpportunityDAO();
+    private OpportunityHistoryDAO historyDAO = new OpportunityHistoryDAO();
+    private PipelineStageDAO stageDAO = new PipelineStageDAO();
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
@@ -46,11 +52,37 @@ public class OpportunityUpdateStageServlet extends HttpServlet {
                 return;
             }
 
+            // Block if already Won/Lost
+            if ("Won".equals(opportunity.getStatus()) || "Lost".equals(opportunity.getStatus())) {
+                out.print("{\"success\": false, \"message\": \"Opportunity da dong (Won/Lost), khong the thay doi.\"}");
+                return;
+            }
+
+            // Log stage change
+            int oldStageId = opportunity.getStageId();
+            String oldStatus = opportunity.getStatus();
+
             // Update the stage
             opportunity.setStageId(stageId);
+
+            // Auto-transition Open → InProgress when moving beyond first stage
+            if ("Open".equals(opportunity.getStatus())) {
+                PipelineStage targetStage = stageDAO.getStageById(stageId);
+                if (targetStage != null && targetStage.getStageOrder() > 1) {
+                    opportunity.setStatus("InProgress");
+                }
+            }
+
             boolean updated = opportunityDAO.updateOpportunity(opportunity);
 
             if (updated) {
+                // Log history
+                Integer userId = SessionHelper.getLoggedInUserId(request);
+                historyDAO.logChange(opportunityId, "stage_id", String.valueOf(oldStageId), String.valueOf(stageId), userId);
+                if (!oldStatus.equals(opportunity.getStatus())) {
+                    historyDAO.logChange(opportunityId, "status", oldStatus, opportunity.getStatus(), userId);
+                }
+
                 out.print("{\"success\": true, \"message\": \"Stage updated successfully\"}");
             } else {
                 out.print("{\"success\": false, \"message\": \"Failed to update stage\"}");
